@@ -5,7 +5,7 @@ Aplicaci√≥n web para venta de entradas utilizada en la cursada 2025 de Ingenier√
 ## Integrantes
 1. Petosa Ayala Franco
 2. Gonzalo Gerez
-3.
+3. Isabella Bresciani
 4.
 5.
 
