@@ -8,6 +8,7 @@ Aplicaci√≥n web para venta de entradas utilizada en la cursada 2025 de Ingenier√
 3. Isabella Bresciani
 4. Silvia Romero
 5. Sofia Raggi
+6. Sofia Lara Goszko
 
 ## Dependencias
 
