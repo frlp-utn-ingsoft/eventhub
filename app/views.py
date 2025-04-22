@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+from .models import Event, User, Comment
 
 
 def register(request):
@@ -125,3 +125,78 @@ def event_form(request, id=None):
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
+
+###################################################################################
+
+@login_required
+def comments(request):
+    event = Event.objects.all().order_by("scheduled_at")
+    comments = event.comments.all() # type: ignore
+    return render(
+        request,
+        "app/comments.html",
+        {"event": event, "comments": comments, "user_is_organizer": request.user.is_organizer},
+    )
+
+
+@login_required
+def comment_detail(request, comment_id):
+    comment = get_object_or_404(Comment, pk=comment_id)
+    return render(request, "app/comment_detail.html", {"comment": comment})
+
+
+@login_required
+def comment_delete(request, comment_id):
+    comment = get_object_or_404(Comment, pk=comment_id)
+
+    if comment.user != request.user and comment.event.organizer != request.user:
+        return redirect('event_detail', id=comment.event.pk)
+
+    if request.method == "POST":
+        event_id = comment.event.pk
+        comment.delete()
+        return redirect('event_detail', id=event_id)
+
+    return redirect('event_detail', id=comment.event.pk)
+
+
+@login_required
+def comment_form(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+
+    if request.method == "POST":
+        title = request.POST.get("title")
+        text = request.POST.get("text")
+
+        success, result = Comment.new(title, text, request.user, event)
+
+        if success:
+            return redirect("event_detail", id=event_id)
+        else:
+            return render(
+                request,
+                "app/comment_form.html",{
+                "errors": result,
+                "event":event}
+            )
+        
+    return render(request, "app/comment_form.html", {"event": event})
+
+@login_required
+def comment_edit(request, comment_id):
+    comment = get_object_or_404(Comment, pk=comment_id)
+
+    if comment.user != request.user:
+        return redirect("events")
+
+    if request.method == "POST":
+        title = request.POST.get("title")
+        text = request.POST.get("text")
+
+        comment.update(title, text)
+        return redirect("event_detail", id=comment.event.pk)
+    
+    return render(request, "app/comment_form.html", {
+        "event": comment.event,
+        "comment": comment
+    })
