@@ -73,3 +73,58 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+class Notification(models.Model):
+    title = models.CharField(max_length=50)
+    message = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    priority = models.CharField(max_length=50)
+    is_read = bool
+
+    @classmethod
+    def new(cls, title, message, created_at, priority):
+        
+        errors = Notification.validate(title, message, priority)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+
+        Notification.objects.create(
+            title=title,
+            message=message,
+            created_at=created_at,
+            priority=priority,
+            is_read=False,
+        )
+
+        return True, None
+    
+    @classmethod
+    def validate(cls, title, message, priority):
+        errors = {}
+
+        if title == "":
+            errors["title"] = "Por favor ingrese un titulo"
+
+        titleMaxLen = 50
+        if len(title) > titleMaxLen:
+            errors["title"] = "Maximo " + str(titleMaxLen) + " caracteres"
+
+        if message == "":
+            errors["message"] = "Por favor ingrese una mensaje"
+
+        messageMaxLen = 100
+        if len(message) > messageMaxLen:
+            errors["title"] = "Maximo " + str(messageMaxLen) + " caracteres"
+
+        if priority == "":
+            errors["priority"] = "Por favor seleccione una prioridad"
+
+        optionList = ["LOW", "MEDIUM", "HIGH"]
+        if priority not in optionList:
+            errors["priority"] = "La prioridad debe ser Baja, Media o Alta"
+
+        return errors
+
+    def markAsRead(self):
+        self.is_read=True
