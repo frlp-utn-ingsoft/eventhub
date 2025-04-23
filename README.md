@@ -33,4 +33,5 @@ Aplicación web para venta de entradas utilizada en la cursada 2025 de Ingenier�
 NOMBRES:
 
 - Joaquin Luberto
-- César Flores 
+- César Flores
+- Gustavo Senna
