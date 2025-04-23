@@ -58,6 +58,22 @@
                                 </div>
                             </div>
                             <div>
+                                <label for="category" class="form-label">Categoría</label>
+                                <select class="form-select" id="category" name="category" required>
+                                    <option value="">Selecciona una categoría</option>
+                                    {% for cat in categories %}
+                                        <option value="{{ cat.id }}"
+                                            {% if event.category and event.category.id == cat.id %}
+                                                selected
+                                            {% endif %}
+                                        >
+                                            {{ cat.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div>
                                 <button type="submit" class="btn btn-primary">Crear Evento</button>
                             </div>
                         </div>
