@@ -131,6 +131,17 @@ def categorias(request):
     return render(request, "app/categories.html", 
                     {"categorys": category_list, "user_is_organizer": request.user.is_organizer})
 
+def category_form(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+
+        category = Category.objects.create(name=name, description=description)
+
+        return redirect('categorias')
+
+    return render(request, 'app/category_form.html')
+
 
 def category_delete(request, id):
     user = request.user
