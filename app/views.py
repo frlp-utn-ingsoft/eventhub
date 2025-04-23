@@ -132,4 +132,15 @@ def categorias(request):
                     {"categorys": category_list, "user_is_organizer": request.user.is_organizer})
 
 
+def category_delete(request, id):
+    user = request.user
+    if not user.is_organizer:
+        return redirect("categorias")
+
+    if request.method == "POST":
+        category = get_object_or_404(Category, pk=id)
+        category.delete()
+        return redirect("categorias")
+
+    return redirect("categorias")
 
