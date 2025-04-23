@@ -2,6 +2,15 @@
 
 Aplicación web para venta de entradas utilizada en la cursada 2025 de Ingeniería y Calidad de Software. UTN-FRLP
 
+## Integrantes
+
+- Valentín Augusto Garzaniti
+- Romeo Lorenzo Monfroglio
+- Gonzalo Martín Perez
+- Manuel Rebol
+- Facundo Serra
+- Federico Nahuel Valle
+
 ## Dependencias
 
 - python 3
