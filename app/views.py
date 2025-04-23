@@ -142,6 +142,24 @@ def category_form(request):
 
     return render(request, 'app/category_form.html')
 
+def edit_category(request, id):
+    category = get_object_or_404(Category, id=id)
+
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        if name and description:
+            category.name = name
+            category.description = description
+            category.save()
+            return redirect('categorias') 
+        else:
+            return render(request, 'app/category_edit.html', {
+                'category': category,
+                'error': 'Todos los campos son obligatorios.'
+            })
+
+    return render(request, 'app/category_edit.html', {'category': category})
 
 def category_delete(request, id):
     user = request.user
