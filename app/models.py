@@ -1,6 +1,12 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+def save(method):
+    def wrapper(self, *args, **kwargs):
+        result = method(self, *args, **kwargs)
+        self.save()
+        return result
+    return wrapper
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -78,11 +84,17 @@ class Notification(models.Model):
     title = models.CharField(max_length=50)
     message = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
-    priority = models.CharField(max_length=50)
-    is_read = bool
+    updated_at = models.DateTimeField(auto_now=True)
+    priority = models.CharField(max_length=10)
+    is_read = models.BooleanField(default=False)
+    user = models.ForeignKey(
+        User, 
+        on_delete=models.CASCADE, 
+        related_name='notifications'
+    )
 
     @classmethod
-    def new(cls, title, message, created_at, priority):
+    def new(cls, user, title, message, created_at, priority):
         
         errors = Notification.validate(title, message, priority)
 
@@ -90,6 +102,7 @@ class Notification(models.Model):
             return False, errors
 
         Notification.objects.create(
+            user=user,
             title=title,
             message=message,
             created_at=created_at,
@@ -126,5 +139,6 @@ class Notification(models.Model):
 
         return errors
 
-    def markAsRead(self):
+    @save
+    def mark_as_read(self):
         self.is_read=True
