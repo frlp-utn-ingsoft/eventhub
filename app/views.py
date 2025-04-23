@@ -71,7 +71,8 @@ def events(request):
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
-    return render(request, "app/event_detail.html", {"event": event})
+    comments = event.comments.all() # type: ignore
+    return render(request, "app/event_detail.html", {"event": event, "comments": comments})
 
 
 @login_required
@@ -129,8 +130,8 @@ def event_form(request, id=None):
 ###################################################################################
 
 @login_required
-def comments(request):
-    event = Event.objects.all().order_by("scheduled_at")
+def comments(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
     comments = event.comments.all() # type: ignore
     return render(
         request,
@@ -175,12 +176,18 @@ def comment_form(request, event_id):
         else:
             return render(
                 request,
-                "app/comment_form.html",{
+                "app/event_detail.html",{
                 "errors": result,
-                "event":event}
+                "event":event,
+                "comment": {
+                    "title": title,
+                    "text": text
+                },
+                "coments": event.comments.all() # type: ignore
+                }
             )
         
-    return render(request, "app/comment_form.html", {"event": event})
+    return redirect("event_detail. id=event_id")
 
 @login_required
 def comment_edit(request, comment_id):
