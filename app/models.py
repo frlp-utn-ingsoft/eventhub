@@ -34,6 +34,7 @@ class Event(models.Model):
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    category = models.ForeignKey('Category', on_delete=models.PROTECT, related_name="events", null=True, blank=True)
 
     def __str__(self):
         return self.title
@@ -51,7 +52,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer):
+    def new(cls, title, description, scheduled_at, organizer,category=None):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -62,14 +63,52 @@ class Event(models.Model):
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
+            category=category,
         )
 
         return True, None
 
-    def update(self, title, description, scheduled_at, organizer):
+    def update(self, title, description, scheduled_at, organizer, category=None):
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
+        self.category = category if category is not None else self.category
+
+        self.save()
+
+class Category(models.Model):
+    name =models.CharField(max_length=100)
+    description = models.TextField()
+    is_active = models.BooleanField(default=True)
+
+    @classmethod
+    def validate(cls, name, description):
+        errors = {}
+
+        if name == "":
+            errors["name"] = "Por favor ingrese un nombre"
+
+        if description == "":
+            errors["description"] = "Por favor ingrese una descripcion"
+
+        return errors
+    
+    @classmethod
+    def new(cls, name, description):
+        errors = Category.validate(name, description)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+
+        Category.objects.create(
+            name=name,
+            description=description,
+        )
+
+        return True, None
+    def update(self, name, description):
+        self.name = name or self.name
+        self.description = description or self.description
 
         self.save()
