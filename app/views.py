@@ -130,13 +130,16 @@ def event_form(request, id=None):
 ###################################################################################
 
 @login_required
-def comments(request, event_id):
-    event = get_object_or_404(Event, pk=event_id)
-    comments = event.comments.all() # type: ignore
+def comments(request):
+    if not request.user.is_organizer:
+        return redirect("events")
+    
+    #comments = Comment.objects.all().order_by("-created_at")
+    comments = Comment.objects.filter(event__organizer=request.user).order_by("-created_at")
     return render(
         request,
-        "app/comments.html",
-        {"event": event, "comments": comments, "user_is_organizer": request.user.is_organizer},
+        "app/comments/comments.html",
+        {"comments": comments, "user_is_organizer": request.user.is_organizer},
     )
 
 @login_required
