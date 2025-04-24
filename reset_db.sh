@@ -1,5 +1,15 @@
 #!/bin/bash
 
+python_interpreter=""
+if command -v python3 &>/dev/null; then
+    python_interpreter="python3"
+elif command -v python &>/dev/null; then
+    python_interpreter="python"
+else
+    echo "Error: No se encontró un intérprete de Python válido."
+    exit 1
+fi
+
 # 1. eliminar la base de datos del proyecto
 echo "==> Eliminando base de datos..."
 
@@ -20,13 +30,13 @@ find . -path "*/migrations/*.pyc" -delete
 
 # 3. crear nuevamente las migraciones
 echo "==> Creando migraciones..."
-python3 manage.py makemigrations
-python3 manage.py migrate
+$python_interpreter manage.py makemigrations
+$python_interpreter manage.py migrate
 
 # 4. crear superusuario
 read -p "¿Desea crear un superusuario? (y/n): " create_superuser
 if [ "$create_superuser" == "y" ]; then
-    python3 manage.py createsuperuser
+    $python_interpreter manage.py createsuperuser
 fi
 
 # 5. cargar datos de prueba
@@ -37,7 +47,7 @@ if [ "$load_fixtures" == "y" ]; then
         
         for fixture in "$dir_data"/*.json; do
             echo "   -> Cargando $fixture..."
-            python3 manage.py loaddata "$fixture"
+            $python_interpreter manage.py loaddata "$fixture"
             echo "✅ Archivo $fixture cargado"
         done
 
