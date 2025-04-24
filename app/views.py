@@ -1,10 +1,11 @@
 import datetime
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+from .models import Category, Event, User
 
 
 def register(request):
@@ -71,7 +72,8 @@ def events(request):
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
-    return render(request, "app/event_detail.html", {"event": event})
+    categories = Category.objects.all()
+    return render(request, "app/event_detail.html", {"event": event, "categories": categories})
 
 
 @login_required
@@ -100,7 +102,10 @@ def event_form(request, id=None):
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
-
+        category_id = request.POST.get("category")
+        category = None
+        if category_id is not None:
+            category = get_object_or_404(Category, pk=category_id)
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
 
@@ -109,10 +114,10 @@ def event_form(request, id=None):
         )
 
         if id is None:
-            Event.new(title, description, scheduled_at, request.user)
+            Event.new(title, category, description, scheduled_at, request.user)
         else:
             event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user)
+            event.update(title, category, description, scheduled_at, request.user)
 
         return redirect("events")
 
@@ -120,8 +125,27 @@ def event_form(request, id=None):
     if id is not None:
         event = get_object_or_404(Event, pk=id)
 
+    categories = Category.objects.all()
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer},
+        {"event": event, "user_is_organizer": request.user.is_organizer, "categories": categories},
     )
+
+@login_required
+def category_form(request, id=None):
+    user = request.user
+
+    if not user.is_organizer:
+        return redirect("events")
+
+    if request.method == "POST":
+        title = request.POST.get("name")
+        description = request.POST.get("description")
+        if id is None:
+            Category.new(title, description, is_active=True)
+        else:
+            category = get_object_or_404(Category, pk=id)
+            category.update(title, description, request.user, is_active=True)
+
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/')) # refresh last screen

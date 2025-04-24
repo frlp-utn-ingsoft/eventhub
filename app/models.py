@@ -27,11 +27,59 @@ class User(AbstractUser):
         return errors
 
 
+class Category(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField()
+    is_active = models.BooleanField()
+
+    def __str__(self):
+        return self.name
+    
+    @classmethod
+    def validate(cls, name, description, is_active):
+        errors = {}
+
+        if name == "":
+            errors["name"] = "El nombre de categoría es requerido"
+
+        if description == "":
+            errors["description"] = "La descripcion de categoría es requerida"
+
+        if is_active is not None and not isinstance(is_active, bool):
+            errors["is_active"] = "is_active debería ser boolean"
+        return errors
+
+    @classmethod
+    def new(cls, name, description, is_active):
+        errors = Category.validate(name, description, is_active)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+
+        Category.objects.create(
+            name=name,
+            description=description,
+            is_active=is_active,
+        )
+
+        return True, None
+
+    def update(self, name, description, is_active):
+        self.name = name or self.name
+        self.description = description or self.description
+        self.is_active = is_active or self.is_active
+        self.save()
+
 class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
+    category = models.ForeignKey(Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='events')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -39,9 +87,8 @@ class Event(models.Model):
         return self.title
 
     @classmethod
-    def validate(cls, title, description, scheduled_at):
+    def validate(cls, title, category, description, scheduled_at):
         errors = {}
-
         if title == "":
             errors["title"] = "Por favor ingrese un titulo"
 
@@ -51,14 +98,15 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer):
-        errors = Event.validate(title, description, scheduled_at)
+    def new(cls, title, category, description, scheduled_at, organizer):
+        errors = Event.validate(title, category, description, scheduled_at)
 
         if len(errors.keys()) > 0:
             return False, errors
 
         Event.objects.create(
             title=title,
+            category=category,
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
@@ -66,10 +114,10 @@ class Event(models.Model):
 
         return True, None
 
-    def update(self, title, description, scheduled_at, organizer):
+    def update(self, title, category, description, scheduled_at, organizer):
         self.title = title or self.title
         self.description = description or self.description
+        self.category = category or self.category
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
-
         self.save()

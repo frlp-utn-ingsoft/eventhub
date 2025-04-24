@@ -5,7 +5,18 @@
     "fields": {
       "title": "Concierto de Jazz",
       "description": "Una noche con los mejores músicos de jazz.",
-      "date": "2025-06-20T20:00:00Z",
+      "scheduled_at": "2025-06-20T20:00:00Z",
+      "organizer": 1,
+      "created_at": "2025-04-01T00:00:00Z",
+      "updated_at": "2025-04-01T00:00:00Z"
+    }
+  },
+  {
+    "model": "app.event",
+    "fields": {
+      "title": "Concierto de Nicki Nicole",
+      "description": "Cantante y compositora argentina de trap, rap, R&B, hip-hop, reguetón y pop urbano.",
+      "scheduled_at": "2025-05-15T20:00:00Z",
       "organizer": 1,
       "created_at": "2025-04-01T00:00:00Z",
       "updated_at": "2025-04-01T00:00:00Z"
