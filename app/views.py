@@ -5,8 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .models import Event, User
 from django.contrib import messages
-from .models import Ticket, Event
-from .forms_Ticket import TicketForm
+from .models import Ticket, Event, TicketForm
 
 
 def register(request):
@@ -140,7 +139,7 @@ def buy_ticket(request, event_id):
             ticket.event = event
             ticket.save()
             messages.success(request, f'¡Ticket comprado con éxito! Tu código es: {ticket.ticket_code}')
-            return redirect('ticket_detail', ticket_id=ticket.id)
+            return redirect('app/ticket_detail', ticket_id=ticket.id)
         
     else:
         form = TicketForm()
