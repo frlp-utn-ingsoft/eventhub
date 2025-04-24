@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Editar Ticket</h2>
+    <div class="alert alert-info">
+        Solo puedes editar tu ticket dentro de los primeros 30 minutos después de la compra.
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <div class="card">
+            <div class="card-body">
+                {{ form.as_p }}
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                <a href="{% url 'ticket_detail' ticket.id %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Comprar Ticket para {{ event.title }}</h2>
+    <div class="card">
+        <div class="card-body">
+            <p><strong>Fecha:</strong> {{ event.date }}</p>
+            <p><strong>Lugar:</strong> {{ event.venue.name }}</p>
+        </div>
+    </div>
+    
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        <div class="card mb-4">
+            <div class="card-header">Detalles del Ticket</div>
+            <div class="card-body">
+                {{ form.quantity.label_tag }}
+                {{ form.quantity }}
+                {{ form.type.label_tag }}
+                {{ form.type }}
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">Información de Pago</div>
+            <div class="card-body">
+                {{ form.card_number.label_tag }}
+                {{ form.card_number }}
+                {{ form.card_holder.label_tag }}
+                {{ form.card_holder }}
+                {{ form.expiration_date.label_tag }}
+                {{ form.expiration_date }}
+                {{ form.cvc.label_tag }}
+                {{ form.cvc }}
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Comprar Ticket</button>
+    </form>
+</div>
+{% endblock %}
