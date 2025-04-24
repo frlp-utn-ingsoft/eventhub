@@ -79,6 +79,7 @@ class Event(models.Model):
 class Ticket(models.Model):
     TICKET_TYPES= [('general', 'General'), ('vip', 'VIP')]
 
+    id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tickets")
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="tickets")
     buy_date = models.DateTimeField(auto_now_add=True)
