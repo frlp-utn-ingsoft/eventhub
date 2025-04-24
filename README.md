@@ -35,3 +35,4 @@ NOMBRES:
 - Joaquin Luberto
 - César Flores
 - Gustavo Senna
+- Stefania Francini
