@@ -112,3 +112,43 @@ class Category(models.Model):
         self.description = description or self.description
 
         self.save()
+
+class Comment(models.Model):
+    title = models.CharField(max_length=100)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="comments")
+
+    @classmethod
+    def validate(cls, title, text):
+        errors = {}
+
+        if not title or title.strip() == "":
+            errors["title"] = "El título es requerido"
+
+        if not text or text.strip() == "":
+            errors["text"] = "El texto es requerido"
+
+        return errors
+
+    @classmethod
+    def new(cls, title, text, user, event):
+        errors = cls.validate(title, text)
+
+        if errors:
+            return False, errors
+
+        cls.objects.create(
+            title=title.strip(),
+            text=text.strip(),
+            user=user,
+            event=event
+        )
+
+        return True, None
+
+    def update(self, title, text):
+        self.title = title.strip() if title else self.title
+        self.text = text.strip() if text else self.text
+        self.save()
