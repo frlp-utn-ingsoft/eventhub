@@ -1,0 +1,33 @@
+<div class="card-body">
+    <hr>
+    <form action="{% url 'comment_form' event.id %}" method="POST">
+        {% csrf_token %}
+        <div class="vstack gap-3">
+            <div>
+                <label for="title" class="form-label">Título del comentario *</label>
+                <input class="form-control"
+                    id="title"
+                    required="true"
+                    type="text"
+                    placeholder="Escribe un título para tu comentario"
+                    value="{{comment.title }}"
+                    name="title" />
+            </div>
+            <div>
+                <label for="text" class="form-label">Contenido del comentario *</label>
+                <textarea
+                    class="form-control"
+                    id="text"
+                    name="text"
+                    rows="4"
+                    placeholder="Escribe tu comentario aquí"
+                    required="true">{{ comment.text }}</textarea>
+            </div>
+            <div>
+                <button type="submit" class="btn btn-primary">
+                    Publicar comentario
+                </button>
+            </div>
+        </div>
+    </form>
+</div> 
