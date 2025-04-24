@@ -29,3 +29,6 @@ Aplicaci√≥n web para venta de entradas utilizada en la cursada 2025 de Ingenier√
 ## Iniciar app
 
 `python manage.py runserver`
+
+Integrantes del proyecto:
+- Geronimo Makowiecki 
