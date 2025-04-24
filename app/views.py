@@ -1,11 +1,21 @@
 import datetime
+from functools import wraps
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+from .models import Event, User, Notification
 
+def organizer_required(view_func):
+    @wraps(view_func)
+    def wrapper(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect('login') 
+        if not request.user.is_organizer:
+            return redirect('events')
+        return view_func(request, *args, **kwargs)
+    return wrapper
 
 def register(request):
     if request.method == "POST":
@@ -125,3 +135,56 @@ def event_form(request, id=None):
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
+
+@login_required
+@organizer_required
+def notification_form(request):
+    notification = {}
+    errors = {}
+    success = False
+    events = Event.objects.all().order_by("scheduled_at")
+    users = User.objects.filter(is_organizer = False)
+
+    if request.method == "POST":
+        user_id = request.POST.get("user")
+        title = request.POST.get("title")
+        message = request.POST.get("message")
+        priority = request.POST.get("priority")
+        event_id = request.POST.get("event")
+        event = get_object_or_404(Event, id=event_id)
+        recipient = request.POST.get("recipient")
+
+        if recipient == "all_users":
+            all_users = User.objects.all()
+            success, errors = Notification.new(all_users, event, title, message, priority)
+        else:
+            user = get_object_or_404(User, id=user_id)
+            single_user = []
+            single_user.append(user)
+            success, errors = Notification.new(single_user, event, title, message, priority)
+
+        if success == False:
+            return render(
+                request,
+                "app/notification_form.html",
+                {
+                    "notification": { title, message, priority }, 
+                    "events": events, 
+                    "users": users,
+                    "errors": errors
+                },
+            )
+        
+        return redirect("events")
+        
+    return render(
+        request,
+        "app/notification_form.html",
+        {
+            "notification": notification, 
+            "events": events, 
+            "users": users,
+            "errors": {}
+        },
+    )
+    

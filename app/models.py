@@ -32,7 +32,6 @@ class User(AbstractUser):
 
         return errors
 
-
 class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
@@ -87,33 +86,38 @@ class Notification(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     priority = models.CharField(max_length=10)
     is_read = models.BooleanField(default=False)
-    user = models.ForeignKey(
-        User, 
+    users = models.ManyToManyField(
+        User,
+        related_name='notifications'
+    )
+    event = models.ForeignKey(
+        Event, 
         on_delete=models.CASCADE, 
         related_name='notifications'
     )
 
     @classmethod
-    def new(cls, user, title, message, created_at, priority):
+    def new(cls, users, event, title, message, priority):
         
-        errors = Notification.validate(title, message, priority)
+        errors = Notification.validate(users, event, title, message, priority)
 
         if len(errors.keys()) > 0:
             return False, errors
-
-        Notification.objects.create(
-            user=user,
+        
+        notification = Notification.objects.create(
+            event=event,
             title=title,
             message=message,
-            created_at=created_at,
             priority=priority,
             is_read=False,
         )
+        
+        notification.users.set(users)
 
         return True, None
     
     @classmethod
-    def validate(cls, title, message, priority):
+    def validate(cls, user, event, title, message, priority):
         errors = {}
 
         if title == "":
@@ -124,18 +128,24 @@ class Notification(models.Model):
             errors["title"] = "Maximo " + str(titleMaxLen) + " caracteres"
 
         if message == "":
-            errors["message"] = "Por favor ingrese una mensaje"
+            errors["message"] = "Por favor ingrese un mensaje"
 
         messageMaxLen = 100
         if len(message) > messageMaxLen:
-            errors["title"] = "Maximo " + str(messageMaxLen) + " caracteres"
+            errors["message"] = "Maximo " + str(messageMaxLen) + " caracteres"
 
         if priority == "":
             errors["priority"] = "Por favor seleccione una prioridad"
+        else:
+            optionList = ["LOW", "MEDIUM", "HIGH"]
+            if priority not in optionList:
+                errors["priority"] = "La prioridad debe ser Baja, Media o Alta"
 
-        optionList = ["LOW", "MEDIUM", "HIGH"]
-        if priority not in optionList:
-            errors["priority"] = "La prioridad debe ser Baja, Media o Alta"
+        if not user:
+            errors["user"] = "Por favor seleccione un usuario"
+        
+        if not event:
+            errors["event"] = "Por favor seleccione un usuario"
 
         return errors
 
