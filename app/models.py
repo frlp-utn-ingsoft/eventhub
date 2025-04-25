@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.core.exceptions import ValidationError
 
 
 class User(AbstractUser):
@@ -73,3 +74,23 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+class Notification(models.Model):
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add = True)
+    priority = models.CharField(max_length=6,choices=[("High","High"),("Medium","Medium"),("Low","Low")])
+    is_read = models.BooleanField(default=False)
+    users = models.ManyToManyField(User, related_name= "notificaciones")
+
+    def __str__(self):
+        return self.title
+    
+    def validate(self):
+        if not self.title:
+            raise ValidationError("El titulo no puede estar vacio.")
+        
+        if not self.message:
+            raise ValidationError("El mensaje no puede estar vacio.")
+         
+        
