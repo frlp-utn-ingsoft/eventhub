@@ -132,11 +132,19 @@ def event_form(request, id=None):
 
 @login_required
 def notifications(request):
+    if request.user.is_organizer:
+        notifications = Notification.objects.all().order_by("created_at")
+        return render(
+            request,
+            "app/notifications_admin.html",
+            {"notifications": notifications, "user_is_organizer": request.user.is_organizer},
+        )
+    
     notifications = Notification.objects.all().order_by("created_at")
     return render(
         request,
         "app/notifications.html",
-        {"notifications": notifications, "user_is_organizer": request.user.is_organizer},
+        {"notifications": notifications},
     )
 
 @login_required
@@ -259,3 +267,8 @@ def notification_form(request):
         },
     )
     
+def mark_all_as_read(request):
+    return redirect("notifications")
+
+def mark_as_read(request, id):
+    return redirect("notifications")

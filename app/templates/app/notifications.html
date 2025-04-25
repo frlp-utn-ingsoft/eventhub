@@ -1,96 +1,35 @@
-{% extends "base.html" %}
-
-{% block title %}Notificaciones{% endblock %}
+{% extends 'base.html' %}
 
 {% block content %}
-<div class="container">
+<div class="container my-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Notificaciones</h1>
-        {% if user_is_organizer %}
-            <a
-                href="{% url 'notification_form' %}"
-                class="btn btn-primary"
-            >
-                <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
-                Crear Notificación
-            </a>
-        {% endif %}
+        <h1 class="fw-bold">
+            Notificaciones 
+            <span class="badge bg-danger fs-6 ms-2">{{ new_notifications_count }} nuevas</span>
+        </h1>
+        <a href="{% url 'mark_all_as_read' %}" class="btn btn-outline-primary">Marcar todas como leídas</a>
     </div>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Título</th>
-                <th>Evento</th>
-                <th>Destinatarios</th>
-                <th>Prioridad</th>
-                <th>Fecha de envío</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for notification in notifications%}
-                <tr>
-                    <td>{{ notification.title }}</td>
-                    <td>
-                        <a href="{% url 'event_detail' notification.event.id %}">{{ notification.event.title }}</a>
-                    </td>
-                    <td>
-                        {% if notification.users.all %}
-                            <span class="badge text-bg-info text-light">
-                                Todos ({{ notification.users.count }})
-                            </span>
-                        {% else %}
-                            Usuario Especifico
-                            <span class="badge text-bg-secondary text-light">
-                                Usuario Especifico
-                            </span>
+    <div class="list-group rounded overflow-hidden">
+        {% for notification in notifications %}
+            <div class="list-group-item {% if notification.is_new %}bg-light{% endif %} d-flex justify-content-between align-items-start border-start border-1 border-primary">
+                <div class="me-3">
+                    <h6 class="mb-1">
+                        <i class="bi bi-bell-fill text-primary me-1"></i>
+                        <strong>{{ notification.event.title }}</strong>
+                        {% if not notification.NotificationUser.is_read %}
+                            <span class="badge bg-primary ms-2">Nueva</span>
                         {% endif %}
-                    </td>
-                    <td>
-                        {% if notification.priority == "HIGH" %}
-                            <span class="badge text-bg-danger text-light">Alta</span>
-                        {% elif notification.priority == "MEDIUM" %}
-                            <span class="badge text-bg-primary text-light">Media</span>
-                        {% elif notification.priority == "LOW" %}
-                            <span class="badge text-bg-secondary text-light">Baja</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ notification.created_at }}</td>
-                    <td>
-                        <div class="hstack gap-1">
-                            <a href="{% url 'notification_detail' notification.id %}"
-                               class="btn btn-sm btn-outline-primary"
-                               aria-label="Ver detalle"
-                               title="Ver detalle">
-                                <i class="bi bi-eye" aria-hidden="true"></i>
-                            </a>
-                            {% if user_is_organizer %}
-                                <a href="{% url 'notification_edit' notification.id %}"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    aria-label="Editar"
-                                    title="Editar">
-                                    <i class="bi bi-pencil" aria-hidden="true"></i>
-                                </a>
-                                <form action="{% url 'notification_delete' notification.id %}" method="POST">
-                                    {% csrf_token %}
-                                    <button class="btn btn-sm btn-outline-danger"
-                                        title="Eliminar"
-                                        type="submit"
-                                        aria-label="Eliminar"
-                                        titile="Eliminar">
-                                        <i class="bi bi-trash" aria-hidden="true"></i>
-                                    </button>
-                                </form>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="4" class="text-center">No hay notificaciones disponibles</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    </h6>
+                    <p class="mb-1">{{ notification.message }}</p>
+                    <small class="text-muted">{{ notification.created_at|date:"d M Y, H:i" }}</small>
+                </div>
+                {% if not notification.NotificationUser.is_read %}
+                <div>
+                    <a href="{% url 'mark_as_read' notification.id %}" class="btn btn-outline-primary btn-sm">Marcar como leída</a>
+                </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}
