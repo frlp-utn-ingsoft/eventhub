@@ -140,7 +140,9 @@ def notifications(request):
             {"notifications": notifications, "user_is_organizer": request.user.is_organizer},
         )
     
-    notifications = Notification.objects.all().order_by("created_at")
+    user = request.user
+    notifications = Notification.objects.filter(users=user).order_by("-created_at")
+    # new_notifications_count = notifications.filter(read=False).count()
     return render(
         request,
         "app/notifications.html",
