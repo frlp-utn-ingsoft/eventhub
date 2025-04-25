@@ -121,3 +121,17 @@ class Event(models.Model):
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
         self.save()
+
+class Notification(models.Model):
+    title=models.CharField(max_length=200)
+    massage=models.TextField()
+    created_at=models.DateField()
+
+    prioridadOpciones=[    
+        ('High', 'HIGH'),
+        ('Medium', 'MEDIUM'),
+        ('Low', 'LOW'),
+        ]
+    
+    Priority=models.CharField(choices=prioridadOpciones, default='Medium')
+    id_read=models.BooleanField(default=False)
