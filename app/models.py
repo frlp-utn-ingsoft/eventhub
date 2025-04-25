@@ -1,9 +1,10 @@
+from pyexpat.errors import messages
+
 from django import forms
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.shortcuts import get_object_or_404, redirect, render
-
 
 
 class User(AbstractUser):
@@ -127,6 +128,7 @@ def detalle_evento(request, evento_titulo):
             nueva_resena.usuario = request.user 
             nueva_resena.evento = evento
             nueva_resena.save()
+            messages.success(request, "¡Tu reseña fue guardada exitosamente!") # type: ignore
             return redirect('detalle_evento', evento_titulo=evento.title)
         
     return render(request, 'app/detalle_evento.html', {
@@ -135,3 +137,9 @@ def detalle_evento(request, evento_titulo):
         'form': form,
         'editando': editando
     })
+
+def eliminar_resena(request, resena_id):
+    resena = get_object_or_404(Rating, id=resena_id)
+    if resena.usuario == request.user or request.user.is_staff:
+        resena.delete()
+    return redirect('detalle_evento', evento_titulo=resena.evento.title)
