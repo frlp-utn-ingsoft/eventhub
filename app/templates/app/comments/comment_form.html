@@ -1,5 +1,4 @@
 <div class="card-body">
-    <hr>
     <form action="{% url 'comment_form' event.id %}" method="POST">
         {% csrf_token %}
         <div class="vstack gap-3">
