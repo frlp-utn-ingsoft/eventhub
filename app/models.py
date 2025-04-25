@@ -85,70 +85,46 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     priority = models.CharField(max_length=10)
-    is_read = models.BooleanField(default=False)
-    users = models.ManyToManyField(
-        User,
-        related_name='notifications'
-    )
     event = models.ForeignKey(
         Event, 
         on_delete=models.CASCADE, 
         related_name='notifications'
     )
+    users = models.ManyToManyField(
+        User,
+        through='NotificationUser',
+        related_name='notifications'
+    )
 
     @classmethod
-    def new(cls, users, event, title, message, priority):
-        
-        errors = Notification.validate(users, event, title, message, priority)
-
-        if len(errors.keys()) > 0:
-            return False, errors
-        
+    def new(cls, users, event, title, message, priority):    
         notification = Notification.objects.create(
             event=event,
             title=title,
             message=message,
-            priority=priority,
-            is_read=False,
+            priority=priority
         )
         
         notification.users.set(users)
 
-        return True, None
+        return notification
     
-    @classmethod
-    def validate(cls, user, event, title, message, priority):
-        errors = {}
-
-        if title == "":
-            errors["title"] = "Por favor ingrese un titulo"
-
-        titleMaxLen = 50
-        if len(title) > titleMaxLen:
-            errors["title"] = "Maximo " + str(titleMaxLen) + " caracteres"
-
-        if message == "":
-            errors["message"] = "Por favor ingrese un mensaje"
-
-        messageMaxLen = 100
-        if len(message) > messageMaxLen:
-            errors["message"] = "Maximo " + str(messageMaxLen) + " caracteres"
-
-        if priority == "":
-            errors["priority"] = "Por favor seleccione una prioridad"
-        else:
-            optionList = ["LOW", "MEDIUM", "HIGH"]
-            if priority not in optionList:
-                errors["priority"] = "La prioridad debe ser Baja, Media o Alta"
-
-        if not user:
-            errors["user"] = "Por favor seleccione un usuario"
+    def update(self, users, event, title, message, priority):
+        self.event = event
+        self.title = title
+        self.message = message
+        self.priority = priority
+        self.save()
+        self.users.set(users)
         
-        if not event:
-            errors["event"] = "Por favor seleccione un usuario"
-
-        return errors
-
     @save
     def mark_as_read(self):
         self.is_read=True
+
+class NotificationUser(models.Model):
+    notification = models.ForeignKey(Notification, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('notification', 'user')

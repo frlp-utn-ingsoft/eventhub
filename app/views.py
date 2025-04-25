@@ -4,8 +4,8 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-
 from .models import Event, User, Notification
+from .validations.notifications import createNotificationValidations
 
 def organizer_required(view_func):
     @wraps(view_func)
@@ -45,7 +45,6 @@ def register(request):
 
     return render(request, "accounts/register.html", {})
 
-
 def login_view(request):
     if request.method == "POST":
         username = request.POST.get("username")
@@ -63,10 +62,8 @@ def login_view(request):
 
     return render(request, "accounts/login.html")
 
-
 def home(request):
     return render(request, "home.html")
-
 
 @login_required
 def events(request):
@@ -77,12 +74,10 @@ def events(request):
         {"events": events, "user_is_organizer": request.user.is_organizer},
     )
 
-
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
     return render(request, "app/event_detail.html", {"event": event})
-
 
 @login_required
 def event_delete(request, id):
@@ -96,7 +91,6 @@ def event_delete(request, id):
         return redirect("events")
 
     return redirect("events")
-
 
 @login_required
 def event_form(request, id=None):
@@ -137,13 +131,27 @@ def event_form(request, id=None):
     )
 
 @login_required
+def notifications(request):
+    notifications = Notification.objects.all().order_by("created_at")
+    return render(
+        request,
+        "app/notifications.html",
+        {"notifications": notifications, "user_is_organizer": request.user.is_organizer},
+    )
+
+@login_required
 @organizer_required
-def notification_form(request):
-    notification = {}
-    errors = {}
-    success = False
+def notification_detail(request, id):
+    notification = get_object_or_404(Notification, pk=id)
+    return render(request, "app/notification_detail.html", {"notification": notification})
+
+@login_required
+@organizer_required
+def notification_edit(request, id):
+    notification = get_object_or_404(Notification, pk=id)
     events = Event.objects.all().order_by("scheduled_at")
     users = User.objects.filter(is_organizer = False)
+    errors = {}
 
     if request.method == "POST":
         user_id = request.POST.get("user")
@@ -152,18 +160,17 @@ def notification_form(request):
         priority = request.POST.get("priority")
         event_id = request.POST.get("event")
         event = get_object_or_404(Event, id=event_id)
-        recipient = request.POST.get("recipient")
+        recipient_type = request.POST.get("recipient_type")
 
-        if recipient == "all_users":
-            all_users = User.objects.all()
-            success, errors = Notification.new(all_users, event, title, message, priority)
+        users = []
+        if recipient_type == "all_users":
+            users = User.objects.all()
         else:
             user = get_object_or_404(User, id=user_id)
-            single_user = []
-            single_user.append(user)
-            success, errors = Notification.new(single_user, event, title, message, priority)
-
-        if success == False:
+            users.append(user)
+        
+        validations_pass, errors = createNotificationValidations(users, event, title, message, priority)
+        if validations_pass == False:
             return render(
                 request,
                 "app/notification_form.html",
@@ -175,7 +182,71 @@ def notification_form(request):
                 },
             )
         
-        return redirect("events")
+        notification = get_object_or_404(Notification, pk=id)
+        notification.update(users, event, title, message, priority)
+
+        return redirect("notifications")
+
+    return render(
+        request,
+        "app/notification_form.html",
+        {
+            "notification": notification, 
+            "events": events, 
+            "users": users,
+            "errors": errors
+        },
+    )
+    
+@login_required
+@organizer_required
+def notification_delete(request, id):
+    if request.method == "POST":
+        notification = get_object_or_404(Notification, pk=id)
+        notification.delete()
+
+    return redirect("notifications")
+
+@login_required
+@organizer_required
+def notification_form(request):
+    notification = {}
+    errors = {}
+    events = Event.objects.all().order_by("scheduled_at")
+    users = User.objects.filter(is_organizer = False)
+
+    if request.method == "POST":
+        user_id = request.POST.get("user")
+        title = request.POST.get("title")
+        message = request.POST.get("message")
+        priority = request.POST.get("priority")
+        event_id = request.POST.get("event")
+        event = get_object_or_404(Event, id=event_id)
+        recipient_type = request.POST.get("recipient_type")
+
+        users = []
+        if recipient_type == "all_users":
+            users = User.objects.all()
+        else:
+            user = get_object_or_404(User, id=user_id)
+            users.append(user)
+        
+        validations_pass, errors = createNotificationValidations(users, event, title, message, priority)
+        if validations_pass == False:
+            return render(
+                request,
+                "app/notification_form.html",
+                {
+                    "notification": { title, message, priority }, 
+                    "events": events, 
+                    "users": users,
+                    "errors": errors
+                },
+            )
+        
+        Notification.new(users, event, title, message, priority)
+
+        return redirect("notifications")
         
     return render(
         request,
@@ -184,7 +255,7 @@ def notification_form(request):
             "notification": notification, 
             "events": events, 
             "users": users,
-            "errors": {}
+            "errors": errors
         },
     )
     
