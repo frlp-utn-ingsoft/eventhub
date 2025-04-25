@@ -164,14 +164,14 @@ def comment_delete(request, comment_id):
     comment = get_object_or_404(Comment, pk=comment_id)
 
     if comment.user != request.user and comment.event.organizer != request.user:
-        return redirect('event_detail', id=comment.event.pk)
+        return redirect(request.META.get("HTTP_REFERER", "/"))
 
     if request.method == "POST":
-        event_id = comment.event.pk
+        next_url = request.POST.get("next")
         comment.delete()
-        return redirect('event_detail', id=event_id)
+        return redirect(next_url)
 
-    return redirect('event_detail', id=comment.event.pk)
+    return redirect(request.META.get("HTTP_REFERER", "/"))
 
 
 @login_required
