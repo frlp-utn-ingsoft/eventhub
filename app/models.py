@@ -107,39 +107,3 @@ class RatingForm(forms.ModelForm):
             'texto' : forms.Textarea(attrs={'rows': 4, 'placeholder': 'Comparte tu experiencia...'}),
         }
     
-@login_required
-def detalle_evento(request, evento_titulo):
-    evento = get_object_or_404(Event, pk=evento_titulo)
-    resenas = Rating.objects.filter(evento=evento)
-
-    try:
-        resena_existente = Rating.objects.get(usuario=request.user, evento=evento)
-        form = RatingForm(instance=resena_existente)
-        editando = True
-    except Rating.DoesNotExist:
-        resena_existente = None
-        form = RatingForm()
-        editando = False
-        
-    if request.method == 'POST':
-        form = RatingForm(request.POST, instance=resena_existente)
-        if form.is_valid():
-            nueva_resena = form.save(commit=False)
-            nueva_resena.usuario = request.user 
-            nueva_resena.evento = evento
-            nueva_resena.save()
-            messages.success(request, "¡Tu reseña fue guardada exitosamente!") # type: ignore
-            return redirect('detalle_evento', evento_titulo=evento.title)
-        
-    return render(request, 'app/detalle_evento.html', {
-        'evento': evento,
-        'ratings' : resenas,
-        'form': form,
-        'editando': editando
-    })
-
-def eliminar_resena(request, resena_id):
-    resena = get_object_or_404(Rating, id=resena_id)
-    if resena.usuario == request.user or request.user.is_staff:
-        resena.delete()
-    return redirect('detalle_evento', evento_titulo=resena.evento.title)
