@@ -134,4 +134,4 @@ class Notification(models.Model):
         ]
     
     Priority=models.CharField(choices=prioridadOpciones, default='Medium')
-    id_read=models.BooleanField(default=False)
+    is_read=models.BooleanField(default=False)

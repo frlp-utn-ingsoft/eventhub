@@ -5,7 +5,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Category, Event, User
+from .models import Category, Event, Notification
 
 
 def register(request):
@@ -149,3 +149,11 @@ def category_form(request, id=None):
             category.update(title, description, request.user, is_active=True)
 
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/')) # refresh last screen
+
+
+
+
+def notification_list(request):
+    notifications = Notification.objects.all()
+    print(notifications)  # Para ver qué se pasa al template
+    return render(request, 'app/notification/list.html', {'notifications': notifications})
