@@ -4,8 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-
-from .models import Category, Event, User
+from .models import Category, Event, User, refund
 
 
 def register(request):
@@ -149,3 +148,57 @@ def category_form(request, id=None):
             category.update(title, description, request.user, is_active=True)
 
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/')) # refresh last screen
+
+
+@login_required
+def Refund_create(request):
+    if request.method == "POST":
+        ticket_code = request.POST.get("ticket_code")
+        reason = request.POST.get("reason")
+        
+        """
+        DESCOMENTAR CUANDO SE IMPLEMENTE LA PARTE DE TICKETS
+
+        if ticket.was_used or (timezone.now() - ticket.purchase_date).days > 30:
+            return render(
+                request,
+                "app/refund_form.html",
+                {"error": "El ticket ya fue usado o han pasado más de 30 días desde su compra."}
+            )
+            """
+        refund.objects.create(ticket_code=ticket_code,
+                              reason=reason,
+                              user=request.user)
+        
+
+
+        return redirect("my_refunds")
+    return render(request, "refund/refund_form.html")
+
+@login_required
+def My_refunds(request):
+    refunds = refund.objects.filter(user=request.user).order_by("-created_at")
+    return render(request, "refund/my_refunds.html", {"refunds": refunds})
+
+@login_required
+def Refund_edit(request, id):
+    refund_obj = get_object_or_404(refund, id=id, user=request.user)
+
+    if refund_obj.aproved:  # Ya la vio un organizer
+        return redirect("my_refunds")
+
+    if request.method == "POST":
+        refund_obj.ticket_code = request.POST.get("ticket_code")
+        refund_obj.reason = request.POST.get("reason")
+        refund_obj.save()
+        return redirect("my_refunds")
+
+    return render(request, "refund/refund_form.html", {"refund": refund_obj})
+
+@login_required
+def Refund_delete(request, id):
+    refund_obj = get_object_or_404(refund, id=id, user=request.user)
+    if not refund_obj.aproved:  # Ya la vio un organizer
+        refund_obj.delete()
+
+    return redirect("my_refunds")
