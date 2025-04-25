@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.db.models import Count
 
 from .models import Event, User, Category
 
@@ -133,7 +134,8 @@ def event_form(request, id=None):
 
 
 def categorias(request):
-    category_list = Category.objects.all()
+    category_list = Category.objects.annotate(num_events=Count('events'))
+
     return render(request, "app/categories.html", 
                     {"categorys": category_list, "user_is_organizer": request.user.is_organizer})
 

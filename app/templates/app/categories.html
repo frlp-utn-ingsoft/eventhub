@@ -27,7 +27,7 @@
                 <tr>
                     <td style="color: #0dcaf0;">{{ category.name }}</td>
                     <td>{{ category.description }}</td>
-                    <td>{{ category.event_set.all|length }} Eventos</td>
+                    <td>{{ category.num_events }} Eventos</td>
                     <td>
                         <div class="hstack gap-1">
                             {% if user_is_organizer %}
