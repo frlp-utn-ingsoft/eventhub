@@ -36,3 +36,4 @@ NOMBRES:
 - César Flores
 - Gustavo Senna
 - Stefania Francini
+- Carolina Cardoso
