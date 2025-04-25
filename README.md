@@ -37,3 +37,4 @@ NOMBRES:
 - Gustavo Senna
 - Stefania Francini
 - Carolina Cardoso
+- Lucio Guerra
