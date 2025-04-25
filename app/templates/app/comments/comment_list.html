@@ -4,42 +4,43 @@
             <div class="card-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <h6 class="mb-1">{{ comment.user.username }}</h6>
-                </div>
-                <div class="d-flex justify-content-between align-items-center">
-                    <h6 class="mb-1">{{ comment.title }}</h6>
-                </div>
-                <div class="d-flex justify-content-between align-items-center">
-                    <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
-                </div>
-                
-
-                <p class="mb-1">{{ comment.text }}</p>
-                <div class="d-flex justify-content-between align-items-center">
-                        <div class="btn-group">
+                    <div class="dropdown">
+                        <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end bg-light rounded shadow">
                             {% if comment.user == user %}
-                                <a href="#" class="btn btn-sm btn-outline-secondary">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
+                                <li>
+                                    <a href="#" class="dropdown-item">
+                                        Editar
+                                    </a>
+                                </li>
                             {% endif %}   
                             {% if comment.user == user or user_is_organizer  %}
-                            <form 
-                                action="{% url 'comment_delete' comment.id %}" 
-                                method="POST"
-                                onsubmit="return confirm('¿Estás seguro de que querés eliminar este comentario?');"
-                            >
-                                {% csrf_token %}
-                                <input type="hidden" name="next" value={{ request.path }}>
-                                <button class="btn btn-sm btn-outline-danger"
-                                    title="Eliminar"
-                                    type="submit"
-                                    aria-label="Eliminar"
-                                    titile="Eliminar">
-                                    <i class="bi bi-trash" aria-hidden="true"></i>
-                                </button>
-                            </form>
+                                <li>
+                                    <form 
+                                        action="{% url 'comment_delete' comment.id %}" 
+                                        method="POST"
+                                        onsubmit="return confirm('¿Estás seguro de que querés eliminar este comentario?');"
+                                    >
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value={{ request.path }}>
+                                        <button class="dropdown-item">
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                </li>
                             {% endif %}   
-                        </div>
-                </div>       
+                        </ul>
+                      </div>
+                </div>
+                <div>
+                    <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                </div>
+                <div>
+                    <h6 class="mb-1">{{ comment.title }}</h6>
+                </div>
+                <p class="mb-1">{{ comment.text }}</p>      
             </div>
             <hr>
         {% endfor %}
