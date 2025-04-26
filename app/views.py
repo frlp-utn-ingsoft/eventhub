@@ -3,8 +3,9 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-
-from .models import Event, User, Category
+from django.http import HttpResponseForbidden
+from .models import Event, User, Category, Comment
+from django.contrib import messages
 
 
 def register(request):
@@ -71,7 +72,9 @@ def events(request):
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
-    return render(request, "app/event_detail.html", {"event": event})
+    todos_los_comentarios = Comment.objects.filter(event=event).order_by('-created_at')
+
+    return render(request, "app/event_detail.html", {"event": event, "todos_los_comentarios": todos_los_comentarios,})
 
 
 @login_required
@@ -179,3 +182,59 @@ def category_delete(request, id):
 
     return redirect("categorias")
 
+
+
+def crear_comentario(request, event_id):  
+    evento = get_object_or_404(Event, id=event_id)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        text = request.POST.get('text', '').strip()
+        comentario_id = request.POST.get('comentario_id')  # nuevo
+
+        errors = Comment.validate(title, text)
+
+        if errors:
+            return render(request, "app/event_detail.html", {
+                "event": evento,
+                "errors": errors,
+                "title": title,
+                "text": text,
+            })
+
+        if comentario_id:
+            # Si hay comentario_id, es edición
+            comentario = get_object_or_404(Comment, id=comentario_id)
+            if request.user != comentario.user:
+                return HttpResponseForbidden("No podés editar este comentario")
+
+            comentario.update(title, text)
+            messages.success(request, "Comentario editado exitosamente")
+        else:
+            # Si no hay comentario_id, se crea uno nuevo
+            Comment.objects.create(
+                title=title,
+                text=text,
+                user=request.user,
+                event=evento
+            )
+            messages.success(request, "Comentario creado exitosamente")
+
+        return redirect('event_detail', id=event_id)
+
+    return redirect('event_detail', id=event_id)
+
+
+
+def delete_comment(request, event_id, pk):
+    comment = get_object_or_404(Comment, pk=pk, event_id=event_id)
+    
+    # Verificación de permisos
+    if request.user == comment.user or request.user == comment.event.organizer:
+        comment.delete()
+        messages.success(request, "Comentario eliminado correctamente")
+    else:
+        messages.error(request, "No tienes permiso para esta acción")
+    
+    return redirect('event_detail', id=event_id)
+    
