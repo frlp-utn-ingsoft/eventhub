@@ -1,10 +1,12 @@
 import datetime
 from django.contrib.auth import authenticate, login
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from .forms import NotificationForm
 
-from .models import Event, User
+from .models import Event, User, Notification
 
 
 def register(request):
@@ -124,4 +126,13 @@ def event_form(request, id=None):
         request,
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer},
+    )
+
+@login_required
+def notifications(request):
+    notifications = Notification.objects.all().order_by("priority")
+    return render(
+        request,
+        "app/notifications.html",
+        {"notifications": notifications, "user_is_organizer": request.user.is_organizer},
     )
