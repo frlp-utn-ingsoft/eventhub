@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+import uuid
+from django.contrib.auth import get_user_model
 
 
 class User(AbstractUser):
@@ -74,7 +76,6 @@ class Event(models.Model):
 
         self.save()
 
-
 class Ticket(models.Model):
 
     TICKET_TYPES = [
@@ -91,3 +92,79 @@ class Ticket(models.Model):
 
     def __str__(self):
         return f"Ticket {self.ticket_code}: {self.user} ({self.type}), Event: {self.event.title}, Quantity: {self.quantity}, Bought on: {self.buy_date}"
+
+class Notification(models.Model):
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add = True)
+    priority = models.CharField(max_length=6,choices=[("High","High"),("Medium","Medium"),("Low","Low")])
+    is_read = models.BooleanField(default=False)
+    users = models.ManyToManyField(User, related_name= "notificaciones")
+
+    def __str__(self):
+        return self.title
+    
+    @classmethod
+    def validate(cls,title,message, priority):
+        errors = {}
+
+        if not title:
+            errors["title"] = "El título no puede estar vacío."
+        
+        if not message:
+            errors["message"] = "El mensaje no puede estar vacío."
+
+        if priority not in ["High","Medium","Low"]:
+            errors["priority"] = "La prioridad debe ser High, Medium o Low"
+
+        return errors
+    
+    @classmethod    
+    def new(cls, title, message, priority, users):
+        errors = cls.validate(title, message,priority)
+
+        if errors:
+            return False, errors
+
+        notif = cls(title=title, message=message, priority=priority)
+        notif.save()
+
+        if users:
+            notif.users.set(users)
+
+        return True, notif
+
+    @classmethod
+    def update(cls, notif_id, title, message, priority, users):
+
+        try:
+            notif = cls.objects.get(id=notif_id)
+
+            errors = cls.validate(title, message,priority)
+
+            if errors:  
+                return False, errors  
+
+            notif.title = title
+            notif.message = message
+            notif.priority = priority
+            notif.save() 
+
+            if users:
+                notif.users.set(users) 
+
+            return True, notif
+
+        except cls.DoesNotExist:
+            return False, "Notificación no encontrada."
+        
+    @classmethod
+    def delete_id(cls,notif_id):
+
+        try:
+            notif = cls.objects.get(id = notif_id )
+            notif.delete()
+            return True, "Notificacion eliminada"
+        
+        except cls.DoesNotExist:
+            return False, "Notificacion no encontrada"
