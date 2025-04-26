@@ -1,6 +1,7 @@
 ## 🎓 **Integrantes del Grupo**  
 
 📌 Alesandro Patricio Borda
+📌 Matias Rau Bekerman
 
 ---
 
