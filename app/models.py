@@ -1,6 +1,12 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+def save(method):
+    def wrapper(self, *args, **kwargs):
+        result = method(self, *args, **kwargs)
+        self.save()
+        return result
+    return wrapper
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -26,23 +32,6 @@ class User(AbstractUser):
 
         return errors
 
-class Category(models.Model):
-    name = models.CharField(max_length=200)
-    description = models.CharField(max_length=500)
-    is_active = models.BooleanField(default=False)
-
-    @classmethod
-    def new(name, description, is_active):
-        Category.objects.create(
-            name=name, 
-            descriptio=description, 
-            is_active=is_active)
-    
-    def update(self, name, description, is_active):
-        self.name = name or self.name
-        self.description = description or self.description
-        self.is_active = is_active or self.is_active
-        
 class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
@@ -89,3 +78,56 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+class Notification(models.Model):
+    title = models.CharField(max_length=50)
+    message = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    priority = models.CharField(max_length=10)
+    event = models.ForeignKey(
+        Event, 
+        on_delete=models.CASCADE, 
+        related_name='notifications'
+    )
+    users = models.ManyToManyField(
+        User,
+        through='NotificationUser',
+        related_name='notifications'
+    )
+
+    @classmethod
+    def new(cls, users, event, title, message, priority):    
+        notification = Notification.objects.create(
+            event=event,
+            title=title,
+            message=message,
+            priority=priority
+        )
+        
+        notification.users.set(users)
+
+        return notification
+    
+    def update(self, users, event, title, message, priority):
+        self.event = event
+        self.title = title
+        self.message = message
+        self.priority = priority
+        self.save()
+        self.users.set(users)
+        
+    def mark_as_read(self, user_id):
+        notification_user = NotificationUser.objects.filter(notification=self, user_id=user_id).first()
+    
+        if notification_user:
+            notification_user.is_read = True
+            notification_user.save()
+
+class NotificationUser(models.Model):
+    notification = models.ForeignKey(Notification, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('notification', 'user')

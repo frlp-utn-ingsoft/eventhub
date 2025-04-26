@@ -58,5 +58,65 @@
             "created_at": "2025-04-20T00:00:00Z",
             "updated_at": "2025-04-20T00:00:00Z"
         }
+    },
+    {
+        "model": "app.event",
+        "pk": 6,
+        "fields": {
+          "title": "Expo Emprendedores",
+          "description": "Espacio para que emprendedores muestren sus proyectos.",
+          "scheduled_at": "2025-10-05T14:00:00Z",
+          "organizer": 1,
+          "created_at": "2025-04-25T00:00:00Z",
+          "updated_at": "2025-04-25T00:00:00Z"
+        }
+      },
+      {
+        "model": "app.event",
+        "pk": 7,
+        "fields": {
+          "title": "Charla sobre Inteligencia Artificial",
+          "description": "Expertos comparten los avances y desafíos de la IA.",
+          "scheduled_at": "2025-10-15T11:00:00Z",
+          "organizer": 1,
+          "created_at": "2025-04-25T00:00:00Z",
+          "updated_at": "2025-04-25T00:00:00Z"
+        }
+      },
+      {
+        "model": "app.event",
+        "pk": 8,
+        "fields": {
+          "title": "Seminario de Marketing Digital",
+          "description": "Estrategias modernas para potenciar tu marca online.",
+          "scheduled_at": "2025-11-02T09:30:00Z",
+          "organizer": 1,
+          "created_at": "2025-04-25T00:00:00Z",
+          "updated_at": "2025-04-25T00:00:00Z"
+        }
+      },
+      {
+        "model": "app.event",
+        "pk": 9,
+        "fields": {
+          "title": "Torneo de Ajedrez",
+          "description": "Competencia abierta para jugadores de todos los niveles.",
+          "scheduled_at": "2025-11-20T10:00:00Z",
+          "organizer": 1,
+          "created_at": "2025-04-25T00:00:00Z",
+          "updated_at": "2025-04-25T00:00:00Z"
+        }
+      },
+      {
+        "model": "app.event",
+        "pk": 10,
+        "fields": {
+          "title": "Festival de Comida Internacional",
+          "description": "Platos típicos de diferentes países en un solo lugar.",
+          "scheduled_at": "2025-12-01T18:00:00Z",
+          "organizer": 1,
+          "created_at": "2025-04-25T00:00:00Z",
+          "updated_at": "2025-04-25T00:00:00Z"
+        }
     }
 ]
