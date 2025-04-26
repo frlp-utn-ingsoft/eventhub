@@ -1,11 +1,14 @@
 import datetime
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.contrib import messages
 from .models import Category, Event, User, refund
-
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.views.generic import ListView
 
 def register(request):
     if request.method == "POST":
@@ -202,3 +205,54 @@ def Refund_delete(request, id):
         refund_obj.delete()
 
     return redirect("my_refunds")
+
+
+# ORGANIZER
+
+
+def is_organizer(user):
+    return user.is_authenticated and user.is_organizer
+
+
+from django.utils import timezone
+
+@login_required
+@require_POST
+def approve_refund_request(request, pk):
+    if not is_organizer(request.user):
+        messages.error(request, "No tienes permisos para aprobar reembolsos.")
+        return redirect('refunds_admin')
+
+    refund_obj = get_object_or_404(refund, pk=pk)
+    if refund_obj.aproved is None:  # Verifica si es pendiente
+        refund_obj.aproved = True
+        refund_obj.aproval_date = timezone.now()
+        refund_obj.save()
+        messages.success(request, "✅ Reembolso aprobado exitosamente.")
+    return redirect('refunds_admin')
+
+@login_required
+@require_POST
+def reject_refund_request(request, pk):
+    if not is_organizer(request.user):
+        messages.error(request, "No tienes permisos para rechazar reembolsos.")
+        return redirect('refunds_admin')
+
+    refund_obj = get_object_or_404(refund, pk=pk)
+    if refund_obj.aproved is None:  # Verifica si es pendiente
+        refund_obj.aproved = False
+        refund_obj.aproval_date = timezone.now()
+        refund_obj.save()
+        messages.success(request, "✅ Reembolso rechazado exitosamente.")
+    return redirect('refunds_admin')
+
+class RefundRequestsAdminView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    model = refund
+    template_name = "refund/refund_request_admin.html"
+    context_object_name = "refund_requests"
+
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.is_organizer
+
+    def handle_no_permission(self):
+        return redirect("events")

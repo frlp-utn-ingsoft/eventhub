@@ -18,4 +18,7 @@ urlpatterns = [
     path("refunds/new/", views.Refund_create, name="refund_create"),
     path("refunds/<int:id>/edit/", views.Refund_edit, name="refund_edit"),
     path("refunds/<int:id>/delete/", views.Refund_delete, name="refund_delete"),
+    path("organizer/refund/", views.RefundRequestsAdminView.as_view(), name="refunds_admin"),
+    path("organizer/refund/aprobar/<int:pk>/", views.approve_refund_request, name="refund_approve"),
+    path("organizer/refund/rechazar/<int:pk>/", views.reject_refund_request, name="refund_reject"),
 ]
