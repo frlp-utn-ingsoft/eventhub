@@ -19,4 +19,5 @@ from django.urls import include, path
 
 urlpatterns = [
     path("", include("app.urls")),
+    path("comments/", include("comments.urls", namespace="comments")),
 ]
