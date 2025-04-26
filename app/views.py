@@ -4,8 +4,10 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Event, User, Notification, NotificationUser
+from .models import Event, User, Notification, NotificationUser, Category
 from .validations.notifications import createNotificationValidations
+from django.db.models import Count
+import math
 
 def organizer_required(view_func):
     @wraps(view_func)
@@ -65,6 +67,101 @@ def login_view(request):
 def home(request):
     return render(request, "home.html")
 
+
+@login_required
+def categories(request):
+
+    categories = Category.objects.annotate(event_count=Count('events')).order_by('updated_at')
+
+    return render(
+        request,
+        "app/categories.html",
+        {"categories": categories, "user_is_organizer": request.user.is_organizer},
+    )
+
+@login_required
+@organizer_required
+def category_form(request, id=None):
+    user = request.user
+
+    if not user.is_organizer:
+        return redirect("categories")
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+        description = request.POST.get("description")
+
+        if id is None:
+            Category.new(name, description)
+        else:
+            category = get_object_or_404(Category, pk=id)
+            category.update(name, description, request.user)
+
+        return redirect("categories")
+
+    category = {}
+    if id is not None:
+        category = get_object_or_404(Category, pk=id)
+
+    return render(
+        request,
+        "app/category_form.html",
+        {"category": category, "user_is_organizer": request.user.is_organizer},
+    )
+
+@login_required
+@organizer_required
+def category_edit(request, id=None):
+    user = request.user
+
+    if not user.is_organizer:
+        return redirect("categories")
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+        description = request.POST.get("description")
+        category = None
+        if id is not None:
+            category = get_object_or_404(Category, pk=id)
+
+        if category: 
+            category.update(name, description)
+        return redirect("categories")
+
+    category = None
+    if id is not None:
+        category = get_object_or_404(Category, pk=id)
+
+    return render(
+        request,
+        "app/category_form.html",
+        {
+            "category": category,
+            "user_is_organizer": user.is_organizer,
+        }
+    )
+
+@login_required
+@organizer_required
+def category_delete(request, id):
+    user = request.user
+    if not user.is_organizer:
+        return redirect("categories")
+
+    if request.method == "POST":
+        category = get_object_or_404(Category, pk=id)
+        category.delete()
+        return redirect("categories")
+    return redirect("categories")
+
+
+@login_required
+@organizer_required
+def category_detail(request, id):
+    event = get_object_or_404(Category, pk=id)
+    return render(request, "app/category_detail.html", {"category": event})
+
+
 @login_required
 def events(request):
     events = Event.objects.all().order_by("scheduled_at")
@@ -91,7 +188,6 @@ def event_delete(request, id):
         return redirect("events")
 
     return redirect("events")
-
 @login_required
 def event_form(request, id=None):
     user = request.user
@@ -104,31 +200,64 @@ def event_form(request, id=None):
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
+        category_ids = request.POST.getlist('categories')  # Lista de IDs
 
-        [year, month, day] = date.split("-")
-        [hour, minutes] = time.split(":")
+        # Parsear fecha y hora
+        year, month, day = date.split("-")
+        hour, minutes = time.split(":")
 
         scheduled_at = timezone.make_aware(
-            datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
+            timezone.datetime(int(year), int(month), int(day), int(hour), int(minutes))
         )
 
         if id is None:
-            Event.new(title, description, scheduled_at, request.user)
+            # Crear evento
+            success, event_or_errors = Event.new(title, description, scheduled_at, request.user, category_ids)
+            if not success:
+                errors = event_or_errors
+                # Puedes agregar lógica para mostrar errores al usuario
+                # Pero aquí simplemente continuamos
         else:
+            # Actualizar evento existente
             event = get_object_or_404(Event, pk=id)
             event.update(title, description, scheduled_at, request.user)
+            # Actualizar categorías
+            categories = Category.objects.filter(id__in=category_ids)
+            event.categories.set(categories)
+            return redirect('event_detail', id=event.id)  # Cambia por tu URL
 
-        return redirect("events")
+        # Para crear nuevos eventos
+        # Después de crear, redireccionar
+        if success:
+            return redirect('event_detail', id=event_or_errors.id)
 
-    event = {}
-    if id is not None:
+    # Si GET, pasar datos al formulario
+    event = None
+    event_categories_ids = []
+    if id:
         event = get_object_or_404(Event, pk=id)
+        event_categories_ids = list(event.categories.values_list('id', flat=True))
+    else:
+        event = {}
 
-    return render(
-        request,
-        "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer},
-    )
+    # ... tu código previo ...
+    categories = list(Category.objects.all())
+
+    # Divide en 3 columnas
+    total = len(categories)
+    per_column = math.ceil(total / 3)
+    categories_chunks = [categories[i:i + per_column] for i in range(0, total, per_column)]
+
+    # Pasar los chunks al contexto
+    context = {
+        'event': event,
+        'categories': categories,
+        'categories_chunks': categories_chunks,
+        'event_categories_ids': event_categories_ids,
+        'user_is_organizer': user.is_organizer,
+    }
+
+    return render(request, 'app/event_form.html', context)
 
 @login_required
 def notifications(request):

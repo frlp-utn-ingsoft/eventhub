@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 def save(method):
     def wrapper(self, *args, **kwargs):
@@ -31,14 +32,39 @@ class User(AbstractUser):
             errors["password"] = "Las contraseñas no coinciden"
 
         return errors
+    
+class Category(models.Model):
+    name = models.CharField(max_length=40)
+    description = models.TextField()
+    is_active = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+
+    @classmethod
+    def new(cls, name, description):    
+        category = Category.objects.create(
+            name=name,
+            description=description
+        )
+        return category
+    
+    def update(self, name, description):
+        self.name = name or self.name
+        self.description = description or self.description
+        self.updated_at = timezone.now()
+        self.save()
+
 
 class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
+    categories = models.ManyToManyField(Category, related_name='events')
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
 
     def __str__(self):
         return self.title
@@ -56,20 +82,17 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer):
-        errors = Event.validate(title, description, scheduled_at)
-
-        if len(errors.keys()) > 0:
-            return False, errors
-
-        Event.objects.create(
+    def new(cls, title, description, scheduled_at, organizer, categories=None):
+        # Validaciones y creación
+        event = cls.objects.create(
             title=title,
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
         )
-
-        return True, None
+        if categories:
+            event.categories.set(categories)
+        return True, event
 
     def update(self, title, description, scheduled_at, organizer):
         self.title = title or self.title
@@ -78,6 +101,7 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
 
 class Notification(models.Model):
     title = models.CharField(max_length=50)
@@ -131,3 +155,7 @@ class NotificationUser(models.Model):
 
     class Meta:
         unique_together = ('notification', 'user')
+
+
+
+
