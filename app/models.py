@@ -117,9 +117,12 @@ class Notification(models.Model):
         self.save()
         self.users.set(users)
         
-    @save
-    def mark_as_read(self):
-        self.is_read=True
+    def mark_as_read(self, user_id):
+        notification_user = NotificationUser.objects.filter(notification=self, user_id=user_id).first()
+    
+        if notification_user:
+            notification_user.is_read = True
+            notification_user.save()
 
 class NotificationUser(models.Model):
     notification = models.ForeignKey(Notification, on_delete=models.CASCADE)

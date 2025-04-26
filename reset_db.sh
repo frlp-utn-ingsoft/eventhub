@@ -33,26 +33,20 @@ echo "==> Creando migraciones..."
 $python_interpreter manage.py makemigrations
 $python_interpreter manage.py migrate
 
-# 4. crear superusuario
+4. crear superusuario
 read -p "¿Desea crear un superusuario? (y/n): " create_superuser
 if [ "$create_superuser" == "y" ]; then
     $python_interpreter manage.py createsuperuser
 fi
 
-# 5. cargar datos de prueba
-read -p "¿Desea cargar datos de prueba (fixtures)? (y/n): " load_fixtures
-if [ "$load_fixtures" == "y" ]; then 
-    if [ -d "$dir_data" ]; then
-        echo "==> Cargando datos de prueba desde $dir_data..."
-        
-        for fixture in "$dir_data"/*.json; do
-            echo "   -> Cargando $fixture..."
-            $python_interpreter manage.py loaddata "$fixture"
-            echo "✅ Archivo $fixture cargado"
-        done
-
-        echo "✅ Datos de prueba cargados."
-    else
-        echo "❌ El directorio $dir_data no existe..."
-    fi
+if [ -d "$dir_data" ]; then
+    echo "==> Cargando datos de prueba desde $dir_data..."
+    
+    $python_interpreter manage.py loaddata "./fixtures/users.json" && \
+    $python_interpreter manage.py loaddata "./fixtures/events.json" && \
+    $python_interpreter manage.py loaddata "./fixtures/notifications.json"
+    
+    echo "✅ Datos de prueba cargados."
+else
+    echo "❌ El directorio $dir_data no existe..."
 fi

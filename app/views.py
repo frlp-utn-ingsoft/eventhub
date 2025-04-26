@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Event, User, Notification
+from .models import Event, User, Notification, NotificationUser
 from .validations.notifications import createNotificationValidations
 
 def organizer_required(view_func):
@@ -132,21 +132,31 @@ def event_form(request, id=None):
 
 @login_required
 def notifications(request):
-    if request.user.is_organizer:
-        notifications = Notification.objects.all().order_by("created_at")
-        return render(
-            request,
-            "app/notifications_admin.html",
-            {"notifications": notifications, "user_is_organizer": request.user.is_organizer},
-        )
-    
     user = request.user
+    
     notifications = Notification.objects.filter(users=user).order_by("-created_at")
-    # new_notifications_count = notifications.filter(read=False).count()
+
+    if user.is_organizer:
+        return render(
+        request,
+        "app/notifications_admin.html",
+        {"notifications": notifications})        
+
+    for notification in notifications:
+        link = NotificationUser.objects.filter(notification=notification, user=user).first()
+        setattr(notification, 'is_read', link.is_read if link else True)
+    
+    new_notifications_count = Notification.objects.filter(
+        notificationuser__is_read=False, 
+        notificationuser__user=user).count()
+
     return render(
         request,
         "app/notifications.html",
-        {"notifications": notifications},
+        {
+            "notifications": notifications,
+            "new_notifications_count": new_notifications_count
+        },
     )
 
 @login_required
@@ -270,7 +280,18 @@ def notification_form(request):
     )
     
 def mark_all_as_read(request):
+    user = request.user
+
+    NotificationUser.objects.filter(
+        user=user,
+        is_read=False
+    ).update(is_read=True)
+
     return redirect("notifications")
 
 def mark_as_read(request, id):
+    user = request.user
+    notification = get_object_or_404(Notification, pk=id)
+    notification.mark_as_read(user.id)
+
     return redirect("notifications")
