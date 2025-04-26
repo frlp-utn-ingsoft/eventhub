@@ -1,0 +1,132 @@
+[
+    {
+      "model": "app.notification",
+      "pk": 1,
+      "fields": {
+        "title": "Cambio de horario",
+        "message": "El evento comenzará una hora más tarde.",
+        "priority": "HIGH",
+        "event": 1,
+        "created_at": "2025-04-01T09:00:00Z",
+        "updated_at": "2025-04-01T09:00:00Z",
+        "users": [1, 2, 3, 4]
+      }
+    },
+    {
+      "model": "app.notification",
+      "pk": 2,
+      "fields": {
+        "title": "Recordatorio de asistencia",
+        "message": "Confirmá tu asistencia antes del viernes.",
+        "priority": "MEDIUM",
+        "event": 2,
+        "created_at": "2025-04-02T10:00:00Z",
+        "updated_at": "2025-04-02T10:00:00Z",
+        "users": [1, 4]
+      }
+    },
+    {
+      "model": "app.notification",
+      "pk": 3,
+      "fields": {
+        "title": "Ubicación modificada",
+        "message": "El evento se realizará en el Salón Dorado.",
+        "priority": "HIGH",
+        "event": 3,
+        "created_at": "2025-04-03T11:00:00Z",
+        "updated_at": "2025-04-03T11:00:00Z",
+        "users": [2, 5]
+      }
+    },
+    {
+      "model": "app.notification",
+      "pk": 4,
+      "fields": {
+        "title": "Entradas agotadas",
+        "message": "No quedan más entradas disponibles para el evento.",
+        "priority": "HIGH",
+        "event": 4,
+        "created_at": "2025-04-04T12:00:00Z",
+        "updated_at": "2025-04-04T12:00:00Z",
+        "users": [3, 4, 5]
+      }
+    },
+    {
+      "model": "app.notification",
+      "pk": 5,
+      "fields": {
+        "title": "Nuevo evento agregado",
+        "message": "Revisá el nuevo evento disponible en el calendario.",
+        "priority": "LOW",
+        "event": 5,
+        "created_at": "2025-04-05T13:00:00Z",
+        "updated_at": "2025-04-05T13:00:00Z",
+        "users": [1, 2]
+      }
+    },
+    {
+      "model": "app.notification",
+      "pk": 6,
+      "fields": {
+        "title": "Invitación enviada",
+        "message": "Has sido invitado al evento Networking 2025.",
+        "priority": "MEDIUM",
+        "event": 6,
+        "created_at": "2025-04-06T14:00:00Z",
+        "updated_at": "2025-04-06T14:00:00Z",
+        "users": [3]
+      }
+    },
+    {
+      "model": "app.notification",
+      "pk": 7,
+      "fields": {
+        "title": "Evento reprogramado",
+        "message": "Nueva fecha para el evento: 15 de abril.",
+        "priority": "HIGH",
+        "event": 7,
+        "created_at": "2025-04-07T15:00:00Z",
+        "updated_at": "2025-04-07T15:00:00Z",
+        "users": [2, 4]
+      }
+    },
+    {
+      "model": "app.notification",
+      "pk": 8,
+      "fields": {
+        "title": "Confirmación de registro",
+        "message": "Estás registrado para la conferencia de tecnología.",
+        "priority": "MEDIUM",
+        "event": 8,
+        "created_at": "2025-04-08T16:00:00Z",
+        "updated_at": "2025-04-08T16:00:00Z",
+        "users": [5]
+      }
+    },
+    {
+      "model": "app.notification",
+      "pk": 9,
+      "fields": {
+        "title": "Evento cancelado",
+        "message": "Lamentablemente, el evento ha sido cancelado.",
+        "priority": "HIGH",
+        "event": 9,
+        "created_at": "2025-04-09T17:00:00Z",
+        "updated_at": "2025-04-09T17:00:00Z",
+        "users": [2, 3, 5]
+      }
+    },
+    {
+      "model": "app.notification",
+      "pk": 10,
+      "fields": {
+        "title": "Cierre de inscripción",
+        "message": "Las inscripciones cierran hoy a las 18:00.",
+        "priority": "MEDIUM",
+        "event": 10,
+        "created_at": "2025-04-10T18:00:00Z",
+        "updated_at": "2025-04-10T18:00:00Z",
+        "users": [4]
+      }
+    }
+]

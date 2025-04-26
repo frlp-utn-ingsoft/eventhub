@@ -1,0 +1,102 @@
+[
+    {
+      "model": "app.category",
+      "pk": 1,
+      "fields": {
+        "name": "Música",
+        "description": "Eventos relacionados con conciertos, festivales y presentaciones musicales.",
+        "created_at": "2025-04-01T00:00:00Z",
+        "updated_at": "2025-04-01T00:00:00Z"
+      }
+    },
+    {
+      "model": "app.category",
+      "pk": 2,
+      "fields": {
+        "name": "Deportes",
+        "description": "Actividades deportivas, competencias y torneos en diferentes disciplinas.",
+        "created_at": "2025-04-01T00:00:00Z",
+        "updated_at": "2025-04-01T00:00:00Z"
+      }
+    },
+    {
+      "model": "app.category",
+      "pk": 3,
+      "fields": {
+        "name": "Cultural",
+        "description": "Eventos que muestran tradiciones, ferias, y exposiciones culturales.",
+        "created_at": "2025-04-01T00:00:00Z",
+        "updated_at": "2025-04-01T00:00:00Z"
+      }
+    },
+    {
+      "model": "app.category",
+      "pk": 4,
+      "fields": {
+        "name": "Tecnología",
+        "description": "Conferencias, ferias y exposiciones sobre innovaciones tecnológicas.",
+        "created_at": "2025-04-01T00:00:00Z",
+        "updated_at": "2025-04-01T00:00:00Z"
+      }
+    },
+    {
+      "model": "app.category",
+      "pk": 5,
+      "fields": {
+        "name": "Educación",
+        "description": "Cursos, talleres y conferencias educativas y de formación.",
+        "created_at": "2025-04-01T00:00:00Z",
+        "updated_at": "2025-04-01T00:00:00Z"
+      }
+    },
+    {
+      "model": "app.category",
+      "pk": 6,
+      "fields": {
+        "name": "Arte",
+        "description": "Exposiciones, ferias y actividades relacionadas con las artes plásticas y visuales.",
+        "created_at": "2025-04-01T00:00:00Z",
+        "updated_at": "2025-04-01T00:00:00Z"
+      }
+    },
+    {
+      "model": "app.category",
+      "pk": 7,
+      "fields": {
+        "name": "Gastronomía",
+        "description": "Feriantes, concursos y clases de cocina y gastronomía internacional.",
+        "created_at": "2025-04-01T00:00:00Z",
+        "updated_at": "2025-04-01T00:00:00Z"
+      }
+    },
+    {
+      "model": "app.category",
+      "pk": 8,
+      "fields": {
+        "name": "Salud",
+        "description": "Campañas de prevención, ferias de salud y actividades relacionadas con bienestar.",
+        "created_at": "2025-04-01T00:00:00Z",
+        "updated_at": "2025-04-01T00:00:00Z"
+      }
+    },
+    {
+      "model": "app.category",
+      "pk": 9,
+      "fields": {
+        "name": "Ciencia",
+        "description": "Conferencias, ferias y talleres sobre avances científicos y tecnológicos.",
+        "created_at": "2025-04-01T00:00:00Z",
+        "updated_at": "2025-04-01T00:00:00Z"
+      }
+    },
+    {
+      "model": "app.category",
+      "pk": 10,
+      "fields": {
+        "name": "Social",
+        "description": "Eventos y actividades con impacto social y comunitario.",
+        "created_at": "2025-04-01T00:00:00Z",
+        "updated_at": "2025-04-01T00:00:00Z"
+      }
+    }
+  ]

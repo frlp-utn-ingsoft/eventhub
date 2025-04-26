@@ -2,7 +2,14 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 import uuid
 from django import forms
+from django.utils import timezone
 
+def save(method):
+    def wrapper(self, *args, **kwargs):
+        result = method(self, *args, **kwargs)
+        self.save()
+        return result
+    return wrapper
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -27,15 +34,40 @@ class User(AbstractUser):
             errors["password"] = "Las contraseñas no coinciden"
 
         return errors
+    
+class Category(models.Model):
+    name = models.CharField(max_length=40)
+    description = models.TextField()
+    is_active = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+
+    @classmethod
+    def new(cls, name, description):    
+        category = Category.objects.create(
+            name=name,
+            description=description
+        )
+        return category
+    
+    def update(self, name, description):
+        self.name = name or self.name
+        self.description = description or self.description
+        self.updated_at = timezone.now()
+        self.save()
 
 
 class Event(models.Model):
+    id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
+    categories = models.ManyToManyField(Category, related_name='events')
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
 
     def __str__(self):
         return self.title
@@ -53,20 +85,17 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer):
-        errors = Event.validate(title, description, scheduled_at)
-
-        if len(errors.keys()) > 0:
-            return False, errors
-
-        Event.objects.create(
+    def new(cls, title, description, scheduled_at, organizer, categories=None):
+        # Validaciones y creación
+        event = cls.objects.create(
             title=title,
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
         )
-
-        return True, None
+        if categories:
+            event.categories.set(categories)
+        return True, event
 
     def update(self, title, description, scheduled_at, organizer):
         self.title = title or self.title
@@ -107,3 +136,59 @@ class TicketForm(forms.ModelForm):
     expiration_date = forms.CharField(max_length=5, required=True, label='Fecha de Expiración (MM/YY)')
     cvc = forms.CharField(max_length=3, required=True, label='CVC')
     
+class Notification(models.Model):
+    title = models.CharField(max_length=50)
+    message = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    priority = models.CharField(max_length=10)
+    event = models.ForeignKey(
+        Event, 
+        on_delete=models.CASCADE, 
+        related_name='notifications'
+    )
+    users = models.ManyToManyField(
+        User,
+        through='NotificationUser',
+        related_name='notifications'
+    )
+
+    @classmethod
+    def new(cls, users, event, title, message, priority):    
+        notification = Notification.objects.create(
+            event=event,
+            title=title,
+            message=message,
+            priority=priority
+        )
+        
+        notification.users.set(users)
+
+        return notification
+    
+    def update(self, users, event, title, message, priority):
+        self.event = event
+        self.title = title
+        self.message = message
+        self.priority = priority
+        self.save()
+        self.users.set(users)
+        
+    def mark_as_read(self, user_id):
+        notification_user = NotificationUser.objects.filter(notification=self, user_id=user_id).first()
+    
+        if notification_user:
+            notification_user.is_read = True
+            notification_user.save()
+
+class NotificationUser(models.Model):
+    notification = models.ForeignKey(Notification, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    is_read = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('notification', 'user')
+
+
+
+
