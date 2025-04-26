@@ -26,7 +26,23 @@ class User(AbstractUser):
 
         return errors
 
+class Category(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.CharField(max_length=500)
+    is_active = models.BooleanField(default=False)
 
+    @classmethod
+    def new(name, description, is_active):
+        Category.objects.create(
+            name=name, 
+            descriptio=description, 
+            is_active=is_active)
+    
+    def update(self, name, description, is_active):
+        self.name = name or self.name
+        self.description = description or self.description
+        self.is_active = is_active or self.is_active
+        
 class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()

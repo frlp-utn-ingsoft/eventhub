@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+from .models import Event, User, Category
 
 
 def register(request):
@@ -67,6 +67,14 @@ def events(request):
         {"events": events, "user_is_organizer": request.user.is_organizer},
     )
 
+
+def categories(request):
+    events = Category.objects.all().order_by("scheduled_at")
+    return render(
+        request,
+        "app/events.html",
+        {"events": events, "user_is_organizer": request.user.is_organizer},
+    )
 
 @login_required
 def event_detail(request, id):
