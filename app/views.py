@@ -139,7 +139,7 @@ def buy_ticket(request, event_id):
             ticket.event = event
             ticket.save()
             messages.success(request, f'¡Ticket comprado con éxito! Tu código es: {ticket.ticket_code}')
-            return redirect('app/ticket_detail', ticket_id=ticket.id)
+            return redirect('ticket_detail', ticket_id=ticket.id)
         
     else:
         form = TicketForm()
