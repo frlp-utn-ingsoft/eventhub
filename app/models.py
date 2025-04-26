@@ -141,7 +141,7 @@ class Comment(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="comments")
     
-    # Estas variables son de contenido
+    # Estas variables son de contenido que pidio el profesor
     title = models.CharField(max_length=200)
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
@@ -154,7 +154,7 @@ class Rating(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ratings")
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="ratings")
     
-    # Estas variables son de contenido
+    # Estas variables son de contenido que pidio el profesor
     title = models.CharField(max_length=200)
     text = models.TextField()
     rating = models.IntegerField()

@@ -21,4 +21,5 @@ urlpatterns = [
     path("organizer/refund/", views.RefundRequestsAdminView.as_view(), name="refunds_admin"),
     path("organizer/refund/aprobar/<int:pk>/", views.approve_refund_request, name="refund_approve"),
     path("organizer/refund/rechazar/<int:pk>/", views.reject_refund_request, name="refund_reject"),
+    path('event/<int:id>/add_comment/', views.add_comment, name='add_comment'),
 ]

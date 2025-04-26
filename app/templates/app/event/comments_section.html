@@ -1,0 +1,57 @@
+{% comment %}
+app/templates/app/event/comments_section.html
+{% endcomment %}
+
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header">
+            <h5>Comentarios ({{ event.comments.count }})</h5>
+        </div>
+        <div class="card-body">
+            {% if event.comments.all %}
+                {% for comment in event.comments.all %}
+                    <div class="d-flex mb-4">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <h6 class="mb-0 fw-bold">{{ comment.title }}</h6>
+                                <small class="text-muted">{{ comment.created_at|date:"d M Y, H:i" }}</small>
+                            </div>
+                            <p class="mb-0">{{ comment.text }}</p>
+                            <small class="text-muted">{{ comment.user.username }}</small>
+                        </div>
+                    </div>
+                    {% if not forloop.last %}
+                        <hr>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No hay comentarios aún.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if user.is_authenticated %}
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Dejar un comentario</h5>
+                <form method="POST" action="{% url 'add_comment' event.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Título del comentario *</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="text" class="form-label">Contenido del comentario *</label>
+                        <textarea class="form-control" id="text" name="text" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Publicar comentario</button>
+                </form>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info mt-4">
+            <i class="bi bi-info-circle me-2"></i>
+            Necesitas <a href="{% url 'login' %}">iniciar sesión</a> para dejar un comentario.
+        </div>
+    {% endif %}
+</div>

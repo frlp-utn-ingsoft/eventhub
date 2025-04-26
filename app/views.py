@@ -1,14 +1,17 @@
 import datetime
+
+from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.contrib import messages
-from .models import Category, Event, User, refund
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.views.decorators.http import require_POST
 from django.views.generic import ListView
+
+from .models import Category, Comment, Event, Rating, User, refund
+
 
 def register(request):
     if request.method == "POST":
@@ -75,7 +78,15 @@ def events(request):
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
     categories = Category.objects.all()
-    return render(request, "app/event/event_detail.html", {"event": event, "categories": categories})
+    comments = Comment.objects.filter(event=event).order_by('-created_at')
+    
+    context = {
+        'event': event,
+        'categories': categories,
+        'comments': comments,
+    }
+    
+    return render(request, "app/event/event_detail.html", context)
 
 
 @login_required
@@ -214,8 +225,6 @@ def is_organizer(user):
     return user.is_authenticated and user.is_organizer
 
 
-from django.utils import timezone
-
 @login_required
 @require_POST
 def approve_refund_request(request, pk):
@@ -256,3 +265,38 @@ class RefundRequestsAdminView(LoginRequiredMixin, UserPassesTestMixin, ListView)
 
     def handle_no_permission(self):
         return redirect("events")
+
+# ----------------------------------------------------------------
+# Vistas dedicadas a los comentarios y valoraciones de los eventos
+# ----------------------------------------------------------------
+
+@login_required
+def add_comment(request, id):
+    """
+    Agrega un comentario a un evento.
+    Se espera que el formulario de comentario envíe un POST con los campos 'title' y 'text'.
+    
+    Si el usuario no está autenticado, redirige a la página de inicio de sesión.
+    
+    Si el comentario se publica correctamente, redirige a la página de detalles del evento.
+    
+    Si hay un error, muestra un mensaje de error.
+    """
+    event = get_object_or_404(Event, pk=id)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        text = request.POST.get('text')
+        
+        if title and text:
+            Comment.objects.create(
+                user=request.user,
+                event=event,
+                title=title,
+                text=text
+            )
+            messages.success(request, 'El comentario ha sido publicado correctamente.')
+        else:
+            messages.error(request, 'Por favor completa todos los campos.')
+            
+    return redirect('event_detail', id=event.pk)
