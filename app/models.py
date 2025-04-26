@@ -1,6 +1,5 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.core.exceptions import ValidationError
 
 
 class User(AbstractUser):
@@ -75,22 +74,20 @@ class Event(models.Model):
 
         self.save()
 
-class Notification(models.Model):
-    title = models.CharField(max_length=200)
-    message = models.TextField()
-    created_at = models.DateTimeField(auto_now_add = True)
-    priority = models.CharField(max_length=6,choices=[("High","High"),("Medium","Medium"),("Low","Low")])
-    is_read = models.BooleanField(default=False)
-    users = models.ManyToManyField(User, related_name= "notificaciones")
+
+class Ticket(models.Model):
+
+    TICKET_TYPES = [
+        ("GENERAL", "GENERAL"),
+        ("VIP", "VIP"),
+    ]
+
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE, related_name="tickets")
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="tickets")
+    buy_date = models.DateTimeField(auto_now_add=True)
+    ticket_code = models.UUIDField(default=uuid.uuid4, editable =False, unique=True)
+    quantity= models.PositiveIntegerField()
+    type = models.CharField(max_length=10, choices=TICKET_TYPES)
 
     def __str__(self):
-        return self.title
-    
-    def validate(self):
-        if not self.title:
-            raise ValidationError("El titulo no puede estar vacio.")
-        
-        if not self.message:
-            raise ValidationError("El mensaje no puede estar vacio.")
-         
-        
+        return f"Ticket {self.ticket_code}: {self.user} ({self.type}), Event: {self.event.title}, Quantity: {self.quantity}, Bought on: {self.buy_date}"
