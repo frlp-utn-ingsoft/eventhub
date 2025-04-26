@@ -70,12 +70,66 @@ class Category(models.Model):
         self.is_active = is_active or self.is_active
         self.save()
 
+class Venue(models.Model):
+    name = models.CharField(max_length=200)
+    address = models.CharField(max_length=200)
+    city = models.CharField(max_length=200)
+    capacity = models.IntegerField()
+
+    def __str__(self):
+        return self.name
+    
+    @classmethod
+    def validate(cls, name, address, city, capacity):
+        errors = {}
+
+        if name == "":
+            errors["name"] = "El nombre del lugar es requerido"
+
+        if address == "":
+            errors["address"] = "La dirección del lugar es requerida"
+
+        if city == "":
+            errors["city"] = "La ciudad del lugar es requerida"
+        
+        if capacity == "":
+            errors["capacity"] = "La capacidad del lugar es requerida"
+        return errors
+
+    @classmethod
+    def new(cls, name, address, city, capacity):
+        errors = Venue.validate(name, address, city, capacity)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+
+        Venue.objects.create(
+            name=name,
+            address=address,
+            city=city,
+            capacity=capacity,
+        )
+
+        return True, None
+
+    def update(self, name, address, city, capacity):
+        self.name = name or self.name
+        self.address = address or self.address
+        self.city = city or self.city
+        self.capacity = capacity or self.capacity
+        self.save()
+
 class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     category = models.ForeignKey(Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='events')
+    venue = models.ForeignKey(Venue,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
