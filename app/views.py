@@ -148,15 +148,17 @@ def comment_list(request, event_id):
     comments = Comment.objects.filter(event=event).order_by('-created_at')
     return render(
         request,
-        "comments/comment_list.html",
+        "app/comments/comment_list.html",
         {"comments": comments, "user": request.user, "user_is_organizer": request.user == event.organizer, "event": event}
     )
  
 
 @login_required
-def comment_detail(request, comment_id):
+def comment_detail(request, event_id, comment_id):
+    if not request.user.is_organizer:
+        return redirect("events")
     comment = get_object_or_404(Comment, pk=comment_id)
-    return render(request, "app/comment_detail.html", {"comment": comment})
+    return render(request, "app/comments/comment_detail.html", {"comment": comment})
 
 
 @login_required
@@ -216,7 +218,7 @@ def comment_edit(request, comment_id):
         comment.update(title, text)
         return redirect("event_detail", id=comment.event.pk)
     
-    return render(request, "app/comment_form.html", {
+    return render(request, "app/comments/comment_form.html", {
         "event": comment.event,
         "comment": comment
     })
