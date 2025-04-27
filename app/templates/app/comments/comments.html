@@ -34,7 +34,7 @@
                     <td>{{ comment.created_at|date:"d b Y, H:i" }}</td>
                     <td>
                         <div class="hstack gap-1">
-                            <a href="{% url 'comment_detail' comment.event.id comment.id %}" 
+                            <a href="{% url 'comment_detail' comment.id %}" 
                                class="btn btn-sm btn-outline-primary"
                                aria-label="Ver detalle"
                                title="Ver detalle">

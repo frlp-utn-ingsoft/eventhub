@@ -133,8 +133,7 @@ def event_form(request, id=None):
 def comments(request):
     if not request.user.is_organizer:
         return redirect("events")
-    
-    #comments = Comment.objects.all().order_by("-created_at")
+
     comments = Comment.objects.filter(event__organizer=request.user).order_by("-created_at")
     return render(
         request,
@@ -154,7 +153,7 @@ def comment_list(request, event_id):
  
 
 @login_required
-def comment_detail(request, event_id, comment_id):
+def comment_detail(request, comment_id):
     if not request.user.is_organizer:
         return redirect("events")
     comment = get_object_or_404(Comment, pk=comment_id)
@@ -202,23 +201,29 @@ def comment_form(request, event_id):
                 }
             )
         
-    return redirect("event_detail. id=event_id")
+    return redirect("event_detail", id=event_id)
 
 @login_required
 def comment_edit(request, comment_id):
     comment = get_object_or_404(Comment, pk=comment_id)
 
-    if comment.user != request.user:
-        return redirect("events")
+    if comment.user != request.user and comment.event.organizer != request.user:
+        return redirect(request.META.get("HTTP_REFERER", "/"))
 
     if request.method == "POST":
         title = request.POST.get("title")
         text = request.POST.get("text")
+        next_url = request.POST.get("next")
 
         comment.update(title, text)
-        return redirect("event_detail", id=comment.event.pk)
+        #return redirect("event_detail", id=comment.event.pk)
+        if comment.user == comment.event.organizer:
+            return redirect("comments")
+        else:
+            return redirect("event_detail", id=comment.event.pk)
     
-    return render(request, "app/comments/comment_form.html", {
-        "event": comment.event,
-        "comment": comment
+    next_url = request.GET.get("next", "/")
+    return render(request, "app/comments/comment_edit.html", {
+        "comment": comment,
+        "next_url": next_url
     })

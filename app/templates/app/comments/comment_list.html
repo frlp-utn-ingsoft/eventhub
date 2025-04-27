@@ -11,7 +11,7 @@
                         <ul class="dropdown-menu dropdown-menu-end bg-light rounded shadow">
                             {% if comment.user == user %}
                                 <li>
-                                    <a href="#" class="dropdown-item">
+                                    <a href="{% url 'comment_edit' comment.id %}" class="dropdown-item">
                                         Editar
                                     </a>
                                 </li>

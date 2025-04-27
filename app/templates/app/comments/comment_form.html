@@ -1,5 +1,5 @@
 <div class="card-body">
-    <form action="{% url 'comment_form' event.id %}" method="POST">
+    <form action="{% if comment.id %}{% url 'comment_edit' comment.id %}{% else %}{% url 'comment_form' event.id %}{% endif %}" method="POST">
         {% csrf_token %}
         <div class="vstack gap-3">
             <div>
@@ -22,9 +22,14 @@
                     placeholder="Escribe tu comentario aquí"
                     required="true">{{ comment.text }}</textarea>
             </div>
+            <input type="hidden" name="next" value="{{ next_url }}" />
             <div>
                 <button type="submit" class="btn btn-primary">
-                    Publicar comentario
+                    {% if comment.id %}
+                    Editar Comentario
+                    {% else %}
+                    Crear Comentario
+                    {% endif %}
                 </button>
             </div>
         </div>
