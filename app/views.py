@@ -257,3 +257,16 @@ def organizer_comments(request):
     }
 
     return render(request, 'app/organizer_comments.html', context)
+
+@login_required
+def organizer_delete_comment(request, pk):
+    comment = get_object_or_404(Comment, pk=pk)
+
+    # Verificación de permisos
+    if request.user == comment.event.organizer:
+        comment.delete()
+        messages.success(request, "Comentario eliminado correctamente")
+    else:
+        messages.error(request, "No tienes permiso para esta acción")
+
+    return redirect('organizer_comments')
