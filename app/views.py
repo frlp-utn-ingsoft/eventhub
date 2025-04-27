@@ -96,7 +96,7 @@ def category_form(request, id=None):
             Category.new(name, description)
         else:
             category = get_object_or_404(Category, pk=id)
-            category.update(name, description, request.user)
+            category.update(name, description)
 
         return redirect("categories")
 

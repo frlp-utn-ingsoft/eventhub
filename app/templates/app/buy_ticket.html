@@ -10,7 +10,7 @@
         </div>
     </div>
     
-    <form method="post" class="mt-4">
+    <form method="post" class="mt-4" id="ticketForm">
         {% csrf_token %}
         <div class="card mb-4">
             <div class="card-header">Detalles del Ticket</div>
@@ -36,7 +36,20 @@
             </div>
         </div>
         
-        <button type="submit" class="btn btn-primary">Comprar Ticket</button>
+        <button type="submit" class="btn btn-primary" id="buyButton">
+            Comprar Ticket
+            <span id="spinner" class="spinner-border spinner-border-sm text-light" style="display: none;" role="status" aria-hidden="true"></span>
+        </button>
     </form>
 </div>
+
+<script>
+    // Capturamos el evento de envío del formulario
+    document.getElementById('ticketForm').addEventListener('submit', function(event) {
+        // Mostramos el spinner y deshabilitamos el botón de "Comprar"
+        document.getElementById('spinner').style.display = 'inline-block';
+        document.getElementById('buyButton').disabled = true;
+    });
+</script>
+
 {% endblock %}
