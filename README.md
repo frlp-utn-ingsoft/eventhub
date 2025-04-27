@@ -33,3 +33,4 @@ Aplicaci√≥n web para venta de entradas utilizada en la cursada 2025 de Ingenier√
 ## Integrantes
 - Espamer Martin
 - Lanzzavecchia Cespedes Ignacio
+- Wacelinka Ariana
