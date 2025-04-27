@@ -53,7 +53,7 @@
                                         id="time"
                                         required=""
                                         type="time"
-                                        value="{{ event.scheduled_at|date:'g:i'}}"
+                                        value="{% if event.scheduled_at %}{{ event.scheduled_at|date:'H:i' }}{% endif %}"
                                         name="time" />
                                 </div>
                             </div>
