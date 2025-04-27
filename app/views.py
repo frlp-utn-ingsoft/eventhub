@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Count
 from django.http import HttpResponseForbidden
-from .models import Event, User, Category, Comment
+from .models import Event, User, Category, Comment, Venue
 from django.contrib import messages
 
 
@@ -105,11 +105,13 @@ def event_form(request, id=None):
         return redirect("events")
 
     if request.method == "POST":
+        id = request.POST.get("id")
         title = request.POST.get("title")
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
         category_id = request.POST.get("category")
+        venue_id = request.POST.get("venue")
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
@@ -119,12 +121,13 @@ def event_form(request, id=None):
         )
 
         category = get_object_or_404(Category, pk=category_id)
+        venue = get_object_or_404(Venue, pk=venue_id)
 
         if id is None:
-            success, errors = Event.new(title, description, scheduled_at, request.user, category)
+            success, errors = Event.new(title, description, scheduled_at, request.user, category, venue)
         else:
             event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user, category)
+            event.update(title, description, scheduled_at, request.user, category, venue)
 
         return redirect("events")
 
@@ -133,18 +136,19 @@ def event_form(request, id=None):
         event = get_object_or_404(Event, pk=id)
 
     categories = Category.objects.filter(is_active=True)
+    venues = Venue.objects.all()
 
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer, "categories": categories},
+        {"event": event, "user_is_organizer": request.user.is_organizer, "categories": categories, "venues": venues},
     )
 
 
 def categorias(request):
     category_list = Category.objects.annotate(num_events=Count('events'))
 
-    return render(request, "app/categories.html", 
+    return render(request, "app/categories.html",
                     {"categorys": category_list, "user_is_organizer": request.user.is_organizer})
 
 def category_form(request):
@@ -168,7 +172,7 @@ def edit_category(request, id):
             category.name = name
             category.description = description
             category.save()
-            return redirect('categorias') 
+            return redirect('categorias')
         else:
             return render(request, 'app/category_edit.html', {
                 'category': category,
@@ -191,9 +195,9 @@ def category_delete(request, id):
 
 
 
-def crear_comentario(request, event_id):  
+def crear_comentario(request, event_id):
     evento = get_object_or_404(Event, id=event_id)
-    
+
     if request.method == 'POST':
         title = request.POST.get('title', '').strip()
         text = request.POST.get('text', '').strip()
@@ -235,16 +239,16 @@ def crear_comentario(request, event_id):
 
 def delete_comment(request, event_id, pk):
     comment = get_object_or_404(Comment, pk=pk, event_id=event_id)
-    
+
     # Verificación de permisos
     if request.user == comment.user or request.user == comment.event.organizer:
         comment.delete()
         messages.success(request, "Comentario eliminado correctamente")
     else:
         messages.error(request, "No tienes permiso para esta acción")
-    
+
     return redirect('event_detail', id=event_id)
-    
+
 @login_required
 def organizer_comments(request):
     user = request.user
@@ -275,3 +279,136 @@ def organizer_delete_comment(request, pk):
         messages.error(request, "No tienes permiso para esta acción")
 
     return redirect('organizer_comments')
+
+#------------------VENUES-----------------
+#listar venues
+@login_required
+def venue_list(request):
+    if not request.user.is_organizer:
+        return redirect('events')
+
+    venues = Venue.objects.all()
+    return render(request, 'app/venue_list.html', {'venues': venues, "user_is_organizer": request.user.is_organizer})
+
+#crear venues
+def venue_create(request):
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        address = request.POST.get('address', '').strip()
+        city = request.POST.get('city', '').strip()
+        capacity = request.POST.get('capacity', '').strip()
+        contact = request.POST.get('contact', '').strip()
+
+        errors = []
+
+        # Validaciones de longitud mínima para los campos string
+        if len(name) < 3:
+            errors.append('El nombre debe tener al menos 3 caracteres.')
+        if len(address) < 3:
+            errors.append('La dirección debe tener al menos 3 caracteres.')
+        if len(city) < 3:
+            errors.append('La ciudad debe tener al menos 3 caracteres.')
+        if len(contact) < 3:
+            errors.append('El contacto debe tener al menos 3 caracteres.')
+
+        # Validación de capacidad
+        if not capacity:
+            errors.append('La capacidad es obligatoria.')
+        else:
+            try:
+                capacity = int(capacity)
+                if capacity <= 0:
+                    errors.append('La capacidad debe ser un número positivo.')
+            except ValueError:
+                errors.append('La capacidad debe ser un número.')
+
+        if errors:
+            return render(request, 'app/venue_form.html', {
+                'errors': errors,
+                'venue': {
+                    'name': name,
+                    'address': address,
+                    'city': city,
+                    'capacity': capacity,
+                    'contact': contact,
+                }
+            })
+
+        Venue.objects.create(
+            name=name,
+            address=address,
+            city=city,
+            capacity=capacity,
+            contact=contact
+        )
+        return redirect('venue_list')
+
+    return render(request, 'app/venue_form.html')
+
+
+# Editar locación existente
+def venue_edit(request, pk):
+    venue = get_object_or_404(Venue, pk=pk)
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        address = request.POST.get('address', '').strip()
+        city = request.POST.get('city', '').strip()
+        capacity = request.POST.get('capacity', '').strip()
+        contact = request.POST.get('contact', '').strip()
+
+        errors = []
+
+        # Validaciones de longitud mínima para los campos string
+        if len(name) < 3:
+            errors.append('El nombre debe tener al menos 3 caracteres.')
+        if len(address) < 3:
+            errors.append('La dirección debe tener al menos 3 caracteres.')
+        if len(city) < 3:
+            errors.append('La ciudad debe tener al menos 3 caracteres.')
+        if len(contact) < 3:
+            errors.append('El contacto debe tener al menos 3 caracteres.')
+
+        # Validación de capacidad
+        if not capacity:
+            errors.append('La capacidad es obligatoria.')
+        else:
+            try:
+                capacity = int(capacity)
+                if capacity <= 0:
+                    errors.append('La capacidad debe ser un número positivo.')
+            except ValueError:
+                errors.append('La capacidad debe ser un número.')
+
+        if errors:
+            return render(request, 'app/venue_form.html', {
+                'errors': errors,
+                'venue': {
+                    'name': name,
+                    'address': address,
+                    'city': city,
+                    'capacity': capacity,
+                    'contact': contact,
+                }
+            })
+
+        venue.name = name
+        venue.address = address
+        venue.city = city
+        venue.capacity = capacity
+        venue.contact = contact
+        venue.save()
+
+        return redirect('venue_list')
+
+    return render(request, 'app/venue_form.html', {'venue': venue})
+
+#borrar venues
+def venue_delete(request, pk):
+    venue = get_object_or_404(Venue, pk=pk)
+
+    if request.method == 'POST':
+        venue.delete()
+        return redirect('venue_list')
+
+    return render(request, 'app/venue_confirm_delete.html', {'venue': venue})

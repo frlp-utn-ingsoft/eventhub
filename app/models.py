@@ -35,6 +35,7 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     category = models.ForeignKey('Category', on_delete=models.PROTECT, related_name="events", null=True, blank=True)
+    venue = models.ForeignKey('Venue', on_delete=models.CASCADE, related_name='events', null=True, blank=True)
 
     def __str__(self):
         return self.title
@@ -52,7 +53,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer,category=None):
+    def new(cls, title, description, scheduled_at, organizer,category=None,venue=None):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -64,16 +65,18 @@ class Event(models.Model):
             scheduled_at=scheduled_at,
             organizer=organizer,
             category=category,
+            venue=venue,
         )
 
         return True, None
 
-    def update(self, title, description, scheduled_at, organizer, category=None):
+    def update(self, title, description, scheduled_at, organizer, category=None, venue=None):
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
         self.category = category if category is not None else self.category
+        self.venue = venue if venue is not None else self.venue
 
         self.save()
 
@@ -93,7 +96,7 @@ class Category(models.Model):
             errors["description"] = "Por favor ingrese una descripcion"
 
         return errors
-    
+
     @classmethod
     def new(cls, name, description):
         errors = Category.validate(name, description)
@@ -152,3 +155,13 @@ class Comment(models.Model):
         self.title = title.strip() if title else self.title
         self.text = text.strip() if text else self.text
         self.save()
+
+class Venue(models.Model):
+    name = models.CharField(max_length=255)
+    address = models.CharField(max_length=255, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    capacity = models.IntegerField(blank=True, null=True)  # Cambiar a IntegerField
+    contact = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return self.name

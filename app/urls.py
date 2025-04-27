@@ -23,4 +23,8 @@ urlpatterns = [
     path('organizer/comments/', views.organizer_comments, name='organizer_comments'),
     path('organizer/comments/delete/<int:pk>/', views.organizer_delete_comment, name='organizer_delete_comment'),
 
+    path('venues/', views.venue_list, name='venue_list'),
+    path('venues/create/', views.venue_create, name='venue_create'),
+    path('venues/<int:pk>/edit/', views.venue_edit, name='venue_edit'),
+    path('venues/<int:pk>/delete/', views.venue_delete, name='venue_delete'),
 ]
