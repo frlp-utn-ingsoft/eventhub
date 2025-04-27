@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container my-4">
+    <h2 class="mb-4">Comentarios</h2>
+  
+    <div class="table-responsive">
+      <table class="table table-striped align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Evento</th>
+            <th>Usuario</th>
+            <th>Comentario</th>
+            <th>Fecha</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in comments %}
+            <tr>
+              <td>
+                <a href="{% url 'event_detail' c.event.pk %}">
+                  {{ c.event.title }}
+                </a>
+              </td>
+              <td>{{ c.user.get_full_name|default:c.user.username }}</td>
+              <td class="text-truncate" style="max-width: 320px;">
+                {{ c.text|truncatechars:60 }}
+              </td>
+              <td>{{ c.created_at|date:"d M Y, H:i" }}</td>
+              <td>
+                <a href="{% url 'event_detail' c.event.pk %}#comments"
+                   class="btn btn-sm btn-outline-primary me-1" title="Ver en evento">
+                  <i class="bi bi-eye"></i>
+                </a>
+                  <a href="{% url 'comments:comment_delete' c.pk %}" class="btn btn-sm btn-outline-danger"
+                          title="Eliminar">
+                    <i class="bi bi-trash"></i>
+                  </a>
+              </td>
+            </tr>
+          {% empty %}
+            <tr>
+              <td colspan="5" class="text-center text-muted">Sin comentarios.</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+{% endblock %}

@@ -13,19 +13,19 @@
             <div class="flex-grow-1">
               <div class="d-flex justify-content-between">
                 <div>
-                  <span class="fw-semibold">{{ object.user.username }}</span><br>
-                  <small class="text-muted">{{ object.created_at|date:"d b Y, H:i" }}</small>
+                  <span class="fw-semibold">{{ comment.user.username }}</span><br>
+                  <small class="text-muted">{{ comment.created_at|date:"d b Y, H:i" }}</small>
                 </div>
 
               </div>
   
             </div>
         </div>
-        <h6 class="mt-2 mb-1">{{ object.title }}</h6>
-        <p class="mb-0">{{ object.text }}</p>
+        <h6 class="mt-2 mb-1">{{ comment.title }}</h6>
+        <p class="mb-0">{{ comment.text }}</p>
     </div>
     <form method="post" class="text-end mt-4">{% csrf_token %}
-        <a href="{% url 'event_detail' object.event.id %}" class="me-2 btn btn-secondary">Cancelar</a>
+        <a href="javascript:history.back()" class="me-2 btn btn-secondary">Cancelar</a>
         <button class="btn btn-danger">Eliminar</button>
     </form>
 </div>

@@ -1,49 +1,80 @@
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
-from django.views.generic import CreateView, UpdateView, DeleteView
+from django.views.generic import CreateView, UpdateView, DeleteView, ListView
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, redirect, render
 
 from .forms import CommentForm
 from .models import Comment
 from app.models import Event
+    
+def commentCreateView(request, id):
+    user = request.user
+    event = get_object_or_404(Event, id=id)
 
-class CommentCreateView(LoginRequiredMixin, CreateView):
-    model = Comment
-    form_class = CommentForm
-    template_name = "comments/comment_form.html"
+    if not user.is_authenticated:
+        return redirect("events")
 
-    def form_valid(self, form):
-        form.instance.user = self.request.user
-        form.instance.event = get_object_or_404(Event, pk=self.kwargs["event_pk"])
-        return super().form_valid(form)
+    if request.method == "POST":
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.user = user
+            comment.event = event
+            comment.save()
+            return redirect("/events/"+str(event.pk)+"/")
+    else:
+        form = CommentForm()
 
-    def get_success_url(self):
-        return reverse("event_detail", kwargs={"id": self.object.event.pk})
-
-
-class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    model = Comment
-    form_class = CommentForm
-    template_name = "comments/comment_form.html"
-
-    def test_func(self):
-        return self.request.user == self.get_object().user
-
-    def get_success_url(self):
-        return reverse("event_detail", kwargs={"id": self.object.event.pk})
+    return render(request, "comments/comment_form.html", {"form": form, "event": event})
 
 
-class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    model = Comment
-    template_name = "comments/comment_confirm_delete.html"
+@login_required
+def commentUpdateView(request, id):
+    user = request.user
+    comment = get_object_or_404(Comment, id=id)
 
-    def test_func(self):
-        comment = self.get_object()
-        return (
-            self.request.user == comment.user
-            or (self.request.user.is_organizer and
-                self.request.user == comment.event.organizer)
-        )
+    if not (user == comment.user or (user.is_organizer and user == comment.event.organizer)):
+        return redirect("events")
 
-    def get_success_url(self):
-        return reverse("event_detail", kwargs={"id": self.get_object().event.pk})
+    if request.method == "POST":
+        form = CommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            form.save()
+            return redirect("/events/"+str(comment.event.id)+"/")
+    else:
+        form = CommentForm(instance=comment)
+
+    return render(request, "comments/comment_form.html", {"form": form, "comment": comment})
+
+@login_required 
+def commentDeleteView(request, id):
+    user = request.user
+    comment = get_object_or_404(Comment, id=id)
+    
+    if not (user == comment.user or (user.is_organizer and user == comment.event.organizer)):
+        return redirect("events")
+    
+    if request.method == "POST":
+        comment.delete()
+        return redirect("/events/"+str(comment.event.id)+"/")
+    return render(request, "comments/comment_confirm_delete.html", {"comment": comment})
+    
+def commentListView(request):
+    user = request.user
+
+    if not user.is_organizer:
+        return redirect("events")
+    
+    comments = Comment.objects.filter(event__organizer=user).order_by("created_at")
+    return render(request, "comments/comment_list.html", {"comments": comments})
+
+@login_required  
+def commentDetailView(request, id):
+    user = request.user
+
+    if not user.is_organizer:
+        return redirect("events")
+    
+    comment = get_object_or_404(Comment, id=id)
+    return render(request, "comments/comment_detail.html", {"comment": comment})

@@ -1,13 +1,15 @@
 from django.urls import path
-from .views import CommentCreateView, CommentUpdateView, CommentDeleteView
+from .views import commentCreateView, commentUpdateView, commentDeleteView, commentDetailView, commentListView
 
 app_name = "comments"
 
 urlpatterns = [
-    path("events/<int:event_pk>/comments/add/", CommentCreateView.as_view(),
+    path("events/<int:id>/add/", commentCreateView,
          name="comment_add"),
-    path("comments/<int:pk>/edit/", CommentUpdateView.as_view(),
+    path("<int:id>/edit/", commentUpdateView,
          name="comment_edit"),
-    path("comments/<int:pk>/delete/", CommentDeleteView.as_view(),
+    path("<int:id>/delete/", view=commentDeleteView,
          name="comment_delete"),
+    # path("comments/<int:pk>/", CommentDetailView.as_view(), name="comment_detail"),
+    path("", view=commentListView, name="comment_list"),
 ]
