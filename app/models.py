@@ -3,6 +3,8 @@ from django.db import models
 import uuid
 from django import forms
 from django.utils import timezone
+from django_countries.fields import CountryField
+from cities_light.models import City
 
 def save(method):
     def wrapper(self, *args, **kwargs):
@@ -37,13 +39,13 @@ class User(AbstractUser):
     
 class Venue(models.Model):
     id = models.AutoField(primary_key=True)
-    name = models.CharField(max_length=255)
-    address = models.CharField(max_length=255)
-    capacity = models.IntegerField()
-    city = models.CharField(max_length=100)
-    country = models.CharField(max_length=100)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    name = models.CharField("Nombre del Lugar", max_length=255)
+    address = models.CharField("Dirección", max_length=255)
+    capacity = models.IntegerField("Capacidad")
+    country = CountryField("País")
+    city = models.CharField("Ciudad", max_length=255)
+    created_at = models.DateTimeField("Fecha de Creación", auto_now_add=True)
+    updated_at = models.DateTimeField("Fecha de Actualización", auto_now=True)
 
     def __str__(self):
         return f"{self.name} - {self.city}, {self.country}"

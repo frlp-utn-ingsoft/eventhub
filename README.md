@@ -26,6 +26,9 @@ AplicaciÃ³n web para venta de entradas utilizada en la cursada 2025 de IngenierÃ
 
 `python manage.py migrate`
 
+## Migraciones de Django cities
+
+`python manage.py migrate cities_light`
 ### Crear usuario admin
 
 `python manage.py createsuperuser`

@@ -1,18 +1,55 @@
 <!-- templates/venue_form.html -->
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crear o Editar Venue</title>
-</head>
-<body>
-    
-    <form method="POST">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button type="submit">Guardar</button>
-    </form>
-</body>
-</html>
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}Crear o Editar Lugar{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card shadow-sm">
+        <div class="card-header">
+            <h3 class="mb-0">Crear o Editar Lugar</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" novalidate>
+                {% csrf_token %}
+
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label">
+                            {% if field.name == 'name' %}
+                                Nombre del Lugar
+                            {% elif field.name == 'address' %}
+                                Dirección
+                            {% elif field.name == 'country' %}
+                                País
+                            {% elif field.name == 'city' %}
+                                Ciudad
+                            {% else %}
+                                {{ field.label|capfirst }}
+                            {% endif %}
+                        </label>
+
+                        {% if field.name == 'country' or field.name == 'city' %}
+                            {{ field|add_class:"form-select" }}
+                        {% else %}
+                            {{ field|add_class:"form-control" }}
+                        {% endif %}
+
+                        {% if field.errors %}
+                            <div class="text-danger small">
+                                {{ field.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'venue_list' %}" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
