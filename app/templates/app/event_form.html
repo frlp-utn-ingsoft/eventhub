@@ -72,9 +72,28 @@
                                     {% endfor %}
                                 </select>
                             </div>
-                            
+
+                            <!-- Dropdown para seleccionar locación -->
                             <div>
-                                <button type="submit" class="btn btn-primary">Crear Evento</button>
+                                <label for="venue" class="form-label">Locación</label>
+                                <select class="form-select" id="venue" name="venue" required>
+                                    <option value="">Selecciona una locación</option>
+                                    {% for v in venues %}
+                                    <option value="{{ v.id }}"
+                                        {% if event.venue and event.venue.id == v.id %}
+                                            selected
+                                        {% endif %}
+                                    >
+                                        {{ v.name }} - {{ v.city }} ({{ v.capacity }} personas)
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-2"></i> {% if event.id %}Guardar Cambios{% else %}Crear Evento{% endif %}
+                                </button>
                             </div>
                         </div>
                     </form>

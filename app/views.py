@@ -105,6 +105,7 @@ def event_form(request, id=None):
         date = request.POST.get("date")
         time = request.POST.get("time")
         category_id = request.POST.get("category")
+        venue_id = request.POST.get("venue")
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
@@ -114,12 +115,13 @@ def event_form(request, id=None):
         )
 
         category = get_object_or_404(Category, pk=category_id)
+        venue = get_object_or_404(Venue, pk=venue_id)
 
         if id is None:
-            success, errors = Event.new(title, description, scheduled_at, request.user, category)
+            success, errors = Event.new(title, description, scheduled_at, request.user, category, venue)
         else:
             event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user, category)
+            event.update(title, description, scheduled_at, request.user, category, venue)
 
         return redirect("events")
 
@@ -128,11 +130,12 @@ def event_form(request, id=None):
         event = get_object_or_404(Event, pk=id)
 
     categories = Category.objects.filter(is_active=True)
+    venues = Venue.objects.all()
 
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer, "categories": categories},
+        {"event": event, "user_is_organizer": request.user.is_organizer, "categories": categories, "venues": venues},
     )
 
 
@@ -267,7 +270,7 @@ def venue_edit(request, pk):
     if request.method == 'POST':
         venue.name = request.POST.get('name')
         venue.address = request.POST.get('address')
-        venue.city = request.POST.get('city')  
+        venue.city = request.POST.get('city')
         venue.capacity = request.POST.get('capacity')
         venue.contact = request.POST.get('contact')
         venue.save()
