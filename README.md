@@ -2,6 +2,10 @@
 
 Aplicación web para venta de entradas utilizada en la cursada 2025 de Ingeniería y Calidad de Software. UTN-FRLP
 
+## Integrantes del grupo:
+
+- Ransan, Magali
+
 ## Dependencias
 
 - python 3
