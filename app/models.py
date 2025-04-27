@@ -35,6 +35,17 @@ class User(AbstractUser):
 
         return errors
     
+class Venue(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+    address = models.CharField(max_length=255)
+    capacity = models.IntegerField()
+    city = models.CharField(max_length=100)
+    country = models.CharField(max_length=100)
+
+    def __str__(self):
+        return f"{self.name} - {self.city}, {self.country}"
+    
 class Category(models.Model):
     name = models.CharField(max_length=40)
     description = models.TextField()
@@ -67,6 +78,7 @@ class Event(models.Model):
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='events')
     
 
     def __str__(self):
@@ -188,6 +200,8 @@ class NotificationUser(models.Model):
 
     class Meta:
         unique_together = ('notification', 'user')
+
+
 
 
 
