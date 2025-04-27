@@ -9,6 +9,10 @@ from .models import Event, User, Notification, NotificationUser, Category, Ticke
 from .validations.notifications import createNotificationValidations
 from django.db.models import Count
 import math
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView
+from django.urls import reverse_lazy
+from .models import Venue
+from .forms import VenueForm
 
 def organizer_required(view_func):
     @wraps(view_func)
@@ -67,6 +71,38 @@ def login_view(request):
 
 def home(request):
     return render(request, "home.html")
+
+def verVenues(request):
+    venues = Venue.objects.all() 
+    return render(request, 'app/venue_list.html', {'venues': venues})
+
+def crearVenues(request):
+    if request.method == 'POST':
+        form = VenueForm(request.POST)
+        if form.is_valid():
+            form.save() 
+            return redirect('venue_list')
+    else:
+        form = VenueForm() 
+    return render(request, 'app/venue_form.html', {'form': form})
+
+def editarVenues(request, pk):
+    venue = get_object_or_404(Venue, pk=pk) 
+    if request.method == 'POST':
+        form = VenueForm(request.POST, instance=venue) 
+        if form.is_valid():
+            form.save()  
+            return redirect('venue_list') 
+    else:
+        form = VenueForm(instance=venue)
+    return render(request, 'app/venue_form.html', {'form': form})
+
+def eliminarVenue(request, pk):
+    venue = get_object_or_404(Venue, pk=pk) 
+    if request.method == 'POST':
+        venue.delete() 
+        return redirect('venue_list') 
+    return render(request, 'app/venue_confirm_delete.html', {'venue': venue})
 
 
 @login_required
