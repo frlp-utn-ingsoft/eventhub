@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="mb-4">
+                {% if venue.id %}
+                    Editar Lugar
+                {% else %}
+                    Crear Lugar
+                {% endif %}
+            </h1>
+
+            <div class="card">
+                <div class="card-body">
+                    <form action="{% url 'venue_form' %}" method="POST">
+                        {% csrf_token %}
+                        <div class="vstack gap-3">
+                            <div>
+                                <label for="name" class="form-label">Nombre</label>
+                                <input class="form-control"
+                                    id="name"
+                                    required=""
+                                    placeholder="Nombre"
+                                    type="text"
+                                    value="{{ venue.name }}"
+                                    name="name" />
+                            </div>
+                            <div>
+                                <label for="name" class="form-label">Dirección</label>
+                                <input class="form-control"
+                                    id="address"
+                                    required=""
+                                    placeholder="Dirección"
+                                    type="text"
+                                    value="{{ venue.address }}"
+                                    name="address" />
+                            </div>
+                            <div>
+                                <label for="name" class="form-label">Ciudad</label>
+                                <input class="form-control"
+                                    id="city"
+                                    required=""
+                                    placeholder="Ciudad"
+                                    type="text"
+                                    value="{{ venue.city }}"
+                                    name="city" />
+                            </div>
+                            <div>
+                                <label for="name" class="form-label">Capacidad</label>
+                                <input class="form-control"
+                                    id="capacity"
+                                    placeholder="Numero de personas que puede albergar el lugar"
+                                    type="number"
+                                    value="{{ venue.capacity }}"
+                                    name="capacity" />
+                            </div>
+                            <div>
+                                <label for="name" class="form-label">Contacto</label>
+                                <input class="form-control"
+                                    id="contact"
+                                    required=""
+                                    placeholder="Número de telefono, redes sociales del contacto"
+                                    type="text"
+                                    value="{{ venue.contact }}"
+                                    name="contact" />
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-success">Crear Lugar</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
