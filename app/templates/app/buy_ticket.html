@@ -88,19 +88,11 @@
                 <a href="{% url 'event_detail' event.id %}" class="btn btn-secondary">Volver al Evento</a>
                 <button type="submit" class="btn btn-primary" id="buyButton">
                     Comprar Ticket
-                    <span id="spinner" class="spinner-border spinner-border-sm text-light" style="display: none;" role="status" aria-hidden="true"></span>
                 </button>
+                
             </div>
         </footer>
 
     </form>
 </div>
-
-<script>
-    // Mostrar el spinner y deshabilitar el botón al enviar el formulario
-    document.querySelector('form').addEventListener('submit', function(event) {
-        document.getElementById('spinner').style.display = 'inline-block';
-        document.getElementById('buyButton').disabled = true;
-    });
-</script>
 {% endblock %}
