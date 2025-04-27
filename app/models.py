@@ -123,6 +123,13 @@ class Comment(models.Model):
         return True, None
 
     def update(self, title, text):
+        errors = Comment.validate(title, text)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+        
         self.title = title or self.title
         self.text = text or self.text
         self.save()
+
+        return True, None

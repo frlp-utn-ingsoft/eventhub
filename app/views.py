@@ -191,13 +191,13 @@ def comment_form(request, event_id):
             return render(
                 request,
                 "app/event_detail.html",{
-                "errors": result,
-                "event":event,
-                "comment": {
-                    "title": title,
-                    "text": text
+                    "errors": result,
+                    "event": event,
+                    "comment": {
+                        "title": title,
+                        "text": text
                 },
-                "coments": event.comments.all() # type: ignore
+                "comments": event.comments.all() # type: ignore
                 }
             )
         
@@ -214,13 +214,29 @@ def comment_edit(request, comment_id):
         title = request.POST.get("title")
         text = request.POST.get("text")
         next_url = request.POST.get("next")
+        
+        success, result = comment.update(title, text)
 
-        comment.update(title, text)
-        #return redirect("event_detail", id=comment.event.pk)
-        if comment.user == comment.event.organizer:
-            return redirect("comments")
+        if success:
+            if next_url:
+                return redirect(next_url)
+            
+            if comment.user == comment.event.organizer:
+                return redirect("comments")
+            else:
+                return redirect("event_detail", id=comment.event.pk)
         else:
-            return redirect("event_detail", id=comment.event.pk)
+            return render(request, "app/comments/comment_edit.html", {
+                "comment": {
+                    "id": comment.pk,
+                    "title": title,
+                    "text": text,
+                    "user": comment.user,
+                    "event": comment.event
+                },
+                "errors": result,
+                "next_url": next_url
+            })
     
     next_url = request.GET.get("next", "/")
     return render(request, "app/comments/comment_edit.html", {

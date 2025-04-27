@@ -11,6 +11,9 @@
                     placeholder="Escribe un título para tu comentario"
                     value="{{comment.title }}"
                     name="title" />
+                {% if errors.title %}
+                <div class="text-danger mt-1">{{ errors.title }}</div>
+                {% endif %}    
             </div>
             <div>
                 <label for="text" class="form-label">Contenido del comentario *</label>
@@ -21,6 +24,9 @@
                     rows="4"
                     placeholder="Escribe tu comentario aquí"
                     required="true">{{ comment.text }}</textarea>
+                {% if errors.text %}
+                <div class="text-danger mt-1">{{ errors.text }}</div>
+                {% endif %}
             </div>
             <input type="hidden" name="next" value="{{ next_url }}" />
             <div>
