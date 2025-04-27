@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">¿Estás seguro de que quieres eliminar esta notificación?</h2>
+
+    <div class="card p-3 mb-3">
+        <h4>{{ notification.title }}</h4>
+        <p>{{ notification.message }}</p>
+        <small class="text-muted">Prioridad: {{ notification.priority }}</small>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <a href="{% url "notifications" %}" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-danger">Eliminar</button>
+    </form>
+</div>
+{% endblock %}

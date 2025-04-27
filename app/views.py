@@ -136,3 +136,18 @@ def notifications(request):
         "app/notifications.html",
         {"notifications": notifications, "user_is_organizer": request.user.is_organizer},
     )
+
+@login_required
+def notification_delete(request,id):
+    user = request.user
+    notification = get_object_or_404(Notification,id = id)
+    
+    if not user.is_organizer:
+        return redirect("notifications")
+    
+    if request.method == "POST" :
+        notification.delete()
+        messages.success(request,"Notificacion eliminada correctamente.")
+        return redirect("notifications")
+    
+    return render(request,"app/notification_delete.html", {"notification":notification})

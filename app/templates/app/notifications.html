@@ -31,7 +31,7 @@
                         <td>{{ notification.created_at|date:"d/m/Y H:i" }}</td>
                         <td>
                             <a href="{% url 'home'  %}" class="btn btn-sm btn-warning">Editar</a>
-                            <a href="{% url 'home'  %}" class="btn btn-sm btn-danger">Eliminar</a>
+                            <a href="{% url "notification_delete" notification.id %}" class="btn btn-sm btn-danger">Eliminar</a>
                         </td>
                     </tr>
                 {% empty %}
