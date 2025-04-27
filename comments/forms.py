@@ -8,7 +8,7 @@ class CommentForm(forms.ModelForm):
         widgets = {
             "title": forms.TextInput(attrs={
                 "class": "form-control",
-                "placeholder": "Escribe nu titulo para tu comentario...",
+                "placeholder": "Escribe un titulo para tu comentario...",
             }),
             "text": forms.Textarea(attrs={
                 "class": "form-control",
