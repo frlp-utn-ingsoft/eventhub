@@ -1,0 +1,88 @@
+<div class="row mt-4 pl-0 pr-0">
+    <div class="card mt-4 pl-0 pr-0">
+        <!-- encabezado -->
+        <div class="card-header fw-semibold">
+          Comentarios ({{ comments|length }})
+        </div>
+      
+        <!-- lista de comentarios -->
+        <ul class="list-group list-group-flush">
+          {% for c in comments %}
+            <li class="list-group-item">
+              <div class="d-flex">
+                <!-- avatar -->
+                <div class="me-3">
+                  <i class="bi bi-person-circle fs-3"></i>
+                </div>
+      
+                <!-- cuerpo -->
+                <div class="flex-grow-1">
+                  <div class="d-flex justify-content-between">
+                    <div>
+                      <span class="fw-semibold">{{ c.user.username }}</span><br>
+                      <small class="text-muted">{{ c.created_at|date:"d b Y, H:i" }}</small>
+                    </div>
+      
+                    {# menú kebab – visible solo si puede editar o borrar #}
+                    {% if user == c.user or user.is_organizer and user == event.organizer %}
+                      <div class="dropdown">
+                        <button class="btn btn-sm btn-light" data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                          {% if user == c.user %}
+                            <li>
+                              <a class="dropdown-item" href="{% url 'comments:comment_edit' c.pk %}">
+                                <i class="bi bi-pencil me-2"></i>Editar
+                              </a>
+                            </li>
+                          {% endif %}
+                          <li>
+                            <a class="dropdown-item text-danger" href="{% url 'comments:comment_delete' c.pk %}">
+                              <i class="bi bi-trash me-2"></i>Eliminar
+                            </a>
+                          </li>
+                        </ul>
+                      </div>
+                    {% endif %}
+                  </div>
+      
+                  <h6 class="mt-2 mb-1">{{ c.title }}</h6>
+                  <p class="mb-0">{{ c.text }}</p>
+                </div>
+              </div>
+            </li>
+          {% empty %}
+            <li class="list-group-item text-muted">Sé el primero en comentar.</li>
+          {% endfor %}
+        </ul>
+      
+        <!-- formulario -->
+        {% if user.is_authenticated %}
+          <div class="card-body">
+            <form method="post" action="{% url 'comments:comment_add' event.pk %}">
+              {% csrf_token %}
+      
+              <div class=" mb-3">
+                  <label for="{{ form.title.id_for_label }}">Título del comentario *</label>
+                {{ form.title }}
+                {{ form.title.errors }}
+              </div>
+          
+              <div class=" mb-3">
+                  <label for="{{ form.text.id_for_label }}">Contenido del comentario *</label>
+                {{ form.text }}
+                {{ form.text.errors }}
+              </div>
+      
+              <button class="btn btn-primary">Publicar comentario</button>
+            </form>
+          </div>
+        {% else %}
+          <div class="card-body">
+            <p><a href="{% url 'login' %}?next={{ request.path }}">Inicia sesión</a> para comentar.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  
