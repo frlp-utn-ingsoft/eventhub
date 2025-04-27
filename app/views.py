@@ -246,38 +246,125 @@ def delete_comment(request, event_id, pk):
 
 #------------------VENUES-----------------
 #listar venues
+@login_required
 def venue_list(request):
+    if not request.user.is_organizer:
+        return redirect('events')
+
     venues = Venue.objects.all()
     return render(request, 'app/venue_list.html', {'venues': venues, "user_is_organizer": request.user.is_organizer})
 
 #crear venues
 def venue_create(request):
     if request.method == 'POST':
-        name = request.POST.get('name')
-        address = request.POST.get('address')
-        city = request.POST.get('city')
-        capacity = request.POST.get('capacity')
-        contact = request.POST.get('contact')
+        name = request.POST.get('name', '').strip()
+        address = request.POST.get('address', '').strip()
+        city = request.POST.get('city', '').strip()
+        capacity = request.POST.get('capacity', '').strip()
+        contact = request.POST.get('contact', '').strip()
 
-        Venue.objects.create(name=name, address=address, city=city, capacity=capacity, contact=contact)
+        errors = []
+
+        # Validaciones
+        if not name:
+            errors.append('El nombre es obligatorio.')
+        if not address:
+            errors.append('La dirección es obligatoria.')
+        if not city:
+            errors.append('La ciudad es obligatoria.')
+        if not capacity:
+            errors.append('La capacidad es obligatoria.')
+        else:
+            try:
+                capacity = int(capacity)
+                if capacity <= 0:
+                    errors.append('La capacidad debe ser un número positivo.')
+            except ValueError:
+                errors.append('La capacidad debe ser un número.')
+
+        if not contact:
+            errors.append('El contacto es obligatorio.')
+
+        if errors:
+            return render(request, 'app/venue_form.html', {
+                'errors': errors,
+                'venue': {
+                    'name': name,
+                    'address': address,
+                    'city': city,
+                    'capacity': capacity,
+                    'contact': contact,
+                }
+            })
+
+        Venue.objects.create(
+            name=name,
+            address=address,
+            city=city,
+            capacity=capacity,
+            contact=contact
+        )
         return redirect('venue_list')
 
     return render(request, 'app/venue_form.html')
+
 
 # Editar locación existente
 def venue_edit(request, pk):
     venue = get_object_or_404(Venue, pk=pk)
 
     if request.method == 'POST':
-        venue.name = request.POST.get('name')
-        venue.address = request.POST.get('address')
-        venue.city = request.POST.get('city')
-        venue.capacity = request.POST.get('capacity')
-        venue.contact = request.POST.get('contact')
+        name = request.POST.get('name', '').strip()
+        address = request.POST.get('address', '').strip()
+        city = request.POST.get('city', '').strip()
+        capacity = request.POST.get('capacity', '').strip()
+        contact = request.POST.get('contact', '').strip()
+
+        errors = []
+
+        # Validaciones
+        if not name:
+            errors.append('El nombre es obligatorio.')
+        if not address:
+            errors.append('La dirección es obligatoria.')
+        if not city:
+            errors.append('La ciudad es obligatoria.')
+        if not capacity:
+            errors.append('La capacidad es obligatoria.')
+        else:
+            try:
+                capacity = int(capacity)
+                if capacity <= 0:
+                    errors.append('La capacidad debe ser un número positivo.')
+            except ValueError:
+                errors.append('La capacidad debe ser un número.')
+
+        if not contact:
+            errors.append('El contacto es obligatorio.')
+
+        if errors:
+            return render(request, 'app/venue_form.html', {
+                'errors': errors,
+                'venue': {
+                    'name': name,
+                    'address': address,
+                    'city': city,
+                    'capacity': capacity,
+                    'contact': contact,
+                }
+            })
+
+        venue.name = name
+        venue.address = address
+        venue.city = city
+        venue.capacity = capacity
+        venue.contact = contact
         venue.save()
+
         return redirect('venue_list')
 
     return render(request, 'app/venue_form.html', {'venue': venue})
+
 #borrar venues
 def venue_delete(request, pk):
     venue = get_object_or_404(Venue, pk=pk)

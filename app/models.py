@@ -160,7 +160,8 @@ class Venue(models.Model):
     name = models.CharField(max_length=255)
     address = models.CharField(max_length=255, blank=True, null=True)
     city = models.CharField(max_length=100, blank=True, null=True)
-    capacity = models.CharField(max_length=5, blank=True, null=True)
+    capacity = models.IntegerField(blank=True, null=True)  # Cambiar a IntegerField
     contact = models.CharField(max_length=100, blank=True, null=True)
+
     def __str__(self):
         return self.name
