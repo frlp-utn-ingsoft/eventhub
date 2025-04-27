@@ -56,8 +56,12 @@ def login_view(request):
     return render(request, "accounts/login.html")
 
 
+@login_required
 def home(request):
-    return render(request, "home.html")
+    return render(request, "home.html", {
+        "user_is_organizer": request.user.is_organizer
+    })
+
 
 
 @login_required
