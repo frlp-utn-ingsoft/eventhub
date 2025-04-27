@@ -6,7 +6,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.contrib import messages
-from .models import Category, Event, User, refund
+from .models import Category, Event, User, Venue, refund
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import ListView
 
@@ -75,7 +75,7 @@ def events(request):
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
     categories = Category.objects.all()
-    return render(request, "app/event/event_detail.html", {"event": event, "categories": categories})
+    return render(request, "app/event/event_detail.html", {"event": event, "categories": categories, "user_is_organizer": request.user.is_organizer})
 
 
 @login_required
@@ -100,6 +100,7 @@ def event_form(request, id=None):
         return redirect("events")
 
     if request.method == "POST":
+        event_id = request.POST.get("id")
         title = request.POST.get("title")
         description = request.POST.get("description")
         date = request.POST.get("date")
@@ -108,6 +109,10 @@ def event_form(request, id=None):
         category = None
         if category_id is not None:
             category = get_object_or_404(Category, pk=category_id)
+        venue_id = request.POST.get("venue")
+        venue = None
+        if venue_id is not None:
+            venue = get_object_or_404(Venue, pk=venue_id)
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
 
@@ -115,11 +120,11 @@ def event_form(request, id=None):
             datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
         )
 
-        if id is None:
-            Event.new(title, category, description, scheduled_at, request.user)
+        if event_id is None:
+            Event.new(title, category, venue, description, scheduled_at, request.user)
         else:
-            event = get_object_or_404(Event, pk=id)
-            event.update(title, category, description, scheduled_at, request.user)
+            event = get_object_or_404(Event, pk=event_id)
+            event.update(title, category, venue, description, scheduled_at, request.user)
 
         return redirect("events")
 
@@ -128,10 +133,16 @@ def event_form(request, id=None):
         event = get_object_or_404(Event, pk=id)
 
     categories = Category.objects.all()
+    venues = Venue.get_venues_by_user(user)
     return render(
         request,
         "app/event/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer, "categories": categories},
+        {
+            "event": event, 
+            "user_is_organizer": request.user.is_organizer, 
+            "categories": categories, 
+            "venues": venues
+        },
     )
 
 @login_required
@@ -151,6 +162,53 @@ def category_form(request, id=None):
             category.update(title, description, request.user, is_active=True)
 
     return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/')) # refresh last screen
+
+
+@login_required
+def venue_form(request, id=None):
+    user = request.user
+
+    if not user.is_organizer:
+        return redirect("events")
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+        address = request.POST.get("address")
+        city = request.POST.get("city")
+        capacity = int(request.POST.get("capacity"))
+        contact = request.POST.get("contact")
+        if id is None:
+            success, data = Venue.new(name, address, city, capacity, contact, user)
+            if not success: 
+                return render(
+                    request,
+                    "app/venue/venue_form.html",
+                    {
+                        "errors": data,
+                        "venue": venue, 
+                        "user_is_organizer": request.user.is_organizer, 
+                        "venues": venues
+                    },
+                )
+        else:
+            venue = get_object_or_404(Venue, pk=id)
+            venue.update(name, address, city, capacity, contact)
+        return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/')) # refresh last screen
+
+    venue = {}
+    if id is not None:
+        venue = get_object_or_404(Venue, pk=id)
+
+    venues = Venue.get_venues_by_user(user)
+    return render(
+        request,
+        "app/venue/venue_form.html",
+        {
+            "venue": venue, 
+            "user_is_organizer": request.user.is_organizer, 
+            "venues": venues
+        },
+    )
 
 
 @login_required

@@ -74,13 +74,19 @@ class Venue(models.Model):
     name = models.CharField(max_length=200)
     address = models.CharField(max_length=200)
     city = models.CharField(max_length=200)
-    capacity = models.IntegerField()
+    capacity = models.IntegerField(blank=True, null=True)
+    user = models.ForeignKey(User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='venues')
+    contact = models.CharField(max_length=200)
 
     def __str__(self):
         return self.name
     
     @classmethod
-    def validate(cls, name, address, city, capacity):
+    def validate(cls, name, address, city, capacity, contact):
         errors = {}
 
         if name == "":
@@ -92,32 +98,43 @@ class Venue(models.Model):
         if city == "":
             errors["city"] = "La ciudad del lugar es requerida"
         
-        if capacity == "":
-            errors["capacity"] = "La capacidad del lugar es requerida"
+        if capacity is not None and not isinstance(capacity, int):
+            errors["capacity"] = "La capacidad del lugar debe ser numérica"
+
+        if contact == "":
+            errors["contact"] = "El contacto del lugar es requerida"
         return errors
 
     @classmethod
-    def new(cls, name, address, city, capacity):
-        errors = Venue.validate(name, address, city, capacity)
+    def new(cls, name, address, city, capacity, contact, user):
+        errors = Venue.validate(name, address, city, capacity, contact)
 
         if len(errors.keys()) > 0:
             return False, errors
 
-        Venue.objects.create(
+        new_venue = Venue.objects.create(
             name=name,
             address=address,
             city=city,
             capacity=capacity,
+            contact=contact,
+            user=user,
         )
+        return True, new_venue
 
-        return True, None
-
-    def update(self, name, address, city, capacity):
+    def update(self, name, address, city, capacity, contact, user): # TO DO: validate this
         self.name = name or self.name
         self.address = address or self.address
         self.city = city or self.city
         self.capacity = capacity or self.capacity
+        self.contact = contact or self.contact
+        self.user = user or self.user
         self.save()
+        return True, None
+
+    @classmethod
+    def get_venues_by_user(cls, user):
+        return cls.objects.filter(user=user)
 
 class Event(models.Model):
     title = models.CharField(max_length=200)
@@ -141,7 +158,7 @@ class Event(models.Model):
         return self.title
 
     @classmethod
-    def validate(cls, title, category, description, scheduled_at):
+    def validate(cls, title, category, venue, description, scheduled_at):
         errors = {}
         if title == "":
             errors["title"] = "Por favor ingrese un titulo"
@@ -152,8 +169,8 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, category, description, scheduled_at, organizer):
-        errors = Event.validate(title, category, description, scheduled_at)
+    def new(cls, title, category, venue, description, scheduled_at, organizer):
+        errors = Event.validate(title, category, venue, description, scheduled_at)
 
         if len(errors.keys()) > 0:
             return False, errors
@@ -161,6 +178,7 @@ class Event(models.Model):
         Event.objects.create(
             title=title,
             category=category,
+            venue=venue,
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
@@ -168,10 +186,11 @@ class Event(models.Model):
 
         return True, None
 
-    def update(self, title, category, description, scheduled_at, organizer):
+    def update(self, title, category, venue, description, scheduled_at, organizer):
         self.title = title or self.title
         self.description = description or self.description
         self.category = category or self.category
+        self.venue = venue or self.venue
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
         self.save()
