@@ -5,7 +5,7 @@
 <div class="container">
     <h2>Comprar Ticket para {{ event.title }}</h2>
     
-    <!-- Card con detalles del evento -->
+    
     <div class="card mb-4">
         <div class="card-body">
             <h6 class="mb-0">Fecha y Hora</h6>
@@ -15,12 +15,12 @@
     </div>
     
 
-    <!-- Formulario de compra -->
+    
     <form method="post" class="mt-4">
         {% csrf_token %}
         
-        <!-- Card con detalles del ticket -->
-    <div class="card mb-4">
+        
+        <div class="card mb-4">
         <div class="card-header">Detalles del Ticket</div>
         <div class="card-body">
          <div class="row">
@@ -41,20 +41,20 @@
      </div>
 
         
-        <!-- Card con la información de pago -->
+        
         <div class="card mb-4">
         <div class="card-header">Información de Pago</div>
         <div class="card-body">
-        <!-- Crear una fila para contener las columnas -->
+        
         <div class="row">
-            <!-- Columna para el número de tarjeta -->
+           
             <div class="col-md-6 mb-3">
                 {{ form.card_number.label_tag }}
                 <div class="input-group">
                     {{ form.card_number|add_class:"form-control" }}
                 </div>
             </div>
-            <!-- Columna para el titular de la tarjeta -->
+            
             <div class="col-md-6 mb-3">
                 {{ form.card_holder.label_tag }}
                 <div class="input-group">
@@ -62,16 +62,16 @@
                 </div>
             </div>
         </div>
-        <!-- Otra fila para los campos de fecha de expiración y CVC -->
+        
         <div class="row">
-            <!-- Columna para la fecha de expiración -->
+            
             <div class="col-md-6 mb-3">
                 {{ form.expiration_date.label_tag }}
                 <div class="input-group">
                     {{ form.expiration_date|add_class:"form-control" }}
                 </div>
             </div>
-            <!-- Columna para el CVC -->
+            
             <div class="col-md-6 mb-3">
                 {{ form.cvc.label_tag }}
                 <div class="input-group">

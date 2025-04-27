@@ -6,17 +6,17 @@
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}EventHub{% endblock %}</title>
-    <!-- Carga de Bootstrap CSS -->
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
     
-    <!-- Carga de Bootstrap Icons -->
+    
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body>
-    <!-- Navbar solo visible si el usuario está autenticado -->
+    
     <nav class="navbar navbar-expand-md bg-body-tertiary">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">EventHub</a>
@@ -71,14 +71,14 @@
         </div>
     </nav>
 
-    <!-- Contenido de la página -->
+    
     {% block content %}
     {% endblock %}
 
-    <!-- Scripts de Bootstrap JS -->
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js" integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq" crossorigin="anonymous"></script>
 
-    <!-- Aquí puedes agregar scripts adicionales -->
+    
     {% block extra_js %}
     {% endblock %}
 </body>

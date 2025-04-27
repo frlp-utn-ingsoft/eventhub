@@ -2,14 +2,15 @@
 
 {% block content %}
 <div class="container">
-    <h2>Detalle del Ticket</h2>
+    <h2>Haz comprado Ticket para:</h2>
     <div class="card">
         <div class="card-header">
+            <p><strong>{{ ticket.event.title }}</strong> </p>
             Código: {{ ticket.ticket_code }}
         </div>
         <div class="card-body">
-            <p><strong>Evento:</strong> {{ ticket.event.title }}</p>
-            <p><strong>Fecha del evento:</strong> {{ ticket.event.date }}</p>
+            
+            <p><strong>Fecha del evento:</strong> {{ ticket.event.scheduled_at }}</p>
             <p><strong>Lugar:</strong> {{ ticket.event.venue.name }}</p>
             <p><strong>Tipo:</strong> {{ ticket.get_type_display }}</p>
             <p><strong>Cantidad:</strong> {{ ticket.quantity }}</p>
