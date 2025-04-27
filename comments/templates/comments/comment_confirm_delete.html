@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>Eliminar comentario</h2>
+<p>¿Seguro que deseas borrar “{{ object.title }}”?</p>
+<form method="post">{% csrf_token %}
+  <button class="btn btn-danger">Eliminar</button>
+  <a href="{% url 'event_detail' object.event.id %}" class="btn btn-secondary">Cancelar</a>
+</form>
+{% endblock %}

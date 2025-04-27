@@ -5,6 +5,15 @@ class CommentForm(forms.ModelForm):
     class Meta:
         model  = Comment
         fields = ["title", "text"]
+        error_messages = {
+            "title": {
+                "required": "El título no puede quedar vacío.",
+                "max_length": "Máximo 120 caracteres.",
+            },
+            "text": {
+                "required": "Escribe tu comentario antes de publicarlo.",
+            },
+        }
         widgets = {
             "title": forms.TextInput(attrs={
                 "class": "form-control",

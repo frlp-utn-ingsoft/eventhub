@@ -21,3 +21,29 @@ class CommentCreateView(LoginRequiredMixin, CreateView):
         return reverse("event_detail", kwargs={"id": self.object.event.pk})
 
 
+class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
+    model = Comment
+    form_class = CommentForm
+    template_name = "comments/comment_form.html"
+
+    def test_func(self):
+        return self.request.user == self.get_object().user
+
+    def get_success_url(self):
+        return reverse("event_detail", kwargs={"id": self.object.event.pk})
+
+
+class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
+    model = Comment
+    template_name = "comments/comment_confirm_delete.html"
+
+    def test_func(self):
+        comment = self.get_object()
+        return (
+            self.request.user == comment.user
+            or (self.request.user.is_organizer and
+                self.request.user == comment.event.organizer)
+        )
+
+    def get_success_url(self):
+        return reverse("event_detail", kwargs={"id": self.get_object().event.pk})

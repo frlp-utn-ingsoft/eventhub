@@ -1,0 +1,34 @@
+{% extends "base.html" %} {% load static %} {% block content %}
+<div class="container my-4" style="max-width: 600px">
+    <h3 class="mb-4">Editar comentario</h3>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="{{ form.title.id_for_label }}"
+                >Título del comentario *</label
+            >
+            {{ form.title }} {{ form.title.errors }}
+        </div>
+
+        <div class="mb-4">
+            <label for="{{ form.text.id_for_label }}"
+                >Contenido del comentario *</label
+            >
+            {{ form.text }} {{ form.text.errors }}
+        </div>
+
+        <div class="text-end">
+            <a
+                href="{% url 'event_detail' object.event.id %}"
+                class="btn btn-outline-secondary me-2"
+            >
+                Cancelar
+            </a>
+            <button type="submit" class="btn btn-primary">
+                Guardar cambios
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}
