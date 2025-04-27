@@ -17,6 +17,9 @@
                     <form action="{% url 'event_form' %}" method="POST">
                         {% csrf_token %}
                         <div class="vstack gap-3">
+                            {% if event.id %}
+                            <input type="hidden" name="id" value="{{ event.id }}">
+                            {% endif %}
                             <div>
                                 <label for="title" class="form-label">Título del Evento</label>
                                 <input class="form-control"

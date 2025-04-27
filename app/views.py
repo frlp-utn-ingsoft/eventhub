@@ -100,6 +100,7 @@ def event_form(request, id=None):
         return redirect("events")
 
     if request.method == "POST":
+        id = request.POST.get("id")
         title = request.POST.get("title")
         description = request.POST.get("description")
         date = request.POST.get("date")
