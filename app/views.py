@@ -251,21 +251,24 @@ def venue_create(request):
     if request.method == 'POST':
         name = request.POST.get('name')
         address = request.POST.get('address')
-        capacity = request.POST.get('capacity') or None
+        city = request.POST.get('city')
+        capacity = request.POST.get('capacity')
         contact = request.POST.get('contact')
 
-        Venue.objects.create(name=name, address=address, capacity=capacity, contact=contact)
+        Venue.objects.create(name=name, address=address, city=city, capacity=capacity, contact=contact)
         return redirect('venue_list')
 
     return render(request, 'app/venue_form.html')
-#editar venues
+
+# Editar locación existente
 def venue_edit(request, pk):
     venue = get_object_or_404(Venue, pk=pk)
 
     if request.method == 'POST':
         venue.name = request.POST.get('name')
         venue.address = request.POST.get('address')
-        venue.capacity = request.POST.get('capacity') or None
+        venue.city = request.POST.get('city')  
+        venue.capacity = request.POST.get('capacity')
         venue.contact = request.POST.get('contact')
         venue.save()
         return redirect('venue_list')
