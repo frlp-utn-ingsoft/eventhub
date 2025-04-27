@@ -143,14 +143,27 @@ def detalle_evento(request, id):
         editando = False
         
     if request.method == 'POST':
-        form = RatingForm(request.POST, instance=resena_existente)
-        if form.is_valid():
-            nueva_resena = form.save(commit=False)
-            nueva_resena.usuario = request.user 
-            nueva_resena.evento = evento
-            nueva_resena.save()
-            messages.success(request, "¡Tu reseña fue guardada exitosamente!")
-            return redirect('detalle_evento', evento_titulo=evento.title)
+        if 'guardar' in request.POST:
+            form = RatingForm(request.POST, instance=resena_existente)
+            if form.is_valid():
+                nueva_resena = form.save(commit=False)
+                nueva_resena.usuario = request.user 
+                nueva_resena.evento = evento
+                nueva_resena.save()
+                messages.success(request, "¡Tu reseña fue guardada exitosamente!")
+                form = RatingForm()
+                return redirect('event_rating', id=evento.id) # type: ignore
+        
+        if 'eliminar' in request.POST:
+            if resena_existente:
+                resena_existente.delete()
+                messages.success(request, "¡Tu reseña fue eliminada exitosamente!")
+                return redirect('event_rating', id=evento.id) # type: ignore
+
+        if 'cancelar' in request.POST:
+            form = RatingForm()
+            return redirect('event_rating', id=evento.id) #type: ignore
+                
         
     return render(request, 'app/event_rating.html', {
         'evento': evento,
@@ -158,28 +171,3 @@ def detalle_evento(request, id):
         'form': form,
         'editando': editando
     })
-
-@login_required
-def editar_resena(request, resena_id):
-    resena = get_object_or_404(Rating, id=resena_id, usuario=request.user)
-
-    if request.method == 'POST':
-        form = RatingForm(request.POST, instance=resena)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Tu reseña fue actualizada.')
-            return redirect('detalle_evento', evento_id=resena.evento.title)
-    else:
-        form = RatingForm(instance=resena)
-
-    return render(request, 'app/editar_rating.html', {'form': form})
-
-@login_required
-def eliminar_resena(request, resena_id):
-    resena = get_object_or_404(Rating, id=resena_id, usuario=request.user)
-    
-    if request.method == 'POST':
-        resena.delete()
-        messages.success(request, 'Tu reseña fue eliminada.')
-        return redirect('detalle_evento', evento_id=resena.evento.title)
-    return redirect('detalle_evento', evento_titulo=resena.evento.title)

@@ -1,10 +1,7 @@
-from pyexpat.errors import messages
 
 from django import forms
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.shortcuts import get_object_or_404, redirect, render
 
 
 class User(AbstractUser):
@@ -103,7 +100,15 @@ class RatingForm(forms.ModelForm):
         model = Rating
         fields = ['titulo', 'calificacion', 'texto']
         widgets = {
-            'calificacion' : forms.RadioSelect(choices=[(i, f'{i} ⭐') for i in range(1, 6)]),
-            'texto' : forms.Textarea(attrs={'rows': 4, 'placeholder': 'Comparte tu experiencia...'}),
+            'titulo': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Gran experiencia'
+            }),
+            'calificacion': forms.HiddenInput(),
+            'texto': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Comparte tu experiencia...'
+            }),
         }
     
