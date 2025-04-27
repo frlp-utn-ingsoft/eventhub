@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container my-4" style="max-width: 600px">
+<h5>Comentario del evento {{comment.event.title}}</h5>
+    <div class="card mt-3 py-2 px-3">
+        <div class="d-flex">
+
+            <div class="me-3">
+              <i class="bi bi-person-circle fs-3"></i>
+            </div>
+  
+            <div class="flex-grow-1">
+              <div class="d-flex justify-content-between">
+                <div>
+                  <span class="fw-semibold">{{ comment.user.username }}</span><br>
+                  <small class="text-muted">{{ comment.created_at|date:"d b Y, H:i" }}</small>
+                </div>
+
+              </div>
+  
+            </div>
+        </div>
+        <h6 class="mt-2 mb-1">{{ comment.title }}</h6>
+        <p class="mb-0">{{ comment.text }}</p>
+    </div>
+    <div class="text-end mt-3">
+        <a href="javascript:history.back()" class="btn btn-primary">Volver</a>
+    </div>
+</div>
+{% endblock %}

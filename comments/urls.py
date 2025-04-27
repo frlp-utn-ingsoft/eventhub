@@ -10,6 +10,6 @@ urlpatterns = [
          name="comment_edit"),
     path("<int:id>/delete/", view=commentDeleteView,
          name="comment_delete"),
-    # path("comments/<int:pk>/", CommentDetailView.as_view(), name="comment_detail"),
+    path("<int:id>/", commentDetailView, name="comment_detail"),
     path("", view=commentListView, name="comment_list"),
 ]

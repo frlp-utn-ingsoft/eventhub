@@ -29,7 +29,7 @@
               </td>
               <td>{{ c.created_at|date:"d M Y, H:i" }}</td>
               <td>
-                <a href="{% url 'event_detail' c.event.pk %}#comments"
+                <a href="{% url 'comments:comment_detail' c.pk %}"
                    class="btn btn-sm btn-outline-primary me-1" title="Ver en evento">
                   <i class="bi bi-eye"></i>
                 </a>
