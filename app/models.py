@@ -1,7 +1,8 @@
+import uuid
+
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-import uuid
-from django.contrib.auth import get_user_model
 
 
 class User(AbstractUser):
@@ -168,3 +169,34 @@ class Notification(models.Model):
         
         except cls.DoesNotExist:
             return False, "Notificacion no encontrada"
+        
+
+class Category(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField()
+    active = models.BooleanField(default=True)
+    
+    def __str__(self):
+        return self.name
+    
+    @classmethod
+    def new(cls, name, description, active):
+        category = cls(name=name, description=description, active=active)
+        category.save()
+        return category
+    
+    @classmethod
+    def update(cls, category_id, name=None, description=None, active=None):
+        
+        try:
+            category = cls.objects.get(id=category_id)
+            if name:
+                category.name = name
+            if description is not None:
+                category.description = description
+            if active is not None:
+                category.active = active
+            category.save()
+            return True, category # retorno verdadero y la categoria.
+        except cls.DoesNotExist:
+            return False, "Categoria no encontrada"  # aca retorno falso si la categoria no se encontro.
