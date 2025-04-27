@@ -240,3 +240,20 @@ def delete_comment(request, event_id, pk):
     
     return redirect('event_detail', id=event_id)
     
+@login_required
+def organizer_comments(request):
+    user = request.user
+
+    if not user.is_organizer:
+        # Si no es organizador, lo podemos redirigir o mostrar error
+        return render(request, "no_permission.html")
+
+    # Busco todos los comentarios de los eventos que organiza
+    comments = Comment.objects.filter(event__organizer=user).select_related('event', 'user')
+
+    context = {
+        'comments': comments,
+        'user_is_organizer': True  # <<< agregamos esto
+    }
+
+    return render(request, 'app/organizer_comments.html', context)
