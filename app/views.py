@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Count
 from django.http import HttpResponseForbidden
-from .models import Event, User, Category, Comment
+from .models import Event, User, Category, Comment, Venue
 from django.contrib import messages
 
 
@@ -139,7 +139,7 @@ def event_form(request, id=None):
 def categorias(request):
     category_list = Category.objects.annotate(num_events=Count('events'))
 
-    return render(request, "app/categories.html", 
+    return render(request, "app/categories.html",
                     {"categorys": category_list, "user_is_organizer": request.user.is_organizer})
 
 def category_form(request):
@@ -163,7 +163,7 @@ def edit_category(request, id):
             category.name = name
             category.description = description
             category.save()
-            return redirect('categorias') 
+            return redirect('categorias')
         else:
             return render(request, 'app/category_edit.html', {
                 'category': category,
@@ -186,9 +186,9 @@ def category_delete(request, id):
 
 
 
-def crear_comentario(request, event_id):  
+def crear_comentario(request, event_id):
     evento = get_object_or_404(Event, id=event_id)
-    
+
     if request.method == 'POST':
         title = request.POST.get('title', '').strip()
         text = request.POST.get('text', '').strip()
@@ -230,13 +230,53 @@ def crear_comentario(request, event_id):
 
 def delete_comment(request, event_id, pk):
     comment = get_object_or_404(Comment, pk=pk, event_id=event_id)
-    
+
     # Verificación de permisos
     if request.user == comment.user or request.user == comment.event.organizer:
         comment.delete()
         messages.success(request, "Comentario eliminado correctamente")
     else:
         messages.error(request, "No tienes permiso para esta acción")
-    
+
     return redirect('event_detail', id=event_id)
-    
+
+#------------------VENUES-----------------
+#listar venues
+def venue_list(request):
+    venues = Venue.objects.all()
+    return render(request, 'app/venue_list.html', {'venues': venues, "user_is_organizer": request.user.is_organizer})
+
+#crear venues
+def venue_create(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        address = request.POST.get('address')
+        capacity = request.POST.get('capacity') or None
+        contact = request.POST.get('contact')
+
+        Venue.objects.create(name=name, address=address, capacity=capacity, contact=contact)
+        return redirect('venue_list')
+
+    return render(request, 'app/venue_form.html')
+#editar venues
+def venue_edit(request, pk):
+    venue = get_object_or_404(Venue, pk=pk)
+
+    if request.method == 'POST':
+        venue.name = request.POST.get('name')
+        venue.address = request.POST.get('address')
+        venue.capacity = request.POST.get('capacity') or None
+        venue.contact = request.POST.get('contact')
+        venue.save()
+        return redirect('venue_list')
+
+    return render(request, 'app/venue_form.html', {'venue': venue})
+#borrar venues
+def venue_delete(request, pk):
+    venue = get_object_or_404(Venue, pk=pk)
+
+    if request.method == 'POST':
+        venue.delete()
+        return redirect('venue_list')
+
+    return render(request, 'app/venue_confirm_delete.html', {'venue': venue})

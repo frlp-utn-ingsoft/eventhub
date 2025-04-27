@@ -93,7 +93,7 @@ class Category(models.Model):
             errors["description"] = "Por favor ingrese una descripcion"
 
         return errors
-    
+
     @classmethod
     def new(cls, name, description):
         errors = Category.validate(name, description)
@@ -152,3 +152,12 @@ class Comment(models.Model):
         self.title = title.strip() if title else self.title
         self.text = text.strip() if text else self.text
         self.save()
+
+class Venue(models.Model):
+    name = models.CharField(max_length=255)
+    address = models.CharField(max_length=255, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    capacity = models.CharField(max_length=5, blank=True, null=True)
+    contact = models.CharField(max_length=100, blank=True, null=True)
+    def __str__(self):
+        return self.name
