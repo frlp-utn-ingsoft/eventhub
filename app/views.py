@@ -265,13 +265,17 @@ def venue_create(request):
 
         errors = []
 
-        # Validaciones
-        if not name:
-            errors.append('El nombre es obligatorio.')
-        if not address:
-            errors.append('La dirección es obligatoria.')
-        if not city:
-            errors.append('La ciudad es obligatoria.')
+        # Validaciones de longitud mínima para los campos string
+        if len(name) < 3:
+            errors.append('El nombre debe tener al menos 3 caracteres.')
+        if len(address) < 3:
+            errors.append('La dirección debe tener al menos 3 caracteres.')
+        if len(city) < 3:
+            errors.append('La ciudad debe tener al menos 3 caracteres.')
+        if len(contact) < 3:
+            errors.append('El contacto debe tener al menos 3 caracteres.')
+
+        # Validación de capacidad
         if not capacity:
             errors.append('La capacidad es obligatoria.')
         else:
@@ -281,9 +285,6 @@ def venue_create(request):
                     errors.append('La capacidad debe ser un número positivo.')
             except ValueError:
                 errors.append('La capacidad debe ser un número.')
-
-        if not contact:
-            errors.append('El contacto es obligatorio.')
 
         if errors:
             return render(request, 'app/venue_form.html', {
@@ -322,13 +323,17 @@ def venue_edit(request, pk):
 
         errors = []
 
-        # Validaciones
-        if not name:
-            errors.append('El nombre es obligatorio.')
-        if not address:
-            errors.append('La dirección es obligatoria.')
-        if not city:
-            errors.append('La ciudad es obligatoria.')
+        # Validaciones de longitud mínima para los campos string
+        if len(name) < 3:
+            errors.append('El nombre debe tener al menos 3 caracteres.')
+        if len(address) < 3:
+            errors.append('La dirección debe tener al menos 3 caracteres.')
+        if len(city) < 3:
+            errors.append('La ciudad debe tener al menos 3 caracteres.')
+        if len(contact) < 3:
+            errors.append('El contacto debe tener al menos 3 caracteres.')
+
+        # Validación de capacidad
         if not capacity:
             errors.append('La capacidad es obligatoria.')
         else:
@@ -338,9 +343,6 @@ def venue_edit(request, pk):
                     errors.append('La capacidad debe ser un número positivo.')
             except ValueError:
                 errors.append('La capacidad debe ser un número.')
-
-        if not contact:
-            errors.append('El contacto es obligatorio.')
 
         if errors:
             return render(request, 'app/venue_form.html', {
