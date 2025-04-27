@@ -1,9 +1,32 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
-<h2>Eliminar comentario</h2>
-<p>¿Seguro que deseas borrar “{{ object.title }}”?</p>
-<form method="post">{% csrf_token %}
-  <button class="btn btn-danger">Eliminar</button>
-  <a href="{% url 'event_detail' object.event.id %}" class="btn btn-secondary">Cancelar</a>
-</form>
+<div class="container my-4" style="max-width: 600px">
+<h5>¿Seguro que deseas borrar el comentario?</h5>
+    <div class="card mt-3 py-2 px-3">
+        <div class="d-flex">
+
+            <div class="me-3">
+              <i class="bi bi-person-circle fs-3"></i>
+            </div>
+  
+            <div class="flex-grow-1">
+              <div class="d-flex justify-content-between">
+                <div>
+                  <span class="fw-semibold">{{ object.user.username }}</span><br>
+                  <small class="text-muted">{{ object.created_at|date:"d b Y, H:i" }}</small>
+                </div>
+
+              </div>
+  
+            </div>
+        </div>
+        <h6 class="mt-2 mb-1">{{ object.title }}</h6>
+        <p class="mb-0">{{ object.text }}</p>
+    </div>
+    <form method="post" class="text-end mt-4">{% csrf_token %}
+        <a href="{% url 'event_detail' object.event.id %}" class="me-2 btn btn-secondary">Cancelar</a>
+        <button class="btn btn-danger">Eliminar</button>
+    </form>
+</div>
 {% endblock %}
