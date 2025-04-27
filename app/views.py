@@ -75,7 +75,8 @@ def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
     todos_los_comentarios = Comment.objects.filter(event=event).order_by('-created_at')
 
-    return render(request, "app/event_detail.html", {"event": event, "todos_los_comentarios": todos_los_comentarios,})
+    return render(request, "app/event_detail.html", {"event": event, "todos_los_comentarios": todos_los_comentarios,
+        "user_is_organizer": request.user.is_organizer,})
 
 
 @login_required
