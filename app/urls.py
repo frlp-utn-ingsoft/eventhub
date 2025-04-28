@@ -21,4 +21,5 @@ urlpatterns = [
     path('notificaciones/', views.notification, name='notification'),
     path('notificaciones/<int:id>/detalle', views.notification_detail,name='notification_detail'),
     path('notificaciones/<int:id>/editar', views.notification_form,name= 'notification_edit'),
+    path('notificaciones/<int:id>/eliminar', views.notification_delete, name='notification_delete'),
 ]
