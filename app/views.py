@@ -9,6 +9,7 @@ from .models import Event, User, Category, Comment, Venue, Ticket
 from django.contrib import messages
 import re
 import random
+from django.db import IntegrityError
 
 
 def register(request):
@@ -194,10 +195,16 @@ def category_delete(request, id):
 
     if request.method == "POST":
         category = get_object_or_404(Category, pk=id)
-        category.delete()
-        return redirect("categorias")
+        
+        try:
+            category.delete() 
+            messages.success(request, "Categoría eliminada exitosamente.")
+        except IntegrityError:
+            messages.error(request, "No se puede eliminar esta categoría porque tiene eventos asociados.")
+        
+        return redirect("categorias") 
 
-    return redirect("categorias")
+    return redirect("categorias")  
 
 
 
