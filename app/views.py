@@ -574,4 +574,24 @@ def rating_create(request, event_id):
 
     return redirect('event_detail', id=event_id)
 
+def rating_update(request, event_id, rating_id):
+    event = get_object_or_404(Event, id=event_id)
+    rating = get_object_or_404(Rating, id=rating_id, event=event)
+
+    if request.user != rating.user:
+        return HttpResponseForbidden("No tenes permiso para editar esta calificación")
+
+    if request.method == 'POST':
+        rating_value = request.POST.get('rating')
+        rating_value = int(rating_value) if rating_value else None
+
+        if rating_value is not None:
+            rating.rating = rating_value
+            rating.save()
+            messages.success(request, "Calificación actualizada exitosamente")
+        else:
+            messages.error(request, "Error al actualizar la calificación")
+
+    return redirect('event_detail', id=event_id)
+
 
