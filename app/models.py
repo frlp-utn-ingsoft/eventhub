@@ -1,5 +1,9 @@
-from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
+import uuid
+from typing import Dict
+from django.contrib.auth.models import AbstractUser
+
 
 
 class User(AbstractUser):
@@ -73,3 +77,64 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+        
+class Ticket(models.Model):
+    
+    class TicketType(models.TextChoices):
+        GENERAL = 'GENERAL', 'General'
+        VIP = 'VIP', 'VIP'
+    
+    buy_date = models.DateField(auto_now_add=True)
+    ticket_dot = models.CharField(max_length=100, unique=True)
+    quantity = models.PositiveIntegerField(default=1)
+    type = models.CharField(
+        max_length=7,
+        choices=TicketType.choices,
+        default=TicketType.GENERAL
+    )
+    
+    user = models.ForeignKey('User', on_delete=models.CASCADE, related_name="tickets")
+    event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name="tickets")
+
+    def __str__(self):
+        type_map = {
+            'GENERAL': 'General',
+            'VIP': 'VIP'
+        }
+        return f"{type_map.get(self.type, self.type)} Ticket - {self.event.title} (x{self.quantity})"
+
+    def clean(self):
+        errors: Dict[str, str] = {}
+        
+        if self.quantity <= 0:
+            errors['quantity'] = 'La cantidad debe ser mayor a cero'
+        
+        if self.type == self.TicketType.VIP and self.quantity > 2:
+            errors['type'] = 'Máximo 2 tickets VIP por compra'
+        
+        if self.pk and (timezone.now().date() - self.buy_date).days > 30:
+            errors['buy_date'] = 'No se puede modificar después de 30 días'
+
+    def save(self, *args, **kwargs):
+        if not self.ticket_dot:
+            self.ticket_dot = str(uuid.uuid4())
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    @property
+    def is_refundable(self) -> bool:
+        event_date = self.event.scheduled_at.date()
+        return (timezone.now().date() - event_date).days <= 30
+
+    @classmethod
+    def create_ticket(cls, user, event, quantity=1, ticket_type='GENERAL'):
+        ticket = cls(
+            user=user,
+            event=event,
+            quantity=quantity,
+            type=ticket_type
+        )
+        ticket.full_clean()
+        ticket.save()
+        return ticket
