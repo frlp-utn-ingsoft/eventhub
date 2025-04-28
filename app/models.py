@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.crypto import get_random_string
 
 
 class User(AbstractUser):
@@ -208,3 +209,26 @@ class refund(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, null=True, blank=True, related_name="refunded_tickets")
 
     def __str__(self): return self.ticket_code
+    
+class Ticket(models.Model):
+
+    TICKET_TYPES = [
+        ("GENERAL", "General"),
+        ("VIP", "VIP")
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tickets")
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="tickets")
+    
+    buy_date = models.DateField(auto_now_add=True)
+    ticket_code = models.CharField(max_length=12, unique=True, editable=False)
+    quantity = models.PositiveIntegerField()
+    type = models.CharField(max_length=10, choices=TICKET_TYPES)
+
+    def save(self, *args, **kwargs):
+        if not self.ticket_code:
+            self.ticket_code = get_random_string(length=12)
+            super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.ticket_code} - {self.user.username} - {self.event.title}"
