@@ -27,4 +27,8 @@ urlpatterns = [
     path('venues/create/', views.venue_create, name='venue_create'),
     path('venues/<int:pk>/edit/', views.venue_edit, name='venue_edit'),
     path('venues/<int:pk>/delete/', views.venue_delete, name='venue_delete'),
+    path('tickets/<int:event_id>/', views.tickets, name='tickets'),
+    path('ticket_compra/<int:event_id>/', views.comprar_ticket, name='ticket_compra'),
+    path('ticket_delete/<int:event_id>/<int:ticket_id>/', views.ticket_delete, name='ticket_delete'),
+    path('Mis_tickets/', views.mis_tickets, name='Mis_tickets'),
 ]
