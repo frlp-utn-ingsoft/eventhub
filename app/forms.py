@@ -4,21 +4,28 @@ from datetime import datetime
 
 class TicketForm(forms.ModelForm):
     # Campos de la tarjeta, validaciones específicas en los métodos clean_* correspondientes
-    card_name = forms.CharField(label="Nombre en la tarjeta", max_length=100)
-    card_number = forms.CharField(label="Número de tarjeta", max_length=16, min_length=13)
-    expiration_date = forms.CharField(label="Fecha de expiración (MM/AA)", max_length=5)
-    cvv = forms.CharField(label="CVV", max_length=4)
+    card_name = forms.CharField(label="Nombre en la tarjeta", max_length=30, widget=forms.TextInput(attrs={'class': 'form-control','placeholder': 'Juan Peres'}))
+    card_number = forms.CharField(label="Número de tarjeta", max_length=25, min_length=13, widget=forms.TextInput(attrs={'class': 'form-control','placeholder': '1234 5678 9012 3456'}))
+    expiration_date = forms.CharField(label="Fecha de expiración (MM/AA)", max_length=5, widget=forms.TextInput(attrs={'class': 'form-control','placeholder': 'MM/AA'}))
+    cvv = forms.CharField(label="CVV", max_length=4, widget=forms.TextInput(attrs={'class': 'form-control','placeholder': '123'}))
 
     # Tipo de entrada con dos opciones posibles (General y VIP)
     ENTRY_TYPE_CHOICES = [
         ("GENERAL", "GENERAL"),
         ("VIP", "VIP"),
     ]
-    type = forms.ChoiceField(label="Tipo de Entrada", choices=ENTRY_TYPE_CHOICES)
+    type = forms.ChoiceField(label="Tipo de Entrada", choices=ENTRY_TYPE_CHOICES, widget=forms.Select(attrs={'class': 'form-control'}))
 
     class Meta:
         model = Ticket
         fields = ['quantity', 'type']  # Solo estos campos se cargan en el formulario
+
+    accept_terms = forms.BooleanField(
+    required=True,
+    label="Acepto los términos y condiciones de privacidad",
+    widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+
 
     def clean_quantity(self):
         quantity = self.cleaned_data.get('quantity')
@@ -89,3 +96,5 @@ class TicketForm(forms.ModelForm):
             raise forms.ValidationError("La fecha de expiración no es válida.")
 
         return expiration_date
+    
+    
