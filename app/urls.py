@@ -22,7 +22,6 @@ urlpatterns = [
     path('events/<int:event_id>/comments/<int:pk>/delete/', views.delete_comment, name='delete_comment'),
     path('organizer/comments/', views.organizer_comments, name='organizer_comments'),
     path('organizer/comments/delete/<int:pk>/', views.organizer_delete_comment, name='organizer_delete_comment'),
-
     path('venues/', views.venue_list, name='venue_list'),
     path('venues/create/', views.venue_create, name='venue_create'),
     path('venues/<int:pk>/edit/', views.venue_edit, name='venue_edit'),
@@ -31,4 +30,7 @@ urlpatterns = [
     path('ticket_compra/<int:event_id>/', views.comprar_ticket, name='ticket_compra'),
     path('ticket_delete/<int:event_id>/<int:ticket_id>/', views.ticket_delete, name='ticket_delete'),
     path('Mis_tickets/', views.mis_tickets, name='Mis_tickets'),
+    path('event/<int:event_id>/rating/create/', views.rating_create, name='rating_create'),
+    path('event/<int:event_id>/rating/<int:rating_id>/update/', views.rating_update, name='rating_update'),
+    path('event/<int:event_id>/rating/<int:rating_id>/delete/', views.rating_delete, name='rating_delete'),
 ]

@@ -200,11 +200,57 @@ class Ticket(models.Model):
             user=user,
             event=event
         )
-
         return True, None
     
     def update(self, ticket_code, quantity):
         self.ticket_code = ticket_code or self.ticket_code
         self.quantity = quantity or self.quantity
 
+        self.save()
+
+class Rating(models.Model):
+    title = models.CharField(max_length=100)
+    text = models.TextField()
+    rating = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ratings")
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="ratings")
+
+    @classmethod
+    def validate(cls, rating,title):
+        errors = {}
+
+        if rating is None:
+            errors["rating"] = "La calificación es requerida"
+        elif rating < 1 or rating > 5:
+            errors["rating"] = "La calificación debe estar entre 1 y 5"
+        
+        if title is None or title.strip() == "":
+            errors["title"] = "El título es requerido"
+        
+
+
+        return errors
+
+    @classmethod
+    def new(cls, title, text, rating, user, event):
+        errors = cls.validate(rating, title)
+
+        if errors:
+            return False, errors
+
+        cls.objects.create(
+            title=title,
+            text=text,
+            rating=rating,
+            user=user,
+            event=event
+        )
+
+        return True, None
+    
+    def update(self, rating, title, text):
+        self.rating = rating if rating is not None else self.rating
+        self.title = title.strip() if title else self.title
+        self.text = text.strip() if text else self.text
         self.save()

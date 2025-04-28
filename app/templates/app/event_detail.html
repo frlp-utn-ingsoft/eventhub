@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 <div class="container">
@@ -6,14 +7,11 @@
         <div class="d-flex justify-content-between align-items-center">
             <h1>{{ event.title }}</h1>
             <div>
-            {% if user_is_organizer %}
-                <a
-                    href="{% url 'event_edit' event.id %}"
-                    class="btn btn-outline-primary me-2"
-                >
+                {% if user_is_organizer %}
+                <a href="{% url 'event_edit' event.id %}" class="btn btn-outline-primary me-2">
                     <i class="bi bi-pencil me-1"></i>Editar
                 </a>
-            {% endif %}
+                {% endif %}
             </div>
         </div>
     </div>
@@ -44,7 +42,7 @@
                     <div class="d-flex align-items-center mb-3">
                         <div class="bg-light rounded-circle p-2 me-3">
                             <i class="bi bi-tag text-primary"></i>
-                        </div>                        
+                        </div>
                         <div>
                             <h6 class="mb-0">Categoria</h6>
                             <p class="mb-0">{{ event.category.name }}</p>
@@ -66,87 +64,261 @@
         </div>
     </div>
 
-{% if request.user != event.organizer %}
-<div class="card mt-4">
-    <div class="card-body">
-        <h5 class="card-title" id="form-title">Agregar un Comentario</h5> 
-        {% if user.is_authenticated%}
-            {% if errors %}
-                <div class="alert alert-danger">
-                    {% for field, error_list in errors.items %}
-                        {% for error in error_list %}
-                            <p>{{ error }}</p>
-                        {% endfor %}
-                    {% endfor %}
+    <div class="card my-4">
+        <div class="card-body">
+            <h3 class="card-title">Calificaciones y Reseñas ({{ event.ratings.count }})</h3>
+            <hr>
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert 
+            {% if message.tags == 'error' %}alert-danger
+            {% elif message.tags == 'success' %}alert-success
+            {% elif message.tags == 'warning' %}alert-warning
+            {% elif message.tags == 'info' %}alert-info
+            {% else %}alert-primary
+            {% endif %}
+            alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <div class="rating-list">
+                {% for rating in ratings %}
+                <div class="border-bottom pb-3 mb-3" id="rating-{{ rating.id }}">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong class="text-primary">{{ rating.user.get_full_name|default:rating.user.username }}</strong>
+                            <div class="mb-1 rating-stars">
+                                {% for i in "12345" %}
+                                {% if forloop.counter <= rating.rating %} <span class="star text-warning">★</span>
+                                    {% else %}
+                                    <span class="star text-muted">☆</span>
+                                    {% endif %}
+                                    {% endfor %}
+                            </div>
+                        </div>
+                        <div class="d-flex gap-2">
+                            {% if request.user == rating.user and not request.user.is_organizer %}
+                            <button
+                                onclick="openEditRatingModal('{{ rating.id }}', '{{ rating.rating }}', '{{ rating.title|escapejs }}', '{{ rating.text|escapejs }}')"
+                                class="btn btn-sm btn-outline-secondary" title="Editar">
+                                <i class="bi bi-pencil" aria-hidden="true"></i>
+                            </button>
+                            {% endif %}
+
+
+                            {% if request.user == rating.user or request.user == event.organizer %}
+                            <form action="{% url 'rating_delete' event.id rating.id %}" method="post"
+                                style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <h6 class="mt-2 rating-title">{{ rating.title}}</h6>
+                    <p class="text-dark mb-1 rating-text">{{ rating.text}}</p>
+                    <small class="text-muted">{{ rating.created_at|date:"d/m/Y H:i" }}</small>
                 </div>
+                {% empty %}
+                <div class="text-center text-muted py-3">
+                    No hay reseñas todavía. ¡Sé el primero en calificar!
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if not user.is_organizer %}
+        <div class="card-body">
+            <h5 class="card-title">Agregar una Reseña</h5>
+            <form action="{% url 'rating_create' event.id %}" method="post" id="ratingForm">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <input type="hidden" id="rating" name="rating" required>
+                    <div id="star-container" class="d-flex gap-2">
+                        {% for i in "12345" %}
+                        <span class="star-rating fs-3 text-muted" data-value="{{ forloop.counter }}"
+                            role="button">☆</span>
+                        {% endfor %}
+                    </div>
+                    <div id="rating-feedback" class="invalid-feedback">
+                        Por favor selecciona una calificación
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <input type="text" name="title" id="title" class="form-control" placeholder="Título"
+                        maxlength="100">
+                </div>
+
+                <div class="mb-3">
+                    <textarea name="text" id="text" class="form-control" rows="3" placeholder="Escribe tu reseña..."
+                        maxlength="1000"></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Publicar</button>
+            </form>
+        </div>
+        {% else %}
+        <div class="text-center my-4">
+            <p>No puedes dejar una reseña si eres el organizador del evento.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="modal fade" id="editRatingModal" tabindex="-1" aria-labelledby="editRatingModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editRatingModalLabel">Editar Reseña</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form action="" method="post" id="editRatingForm">
+                        {% csrf_token %}
+                        <input type="hidden" id="edit_rating_id" name="rating_id">
+
+                        <div class="mb-3">
+                            <label for="edit_rating" class="form-label">Calificación</label>
+                            <input type="hidden" id="edit_rating" name="rating" required>
+                            <div id="edit-star-container" class="d-flex gap-2">
+                                {% for i in "12345" %}
+                                <span class="edit-star-rating fs-3 text-muted" data-value="{{ forloop.counter }}"
+                                    role="button">☆</span>
+                                {% endfor %}
+                            </div>
+                            <div id="edit-rating-feedback" class="invalid-feedback">
+                                Por favor selecciona una calificación
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="edit_title" class="form-label">Título</label>
+                            <input type="text" name="title" id="edit_title" class="form-control" placeholder="Título"
+                                maxlength="100">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="edit_text" class="form-label">Reseña</label>
+                            <textarea name="text" id="edit_text" class="form-control" rows="3"
+                                placeholder="Escribe tu reseña..." maxlength="1000"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="saveRatingChanges">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    {% if request.user != event.organizer %}
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title" id="form-title">Agregar un Comentario</h5> 
+            {% if user.is_authenticated%}
+                {% if errors %}
+                    <div class="alert alert-danger">
+                        {% for field, error_list in errors.items %}
+                            {% for error in error_list %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        {% endfor %}
+    
+    
+    {% if request.user != event.organizer %}
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title" id="form-title">Agregar un Comentario</h5>
+            <!-- le ponemos ID para poder cambiarlo -->
+            {% if user.is_authenticated%}
+            {% if errors %}
+            <div class="alert alert-danger">
+                {% for field, error_list in errors.items %}
+                {% for error in error_list %}
+                <p>{{ error }}</p>
+                {% endfor %}
+                {% endfor %}
+            </div>
             {% endif %}
             <form method="post" action="{% url 'crear_comentario' event_id=event.id %}" id="formulario-comentario">
                 {% csrf_token %}
                 <input type="hidden" id="comentario_id" name="comentario_id">
                 <div class="mb-3">
-                    <input type="text" name="title" class="form-control" placeholder="Título" value="{{ title|default:'' }}" required>
+                    <input type="text" name="title" class="form-control" placeholder="Título"
+                        value="{{ title|default:'' }}" required>
                 </div>
                 <div class="mb-3">
-                    <textarea name="text" class="form-control" rows="3" placeholder="Escribe tu comentario..." required>{{ text|default:'' }}</textarea>
+                    <textarea name="text" class="form-control" rows="3" placeholder="Escribe tu comentario..."
+                        required>{{ text|default:'' }}</textarea>
                 </div>
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary" id="boton-submit">Publicar</button>
-                    <button type="button" class="btn btn-secondary d-none" id="boton-cancelar" onclick="cancelarEdicion()">Cancelar</button>
+                    <button type="button" class="btn btn-secondary d-none" id="boton-cancelar"
+                        onclick="cancelarEdicion()">Cancelar</button>
                 </div>
             </form>
-        {% endif %}
+            {% endif %}
+        </div>
     </div>
-</div>
-{% endif %}
+    {% endif %}
 
 
-<div class="card mt-4">
-    <div class="card-body">
-        <h5 class="card-title">Comentarios</h5>
-        {% if todos_los_comentarios %}
+
+
+    <div class="card mt-4">
+        <div class="card-body">
+            <h5 class="card-title">Comentarios</h5>
+            {% if todos_los_comentarios %}
             <div class="comment-list">
                 {% for comment in todos_los_comentarios %}
-                    <div class="comment mb-3 border-bottom pb-3">
-                        <div class="d-flex justify-content-between">
-                            <div>
-                                <strong class="text-primary">{{ comment.user.username }}</strong>
-                                {% if event.organizer == comment.user %}
-                                    <span class="badge bg-success ms-2">Organizador</span>
-                                {% endif %}
-                            </div>
-                            {% if request.user == comment.user or event.organizer == request.user or request.user.is_superuser %}
-                                <div class="d-flex gap-2">
-                                    <a href="{% url 'delete_comment' event_id=event.id pk=comment.id %}" class="btn btn-sm btn-outline-danger"
-                                    title="Eliminar"
-                                    type="submit"
-                                    aria-label="Eliminar"
-                                    titile="Eliminar">
-                                    <i class="bi bi-trash" aria-hidden="true"></i>
-                                    </a>
-                                    {% if request.user == comment.user %}
-                                        <a href="#" onclick="editarComentario('{{ comment.id }}', '{{ comment.title|escapejs }}', '{{ comment.text|escapejs }}')" class="btn btn-sm btn-outline-secondary"
-                                        aria-label="Editar"
-                                        title="Editar">
-                                        <i class="bi bi-pencil" aria-hidden="true"></i>
-                                    </a>
-                                    {% endif %}
-                                </div>
+                <div class="comment mb-3 border-bottom pb-3">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong class="text-primary">{{ comment.user.username }}</strong>
+                            {% if event.organizer == comment.user %}
+                            <span class="badge bg-success ms-2">Organizador</span>
+                            {% endif %}
+                        </div>
+                        {% if request.user == comment.user or event.organizer == request.user or
+                        request.user.is_superuser %}
+                        <div class="d-flex gap-2">
+                            <a href="{% url 'delete_comment' event_id=event.id pk=comment.id %}"
+                                class="btn btn-sm btn-outline-danger" title="Eliminar" type="submit"
+                                aria-label="Eliminar" titile="Eliminar">
+                                <i class="bi bi-trash" aria-hidden="true"></i>
+                            </a>
+                            {% if request.user == comment.user %}
+                            <a href="#"
+                                onclick="editarComentario('{{ comment.id }}', '{{ comment.title|escapejs }}', '{{ comment.text|escapejs }}')"
+                                class="btn btn-sm btn-outline-secondary" aria-label="Editar" title="Editar">
+                                <i class="bi bi-pencil" aria-hidden="true"></i>
+                            </a>
                             {% endif %}
                         </div>
 
-                        <h6 class="mt-2">{{ comment.title }}</h6>
-                        <p class="mb-1 text-dark">{{ comment.text|escape|linebreaks }}</p>
-                        <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
                     </div>
+
+                    <h6 class="mt-2">{{ comment.title }}</h6>
+                    <p class="mb-1 text-dark">{{ comment.text|escape|linebreaks }}</p>
+                    <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                </div>
                 {% endfor %}
             </div>
-        {% else %}
+            {% else %}
             <div class="text-center py-3">
                 <p class="text-muted">No hay comentarios aún. ¡Sé el primero en comentar!</p>
             </div>
-        {% endif %}
+            {% endif %}
+        </div>
     </div>
-</div>
 </div>
 
 <script>
@@ -184,6 +356,220 @@
     }
 </script>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const starContainer = document.getElementById('star-container');
+        const ratingInput = document.getElementById('rating');
+        const ratingFeedback = document.getElementById('rating-feedback');
+        const ratingForm = document.getElementById('ratingForm');
+
+        if (starContainer && ratingInput) {
+            const stars = starContainer.querySelectorAll('.star-rating');
+
+            function updateStars(rating) {
+                stars.forEach((star, index) => {
+                    if (index < rating) {
+                        star.textContent = '★';
+                        star.classList.remove('text-muted');
+                        star.classList.add('text-warning');
+                    } else {
+                        star.textContent = '☆';
+                        star.classList.remove('text-warning');
+                        star.classList.add('text-muted');
+                    }
+                });
+            }
+            stars.forEach(star => {
+                star.addEventListener('click', () => {
+                    const value = parseInt(star.getAttribute('data-value'));
+                    ratingInput.value = value;
+                    updateStars(value);
+                    ratingFeedback.classList.add('d-none');
+                });
+
+                star.addEventListener('mouseenter', () => {
+                    const value = parseInt(star.getAttribute('data-value'));
+                    updateStars(value);
+                });
+            });
+
+            starContainer.addEventListener('mouseleave', () => {
+                const currentRating = parseInt(ratingInput.value) || 0;
+                updateStars(currentRating);
+            });
+
+            if (ratingForm) {
+                ratingForm.addEventListener('submit', function (e) {
+                    if (!ratingInput.value) {
+                        e.preventDefault();
+                        ratingFeedback.classList.remove('d-none');
+                        return false;
+                    }
+                    return true;
+                });
+            }
+        }
+
+        const editStarContainer = document.getElementById('edit-star-container');
+        const editRatingInput = document.getElementById('edit_rating');
+        const editRatingFeedback = document.getElementById('edit-rating-feedback');
+
+        if (editStarContainer && editRatingInput) {
+            const editStars = editStarContainer.querySelectorAll('.edit-star-rating');
+
+            function updateEditStars(rating) {
+                editStars.forEach((star, index) => {
+                    if (index < rating) {
+                        star.textContent = '★';
+                        star.classList.remove('text-muted');
+                        star.classList.add('text-warning');
+                    } else {
+                        star.textContent = '☆';
+                        star.classList.remove('text-warning');
+                        star.classList.add('text-muted');
+                    }
+                });
+            }
+
+            editStars.forEach(star => {
+                star.addEventListener('click', () => {
+                    const value = parseInt(star.getAttribute('data-value'));
+                    editRatingInput.value = value;
+                    updateEditStars(value);
+                    editRatingFeedback.classList.add('d-none');
+                });
+
+                star.addEventListener('mouseenter', () => {
+                    const value = parseInt(star.getAttribute('data-value'));
+                    updateEditStars(value);
+                });
+            });
+
+            editStarContainer.addEventListener('mouseleave', () => {
+                const currentRating = parseInt(editRatingInput.value) || 0;
+                updateEditStars(currentRating);
+            });
+        }
+
+        function updateRatingStarsInDOM(ratingContainer, value) {
+            const stars = ratingContainer.querySelectorAll('.star');
+            stars.forEach((star, index) => {
+                if (index < value) {
+                    star.textContent = '★';
+                    star.classList.remove('text-muted');
+                    star.classList.add('text-warning');
+                } else {
+                    star.textContent = '☆';
+                    star.classList.remove('text-warning');
+                    star.classList.add('text-muted');
+                }
+            });
+        }
+
+        document.getElementById('saveRatingChanges').addEventListener('click', function () {
+            const ratingId = document.getElementById('edit_rating_id').value;
+            const rating = document.getElementById('edit_rating').value;
+            const title = document.getElementById('edit_title').value;
+            const text = document.getElementById('edit_text').value;
+
+            if (!rating) {
+                document.getElementById('edit-rating-feedback').classList.remove('d-none');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('rating_id', ratingId);
+            formData.append('rating', rating);
+            formData.append('title', title);
+            formData.append('text', text);
+            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+
+            fetch(`{% url 'rating_update' event.id 0 %}`.replace('0', ratingId), {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+                .then(response => {
+                    if (response.ok) {
+                        const ratingContainer = document.getElementById(`rating-${ratingId}`);
+                        ratingContainer.querySelector('.rating-title').textContent = title;
+                        ratingContainer.querySelector('.rating-text').textContent = text;
+
+                        const starsContainer = ratingContainer.querySelector('.rating-stars');
+                        updateRatingStarsInDOM(starsContainer, rating);
+
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('editRatingModal'));
+                        modal.hide();
+
+                        showToast('¡Reseña actualizada correctamente!');
+                    } else {
+                        alert('Hubo un error al guardar los cambios');
+                    }
+                });
+        });
+    });
+
+    function showToast(message) {
+        if (!document.getElementById('toast-container')) {
+            const toastContainer = document.createElement('div');
+            toastContainer.id = 'toast-container';
+            toastContainer.className = 'position-fixed bottom-0 end-0 p-3';
+            toastContainer.style.zIndex = '5';
+
+            const toastEl = document.createElement('div');
+            toastEl.id = 'liveToast';
+            toastEl.className = 'toast hide bg-success text-white';
+            toastEl.setAttribute('role', 'alert');
+            toastEl.setAttribute('aria-live', 'assertive');
+            toastEl.setAttribute('aria-atomic', 'true');
+
+            const toastBody = document.createElement('div');
+            toastBody.className = 'toast-body d-flex align-items-center';
+
+            const icon = document.createElement('i');
+            icon.className = 'bi bi-check-circle me-2';
+
+            const messageEl = document.createElement('span');
+            messageEl.id = 'toast-message';
+
+            toastBody.appendChild(icon);
+            toastBody.appendChild(messageEl);
+            toastEl.appendChild(toastBody);
+            toastContainer.appendChild(toastEl);
+
+            document.body.appendChild(toastContainer);
+        }
+        document.getElementById('toast-message').textContent = message;
+        const toast = new bootstrap.Toast(document.getElementById('liveToast'));
+        toast.show();
+    }
+
+    function openEditRatingModal(ratingId, ratingValue, title, text) {
+        document.getElementById('edit_rating_id').value = ratingId;
+        document.getElementById('edit_rating').value = ratingValue;
+        document.getElementById('edit_title').value = title;
+        document.getElementById('edit_text').value = text;
+
+        // Actualizar estrellas
+        const editStars = document.querySelectorAll('.edit-star-rating');
+        editStars.forEach((star, index) => {
+            if (index < ratingValue) {
+                star.textContent = '★';
+                star.classList.remove('text-muted');
+                star.classList.add('text-warning');
+            } else {
+                star.textContent = '☆';
+                star.classList.remove('text-warning');
+                star.classList.add('text-muted');
+            }
+        });
+
+        // Abrir el modal
+        const modal = new bootstrap.Modal(document.getElementById('editRatingModal'));
+        modal.show();
+    }
+</script>
 
 {% endblock %}
-
