@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from datetime import datetime
 
 
 class User(AbstractUser):
@@ -93,7 +94,7 @@ class Category(models.Model):
             errors["description"] = "Por favor ingrese una descripcion"
 
         return errors
-    
+
     @classmethod
     def new(cls, name, description):
         errors = Category.validate(name, description)
@@ -111,4 +112,30 @@ class Category(models.Model):
         self.name = name or self.name
         self.description = description or self.description
 
+        self.save()
+
+
+class RefundRequest(models.Model):
+    approved = models.BooleanField(default=False)
+    approval_date = models.DateTimeField(null=True, blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    reason = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @classmethod
+    def new(cls, approved, amount, reason):
+        refundRequest = cls(
+            approved=approved,
+            amount=amount,
+            reason=reason,
+            created_at=datetime.now()
+        )
+        refundRequest.save()
+        return refundRequest
+
+    def update(self, approved, approval_date, amount, reason):
+        self.approved = approved or self.approved
+        self.approval_date = approval_date or self.approval_date
+        self.amount = amount or self.amount
+        self.reason = reason or self.reason
         self.save()
