@@ -1,14 +1,14 @@
 {% extends "base.html" %}
 
-{% block title %}Categorias{% endblock %}
+{% block title %}Locaciones{% endblock %}
 
 {% block content %}
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Categorías</h1>
+        <h1>Locaciones</h1>
         {% if user_is_organizer %}
-            <a href="{% url 'category_form' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-2"></i> Crear Categoría
+            <a href="{% url 'venue_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i> Crear Locacion
             </a>
         {% endif %}
     </div>
@@ -17,25 +17,29 @@
         <thead>
             <tr>
                 <th>Nombre</th>
-                <th>Descripción</th>
-                <th>Eventos</th>
+                <th>Dirección</th>
+                <th>Ciudad</th>
+                <th>Capacidad</th>
+                <th>Contacto</th>
                 <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
-            {% for category in categorys %}
+            {% for venue in venues %}
                 <tr>
-                    <td style="color: #0dcaf0;">{{ category.name }}</td>
-                    <td>{{ category.description }}</td>
-                    <td>{{ category.num_events }} Eventos</td>
+                    <td style="color: #0dcaf0;">{{ venue.name }}</td>
+                    <td>{{ venue.address }}</td>
+                    <td>{{ venue.city }}</td>
+                    <td>{{ venue.capacity }}</td>  
+                    <td>{{ venue.contact }}</td>
                     <td>
                         <div class="hstack gap-1">
                             {% if user_is_organizer %}
-                            <a href="{% url 'category_edit' category.id %}" class="btn btn-sm btn-outline-secondary"
+                            <a href="{% url 'venue_edit' venue.id %}" class="btn btn-sm btn-outline-secondary"
                             title="Editar" aria-label="Editar">
                                 <i class="bi bi-pencil" aria-hidden="true"></i>
                             </a>
-                                <form action="{% url 'category_delete' category.id %}" method="POST" class="d-inline">
+                                <form action="{% url 'venue_delete' venue.id %}" method="POST" class="d-inline">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-danger"
                                             type="submit"
@@ -45,24 +49,12 @@
                                     </button>
                                 </form>
                             {% endif %}
-                            
                         </div>
                     </td>
                 </tr>
-                {% if messages %}
-                    {% for message in messages %}
-                        {% if message.tags == "warning" %}
-                            <div class="alert alert-warning">
-                            <p>{{ message }}</p>
-                            </div>
-                        {% endif %}
-                    {% endfor %}
-                {% endif %}
-
-
             {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center">No hay categorías disponibles</td>
+                    <td colspan="4" class="text-center">No hay locaciones disponibles</td>
                 </tr>
             {% endfor %}
         </tbody>

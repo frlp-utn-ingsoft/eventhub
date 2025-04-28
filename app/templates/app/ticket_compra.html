@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-8">
+            <h2>Comprar Entrada</h2>
+            <div class="mb-4">
+                <h1 class="display-6"><strong>{{ event.title }}</strong></h1>
+                <p class="mb-1"><i class="bi bi-calendar-event text-primary"></i>  {{ event.scheduled_at }}</p>
+                <p class="mb-1"><i class="bi bi-geo-alt text-primary"></i> {{ event.venue.name }} - {{event.venue.city}}</p>
+                <p class="mb-3"><i class="bi bi-person text-primary"></i> {{ event.organizer.username }}</p>
+            </div>
+            <form method="post" id="payment-form">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="quantity" class="form-label">Cantidad de Entradas</label>
+                    <input type="number" id="quantity" name="quantity" class="form-control" value="1" min="1" required>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="type" class="form-label">Tipo de Entrada</label>
+                    <select id="type" name="type" class="form-select" required>
+                        <option value="general">General - $50</option>
+                        <option value="vip">VIP - $100</option>
+                    </select>
+                </div>
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Método de pago</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="card_number" class="form-label">Número de tarjeta</label>
+                            <input type="text" id="card_number" name="card_number" class="form-control" placeholder="1234 5678 9012 3456" required>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="card_expiry" class="form-label">Fecha de expiración</label>
+                                <input type="text" id="card_expiry" name="card_expiry" class="form-control" placeholder="MM/AA" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="card_cvv" class="form-label">CVV</label>
+                                <input type="text" id="card_cvv" name="card_cvv" class="form-control" placeholder="123" required>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="card_name" class="form-label">Nombre en la tarjeta</label>
+                            <input type="text" id="card_name" name="card_name" class="form-control" placeholder="Juan Pérez" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3 form-check">
+                    <input type="checkbox" class="form-check-input" id="accept_terms" name="accept_terms" required>
+                    <label class="form-check-label" for="accept_terms">
+                        Acepto los <a href="#" class="text-primary">términos y condiciones</a> y la <a href="#" class="text-primary">política de privacidad</a>
+                    </label>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100" id="submit-btn">Confirmar compra</button>
+            </form>
+        </div>
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Resumen de compra</h5>
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Precio por entrada:</span>
+                            <span id="precio-unitario">$50</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Cantidad:</span>
+                            <span id="cantidad-display">1</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Subtotal:</span>
+                            <span id="subtotal">$50.00</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between">
+                            <span>Impuestos (10%):</span>
+                            <span id="impuestos">$5.00</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between fw-bold">
+                            <span>Total:</span>
+                            <span id="total">$55.00</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Información importante</h5>
+                    <ul class="list-unstyled">
+                        <li>• Las entradas son personales e intransferibles.</li>
+                        <li>• Puedes solicitar un reembolso hasta 48 horas antes del evento.</li>
+                        <li>• Recibirás tu entrada en tu correo electrónico.</li>
+                        <li>• Presenta tu entrada digital o impresa el día del evento.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const quantityInput = document.getElementById('quantity');
+        const typeSelect = document.getElementById('type');
+        const precioUnitarioElement = document.getElementById('precio-unitario');
+        const cantidadElement = document.getElementById('cantidad-display');
+        const subtotalElement = document.getElementById('subtotal');
+        const impuestosElement = document.getElementById('impuestos');
+        const totalElement = document.getElementById('total');
+        const paymentForm = document.getElementById('payment-form');
+        const submitBtn = document.getElementById('submit-btn');
+
+        function actualizarResumen() {
+            
+            const cantidad = parseInt(quantityInput.value) || 1;
+            const tipo = typeSelect.value;
+            
+            
+            let precioUnitario = tipo === 'vip' ? 100 : 50;
+            
+            
+            const subtotal = precioUnitario * cantidad;
+            const impuestos = subtotal * 0.10;
+            const total = subtotal + impuestos;
+            
+            
+            precioUnitarioElement.textContent = '$' + precioUnitario;
+            cantidadElement.textContent = cantidad;
+            subtotalElement.textContent = '$' + subtotal.toFixed(2);
+            impuestosElement.textContent = '$' + impuestos.toFixed(2);
+            totalElement.textContent = '$' + total.toFixed(2);
+        }
+        
+        // Formatear número de tarjeta
+        document.getElementById('card_number').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            let formattedValue = '';
+            
+            for (let i = 0; i < value.length; i++) {
+                if (i > 0 && i % 4 === 0) {
+                    formattedValue += ' ';
+                }
+                formattedValue += value[i];
+            }
+            
+            e.target.value = formattedValue.substring(0, 19);
+        });
+        
+        // Formatear fecha de expiración
+        document.getElementById('card_expiry').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            let formattedValue = '';
+            
+            if (value.length > 0) {
+                formattedValue = value.substring(0, 2);
+                if (value.length > 2) {
+                    formattedValue += '/' + value.substring(2, 4);
+                }
+            }
+            
+            e.target.value = formattedValue;
+        });
+        
+        // Limitar CVV a 3-4 dígitos
+        document.getElementById('card_cvv').addEventListener('input', function(e) {
+            e.target.value = e.target.value.replace(/\D/g, '').substring(0, 4);
+        });
+        
+        // Simular procesamiento de pago al enviar el formulario
+        paymentForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Deshabilitar botón y mostrar indicador de carga
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Procesando...';
+            
+            // Obtener datos del formulario
+            const formData = new FormData(paymentForm);
+            const paymentData = {
+                card_number: formData.get('card_number').replace(/\s/g, ''),
+                card_expiry: formData.get('card_expiry'),
+                card_cvv: formData.get('card_cvv'),
+                card_name: formData.get('card_name'),
+                quantity: formData.get('quantity'),
+                type: formData.get('type'),
+                event_id: '{{ event_id }}'
+            };
+            
+            // Simular llamada a API de pago
+            setTimeout(function() {
+                // En un caso real, aquí iría la llamada a la api
+                console.log('Datos de pago enviados:', paymentData);
+                
+                // Generar un código de ticket único
+                const ticketCode = 'TIX-' + Math.random().toString(36).substring(2, 10).toUpperCase();
+                
+                const ticketCodeInput = document.createElement('input');
+                ticketCodeInput.type = 'hidden';
+                ticketCodeInput.name = 'ticket_code';
+                ticketCodeInput.value = ticketCode;
+                paymentForm.appendChild(ticketCodeInput);
+                paymentForm.submit();
+            }, 2000);
+        });
+        quantityInput.addEventListener('change', actualizarResumen);
+        quantityInput.addEventListener('input', actualizarResumen);
+        typeSelect.addEventListener('change', actualizarResumen);
+        
+        // Inicializar el resumen al cargar la página
+        actualizarResumen();
+    });
+</script>
+{% endblock %}

@@ -36,6 +36,7 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     category = models.ForeignKey('Category', on_delete=models.PROTECT, related_name="events", null=True, blank=True)
+    venue = models.ForeignKey('Venue', on_delete=models.CASCADE, related_name='events', null=True, blank=True)
 
     def __str__(self):
         return self.title
@@ -53,7 +54,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer,category=None):
+    def new(cls, title, description, scheduled_at, organizer,category=None,venue=None):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -65,16 +66,18 @@ class Event(models.Model):
             scheduled_at=scheduled_at,
             organizer=organizer,
             category=category,
+            venue=venue,
         )
 
         return True, None
 
-    def update(self, title, description, scheduled_at, organizer, category=None):
+    def update(self, title, description, scheduled_at, organizer, category=None, venue=None):
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
         self.category = category if category is not None else self.category
+        self.venue = venue if venue is not None else self.venue
 
         self.save()
 
@@ -114,7 +117,144 @@ class Category(models.Model):
 
         self.save()
 
+class Comment(models.Model):
+    title = models.CharField(max_length=100)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="comments")
 
+    @classmethod
+    def validate(cls, title, text):
+        errors = {}
+
+        if not title or title.strip() == "":
+            errors["title"] = "El título es requerido"
+
+        if not text or text.strip() == "":
+            errors["text"] = "El texto es requerido"
+
+        return errors
+
+    @classmethod
+    def new(cls, title, text, user, event):
+        errors = cls.validate(title, text)
+
+        if errors:
+            return False, errors
+
+        cls.objects.create(
+            title=title.strip(),
+            text=text.strip(),
+            user=user,
+            event=event
+        )
+
+        return True, None
+
+    def update(self, title, text):
+        self.title = title.strip() if title else self.title
+        self.text = text.strip() if text else self.text
+        self.save()
+
+class Venue(models.Model):
+    name = models.CharField(max_length=255)
+    address = models.CharField(max_length=255, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    capacity = models.IntegerField(blank=True, null=True)  # Cambiar a IntegerField
+    contact = models.CharField(max_length=100, blank=True, null=True)
+
+    def __str__(self):
+        return self.name
+
+
+class Ticket(models.Model):
+    buy_date = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tickets")
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="tickets")
+    ticket_code = models.CharField(max_length=100, unique=True)
+    quantity = models.IntegerField(default=1)
+    type = models.CharField(max_length=50, choices=[('general', 'General'), ('vip', 'VIP')], default='general')
+
+    @classmethod
+    def validate(cls, ticket_code, quantity):
+        errors = {}
+
+        if ticket_code is None or ticket_code == "":
+            errors["ticket_code"] = "El código de entrada es requerido"
+
+        if quantity is None or quantity <= 0:
+            errors["quantity"] = "La cantidad debe ser mayor a 0"
+
+        return errors
+
+    @classmethod
+    def new(cls, ticket_code, quantity, user, event):
+        errors = cls.validate(ticket_code, quantity)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+
+        Ticket.objects.create(
+            ticket_code=ticket_code,
+            quantity=quantity,
+            user=user,
+            event=event
+        )
+        return True, None
+
+    def update(self, ticket_code, quantity):
+        self.ticket_code = ticket_code or self.ticket_code
+        self.quantity = quantity or self.quantity
+
+        self.save()
+
+class Rating(models.Model):
+    title = models.CharField(max_length=100)
+    text = models.TextField()
+    rating = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ratings")
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="ratings")
+
+    @classmethod
+    def validate(cls, rating,title):
+        errors = {}
+
+        if rating is None:
+            errors["rating"] = "La calificación es requerida"
+        elif rating < 1 or rating > 5:
+            errors["rating"] = "La calificación debe estar entre 1 y 5"
+
+        if title is None or title.strip() == "":
+            errors["title"] = "El título es requerido"
+
+
+
+        return errors
+
+    @classmethod
+    def new(cls, title, text, rating, user, event):
+        errors = cls.validate(rating, title)
+
+        if errors:
+            return False, errors
+
+        cls.objects.create(
+            title=title,
+            text=text,
+            rating=rating,
+            user=user,
+            event=event
+        )
+
+        return True, None
+
+    def update(self, rating, title, text):
+        self.rating = rating if rating is not None else self.rating
+        self.title = title.strip() if title else self.title
+        self.text = text.strip() if text else self.text
+        self.save()
 class RefundRequest(models.Model):
     approved = models.BooleanField(default=False)
     approval_date = models.DateTimeField(null=True, blank=True)

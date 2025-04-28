@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{% if venue %}Editar Locación{% else %}Crear Locación{% endif %}</h1>
+    </div>
+
+    {% if errors %}
+    <div class="alert alert-danger">
+        <ul>
+            {% for error in errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <form method="post" class="card p-4 shadow-sm">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="name" class="form-label">Nombre</label>
+            <input type="text" class="form-control" id="name" name="name" value="{{ venue.name|default:'' }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="address" class="form-label">Dirección</label>
+            <input type="text" class="form-control" id="address" name="address" value="{{ venue.address|default:'' }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="city" class="form-label">Ciudad</label>
+            <input type="text" class="form-control" id="city" name="city" value="{{ venue.city|default:'' }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="capacity" class="form-label">Capacidad</label>
+            <input type="number" class="form-control" id="capacity" name="capacity" value="{{ venue.capacity|default:'' }}" required>
+        </div>
+        <div class="mb-3">
+            <label for="contact" class="form-label">Contacto</label>
+            <input type="text" class="form-control" id="contact" name="contact" value="{{ venue.contact|default:'' }}" required>
+        </div>
+
+        <div class="text-end">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-circle me-2"></i> {% if venue %}Guardar Cambios{% else %}Guardar{% endif %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

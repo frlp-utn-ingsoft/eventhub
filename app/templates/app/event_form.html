@@ -17,6 +17,9 @@
                     <form action="{% url 'event_form' %}" method="POST">
                         {% csrf_token %}
                         <div class="vstack gap-3">
+                            {% if event.id %}
+                            <input type="hidden" name="id" value="{{ event.id }}">
+                            {% endif %}
                             <div>
                                 <label for="title" class="form-label">Título del Evento</label>
                                 <input class="form-control"
@@ -53,7 +56,7 @@
                                         id="time"
                                         required=""
                                         type="time"
-                                        value="{{ event.scheduled_at|date:'g:i'}}"
+                                        value="{% if event.scheduled_at %}{{ event.scheduled_at|date:'H:i' }}{% endif %}"
                                         name="time" />
                                 </div>
                             </div>
@@ -72,9 +75,28 @@
                                     {% endfor %}
                                 </select>
                             </div>
-                            
+
+                            <!-- Dropdown para seleccionar locación -->
                             <div>
-                                <button type="submit" class="btn btn-primary">Crear Evento</button>
+                                <label for="venue" class="form-label">Locación</label>
+                                <select class="form-select" id="venue" name="venue" required>
+                                    <option value="">Selecciona una locación</option>
+                                    {% for v in venues %}
+                                    <option value="{{ v.id }}"
+                                        {% if event.venue and event.venue.id == v.id %}
+                                            selected
+                                        {% endif %}
+                                    >
+                                        {{ v.name }} - {{ v.city }} ({{ v.capacity }} personas)
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-2"></i> {% if event.id %}Guardar Cambios{% else %}Crear Evento{% endif %}
+                                </button>
                             </div>
                         </div>
                     </form>

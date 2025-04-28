@@ -23,6 +23,7 @@
                 <th>Descripción</th>
                 <th>Fecha</th>
                 <th>Categorias</th>
+                <th>Locación</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -32,13 +33,14 @@
                     <td>{{ event.title }}</td>
                     <td>{{ event.description }}</td>
                     <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
-                    <td> {{event.category.name}}
+                    <td> {{event.category.name}}</td>
+                    <td>{{ event.venue.name }}</td>
                     <td>
                         <div class="hstack gap-1">
                             <a href="{% url 'event_detail' event.id %}"
-                               class="btn btn-sm btn-outline-primary"
-                               aria-label="Ver detalle"
-                               title="Ver detalle">
+                                class="btn btn-sm btn-outline-primary"
+                                aria-label="Ver detalle"
+                                title="Ver detalle">
                                 <i class="bi bi-eye" aria-hidden="true"></i>
                             </a>
                             {% if user_is_organizer %}
@@ -48,6 +50,13 @@
                                     title="Editar">
                                     <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
+                                <a href="{% url 'tickets' event.id %}"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    aria-label="ticket"
+                                    title="ticket">
+                                    <i class="bi bi-ticket" aria-hidden="true"></i>
+                                </a>
+
                                 <form action="{% url 'event_delete' event.id %}" method="POST">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-danger"

@@ -27,6 +27,7 @@
         <div class="container-fluid">
             <a class="navbar-brand" href="/">EventHub</a>
 
+
             <div class="hstack gap-2">
                 {% if user.is_authenticated %}
                     <button
@@ -50,6 +51,17 @@
                             {% if user_is_organizer %}
                                 <li class="nav-item">
                                     {% navbar_link 'categorias' 'Categorias' %}
+                                </li>
+                                <li class="nav-item">
+                                    {% navbar_link 'organizer_comments' 'Comentarios' %}
+
+                                <li class="nav-item">
+                                    {% navbar_link 'venue_list' 'Locaciones' %}
+                                </li>
+                            {% endif %}
+                            {%if not user_is_organizer %}
+                                <li class="nav-item">
+                                    {% navbar_link 'Mis_tickets' 'Tickets' %}
                                 </li>
                             {% endif %}
                             <li class="nav-item">
