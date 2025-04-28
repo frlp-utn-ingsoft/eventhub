@@ -304,3 +304,17 @@ def notification_detail(request, id):
         },
     )
 
+@login_required
+
+def notification_delete(request,id):
+    user = request.user
+    if not user.is_organizer:
+        return redirect("notification")
+
+    if request.method == "POST":
+        notification = get_object_or_404(Notification, pk=id)
+        notification.delete()
+        return redirect("notification")
+
+    return redirect("notification")
+
