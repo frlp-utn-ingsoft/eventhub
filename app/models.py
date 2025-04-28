@@ -73,3 +73,65 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+
+class Location(models.Model):
+    name = models.CharField(max_length=200)
+    address = models.CharField(max_length=300)
+    city = models.CharField(max_length=100)
+    capacity = models.PositiveIntegerField()
+    contact = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.city}"
+
+    @classmethod
+    def validate(cls, name, address, city, capacity, contact):
+        errors = {}
+
+        if not name:
+            errors["name"] = "El nombre es requerido."
+        
+        if not address:
+            errors["address"] = "La dirección es requerida."
+        
+        if not city:
+            errors["city"] = "La ciudad es requerida."
+        
+        if capacity is None:
+            errors["capacity"] = "La capacidad es requerida."
+        elif capacity <= 0:
+            errors["capacity"] = "La capacidad debe ser un número positivo."
+        
+        if not contact:
+            errors["contact"] = "El contacto es requerido."
+
+        return errors
+
+    @classmethod
+    def new(cls, name, address, city, capacity, contact):
+        errors = cls.validate(name, address, city, capacity, contact)
+
+        if errors:
+            return False, errors
+
+        Location.objects.create(
+            name=name,
+            address=address,
+            city=city,
+            capacity=capacity,
+            contact=contact,
+        )
+
+        return True, None
+
+    def update(self, name=None, address=None, city=None, capacity=None, contact=None):
+        self.name = name or self.name
+        self.address = address or self.address
+        self.city = city or self.city
+        self.capacity = capacity if capacity is not None else self.capacity
+        self.contact = contact or self.contact
+
+        self.save()
