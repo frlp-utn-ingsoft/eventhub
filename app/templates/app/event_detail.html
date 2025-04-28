@@ -68,21 +68,6 @@
         <div class="card-body">
             <h3 class="card-title">Calificaciones y Reseñas ({{ event.ratings.count }})</h3>
             <hr>
-            {% if messages %}
-            {% for message in messages %}
-            <div class="alert 
-            {% if message.tags == 'error' %}alert-danger
-            {% elif message.tags == 'success' %}alert-success
-            {% elif message.tags == 'warning' %}alert-warning
-            {% elif message.tags == 'info' %}alert-info
-            {% else %}alert-primary
-            {% endif %}
-            alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-            </div>
-            {% endfor %}
-            {% endif %}
 
             <div class="rating-list">
                 {% for rating in ratings %}
@@ -218,60 +203,42 @@
         </div>
     </div>
 
-
-    {% if request.user != event.organizer %}
-    <div class="card mt-4">
-        <div class="card-body">
-            <h5 class="card-title" id="form-title">Agregar un Comentario</h5> 
-            {% if user.is_authenticated%}
-                {% if errors %}
-                    <div class="alert alert-danger">
-                        {% for field, error_list in errors.items %}
-                            {% for error in error_list %}
-                                <p>{{ error }}</p>
-                            {% endfor %}
-                        {% endfor %}
-    
-    
     {% if request.user != event.organizer %}
     <div class="card mt-4">
         <div class="card-body">
             <h5 class="card-title" id="form-title">Agregar un Comentario</h5>
             <!-- le ponemos ID para poder cambiarlo -->
-            {% if user.is_authenticated%}
-            {% if errors %}
-            <div class="alert alert-danger">
-                {% for field, error_list in errors.items %}
-                {% for error in error_list %}
-                <p>{{ error }}</p>
-                {% endfor %}
-                {% endfor %}
-            </div>
-            {% endif %}
-            <form method="post" action="{% url 'crear_comentario' event_id=event.id %}" id="formulario-comentario">
-                {% csrf_token %}
-                <input type="hidden" id="comentario_id" name="comentario_id">
-                <div class="mb-3">
-                    <input type="text" name="title" class="form-control" placeholder="Título"
-                        value="{{ title|default:'' }}" required>
+            {% if user.is_authenticated %}
+                {% if errors %}
+                <div class="alert alert-danger">
+                    {% for field, error_list in errors.items %}
+                        {% for error in error_list %}
+                        <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
                 </div>
-                <div class="mb-3">
-                    <textarea name="text" class="form-control" rows="3" placeholder="Escribe tu comentario..."
-                        required>{{ text|default:'' }}</textarea>
-                </div>
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-primary" id="boton-submit">Publicar</button>
-                    <button type="button" class="btn btn-secondary d-none" id="boton-cancelar"
-                        onclick="cancelarEdicion()">Cancelar</button>
-                </div>
-            </form>
+                {% endif %}
+                <form method="post" action="{% url 'crear_comentario' event_id=event.id %}" id="formulario-comentario">
+                    {% csrf_token %}
+                    <input type="hidden" id="comentario_id" name="comentario_id">
+                    <div class="mb-3">
+                        <input type="text" name="title" class="form-control" placeholder="Título"
+                            value="{{ title|default:'' }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <textarea name="text" class="form-control" rows="3" placeholder="Escribe tu comentario..."
+                            required>{{ text|default:'' }}</textarea>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary" id="boton-submit">Publicar</button>
+                        <button type="button" class="btn btn-secondary d-none" id="boton-cancelar"
+                            onclick="cancelarEdicion()">Cancelar</button>
+                    </div>
+                </form>
             {% endif %}
         </div>
     </div>
     {% endif %}
-
-
-
 
     <div class="card mt-4">
         <div class="card-body">
@@ -287,8 +254,7 @@
                             <span class="badge bg-success ms-2">Organizador</span>
                             {% endif %}
                         </div>
-                        {% if request.user == comment.user or event.organizer == request.user or
-                        request.user.is_superuser %}
+                        {% if request.user == comment.user or event.organizer == request.user or request.user.is_superuser %}
                         <div class="d-flex gap-2">
                             <a href="{% url 'delete_comment' event_id=event.id pk=comment.id %}"
                                 class="btn btn-sm btn-outline-danger" title="Eliminar" type="submit"
@@ -303,7 +269,7 @@
                             </a>
                             {% endif %}
                         </div>
-
+                        {% endif %}
                     </div>
 
                     <h6 class="mt-2">{{ comment.title }}</h6>
