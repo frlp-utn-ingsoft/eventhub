@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Tickets{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Tickets</h1>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Evento</th>
+                <th>Usuario</th>
+                <th>Fecha Compra</th>
+                <th>Tipo</th>
+                <th>Codigo</th>
+                <th>Cantidad</th>
+                <th>Precio</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket in tickets%}
+                <tr>
+                    <td>{{ ticket.event.title }}</td>
+                    <td>{{ ticket.user.username }}</td>
+                    <td>{{ ticket.buy_date|date:"d b Y, H:i" }}</td>
+                    <td>{{ ticket.type }}</td>
+                    <td>{{ ticket.ticket_code }}</td>
+                    <td>{{ ticket.quantity }}</td>
+                    <!---si el type es general muestra valor 50, si es vip 100-->
+                    <td>
+                        {% if ticket.type == "general" %}
+                            50
+                        {% elif ticket.type == "vip" %}
+                            100
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </td>
+                    
+                    <td>
+                        <div class="hstack gap-1">
+                            <a>
+                                <a href="{% url 'event_detail' ticket.event.id %}"
+                                class="btn btn-sm btn-outline-primary"
+                                aria-label="Ver detalle"
+                                title="Ver detalle">
+                                <i class="bi bi-eye" aria-hidden="true"></i>
+                            </a>
+                            <form action="{% url 'ticket_delete' event_id=ticket.event.id ticket_id=ticket.id %}" method="POST">
+                                {% csrf_token %}
+                                <button class="btn btn-sm btn-outline-danger"
+                                        title="Eliminar"
+                                        type="submit"
+                                        aria-label="Eliminar"
+                                        titile="Eliminar">
+                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                </button>
+                            </form>
+                        
+                        </div>
+                        
+                        
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">No hay tickets</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

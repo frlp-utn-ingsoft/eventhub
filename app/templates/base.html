@@ -56,7 +56,12 @@
                                     {% navbar_link 'organizer_comments' 'Comentarios' %}
 
                                 <li class="nav-item">
-                                   {% navbar_link 'venue_list' 'Locaciones' %}
+                                    {% navbar_link 'venue_list' 'Locaciones' %}
+                                </li>
+                            {% endif %}
+                            {%if not user_is_organizer %}
+                                <li class="nav-item">
+                                    {% navbar_link 'Mis_tickets' 'Tickets' %}
                                 </li>
                             {% endif %}
                             <li class="nav-item">

@@ -528,3 +528,8 @@ def ticket_delete(request,event_id, ticket_id):
         return redirect('tickets', event_id=event_id)
 
     return render(request, 'app/tickets', {'ticket': ticket})
+
+@login_required
+def mis_tickets(request):
+    tickets = Ticket.objects.filter(user=request.user).order_by('-buy_date')
+    return render(request, 'app/mis_tickets.html', {'tickets': tickets})
