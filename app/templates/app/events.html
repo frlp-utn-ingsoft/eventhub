@@ -39,6 +39,15 @@
                                title="Ver detalle">
                                 <i class="bi bi-eye" aria-hidden="true"></i>
                             </a>
+
+                            <!-- Botón para comprar un ticket -->
+                            <a href="{% url 'ticket_create' event.id %}" 
+                               class="btn btn-sm btn-outline-success" 
+                               aria-label="Comprar Ticket" 
+                               title="Comprar Ticket">
+                                <i class="bi bi-cart-plus" aria-hidden="true"></i> Comprar Ticket
+                            </a>
+                            
                             {% if user_is_organizer %}
                                 <a href="{% url 'event_edit' event.id %}"
                                     class="btn btn-sm btn-outline-secondary"
