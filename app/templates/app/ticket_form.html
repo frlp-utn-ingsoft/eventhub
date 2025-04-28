@@ -65,22 +65,16 @@
                                 <div class="card bg-light mb-3">
                                     <div class="card-body">
                                         <div class="mb-3">
-                                            <label for="{{ form.card_name.id_for_label }}" class="form-label">Nombre en la tarjeta</label>
-                                            {{ form.card_name }}
-                                            {% if form.card_name.errors %}
-                                                <div class="text-danger">{{ form.card_name.errors }}</div>
-                                            {% endif %}
-                                        </div>
-                                        <div class="mb-3">
                                             <label for="{{ form.card_number.id_for_label }}" class="form-label">Número de tarjeta</label>
                                             {{ form.card_number }}
                                             {% if form.card_number.errors %}
                                                 <div class="text-danger">{{ form.card_number.errors }}</div>
                                             {% endif %}
                                         </div>
+
                                         <div class="row mb-3">
                                             <div class="col-md-7">
-                                                <label for="{{ form.expiration_date.id_for_label }}" class="form-label">Fecha de expiración (MM/AA)</label>
+                                                <label for="{{ form.expiration_date.id_for_label }}" class="form-label">Fecha de expiración</label>
                                                 {{ form.expiration_date }}
                                                 {% if form.expiration_date.errors %}
                                                     <div class="text-danger">{{ form.expiration_date.errors }}</div>
@@ -94,6 +88,16 @@
                                                 {% endif %}
                                             </div>
                                         </div>
+
+                                        <div class="mb-3">
+                                            <label for="{{ form.card_name.id_for_label }}" class="form-label">Nombre en la tarjeta</label>
+                                            {{ form.card_name }}
+                                            {% if form.card_name.errors %}
+                                                <div class="text-danger">{{ form.card_name.errors }}</div>
+                                            {% endif %}
+                                        </div>
+                                        
+                                        
                                     </div> <!-- cierre de card-body -->
                                 </div>
                                 <div class="form-check mb-3">
@@ -109,7 +113,7 @@
                             </form>
                         </div>
                         <div class="card-footer text-start">
-                            <a href="{% url 'events' %}" class="btn btn-secondary">Volver</a>
+                            <a href="{% url 'events' %}" class="btn btn-secondary">Volver a Eventos</a>
                         </div>
                     </div>
                 </div>
@@ -151,10 +155,10 @@
                         </div>
                         <div class="card-body">
                             <ul class="list-unstyled">
-                                <li><i class="bi bi-info-circle-fill text-primary me-2"></i> Las entradas son personales e intransferibles.</li>
-                                <li><i class="bi bi-info-circle-fill text-primary me-2"></i> Puedes solicitar un reembolso hasta 48 horas antes del evento.</li>
-                                <li><i class="bi bi-info-circle-fill text-primary me-2"></i> Recibirás tu entrada en tu correo electrónico.</li>
-                                <li><i class="bi bi-info-circle-fill text-primary me-2"></i> Presenta tu entrada digital o impresa el día del evento.</li>
+                                <li><i class="bi bi-info-circle text-primary"></i> Las entradas son personales e intransferibles.</li>
+                                <li><i class="bi bi-info-circle text-primary"></i> Puedes solicitar un reembolso hasta 48 horas antes del evento.</li>
+                                <li><i class="bi bi-info-circle text-primary"></i> Recibirás tu entrada en tu correo electrónico.</li>
+                                <li><i class="bi bi-info-circle text-primary"></i> Presenta tu entrada digital o impresa el día del evento.</li>
                             </ul>
                         </div>
                     </div>
