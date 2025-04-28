@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card p-4 shadow-sm">
+        <h2 class="mb-4">Crear Nueva Ubicación</h2>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label">Nombre de la ubicación *</label>
+                <input type="text" name="name" class="form-control" placeholder="Ej: Estadio Nacional" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Dirección *</label>
+                <input type="text" name="address" class="form-control" placeholder="Ej: Av. Grecia 2001" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Ciudad *</label>
+                <input type="text" name="city" class="form-control" placeholder="Ej: Santiago" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Capacidad (número de personas) *</label>
+                <input type="number" name="capacity" class="form-control" placeholder="Ej: 1000" required min="1">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Contacto *</label>
+                <textarea name="contact" class="form-control" placeholder="Describe las características principales de la ubicación..." rows="3" required></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Crear Ubicación</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

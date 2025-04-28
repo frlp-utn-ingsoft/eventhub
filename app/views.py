@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+from .models import Event, User, Location
 
 
 def register(request):
@@ -125,3 +125,40 @@ def event_form(request, id=None):
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
+
+
+def create_location(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        address = request.POST.get('address')
+        city = request.POST.get('city')
+        capacity = request.POST.get('capacity')
+        contact = request.POST.get('contact')
+
+        # Validar datos
+        errors = Location.validate(name, address, city, int(capacity) if capacity else None, contact)
+
+        if errors:
+            # Si hay errores, renderizamos el formulario otra vez, mostrando errores
+            return render(request, 'locations/create_location.html', {
+                'errors': errors,
+                'form_data': request.POST,
+            })
+
+        # Si no hay errores, creamos la Location
+        Location.new(name, address, city, int(capacity), contact)
+        return redirect('events')  # Redirigimos a una lista o donde quieras
+
+    return render(request, 'locations/create_location.html')
+
+
+
+    if request.method == "POST":
+        name = request.POST.get("nombre")
+        address = request.POST.get("direccion")
+        city = request.POST.get("city")
+        capacity = request.POST.get("capacity")
+        contact = request.POST.get("contact")
+        Location.new(name,address,city,capacity,contact)
+        return redirect("events")
+    return render(request, "locations/location_form.html")
