@@ -3,8 +3,9 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.db.models import Count
 
-from .models import Event, User
+from .models import Event, User, Category
 
 
 def register(request):
@@ -95,33 +96,140 @@ def event_form(request, id=None):
     if not user.is_organizer:
         return redirect("events")
 
+    categories = Category.objects.filter(is_active=True)                        # ADD ----- crud-category
+
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
+        category_ids = request.POST.getlist("categories")                       # ADD ----- crud-category
 
+        # Convertir fecha y hora
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
-
         scheduled_at = timezone.make_aware(
             datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
         )
 
-        if id is None:
-            Event.new(title, description, scheduled_at, request.user)
+        # Buscar las categorías seleccionadas
+        selected_categories = Category.objects.filter(id__in=category_ids)
+
+        if id is None:                                                                                                  # ADD ----- crud-category
+            # Crear nuevo evento
+            success, errors = Event.new(title, description, scheduled_at, user, selected_categories)
+
+            if not success:
+                # Si hay errores, volver al formulario
+                return render(
+                    request,
+                    "app/event_form.html",
+                    {
+                        "event": {},
+                        "categories": categories,
+                        "selected_categories": category_ids,
+                        "errors": errors,
+                        "user_is_organizer": user.is_organizer,
+                    },
+                )
         else:
+            # Editar evento existente
             event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user)
+            event.update(title, description, scheduled_at, user, selected_categories)                   # ADD ----- crud-category
 
         return redirect("events")
 
     event = {}
+    selected_categories = []
     if id is not None:
         event = get_object_or_404(Event, pk=id)
+        selected_categories = event.categories.values_list('id', flat=True)
+
+    return render(                                                                                      # ADD ----- crud-category
+        request,
+        "app/event_form.html",
+        {
+            "event": event,
+            "categories": categories,
+            "selected_categories": selected_categories,             
+            "user_is_organizer": user.is_organizer,
+        },
+    )
+
+################### crud-category ###################
+@login_required
+def categories(request):
+    # Contamos los eventos por categoría usando annotate
+    categories = Category.objects.annotate(event_count=Count('events')).order_by("name")
 
     return render(
         request,
-        "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer},
+        "app/category/categories.html",
+        {
+            "categories": categories,  
+            "user_is_organizer": request.user.is_organizer,
+        },
+    )
+
+
+
+@login_required
+def category_detail(request, id):
+    category = get_object_or_404(Category, pk=id)
+    return render(
+        request,
+        "app/category/category_detail.html",
+        {"category": category, "user_is_organizer": request.user.is_organizer},
+    )
+
+@login_required
+def category_delete(request, id):
+    user = request.user
+    if not user.is_organizer:
+        return redirect("categories")
+
+    if request.method == "POST":
+        category = get_object_or_404(Category, pk=id)
+        category.delete()
+        return redirect("categories")
+
+    return redirect("categories")
+
+@login_required
+def category_form(request, id=None):                    # En la misma def esta el crear y editar.
+    user = request.user
+
+    if not user.is_organizer:
+        return redirect("categories")
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+        description = request.POST.get("description")
+        is_active = request.POST.get("is_active") == "on"
+
+        if id is None:
+            # Crear
+            Category.objects.create(
+                name=name,
+                description=description,
+                is_active=is_active
+            )
+        else:
+            # Editar
+            category = get_object_or_404(Category, pk=id)
+            category.name = name
+            category.description = description
+            category.is_active = is_active
+            category.save()
+
+        return redirect("categories")
+
+    category = {}
+    if id is not None:
+        category = get_object_or_404(Category, pk=id)
+
+    return render(
+        request,
+        "app/category/category_form.html",
+        {"category": category, "user_is_organizer": request.user.is_organizer},
     )

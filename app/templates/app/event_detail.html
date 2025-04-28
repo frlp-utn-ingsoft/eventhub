@@ -6,14 +6,15 @@
         <div class="d-flex justify-content-between align-items-center">
             <h1>{{ event.title }}</h1>
             <div>
-            {% if user_is_organizer %}
-                <a
-                    href="{% url 'event_edit' event.id %}"
-                    class="btn btn-outline-primary me-2"
-                >
-                    <i class="bi bi-pencil me-1"></i>Editar
-                </a>
-            {% endif %}
+                {% if user_is_organizer %}
+                    <a
+                        href="{% url 'event_edit' event.id %}"
+                        class="btn btn-outline-primary me-2"
+                    >
+                        <i class="bi bi-pencil me-1"></i>Editar
+                    </a>
+                {% endif %}
+            </div>
         </div>
     </div>
     <div class="row">
@@ -38,6 +39,23 @@
                         <div>
                             <h6 class="mb-0">Organizador</h6>
                             <p class="mb-0">{{ event.organizer }}</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-tags text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Categoría</h6>
+                            <p class="mb-0">
+                                {% if event.categories.all %}
+                                    {% for category in event.categories.all %}
+                                        <span class="badge bg-light text-dark">{{ category.name }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    Sin categoría
+                                {% endif %}
+                            </p>
                         </div>
                     </div>
                 </div>

@@ -14,7 +14,7 @@
 
             <div class="card">
                 <div class="card-body">
-                    <form action="{% url 'event_form' %}" method="POST">
+                    <form action="{% if event.id %}{% url 'event_edit' event.id %}{% else %}{% url 'event_form' %}{% endif %}" method="POST">
                         {% csrf_token %}
                         <div class="vstack gap-3">
                             <div>
@@ -26,6 +26,7 @@
                                     value="{{ event.title }}"
                                     name="title" />
                             </div>
+
                             <div>
                                 <label for="description" class="form-label">Descripción</label>
                                 <textarea
@@ -35,6 +36,7 @@
                                     rows="4"
                                     required="">{{ event.description }}</textarea>
                             </div>
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <label for="date" class="form-label">Fecha</label>
@@ -53,12 +55,42 @@
                                         id="time"
                                         required=""
                                         type="time"
-                                        value="{{ event.scheduled_at|date:'g:i'}}"
+                                        value="{{ event.scheduled_at|date:'H:i'}}"
                                         name="time" />
                                 </div>
                             </div>
+
                             <div>
-                                <button type="submit" class="btn btn-primary">Crear Evento</button>
+                                <label for="categories" class="form-label">Categorías</label>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {% for cat in categories %}
+                                                <div class="form-check">
+                                                    <input
+                                                        class="form-check-input"
+                                                        type="checkbox"
+                                                        name="categories"
+                                                        id="category_{{ cat.id }}"
+                                                        value="{{ cat.id }}"
+                                                        {% if cat.id in selected_categories %}checked{% endif %}>
+                                                    <label class="form-check-label ms-1" for="category_{{ cat.id }}">
+                                                        <span class="badge bg-light text-dark">{{ cat.name }}</span>
+                                                    </label>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if event.id %}
+                                        Editar Evento
+                                    {% else %}
+                                        Crear Evento
+                                    {% endif %}
+                                </button>
                             </div>
                         </div>
                     </form>
