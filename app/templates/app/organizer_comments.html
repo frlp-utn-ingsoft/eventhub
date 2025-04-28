@@ -1,89 +1,92 @@
 {% extends "base.html" %}
 
-{% block title %} Comentarios {% endblock %}
+
+{% block title %}Comentarios{% endblock %}
+
 
 {% block content %}
-<h1>Comentarios</h1>
-
-    <table class="table table-bordered mt-4">
-        <thead class="table-light">
-            <tr>
-                <th>Evento</th>
-                <th>Usuario</th>
-                <th>Comentario</th>
-                <th>Fecha</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for comment in comments %}
-                <tr>
-                    <td>
-                        <a href="#">{{ comment.event.title }}</a>
-                    </td>
-                    <td>{{ comment.user.get_full_name|default:comment.user.username }}</td>
-                    <td>{{ comment.text|truncatechars:50 }}</td>
-                    <td>{{ comment.created_at|date:"d M Y, H:i" }}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary"
-                            aria-label="Ver detalle"
-                            title="Ver detalle"
-                            data-bs-toggle="modal"
-                            data-bs-target="#commentModal"
-                            data-comment="{{ comment.text|escapejs }}">
-                            <i class="bi bi-eye" aria-hidden="true"></i>
-                        </button>
-
-                        <form method="POST" action="{% url 'organizer_delete_comment' comment.pk %}" style="display: inline;">
-                            {% csrf_token %}
-                            <button class="btn btn-sm btn-outline-danger"
-                                title="Eliminar"
-                                type="submit"
-                                aria-label="Eliminar">
-                                <i class="bi bi-trash" aria-hidden="true"></i>
-                            </button>
-                        </form>
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="5" class="text-center">No hay comentarios para tus eventos aún.</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="container">
+   <div class="d-flex justify-content-between align-items-center mb-4">
+       <h1>Comentarios</h1>
+   </div>
 
 
+   <table class="table">
+       <thead>
+           <tr>
+               <th>Evento</th>
+               <th>Usuario</th>
+               <th>Comentario</th>
+               <th>Fecha</th>
+               <th>Acciones</th>
+           </tr>
+       </thead>
+       <tbody>
+           {% for comment in comments %}
+               <tr>
+                   <td >{{ comment.event.title }}</td>
+                   <td>{{ comment.user.get_full_name|default:comment.user.username }}</td>
+                   <td>{{ comment.text|truncatechars:50 }}</td>
+                   <td>{{ comment.created_at|date:"d M Y, H:i" }}</td>
+                   <td>
+                       <div class="hstack gap-1">
+                           <button class="btn btn-sm btn-outline-primary"
+                                   aria-label="Ver detalle"
+                                   title="Ver detalle"
+                                   data-bs-toggle="modal"
+                                   data-bs-target="#commentModal"
+                                   data-comment="{{ comment.text|escapejs }}">
+                               <i class="bi bi-eye" aria-hidden="true"></i>
+                           </button>
 
 
+                           <form method="POST" action="{% url 'organizer_delete_comment' comment.pk %}" class="d-inline">
+                               {% csrf_token %}
+                               <button class="btn btn-sm btn-outline-danger"
+                                       type="submit"
+                                       title="Eliminar"
+                                       aria-label="Eliminar">
+                                   <i class="bi bi-trash" aria-hidden="true"></i>
+                               </button>
+                           </form>
+                       </div>
+                   </td>
+               </tr>
+           {% empty %}
+               <tr>
+                   <td colspan="5" class="text-center">No hay comentarios para tus eventos aún.</td>
+               </tr>
+           {% endfor %}
+       </tbody>
+   </table>
+</div>
 
 
 <!-- Modal -->
 <div class="modal fade" id="commentModal" tabindex="-1" aria-labelledby="commentModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="commentModalLabel">Comentario completo</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-        </div>
-        <div class="modal-body text-break" id="modalCommentText" style="max-height: 300px; overflow-y: auto;">
-          <!-- Aquí se mostrará el comentario -->
-        </div>
-      </div>
-    </div>
-  </div>
-  
+   <div class="modal-dialog">
+     <div class="modal-content">
+       <div class="modal-header">
+         <h5 class="modal-title" id="commentModalLabel">Comentario completo</h5>
+         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+       </div>
+       <div class="modal-body text-break" id="modalCommentText" style="max-height: 300px; overflow-y: auto;">
+         <!-- Aquí se mostrará el comentario -->
+       </div>
+     </div>
+   </div>
+</div>
 
-  <script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const commentModal = document.getElementById('commentModal');
-        commentModal.addEventListener('show.bs.modal', function (event) {
-            const button = event.relatedTarget;
-            const commentText = button.getAttribute('data-comment');
-            const modalBody = commentModal.querySelector('#modalCommentText');
-            modalBody.textContent = commentText;
-        });
-    });
-    </script>
-    
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+   const commentModal = document.getElementById('commentModal');
+   commentModal.addEventListener('show.bs.modal', function (event) {
+       const button = event.relatedTarget;
+       const commentText = button.getAttribute('data-comment');
+       const modalBody = commentModal.querySelector('#modalCommentText');
+       modalBody.textContent = commentText;
+   });
+});
+</script>
 {% endblock %}
