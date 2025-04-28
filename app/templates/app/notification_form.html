@@ -2,21 +2,34 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-4">Crear Notificación</h2>
+    <h2 class="mb-4">{% if notification %}Editar{% else %}Crear{% endif %} Notificación</h2>
     
     <div class="card">
         <div class="card-body">
+            {% if errors %}
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        {% for error in errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            
             <form method="post">
                 {% csrf_token %}
                 
                 <div class="mb-3">
                     <label for="title" class="form-label">Título de la notificación *</label>
-                    <input type="text" class="form-control" id="title" name="title" placeholder="Ej: Cambio de horario del evento" required>
+                    <input type="text" class="form-control" id="title" name="title" 
+                           value="{% if notification %}{{ notification.title }}{% endif %}"
+                           placeholder="Ej: Cambio de horario del evento" required>
                 </div>
                 
                 <div class="mb-3">
                     <label for="message" class="form-label">Mensaje *</label>
-                    <textarea class="form-control" id="message" name="message" rows="4" placeholder="Escribe el contenido de la notificación..." required></textarea>
+                    <textarea class="form-control" id="message" name="message" rows="4" 
+                              placeholder="Escribe el contenido de la notificación..." required>{% if notification %}{{ notification.message }}{% endif %}</textarea>
                 </div>
                 
                 <div class="mb-3">
@@ -24,7 +37,9 @@
                     <select class="form-select" id="event" name="event" required>
                         <option selected disabled value="">Selecciona un evento</option>
                         {% for event in events %}
-                            <option value="{{ event.id }}">{{ event.title }}</option>
+                            <option value="{{ event.id }}" {% if notification and notification.event.id == event.id %}selected{% endif %}>
+                                {{ event.title }}
+                            </option>
                         {% endfor %}
                     </select>
                 </div>
@@ -51,9 +66,13 @@
                           id="users" 
                           name="users" 
                           required
+                          
                         >
                           {% for user in users %}
-                            <option value="{{ user.id }}">{{ user.username }}</option>
+                            <option value="{{ user.id }}" 
+                              {% if notification and user in notification.users.all %}selected{% endif %}>
+                              {{ user.username }}
+                            </option>
                           {% endfor %}
                         </select>
                       </div>
@@ -62,14 +81,16 @@
                 <div class="mb-3">
                     <label for="priority" class="form-label">Prioridad</label>
                     <select class="form-select" id="priority" name="priority">
-                        <option value="LOW" selected>Baja</option>
-                        <option value="MEDIUM">Media</option>
-                        <option value="HIGH">Alta</option>
+                        <option value="LOW" {% if notification and notification.priority == 'LOW' %}selected{% endif %}>Baja</option>
+                        <option value="MEDIUM" {% if notification and notification.priority == 'MEDIUM' %}selected{% endif %}>Media</option>
+                        <option value="HIGH" {% if notification and notification.priority == 'HIGH' %}selected{% endif %}>Alta</option>
                     </select>
                 </div>
                 
                 <div class="text-end">
-                    <button type="submit" class="btn btn-primary">Enviar Notificación</button>
+                    <button type="submit" class="btn btn-primary">
+                        {% if notification %}Actualizar{% else %}Enviar{% endif %} Notificación
+                    </button>
                 </div>
             </form>
         </div>
