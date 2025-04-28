@@ -101,13 +101,14 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, categories=None):
+    def new(cls, title, description, scheduled_at, organizer, categories=None, venue=None):
         # Validaciones y creación
         event = cls.objects.create(
             title=title,
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
+            venue=venue
         )
         if categories:
             event.categories.set(categories)

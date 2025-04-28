@@ -14,7 +14,7 @@
                         </div>
                         <div class="card-body">
                             <p><strong>Código:</strong> {{ ticket.ticket_code }}</p>
-                            <p><strong>Fecha del evento:</strong> {{ ticket.event.date }}</p>
+                            <p><strong>Fecha del evento:</strong> {{ ticket.event.scheduled_at }}</p>
                             <p><strong>Tipo:</strong> {{ ticket.get_type_display }}</p>
                             <p><strong>Cantidad:</strong> {{ ticket.quantity }}</p>
                         </div>

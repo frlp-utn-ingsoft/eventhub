@@ -232,52 +232,56 @@ def event_form(request, id=None):
     if not user.is_organizer:
         return redirect("events")
 
+    # Obtener todos los venues disponibles
+    venues = Venue.objects.all()
+
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
         category_ids = request.POST.getlist('categories')  # Lista de IDs
+        venue_id = request.POST.get("venue")  # Obtener el venue seleccionado
 
         # Parsear fecha y hora
         year, month, day = date.split("-")
         hour, minutes = time.split(":")
-
         scheduled_at = timezone.make_aware(
             timezone.datetime(int(year), int(month), int(day), int(hour), int(minutes))
         )
 
+        # Crear o actualizar el evento
         if id is None:
             # Crear evento
-            success, event_or_errors = Event.new(title, description, scheduled_at, request.user, category_ids)
+            venue = get_object_or_404(Venue, pk=venue_id) if venue_id else Venue.objects.first()
+            success, event_or_errors = Event.new(title, description, scheduled_at, request.user, category_ids, venue)
             if not success:
                 errors = event_or_errors
-                # Puedes agregar lógica para mostrar errores al usuario
-                # Pero aquí simplemente continuamos
+                
         else:
-            # Actualizar evento existente
             event = get_object_or_404(Event, pk=id)
             event.update(title, description, scheduled_at, request.user)
-            # Actualizar categorías
             categories = Category.objects.filter(id__in=category_ids)
             event.categories.set(categories)
-            return redirect('event_detail', id=event.id)  # Cambia por tu URL
+            event.venue = get_object_or_404(Venue, pk=venue_id) if venue_id else Venue.objects.first()
+            event.save()
 
-        # Para crear nuevos eventos
-        # Después de crear, redireccionar
+            return redirect('event_detail', id=event.id)
+
         if success:
             return redirect('event_detail', id=event_or_errors.id)
 
-    # Si GET, pasar datos al formulario
+  
     event = None
     event_categories_ids = []
+    event_venue = None
     if id:
         event = get_object_or_404(Event, pk=id)
         event_categories_ids = list(event.categories.values_list('id', flat=True))
+        event_venue = event.venue 
     else:
         event = {}
 
-    # ... tu código previo ...
     categories = list(Category.objects.all())
 
     # Divide en 3 columnas
@@ -285,13 +289,14 @@ def event_form(request, id=None):
     per_column = math.ceil(total / 3)
     categories_chunks = [categories[i:i + per_column] for i in range(0, total, per_column)]
 
-    # Pasar los chunks al contexto
     context = {
         'event': event,
         'categories': categories,
         'categories_chunks': categories_chunks,
         'event_categories_ids': event_categories_ids,
         'user_is_organizer': user.is_organizer,
+        'venues': venues, 
+        'event_venue': event_venue, 
     }
 
     return render(request, 'app/event_form.html', context)
