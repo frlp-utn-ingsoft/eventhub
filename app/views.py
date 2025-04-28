@@ -433,3 +433,15 @@ def tickets(request, event_id):
         {"events": events, "user_is_organizer": request.user.is_organizer, "tickets": tickets},
     )
 
+
+@login_required
+def ticket_delete(request,event_id, ticket_id):
+    ticket = get_object_or_404(Ticket, pk=ticket_id)
+    event_id=event_id
+
+    if request.method == 'POST':
+        ticket.delete()
+        messages.success(request, "Ticket eliminado correctamente")
+        return redirect('tickets', event_id=event_id)
+
+    return render(request, 'app/tickets', {'ticket': ticket})
