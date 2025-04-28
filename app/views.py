@@ -87,9 +87,6 @@ def event_detail(request, id):
     todos_los_comentarios = Comment.objects.filter(event=event).order_by('-created_at')
     ratings = Rating.objects.filter(event=event).order_by('-created_at')
 
-
-    return render(request, "app/event_detail.html", {"event": event, "todos_los_comentarios": todos_los_comentarios,
-        "user_is_organizer": request.user.is_organizer,})
     return render(request, "app/event_detail.html", {"event": event, "todos_los_comentarios": todos_los_comentarios, "ratings": ratings, "user_is_organizer": request.user.is_organizer})
 
 
@@ -549,13 +546,14 @@ def mis_tickets(request):
 def rating_create(request, event_id):
     event = get_object_or_404(Event, id=event_id)
 
-    #debo validar que el usuario no califique el mismo evento mas de una vez
     if Rating.objects.filter(user=request.user, event=event).exists():
         messages.error(request, "Ya has calificado este evento")
         return redirect('event_detail', id=event_id)
     
-    # debo implementar cuando exista el modelo Ticket que solo se pueda hacer una reseña si el usuario tiene un ticket para el evento
-
+    if not Ticket.objects.filter(user=request.user, event=event).exists():
+        messages.error(request, "No puedes calificar un evento si no tienes un ticket")
+        return redirect('event_detail', id=event_id)
+    
     if request.method == 'POST':
         title = request.POST.get('title')
         text = request.POST.get('text')
@@ -576,36 +574,4 @@ def rating_create(request, event_id):
 
     return redirect('event_detail', id=event_id)
 
-def rating_update(request, event_id, rating_id):
-    event = get_object_or_404(Event, id=event_id)
-    rating = get_object_or_404(Rating, id=rating_id, event=event)
 
-    if request.user != rating.user:
-        return HttpResponseForbidden("No tenes permiso para editar esta calificación")
-
-    if request.method == 'POST':
-        rating_value = request.POST.get('rating')
-        rating_value = int(rating_value) if rating_value else None
-
-        if rating_value is not None:
-            rating.rating = rating_value
-            rating.save()
-            messages.success(request, "Calificación actualizada exitosamente")
-        else:
-            messages.error(request, "Error al actualizar la calificación")
-
-    return redirect('event_detail', id=event_id)
-
-def rating_delete(request, event_id, rating_id):
-    event = get_object_or_404(Event, id=event_id)
-    rating = get_object_or_404(Rating, id=rating_id, event=event)
-
-    if not (request.user == rating.user or request.user == event.organizer):
-        return HttpResponseForbidden("No tienes permiso para eliminar esta calificación")
-    if request.method == 'POST':
-        rating.delete()
-        messages.success(request, "Calificación eliminada exitosamente")
-    else:
-        messages.error(request, "Error al eliminar la calificación")
-
-    return redirect('event_detail', id=event_id)
