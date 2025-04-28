@@ -6,23 +6,17 @@
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}EventHub{% endblock %}</title>
-    <link
-        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css"
-        rel="stylesheet"
-    >
-    <link
-        rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
-    >
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1"
-    />
-
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body>
-    <!-- Navbar solo visible si el usuario está autenticado -->
+    
     <nav class="navbar navbar-expand-md bg-body-tertiary">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">EventHub</a>
@@ -41,10 +35,7 @@
                         <span class="navbar-toggler-icon"></span>
                     </button>
 
-                    <div
-                        class="collapse navbar-collapse"
-                        id="navbar-content"
-                    >
+                    <div class="collapse navbar-collapse" id="navbar-content">
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                             <li class="nav-item">
                                 {% navbar_link 'events' 'Eventos' %}
@@ -52,20 +43,15 @@
                         </ul>
                     </div>
 
-                    <div
-                        class="collapse navbar-collapse"
-                        id="navbar-content"
-                    >
+                    <div class="collapse navbar-collapse" id="navbar-content">
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                             <li class="nav-item">
                                 {% navbar_link 'notifications' 'Notificaciones' %}
                             </li>
                         </ul>
                     </div>
-                    <div
-                        class="collapse navbar-collapse"
-                        id="navbar-content"
-                    >
+
+                    <div class="collapse navbar-collapse" id="navbar-content">
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                             <li class="nav-item">
                                 {% navbar_link 'categories' 'Categorias' %}
@@ -73,39 +59,29 @@
                         </ul>
                     </div>
 
-                    <form
-                        class="d-flex"
-                        action={% url 'logout' %}
-                        method="POST"
-                    >
+                    <form class="d-flex" action={% url 'logout' %} method="POST">
                         {% csrf_token %}
-                        <button
-                            class="btn btn-sm btn-outline-secondary"
-                            type="submit"
-                            name="logout"
-                        >Salir</button>
+                        <button class="btn btn-sm btn-outline-secondary" type="submit" name="logout">Salir</button>
                     </form>
                 {% else %}
-                    <a
-                        class="btn btn-sm btn-outline-primary"
-                        href="{% url 'login' %}"
-                    >Ingresá</>
-                    <a
-                        class="btn btn-sm btn-primary"
-                        href="{% url 'register' %}"
-                    >Creá tu cuenta</a>
+                    <a class="btn btn-sm btn-outline-primary" href="{% url 'login' %}">Ingresá</a>
+                    <a class="btn btn-sm btn-primary" href="{% url 'register' %}">Creá tu cuenta</a>
                 {% endif %}
             </div>
         </div>
     </nav>
 
+    
     {% block content %}
     {% endblock %}
+
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js" integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq" crossorigin="anonymous"></script>
+
+    
+    {% block extra_js %}
+    {% endblock %}
 </body>
-<script
-    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq"
-    crossorigin="anonymous"
-></script>
 
 </html>
+

@@ -1,14 +1,14 @@
 #!/bin/bash
 
-python_interpreter=""
-if command -v python3 &>/dev/null; then
-    python_interpreter="python3"
-elif command -v python &>/dev/null; then
-    python_interpreter="python"
-else
-    echo "Error: No se encontró un intérprete de Python válido."
-    exit 1
-fi
+python_interpreter="python"
+# if command -v python3 &>/dev/null; then
+#     python_interpreter="python3"
+# elif command -v python &>/dev/null; then
+#     python_interpreter="python"
+# else
+#     echo "Error: No se encontró un intérprete de Python válido."
+#     exit 1
+# fi
 
 # 1. eliminar la base de datos del proyecto
 echo "==> Eliminando base de datos..."

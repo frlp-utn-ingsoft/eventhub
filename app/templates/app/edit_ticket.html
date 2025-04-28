@@ -1,0 +1,95 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Editar Ticket</h2>
+    <div class="alert alert-info">
+        Solo puedes editar tu ticket dentro de los primeros 30 minutos después de la compra.
+    </div>
+    
+    <div id="time-remaining" class="alert alert-warning"></div>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.quantity.id_for_label }}" class="form-label">Cantidad</label>
+                        <div class="input-group">
+                            {{ form.quantity }}
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.type.id_for_label }}" class="form-label">Tipo</label>
+                        <div class="input-group">
+                            {{ form.type }}
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.card_number.id_for_label }}" class="form-label">Número de tarjeta</label>
+                        <div class="input-group">
+                            {{ form.card_number }}
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.card_holder.id_for_label }}" class="form-label">Titular</label>
+                        <div class="input-group">
+                            {{ form.card_holder }}
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.expiration_date.id_for_label }}" class="form-label">Fecha de expiración</label>
+                        <div class="input-group">
+                            {{ form.expiration_date }}
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.cvc.id_for_label }}" class="form-label">CVC</label>
+                        <div class="input-group">
+                            {{ form.cvc }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="card-footer">
+                <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                <a href="{% url 'ticket_detail' ticket.id %}" class="btn btn-secondary">Cancelar</a>
+            </div>
+        </div>
+    </form>
+</div>
+
+{% block extra_head %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    
+    var buyDate = new Date("{{ ticket.buy_date|date:'c' }}");
+    console.log("Fecha de compra del ticket: ", buyDate);
+
+    if (isNaN(buyDate)) {
+        console.log("La fecha no es válida");
+    }
+
+    var limitTime = new Date(buyDate.getTime() + 30 * 60000);
+    console.log("Tiempo límite: ", limitTime);
+
+    function updateTimer() {
+        var now = new Date();
+        var remainingTime = limitTime - now;
+        
+        if (remainingTime <= 0) {
+            document.getElementById("time-remaining").innerHTML = "El tiempo ha expirado.";
+        } else {
+            var minutes = Math.floor(remainingTime / 60000); // Minutos restantes
+            var seconds = Math.floor((remainingTime % 60000) / 1000); // Segundos restantes
+            document.getElementById("time-remaining").innerHTML = minutes + " minutos y " + seconds + " segundos.";
+        }
+    }
+
+    setInterval(updateTimer, 1000);
+</script>
+{% endblock %}
+
+{% endblock %}

@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+import uuid
+from django import forms
 from django.utils import timezone
 
 def save(method):
@@ -57,6 +59,7 @@ class Category(models.Model):
 
 
 class Event(models.Model):
+    id = models.AutoField(primary_key=True)
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
@@ -103,6 +106,36 @@ class Event(models.Model):
         self.save()
 
 
+class Ticket(models.Model):
+    TICKET_TYPES= [('general', 'General'), ('vip', 'VIP')]
+
+    id = models.AutoField(primary_key=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tickets")
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="tickets")
+    buy_date = models.DateTimeField(auto_now_add=True)
+    ticket_code = models.CharField(max_length=100, unique=True, editable=False)
+    quantity = models.PositiveIntegerField(default=1)
+    type = models.CharField(max_length=10, choices=TICKET_TYPES, default='general')
+
+    def save(self, *args, **kwargs):
+        if not self.ticket_code:
+            self.ticket_code = str(uuid.uuid4())
+        super().save(*args, **kwargs)  
+
+    def __str__(self):
+        return f"{self.user.username} - {self.event.title} - {self.ticket_code}"
+    
+class TicketForm(forms.ModelForm):
+    class Meta:
+        model = Ticket
+        fields = ['quantity', 'type']
+        
+    # Campos para la simulación de pago con tarjeta (no se guardan en la BD)
+    card_number = forms.CharField(max_length=16, required=True, label='Número de Tarjeta')
+    card_holder = forms.CharField(max_length=100, required=True, label='Nombre del Titular')
+    expiration_date = forms.CharField(max_length=5, required=True, label='Expiración (MM/YY)')
+    cvc = forms.CharField(max_length=3, required=True, label='CVC')
+    
 class Notification(models.Model):
     title = models.CharField(max_length=50)
     message = models.CharField(max_length=100)
