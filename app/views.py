@@ -3,7 +3,6 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-
 from .models import Event, User, Location
 
 
@@ -126,7 +125,12 @@ def event_form(request, id=None):
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
 
+@login_required
+def list_locations(request):
+    locations = Location.objects.all() # Las más nuevas primero
+    return render(request, 'locations/list_locations.html', {'locations': locations})
 
+@login_required
 def create_location(request):
     if request.method == 'POST':
         name = request.POST.get('name')
@@ -147,18 +151,36 @@ def create_location(request):
 
         # Si no hay errores, creamos la Location
         Location.new(name, address, city, int(capacity), contact)
-        return redirect('events')  # Redirigimos a una lista o donde quieras
+        return redirect('locations_list')  # Redirigimos a una lista o donde quieras
 
     return render(request, 'locations/create_location.html')
 
 
+def update_location(request, location_id):
+    location = get_object_or_404(Location, id=location_id)
 
-    if request.method == "POST":
-        name = request.POST.get("nombre")
-        address = request.POST.get("direccion")
-        city = request.POST.get("city")
-        capacity = request.POST.get("capacity")
-        contact = request.POST.get("contact")
-        Location.new(name,address,city,capacity,contact)
-        return redirect("events")
-    return render(request, "locations/location_form.html")
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        address = request.POST.get('address')
+        city = request.POST.get('city')
+        capacity = request.POST.get('capacity')
+        contact = request.POST.get('contact')
+
+        errors = Location.validate(name, address, city, int(capacity) if capacity else None, contact)
+
+        if errors:
+            return render(request, 'locations/update_location.html', {
+                'location': location,
+                'errors': errors,
+                'form_data': request.POST,
+            })
+
+        location.update(name=name, address=address, city=city, capacity=int(capacity), contact=contact)
+        return redirect('locations_list')
+
+    return render(request, 'locations/update_location.html', {'location': location})
+
+def delete_location(request, location_id):
+    location = get_object_or_404(Location, id=location_id)
+    location.delete()
+    return redirect('locations_list')

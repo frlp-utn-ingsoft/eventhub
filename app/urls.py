@@ -13,5 +13,8 @@ urlpatterns = [
     path("events/<int:id>/edit/", views.event_form, name="event_edit"),
     path("events/<int:id>/", views.event_detail, name="event_detail"),
     path("events/<int:id>/delete/", views.event_delete, name="event_delete"),
-    path('locations/new/', views.create_location, name='create_location')
+    path('locations/new/', views.create_location, name='create_location'),
+    path('locations/', views.list_locations, name='locations_list'),
+    path('locations/<int:location_id>/edit/', views.update_location, name='update_location'),
+    path('locations/<int:location_id>/delete/', views.delete_location, name='delete_location')
 ]
