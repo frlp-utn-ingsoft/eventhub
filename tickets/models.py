@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class Ticket(models.Model):
     class TipoTicket(models.TextChoices): #mi enumerativa
         GENERAL = "General"

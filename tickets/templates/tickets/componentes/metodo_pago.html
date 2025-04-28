@@ -1,0 +1,37 @@
+{% comment %}
+    Componente: Método de pago con tarjeta
+{% endcomment %}
+
+<!-- Método de pago -->
+<div class="mb-3">
+    <label class="form-label">Método de pago</label>
+    <div class="card">
+        <div class="card-body">
+            <!-- Datos de tarjeta -->
+            <div class="mb-3">
+                <label for="card-number" class="form-label">Número de tarjeta</label>
+                <input type="text" class="form-control" id="card-number" name="card_number" 
+                       placeholder="1234 5678 9012 3456" required>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label for="expiry-date" class="form-label">Fecha de expiración</label>
+                    <input type="text" class="form-control" id="expiry-date" name="expiry_date" 
+                           placeholder="MM/AA" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label for="cvv" class="form-label">CVV</label>
+                    <input type="text" class="form-control" id="cvv" name="cvv" 
+                           placeholder="123" required>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label for="card-name" class="form-label">Nombre en la tarjeta</label>
+                <input type="text" class="form-control" id="card-name" name="card_name" 
+                       placeholder="Juan Pérez" required>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% load ticket_tags %}
+
+{% block title %}Comprar Entrada - {{ event.name }}{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row">
+        <!-- Formulario de compra -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Comprar Entrada</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Información del evento -->
+                    <h3>{{ event.name }}</h3>
+                    <div class="mb-3">
+                        <i class="bi bi-calendar me-2"></i> {{ event.date|date:"l, j \d\e F \d\e Y, H:i" }}
+                    </div>
+                    <div class="mb-3">
+                        <i class="bi bi-geo-alt me-2"></i> {{ event.location }}
+                    </div>
+                    <div class="mb-3">
+                        <i class="bi bi-people me-2"></i> {{ event.organizer }}
+                    </div>
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <!-- Componente: Formulario de compra -->
+                        {% include "tickets/componentes/compra_form.html" %}
+                        
+                        <!-- Componente: Método de pago -->
+                        {% include "tickets/componentes/metodo_pago.html" %}
+
+                        <!-- Términos y condiciones -->
+                        <div class="mb-4 form-check">
+                            <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
+                            <label class="form-check-label" for="terms">
+                                Acepto los <a href="" target="_blank">términos y condiciones</a> y la 
+                                <a href="" target="_blank">política de privacidad</a>
+                            </label>
+                        </div>
+
+                        <!-- Botón de confirmación -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">Confirmar compra</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Componente: Resumen de compra -->
+            {% include "tickets/componentes/resumen.html" %}
+            
+            <!-- Componente: Información importante -->
+            {% include "tickets/componentes/informacion.html" %}
+        </div>
+    </div>
+</div>
+
+{% calculate_ticket_price as initial_price %}
+
+<!-- Script para actualizar el resumen de compra -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const quantityInput = document.getElementById('tickets-quantity');
+        const decreaseBtn = document.getElementById('decrease-qty');
+        const increaseBtn = document.getElementById('increase-qty');
+        const ticketTypeSelect = document.getElementById('ticket-type');
+        
+        const summaryQuantity = document.getElementById('summary-quantity');
+        const summarySubtotal = document.getElementById('summary-subtotal');
+        const summaryTax = document.getElementById('summary-tax');
+        const summaryTotal = document.getElementById('summary-total');
+        
+        const basePrice = {{ initial_price|floatformat:2 }};
+        const taxRate = {{ tax_rate|default:0.10 }};
+        
+        // Actualizar resumen cuando cambie la cantidad
+        function updateSummary() {
+            const quantity = parseInt(quantityInput.value);
+            const ticketTypeOptionEl = ticketTypeSelect.options[ticketTypeSelect.selectedIndex];
+            const ticketPrice = parseFloat(ticketTypeOptionEl.dataset.price || basePrice);
+            
+            const subtotal = quantity * ticketPrice;
+            const tax = subtotal * taxRate;
+            const total = subtotal + tax;
+            
+            summaryQuantity.textContent = quantity;
+            summarySubtotal.textContent = '$' + subtotal.toFixed(2);
+            summaryTax.textContent = '$' + tax.toFixed(2);
+            summaryTotal.textContent = '$' + total.toFixed(2);
+        }
+        
+        // Event listeners
+        decreaseBtn.addEventListener('click', function() {
+            if (quantityInput.value > 1) {
+                quantityInput.value = parseInt(quantityInput.value) - 1;
+                updateSummary();
+            }
+        });
+        
+        increaseBtn.addEventListener('click', function() {
+            const max = parseInt(quantityInput.getAttribute('max'));
+            if (parseInt(quantityInput.value) < max) {
+                quantityInput.value = parseInt(quantityInput.value) + 1;
+                updateSummary();
+            }
+        });
+        
+        quantityInput.addEventListener('change', updateSummary);
+        ticketTypeSelect.addEventListener('change', updateSummary);
+        
+        // Inicializar
+        updateSummary();
+    });
+</script>
+{% endblock %}

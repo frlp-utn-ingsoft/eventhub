@@ -19,4 +19,5 @@ from django.urls import include, path
 
 urlpatterns = [
     path("", include("app.urls")),
+    path("tickets/", include("tickets.urls", namespace="tickets")),
 ]
