@@ -73,3 +73,10 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+class Venue(models.Model):
+    name = models.CharField(max_length=200)
+    address = models.CharField(max_length=200)
+    city = models.CharField(max_length=100)
+    capacity=models.IntegerField()
+    contact=models.CharField(max_length=100)
