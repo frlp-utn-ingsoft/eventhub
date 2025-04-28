@@ -594,4 +594,16 @@ def rating_update(request, event_id, rating_id):
 
     return redirect('event_detail', id=event_id)
 
+def rating_delete(request, event_id, rating_id):
+    event = get_object_or_404(Event, id=event_id)
+    rating = get_object_or_404(Rating, id=rating_id, event=event)
 
+    if not (request.user == rating.user or request.user == event.organizer):
+        return HttpResponseForbidden("No tienes permiso para eliminar esta calificación")
+    if request.method == 'POST':
+        rating.delete()
+        messages.success(request, "Calificación eliminada exitosamente")
+    else:
+        messages.error(request, "Error al eliminar la calificación")
+
+    return redirect('event_detail', id=event_id)
