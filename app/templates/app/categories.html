@@ -50,12 +50,15 @@
                     </td>
                 </tr>
                 {% if messages %}
-                    <div class="alert alert-danger">
                     {% for message in messages %}
-                        <p>{{ message }}</p>
+                        {% if message.tags == "warning" %}
+                            <div class="alert alert-warning">
+                            <p>{{ message }}</p>
+                            </div>
+                        {% endif %}
                     {% endfor %}
-                    </div>
                 {% endif %}
+
 
             {% empty %}
                 <tr>

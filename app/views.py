@@ -202,7 +202,7 @@ def category_delete(request, id):
             category.delete() 
             messages.success(request, "Categoría eliminada exitosamente.")
         except IntegrityError:
-            messages.error(request, "No se puede eliminar esta categoría porque tiene eventos asociados.")
+            messages.warning(request, "No se puede eliminar esta categoría porque tiene eventos asociados.")
         
         return redirect("categorias") 
 
