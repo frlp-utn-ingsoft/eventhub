@@ -180,46 +180,71 @@ def category_delete(request, id):
 
 # notificacion
 User = get_user_model()
-@login_required
 
-def notification_form(request):
+def notification_form(request, id=None):
     if not request.user.is_organizer:
         return redirect("notification")
-
+    
+    notification = None
+    if id is not None:
+        notification = get_object_or_404(Notification, pk=id)
+    
     if request.method == "POST":
         # Campos
-        title      = request.POST.get("title")
-        message    = request.POST.get("message")
-        priority   = request.POST.get("priority")
-        event_id   = request.POST.get("event")
-        user_ids   = request.POST.getlist("users")  # <- ahora sí
-
+        title = request.POST.get("title")
+        message = request.POST.get("message")
+        priority = request.POST.get("priority")
+        event_id = request.POST.get("event")
+        user_ids = request.POST.getlist("users")
+        
         event = get_object_or_404(Event, pk=event_id)
+        print("user_ids:",title )
+
         users = User.objects.filter(id__in=user_ids)
-
-        success, errors = Notification.new(
-            title=title,
-            message=message,
-            priority=priority,
-            users=users,
-            event=event
-        )
-
-        if not success:
-            return render(request, "app/notification_form.html", {
-                "events": Event.objects.all(),
-                "users": User.objects.all(),
-                "errors": errors
-            })
-
+        
+        if id is None:  # Crear nueva notificación
+            success, errors = Notification.new(
+                title=title,
+                message=message,
+                priority=priority,
+                users=users,
+                event=event
+            )
+            
+            if not success:
+                return render(request, "app/notification_form.html", {
+                    "events": Event.objects.all(),
+                    "users": User.objects.all(),
+                    "errors": errors,
+                    "notification": notification,
+                })
+        else:  # Actualizar notificación existente
+            # Asegúrate de que notification existe antes de intentar actualizarlo
+            if notification:
+                notification.update(
+                    title,
+                    message,
+                    priority,
+                    users,
+                    event
+                )
+            else:
+                # Si por alguna razón no existe, manejamos el error
+                return render(request, "app/notification_form.html", {
+                    "events": Event.objects.all(),
+                    "users": User.objects.all(),
+                    "errors": ["La notificación que intentas actualizar no existe."],
+                })
+        
         return redirect("notification")
-
-    # GET
+    
+    # GET request
     return render(request, "app/notification_form.html", {
+        "notification": notification,
         "events": Event.objects.all(),
         "users": User.objects.all(),
+        "user_is_organizer": request.user.is_organizer,
     })
-
 
 @login_required
 def notification(request):
@@ -230,7 +255,7 @@ def notification(request):
     
     # Obtener todos los eventos para el filtro
     events = Event.objects.all()
-    
+
     # Configurar los filtros
     event_filter = request.GET.get('event', 'all')
     priority_filter = request.GET.get('priority', 'all')
@@ -262,7 +287,6 @@ def notification(request):
         },
     )
 
-
 def notification_detail(request, id):
  
     # Verifica si el usuario es un organizador
@@ -279,3 +303,4 @@ def notification_detail(request, id):
             "notification": notification,
         },
     )
+
