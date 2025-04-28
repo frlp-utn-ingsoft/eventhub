@@ -3,7 +3,8 @@
 Aplicación web para venta de entradas utilizada en la cursada 2025 de Ingeniería y Calidad de Software. UTN-FRLP
 
 ## Integrantes
-Capre Rodrigo 3187
+- Capre Rodrigo 31877
+- Elizalde Benjamín 32030
 
 ## Dependencias
 
