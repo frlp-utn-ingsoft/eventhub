@@ -433,6 +433,89 @@ def tickets(request, event_id):
         {"events": events, "user_is_organizer": request.user.is_organizer, "tickets": tickets},
     )
 
+@login_required
+def comprar_ticket(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+    
+    if request.method == 'POST':
+        # Obtener datos del formulario
+        ticket_code = request.POST.get('ticket_code')
+        quantity = request.POST.get('quantity')
+        type_entrada = request.POST.get('type')
+        try:
+            quantity = int(quantity)
+        except ValueError:
+            quantity = 0 
+        
+        # Datos de pago (estos se enviarían a una API externa en un caso real)
+        payment_data = {
+            'card_number': request.POST.get('card_number'),
+            'card_expiry': request.POST.get('card_expiry'),
+            'card_cvv': request.POST.get('card_cvv'),
+            'card_name': request.POST.get('card_name'),
+        }
+        
+        # Simulación de llamada a API de pago
+        payment_success = simular_procesamiento_pago(payment_data)
+        
+        if not payment_success:
+            messages.error(request, "Error en el procesamiento del pago. Por favor, intenta nuevamente.")
+            return render(request, 'app/ticket_compra.html', {
+                'event': event, 
+                'event_id': event_id,
+                'error': "Error en el procesamiento del pago"
+            })
+        
+        errors = Ticket.validate(ticket_code, quantity)
+        
+        if errors:
+            messages.error(request, "Error en la validación del ticket.")
+            return render(request, 'app/ticket_compra.html', {
+                'errors': errors, 
+                'event': event, 
+                'event_id': event_id
+            })
+        
+        user = request.user
+        
+        ticket = Ticket.objects.create(
+            ticket_code=ticket_code,
+            quantity=quantity,
+            type=type_entrada,
+            user=user,
+            event=event
+        )
+        
+        messages.success(request, f"¡Compra exitosa! Tu código de ticket es: {ticket_code}")
+        return redirect('events')
+    return render(request, 'app/ticket_compra.html', {
+        'event': event, 
+        'event_id': event_id
+    })
+
+def simular_procesamiento_pago(payment_data):
+    """
+    Función para simular el procesamiento de pago con una pasarela externa.
+    En un entorno real, aquí se realizaría una llamada a la API de la pasarela de pagos.
+    """
+    card_number = payment_data.get('card_number', '').replace(' ', '')
+    
+    # Comprobar que el número de tarjeta tiene 16 dígitos
+    if not card_number.isdigit() or len(card_number) != 16:
+        return False
+    
+    # Comprobar que la fecha de expiración tiene el formato MM/AA
+    expiry = payment_data.get('card_expiry', '')
+    if not re.match(r'^\d{2}/\d{2}$', expiry):
+        return False
+    
+    # Comprobar que el CVV tiene 3-4 dígitos
+    cvv = payment_data.get('card_cvv', '')
+    if not cvv.isdigit() or not (3 <= len(cvv) <= 4):
+        return False
+    
+    # Simular un 95% de probabilidad de éxito en el pago
+    return random.random() < 0.95
 
 @login_required
 def ticket_delete(request,event_id, ticket_id):
