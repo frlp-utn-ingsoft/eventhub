@@ -131,12 +131,13 @@ def event_form(request, id=None):
 
 #Listado de todos los tickets del user
 @login_required
-@login_required
 def ticket_list(request):
+    print(request.user)
     tickets = Ticket.objects.filter(user=request.user)
+    print(tickets) 
     if not tickets:
         messages.info(request, "No tienes tickets registrados.")  
-    return render(request, "tickets/ticket_list.html", {"tickets": tickets})
+    return render(request, "app/ticket_list.html", {"tickets": tickets})
 
 
 #Alta Ticket
@@ -156,7 +157,7 @@ def ticket_create(request, event_id):
     else:
         form = TicketForm()
 
-    return render(request, "tickets/ticket_form.html", {"form": form, "event": event})
+    return render(request, "app/ticket_form.html", {"form": form, "event": event})
 
 
 #Editar Ticket (solo si es dueño)
@@ -178,7 +179,7 @@ def ticket_update(request, ticket_id):
     else:
         form = TicketForm(instance=ticket)
 
-    return render(request, "tickets/ticket_form.html", {"form": form})
+    return render(request, "app/ticket_form.html", {"form": form})
 
 
 # Eliminar Ticket

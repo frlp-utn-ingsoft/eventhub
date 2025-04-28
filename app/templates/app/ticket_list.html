@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h1>Mis Tickets</h1>
+    {% if tickets %}
+        <ul>
+            {% for ticket in tickets %}
+                <li>
+                    <strong>Evento:</strong> {{ ticket.event.title }} <br>
+                    <strong>Fecha:</strong> {{ ticket.buy_date }} <br>
+                    <strong>Codigo de la Entrada:</strong> {{ ticket.ticket_code }} <br>
+                    <strong>Tipo de Entrada:</strong> {{ ticket.type }} <br>
+                    <strong>Cantidad:</strong> {{ ticket.quantity }} <br>
+
+                    <a href="{% url 'ticket_update' ticket.id %}">Editar</a> |
+                    <a href="{% url 'ticket_delete' ticket.id %}">Eliminar</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No tienes tickets registrados.</p>
+    {% endif %}
+   
+{% endblock %}
+

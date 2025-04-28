@@ -11,8 +11,8 @@ class TicketForm(forms.ModelForm):
 
     # Tipo de entrada con dos opciones posibles (General y VIP)
     ENTRY_TYPE_CHOICES = [
-        ('general', 'General'),
-        ('vip', 'VIP'),
+        ("GENERAL", "GENERAL"),
+        ("VIP", "VIP"),
     ]
     type = forms.ChoiceField(label="Tipo de Entrada", choices=ENTRY_TYPE_CHOICES)
 
