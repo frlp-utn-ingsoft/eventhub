@@ -5,8 +5,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Count
 from django.http import HttpResponseForbidden
-from .models import Event, User, Category, Comment, Venue
+from .models import Event, User, Category, Comment, Venue, Ticket
 from django.contrib import messages
+import re
+import random
 
 
 def register(request):
@@ -66,7 +68,11 @@ def home(request):
 
 @login_required
 def events(request):
-    events = Event.objects.all().order_by("scheduled_at")
+    #si el usuario es organizador recupera todos sus eventos, si el usuario no es organizador recupera todos los eventos siempre y cuando la fecha del evento sea posterior a la actual. De esta forma permitimos que el usuario que no es  organizador pueda comprar entradas.
+    if request.user.is_organizer:
+        events = Event.objects.filter(organizer=request.user).order_by("scheduled_at")
+    else:
+        events = Event.objects.filter(scheduled_at__gte=timezone.now()).order_by("scheduled_at")
     return render(
         request,
         "app/events.html",
@@ -412,3 +418,18 @@ def venue_delete(request, pk):
         return redirect('venue_list')
 
     return render(request, 'app/venue_confirm_delete.html', {'venue': venue})
+
+
+@login_required
+def tickets(request, event_id):
+    if not request.user.is_organizer:
+        return redirect('events')
+    #ocon el id del evento obtengo todos sus tickets
+    tickets = Ticket.objects.filter(event_id=event_id).order_by('-buy_date')
+
+    return render(
+        request,
+        "app/tickets.html",
+        {"events": events, "user_is_organizer": request.user.is_organizer, "tickets": tickets},
+    )
+
