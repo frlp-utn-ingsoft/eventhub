@@ -1,10 +1,9 @@
 import datetime
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login,get_user_model
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-
-from .models import Event, User, Category
+from .models import Event, User, Category, Notification
 
 
 def register(request):
@@ -179,3 +178,104 @@ def category_delete(request, id):
 
     return redirect("categorias")
 
+# notificacion
+User = get_user_model()
+@login_required
+
+def notification_form(request):
+    if not request.user.is_organizer:
+        return redirect("notification")
+
+    if request.method == "POST":
+        # Campos
+        title      = request.POST.get("title")
+        message    = request.POST.get("message")
+        priority   = request.POST.get("priority")
+        event_id   = request.POST.get("event")
+        user_ids   = request.POST.getlist("users")  # <- ahora sí
+
+        event = get_object_or_404(Event, pk=event_id)
+        users = User.objects.filter(id__in=user_ids)
+
+        success, errors = Notification.new(
+            title=title,
+            message=message,
+            priority=priority,
+            users=users,
+            event=event
+        )
+
+        if not success:
+            return render(request, "app/notification_form.html", {
+                "events": Event.objects.all(),
+                "users": User.objects.all(),
+                "errors": errors
+            })
+
+        return redirect("notification")
+
+    # GET
+    return render(request, "app/notification_form.html", {
+        "events": Event.objects.all(),
+        "users": User.objects.all(),
+    })
+
+
+@login_required
+def notification(request):
+    # Verifica si el usuario es un organizador
+    if not request.user.is_organizer:
+        # Si no es organizador, muestra un mensaje de error y redirige al inicio
+        return redirect("home")
+    
+    # Obtener todos los eventos para el filtro
+    events = Event.objects.all()
+    
+    # Configurar los filtros
+    event_filter = request.GET.get('event', 'all')
+    priority_filter = request.GET.get('priority', 'all')
+    search_query = request.GET.get('search', '')
+    
+    # Consulta base de notificaciones  
+    notifications = Notification.objects.all().order_by("-created_at")
+    
+    # Aplicar filtros si están presentes
+    if search_query:
+        notifications = notifications.filter(title__icontains=search_query)
+    
+    if event_filter and event_filter != 'all':
+        notifications = notifications.filter(event__id=event_filter)
+    
+    if priority_filter and priority_filter != 'all':
+        notifications = notifications.filter(priority=priority_filter)
+    
+    return render(
+        request,
+        "app/notifications.html",
+        {
+            "notifications": notifications,
+            "events": events,
+            "has_notifications": notifications.exists(),
+            "current_event_filter": event_filter,
+            "current_priority_filter": priority_filter,
+            "search_query": search_query,
+        },
+    )
+
+
+def notification_detail(request, id):
+ 
+    # Verifica si el usuario es un organizador
+    if not request.user.is_organizer:
+
+        return redirect("home")
+    
+    notification = get_object_or_404(Notification, id=id)
+    
+    return render(
+        request,
+        "app/notification_detail.html",
+        {
+            "notification": notification,
+        },
+    )
