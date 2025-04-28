@@ -3,6 +3,7 @@
 📌 Alesandro Patricio Borda
 📌 Matias Rau Bekerman
 📌 Enzo Daniel Pinotti
+📌 Tomas Pipolo
 ---
 
 
