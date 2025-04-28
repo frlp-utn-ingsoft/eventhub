@@ -1,25 +1,48 @@
 {% extends "base.html" %}
 
 {% block content %}
-    <h1>Mis Tickets</h1>
+<div class="container mt-5">
+    <h1 class="mb-4 text-center">Mis Entradas</h1>
+
     {% if tickets %}
-        <ul>
+        <div class="row justify-content-center">
             {% for ticket in tickets %}
-                <li>
-                    <strong>Evento:</strong> {{ ticket.event.title }} <br>
-                    <strong>Fecha:</strong> {{ ticket.buy_date }} <br>
-                    <strong>Codigo de la Entrada:</strong> {{ ticket.ticket_code }} <br>
-                    <strong>Tipo de Entrada:</strong> {{ ticket.type }} <br>
-                    <strong>Cantidad:</strong> {{ ticket.quantity }} <br>
-
-                    <a href="{% url 'ticket_update' ticket.id %}">Editar</a> |
-                    <a href="{% url 'ticket_delete' ticket.id %}">Eliminar</a>
-                </li>
+                <div class="col-md-8 mb-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ ticket.event.title }}</h5>
+                            <p class="card-text mb-2">
+                                <strong>Fecha:</strong> {{ ticket.buy_date }}<br>
+                                <strong>Código de Entrada:</strong> {{ ticket.ticket_code }}<br>
+                                <strong>Tipo de Entrada:</strong> {{ ticket.type }}<br>
+                                <strong>Cantidad:</strong> {{ ticket.quantity }}
+                            </p>
+                            <div class="d-flex justify-content-end">
+                                <a href="{% url 'ticket_update' ticket.id %}" class="btn btn-sm btn-primary me-2">Editar</a>
+                                <a href="{% url 'ticket_delete' ticket.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             {% endfor %}
-        </ul>
+        </div>
     {% else %}
-        <p>No tienes tickets registrados.</p>
+        <div class="alert alert-info" role="alert">
+            No tienes tickets registrados.
+        </div>
     {% endif %}
-   
-{% endblock %}
+</div>
+{% block styles %}
+<style>
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); /* sombra leve inicial */
+    }
 
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* sombra más intensa en hover */
+    }
+</style>
+{% endblock %}
+{% endblock %}
