@@ -187,3 +187,18 @@ class Notification(models.Model):
 
         return True, None
 
+    def update(self, title=None, message=None, priority=None, is_read=None, users=None, event=None):
+        self.title = title or self.title
+        self.message = message or self.message
+        self.priority = priority or self.priority
+        self.is_read = is_read if is_read is not None else self.is_read
+        
+        # Actualizar el evento si se proporciona uno nuevo
+        if event is not None:
+            self.event = event
+        
+        self.save()
+        
+        # si recibo usuarios nuevos, actualizamos la relación
+        if users is not None:
+            self.users.set(users)  # Reemplaza los usuarios asociados por estos nuevos
