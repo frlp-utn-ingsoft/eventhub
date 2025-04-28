@@ -89,13 +89,15 @@ class Rating(models.Model):
 
     class Meta:
         #Con unique se busca que solo el usuario pueda hacer una sola calificacion
-        unique_together = ('usuario', 'evento')
         ordering = ['-fecha_creacion']
+        constraints = [
+            models.UniqueConstraint(fields=['usuario', 'evento'], name='unique_rating')
+        ]
     
     def __str__(self):
         return f'{self.usuario} - {self.evento} ({self.calificacion}⭐)'
 
-class RatingForm(forms.ModelForm):
+class Rating_Form(forms.ModelForm):
     class Meta:
         model = Rating
         fields = ['titulo', 'calificacion', 'texto']

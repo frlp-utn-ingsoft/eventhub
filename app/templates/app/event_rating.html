@@ -55,7 +55,7 @@
     <div class="row">
         <div class="card mb-4 shadow-sm rounded-3">
                 <div class="card-body">
-                    <h5 class="card-title">Calificaciones y Reseñas</h5>
+                    <h5 class="card-title">Calificaciones y Reseñas ({{ cantidad_resenas }})</h5>
                         
                     {% for rating in ratings %}
                             <div class="card mb-4 shadow-sm">
@@ -120,14 +120,13 @@
 
                                 {% if editando %}
                                     <button type="submit" name="guardar" class="btn btn-primary w-100">Actualizar reseña</button>
-                                    <button type="submit" name="cancelar" class="btn btn-secondary w-100 mt-2">Cancelar edición</button>
+                                    <button type="submit" name="cancelar" class="btn btn-outline-secondary w-100 mt-2">Cancelar edición</button>
                                 {% else %}
                                     <button type="submit" name="guardar" class="btn btn-primary w-100">Enviar reseña</button>
                                 {% endif %}
                                 
                             </div>
                         </form>
-
 
                     {% else %}
                         <p><a href="{% url 'login' %}">Iniciar sesion</a> para modificar este evento</p>
