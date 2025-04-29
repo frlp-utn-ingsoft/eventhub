@@ -1,3 +1,5 @@
+
+from django import forms
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 import uuid
@@ -114,6 +116,7 @@ class Event(models.Model):
             event.categories.set(categories)
         return True, event
 
+
     def update(self, title, description, scheduled_at, organizer):
         self.title = title or self.title
         self.description = description or self.description
@@ -206,8 +209,40 @@ class NotificationUser(models.Model):
     class Meta:
         unique_together = ('notification', 'user')
 
+CALIFICACIONES = [(i, f"{i} ⭐") for i in range(1,6)]
 
+class Rating(models.Model):
+    usuario = models.ForeignKey(User, on_delete=models.CASCADE)
+    evento = models.ForeignKey(Event, on_delete=models.CASCADE)
+    titulo = models.CharField(max_length=255)
+    texto = models.TextField(blank=True)
+    calificacion = models.IntegerField(choices=CALIFICACIONES) 
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        #Con unique se busca que solo el usuario pueda hacer una sola calificacion
+        ordering = ['-fecha_creacion']
+        constraints = [
+            models.UniqueConstraint(fields=['usuario', 'evento'], name='unique_rating')
+        ]
+    
+    def __str__(self):
+        return f'{self.usuario} - {self.evento} ({self.calificacion}⭐)'
 
-
-
+class Rating_Form(forms.ModelForm):
+    class Meta:
+        model = Rating
+        fields = ['titulo', 'calificacion', 'texto']
+        widgets = {
+            'titulo': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ej: Gran experiencia'
+            }),
+            'calificacion': forms.HiddenInput(),
+            'texto': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Comparte tu experiencia...'
+            }),
+        }
+    

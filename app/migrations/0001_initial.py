@@ -29,6 +29,7 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True)),
             ],
         ),
+        
         migrations.CreateModel(
             name='Venue',
             fields=[
