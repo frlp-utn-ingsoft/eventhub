@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-
+{% load custom_tags %}
 {% block content %}
     <h1>Notificaciones</h1>
 
@@ -43,20 +43,41 @@
         </table>
 
     {% else %}
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h2> 
+                {% with unread=notifications|length|add:"-user_notifications|dictsort:'value'|length" %}
+                    {% if unread > 0 %}
+                        <span class="badge bg-danger">{{ unread }} nuevas</span>
+                    {% endif %}
+                {% endwith %}
+            </h2>
+            <form method="post" action="{% url "home" %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-secondary btn-sm">Marcar todas como leídas</button>
+            </form>
+        </div>
+        
         {% for notification in notifications %}
-            <div class="notification">
-                <h3>{{ notification.title }}</h3>
-                <p>{{ notification.message }}</p>
-                <p>Fecha: {{ notification.created_at|date:"d/m/Y H:i" }}</p>
-                {% if not notification.is_read %}
-                    <form>
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-success">Marcar como leída</button>
-                    </form>
+            {% with is_read=user_notifications|get_item:notification.id %}
+                {% if not is_read %}
+                    <div class="p-3 mb-3 border border-primary rounded bg-light">
+                        <h5>{{ notification.title }} <span class="badge bg-primary">Nueva</span></h5>
+                        <p>{{ notification.message }}</p>
+                        <small class="text-muted">{{ notification.created_at|date:"d M Y, H:i" }}</small>
+                        <form method="post" action="{% url "is_read" notification.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-success mt-2">Marcar como leída</button>
+                        </form>
+                    </div>
                 {% else %}
-                    <span class="text-muted">Ya leída</span>
+                    <div class="p-3 mb-3 border rounded">
+                        <h5>{{ notification.title }}</h5>
+                        <p>{{ notification.message }}</p>
+                        <small class="text-muted">{{ notification.created_at|date:"d M Y, H:i" }}</small>
+                        <span class="text-muted">Ya leída</span>
+                    </div>
                 {% endif %}
-            </div>
+            {% endwith %}
         {% empty %}
             <p>No hay notificaciones disponibles.</p>
         {% endfor %}

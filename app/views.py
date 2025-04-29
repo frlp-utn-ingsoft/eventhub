@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .forms import NotificationForm
 
-from .models import Event, User, Notification
+from .models import Event, User, Notification, User_Notification
 
 
 def register(request):
@@ -130,11 +130,17 @@ def event_form(request, id=None):
 
 @login_required
 def notifications(request):
+    user = request.user 
     notifications = Notification.objects.all().order_by("priority")
+
+    user_notifications = {
+        un.notification.id: un.is_read
+        for un in User_Notification.objects.filter(user = user)
+    }
     return render(
         request,
         "app/notifications.html",
-        {"notifications": notifications, "user_is_organizer": request.user.is_organizer},
+        {"notifications": notifications, "user_is_organizer": request.user.is_organizer,"user_notifications": user_notifications,},
     )
 
 @login_required
@@ -151,3 +157,18 @@ def notification_delete(request,id):
         return redirect("notifications")
     
     return render(request,"app/notification_delete.html", {"notification":notification})
+
+@login_required
+def is_read(request, notification_id):
+    user = request.user
+
+    if request.method == "POST":
+        notification = get_object_or_404(Notification, id=notification_id)
+        user_notification, _ = User_Notification.objects.get_or_create(
+            user=user, notification=notification
+        )
+        user_notification.is_read = True
+        user_notification.save()
+
+    return redirect("notifications")
+
