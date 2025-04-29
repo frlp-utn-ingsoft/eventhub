@@ -36,3 +36,4 @@ Integrantes del proyecto:
 - Santiago Montanari
 - Jano Stratakis
 - Tomás Ochoa
+- Federico Blanco Cavallero
