@@ -95,18 +95,34 @@ def event_form(request, id=None):
     if not user.is_organizer:
         return redirect("events")
 
+    event = None
+
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
 
-        [year, month, day] = date.split("-")
-        [hour, minutes] = time.split(":")
+        [year, month, day] = map(int, date.split("-"))
+        [hour, minutes] = map(int, time.split(":"))
 
         scheduled_at = timezone.make_aware(
-            datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
+            datetime.datetime(year, month, day, hour, minutes)
         )
+
+        # Validar: que la FECHA del evento sea al menos el día de mañana (sin importar hora)
+        today = timezone.localtime().date()
+        if scheduled_at.date() <= today:
+            return render(
+                request,
+                "app/event_form.html",
+                {
+                    "event": event,
+                    "user_is_organizer": request.user.is_organizer,
+                    "error": "La fecha debe ser a partir de mañana.",
+                    "min_date": (today + datetime.timedelta(days=1)),
+                },
+            )
 
         if id is None:
             Event.new(title, description, scheduled_at, request.user)
@@ -116,12 +132,14 @@ def event_form(request, id=None):
 
         return redirect("events")
 
-    event = {}
     if id is not None:
         event = get_object_or_404(Event, pk=id)
+
+    today = timezone.localtime().date()
+    min_date = today + datetime.timedelta(days=1)
 
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer},
+        {"event": event, "user_is_organizer": request.user.is_organizer, "min_date": min_date},
     )

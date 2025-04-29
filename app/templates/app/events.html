@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block title %}Eventos{% endblock %}
 
 {% block content %}
@@ -16,56 +15,59 @@
             </a>
         {% endif %}
     </div>
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Título</th>
-                <th>Descripción</th>
-                <th>Fecha</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for event in events%}
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead class="table-light">
                 <tr>
-                    <td>{{ event.title }}</td>
-                    <td>{{ event.description }}</td>
-                    <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
-                    <td>
-                        <div class="hstack gap-1">
-                            <a href="{% url 'event_detail' event.id %}"
-                               class="btn btn-sm btn-outline-primary"
-                               aria-label="Ver detalle"
-                               title="Ver detalle">
-                                <i class="bi bi-eye" aria-hidden="true"></i>
-                            </a>
-                            {% if user_is_organizer %}
-                                <a href="{% url 'event_edit' event.id %}"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    aria-label="Editar"
-                                    title="Editar">
-                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                    <th>Título</th>
+                    <th>Descripción</th>
+                    <th>Fecha y Hora</th>
+                    <th>Organizador</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in events%}
+                    <tr>
+                        <td>{{ event.title }}</td>
+                        <td>{{ event.description|truncatechars:50 }}</td>
+                        <td>{{ event.scheduled_at|date:"l, j \d\e F \d\e Y, H:i" }}</td>
+                        <td>{{ event.organizer }}</td>
+                        <td>
+                            <div class="hstack gap-1">
+                                <a href="{% url 'event_detail' event.id %}"
+                                   class="btn btn-sm btn-outline-primary"
+                                   aria-label="Ver detalle"
+                                   title="Ver detalle">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
                                 </a>
-                                <form action="{% url 'event_delete' event.id %}" method="POST">
-                                    {% csrf_token %}
-                                    <button class="btn btn-sm btn-outline-danger"
-                                        title="Eliminar"
-                                        type="submit"
-                                        aria-label="Eliminar"
-                                        titile="Eliminar">
-                                        <i class="bi bi-trash" aria-hidden="true"></i>
-                                    </button>
-                                </form>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-            {% empty %}
-                <tr>
-                    <td colspan="4" class="text-center">No hay eventos disponibles</td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                                {% if user_is_organizer %}
+                                    <a href="{% url 'event_edit' event.id %}"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        aria-label="Editar"
+                                        title="Editar">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                                    </a>
+                                    <form action="{% url 'event_delete' event.id %}" method="POST" onsubmit="return confirm('¿Estás segura que deseas eliminar este evento?')">
+                                        {% csrf_token %}
+                                        <button class="btn btn-sm btn-outline-danger"
+                                            title="Eliminar"
+                                            type="submit"
+                                            aria-label="Eliminar">
+                                            <i class="bi bi-trash" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No hay eventos disponibles</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
 </div>
 {% endblock %}

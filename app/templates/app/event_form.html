@@ -14,14 +14,14 @@
 
             <div class="card">
                 <div class="card-body">
-                    <form action="{% url 'event_form' %}" method="POST">
+                    <form id="eventForm" action="{% if event.id %}{% url 'event_edit' id=event.id %}{% else %}{% url 'event_form' %}{% endif %}" method="POST">
                         {% csrf_token %}
                         <div class="vstack gap-3">
                             <div>
                                 <label for="title" class="form-label">Título del Evento</label>
                                 <input class="form-control"
                                     id="title"
-                                    required=""
+                                    required
                                     type="text"
                                     value="{{ event.title }}"
                                     name="title" />
@@ -33,7 +33,7 @@
                                     id="description"
                                     name="description"
                                     rows="4"
-                                    required="">{{ event.description }}</textarea>
+                                    required>{{ event.description }}</textarea>
                             </div>
                             <div class="row">
                                 <div class="col-md-6">
@@ -41,24 +41,31 @@
                                     <input
                                         class="form-control"
                                         id="date"
-                                        required=""
+                                        required
                                         type="date"
-                                        value="{{ event.scheduled_at|date:'Y-m-d'}}"
-                                        name="date" />
+                                        name="date"
+                                        value="{{ event.scheduled_at|date:'Y-m-d' }}"
+                                        min="{{ min_date }}" />
                                 </div>
                                 <div class="col-md-6">
                                     <label for="time" class="form-label">Hora</label>
                                     <input
                                         class="form-control"
                                         id="time"
-                                        required=""
+                                        required
                                         type="time"
-                                        value="{{ event.scheduled_at|date:'g:i'}}"
+                                        value="{{ event.scheduled_at|date:'H:i' }}"
                                         name="time" />
                                 </div>
                             </div>
                             <div>
-                                <button type="submit" class="btn btn-primary">Crear Evento</button>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if event.id %}
+                                        Guardar Cambios
+                                    {% else %}
+                                        Crear Evento
+                                    {% endif %}
+                                </button>
                             </div>
                         </div>
                     </form>
@@ -67,4 +74,30 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.getElementById('eventForm').addEventListener('submit', function(event) {
+        const dateInput = document.getElementById('date');
+        const selectedDateParts = dateInput.value.split('-');
+
+        const selectedDate = new Date(
+            parseInt(selectedDateParts[0], 10),
+            parseInt(selectedDateParts[1], 10) - 1,
+            parseInt(selectedDateParts[2], 10)
+        );
+        selectedDate.setHours(0, 0, 0, 0); // limpiar la hora
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const tomorrow = new Date(today);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+
+        // Solo importa que la fecha sea igual o posterior a mañana
+        if (selectedDate.getTime() < tomorrow.getTime()) {
+            alert('La fecha debe ser posterior a la actual.');
+            event.preventDefault();
+        }
+    });
+</script>
+
 {% endblock %}
