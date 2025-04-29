@@ -59,7 +59,12 @@
                                 <li class="nav-item">
                                     {% navbar_link 'notification' 'Notificaciones' %}
                                 </li>
-                            {% endif %}
+                            {% else %}
+                            <li class="nav-item">
+                                {% navbar_link 'user_notifications' 'Notificacion' %}
+                            </li>
+
+                            {% endif%}
                         </ul>
                     </div>
 

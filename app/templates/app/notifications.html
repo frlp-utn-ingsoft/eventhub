@@ -96,9 +96,6 @@
                             <button class="btn btn-sm btn-outline-secondary" onclick="window.location.href='{% url 'notification_edit' id=notification.id %}'"">
                                 <i class="bi bi-pencil"></i>
                             </button>
-
-
-
                             <form action="{% url 'notification_delete' notification.id %}" method="POST" class="d-inline">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-danger"
