@@ -33,4 +33,5 @@ urlpatterns = [
     path('event/<int:event_id>/rating/create/', views.rating_create, name='rating_create'),
     path('event/<int:event_id>/rating/<int:rating_id>/update/', views.rating_update, name='rating_update'),
     path('event/<int:event_id>/rating/<int:rating_id>/delete/', views.rating_delete, name='rating_delete'),
+    path('create_refund/', views.create_refund, name='create_refund'),
 ]

@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Count
 from django.http import HttpResponseForbidden
-from .models import Event, User, Category, Comment, Venue, Ticket, Rating
+from .models import Event, User, Category, Comment, Venue, Ticket, Rating, RefundRequest
 from django.contrib import messages
 import re
 import random
@@ -197,16 +197,16 @@ def category_delete(request, id):
 
     if request.method == "POST":
         category = get_object_or_404(Category, pk=id)
-        
+
         try:
-            category.delete() 
+            category.delete()
             messages.success(request, "Categoría eliminada exitosamente.")
         except IntegrityError:
             messages.warning(request, "No se puede eliminar esta categoría porque tiene eventos asociados.")
-        
-        return redirect("categorias") 
 
-    return redirect("categorias")  
+        return redirect("categorias")
+
+    return redirect("categorias")
 
 
 
@@ -445,7 +445,7 @@ def tickets(request, event_id):
 @login_required
 def comprar_ticket(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
-    
+
     if request.method == 'POST':
         # Obtener datos del formulario
         ticket_code = request.POST.get('ticket_code')
@@ -454,8 +454,8 @@ def comprar_ticket(request, event_id):
         try:
             quantity = int(quantity)
         except ValueError:
-            quantity = 0 
-        
+            quantity = 0
+
         # Datos de pago (estos se enviarían a una API externa en un caso real)
         payment_data = {
             'card_number': request.POST.get('card_number'),
@@ -463,30 +463,30 @@ def comprar_ticket(request, event_id):
             'card_cvv': request.POST.get('card_cvv'),
             'card_name': request.POST.get('card_name'),
         }
-        
+
         # Simulación de llamada a API de pago
         payment_success = simular_procesamiento_pago(payment_data)
-        
+
         if not payment_success:
             messages.error(request, "Error en el procesamiento del pago. Por favor, intenta nuevamente.")
             return render(request, 'app/ticket_compra.html', {
-                'event': event, 
+                'event': event,
                 'event_id': event_id,
                 'error': "Error en el procesamiento del pago"
             })
-        
+
         errors = Ticket.validate(ticket_code, quantity)
-        
+
         if errors:
             messages.error(request, "Error en la validación del ticket.")
             return render(request, 'app/ticket_compra.html', {
-                'errors': errors, 
-                'event': event, 
+                'errors': errors,
+                'event': event,
                 'event_id': event_id
             })
-        
+
         user = request.user
-        
+
         ticket = Ticket.objects.create(
             ticket_code=ticket_code,
             quantity=quantity,
@@ -494,11 +494,11 @@ def comprar_ticket(request, event_id):
             user=user,
             event=event
         )
-        
+
         messages.success(request, f"¡Compra exitosa! Tu código de ticket es: {ticket_code}")
         return redirect('events')
     return render(request, 'app/ticket_compra.html', {
-        'event': event, 
+        'event': event,
         'event_id': event_id
     })
 
@@ -508,21 +508,21 @@ def simular_procesamiento_pago(payment_data):
     En un entorno real, aquí se realizaría una llamada a la API de la pasarela de pagos.
     """
     card_number = payment_data.get('card_number', '').replace(' ', '')
-    
+
     # Comprobar que el número de tarjeta tiene 16 dígitos
     if not card_number.isdigit() or len(card_number) != 16:
         return False
-    
+
     # Comprobar que la fecha de expiración tiene el formato MM/AA
     expiry = payment_data.get('card_expiry', '')
     if not re.match(r'^\d{2}/\d{2}$', expiry):
         return False
-    
+
     # Comprobar que el CVV tiene 3-4 dígitos
     cvv = payment_data.get('card_cvv', '')
     if not cvv.isdigit() or not (3 <= len(cvv) <= 4):
         return False
-    
+
     # Simular un 95% de probabilidad de éxito en el pago
     return random.random() < 0.95
 
@@ -549,11 +549,11 @@ def rating_create(request, event_id):
     if Rating.objects.filter(user=request.user, event=event).exists():
         messages.error(request, "Ya has calificado este evento")
         return redirect('event_detail', id=event_id)
-    
+
     if not Ticket.objects.filter(user=request.user, event=event).exists():
         messages.error(request, "No puedes calificar un evento si no tienes un ticket")
         return redirect('event_detail', id=event_id)
-    
+
     if request.method == 'POST':
         title = request.POST.get('title')
         text = request.POST.get('text')
@@ -607,3 +607,36 @@ def rating_delete(request, event_id, rating_id):
         messages.error(request, "Error al eliminar la calificación")
 
     return redirect('event_detail', id=event_id)
+
+def create_refund(request):
+    if request.method == 'POST':
+        ticket_code = request.POST.get('ticket_code')
+        amount = request.POST.get('amount')
+        reason = request.POST.get('reason')
+        refund_reason = request.POST.get('refund_reason')
+
+        ticket = get_object_or_404(Ticket, ticket_code=ticket_code)
+
+        success, errors = RefundRequest.new(
+            approved=False,
+            amount=float(amount),
+            reason=reason,
+            refund_reason=refund_reason,
+            ticket_code=ticket_code,
+            user=request.user
+        )
+
+        if not success:
+            return render(request, 'app/refund_form.html', {
+                'ticket': ticket,
+                'errors': errors,
+                'input': request.POST
+            })
+
+        return redirect('Mis_tickets')
+    if request.method == 'GET':
+        #ticket_code = request.GET.get('ticket_code')
+        #ticket = get_object_or_404(Ticket, ticket_code=ticket_code)
+
+        return render(request, 'app/refund_form.html')
+    return redirect('Mis_tickets')

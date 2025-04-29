@@ -255,27 +255,76 @@ class Rating(models.Model):
         self.title = title.strip() if title else self.title
         self.text = text.strip() if text else self.text
         self.save()
+
+
+class RefundStatus(models.TextChoices):
+    PENDING = "pending", "Pendiente"
+    APPROVED = "approved", "Aprobado"
+    REJECTED = "rejected", "Rechazado"
+
+class RefundReason(models.TextChoices):
+    EVENT_CANCELLED = "event_cancelled", "Evento cancelado"
+    TICKET_NOT_RECEIVED = "ticket_not_received", "Entrada no recibida"
+    OTHER = "other", "Otro"
+
 class RefundRequest(models.Model):
     approved = models.BooleanField(default=False)
     approval_date = models.DateTimeField(null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     reason = models.TextField()
+    status = models.CharField(max_length=10, choices=RefundStatus.choices, default=RefundStatus.PENDING)
+    refund_reason = models.CharField(max_length=50, choices=RefundReason.choices, default=RefundReason.OTHER)
+    ticket_code = models.CharField(max_length=100, unique=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refund_requests")
     created_at = models.DateTimeField(auto_now_add=True)
 
+
     @classmethod
-    def new(cls, approved, amount, reason):
-        refundRequest = cls(
-            approved=approved,
+    def new(cls, approved, amount, reason, refund_reason, ticket_code, user):
+        errors = cls.validate(approved, amount, reason)
+
+        if errors:
+            return False, errors
+
+        cls.objects.create(
+            approved=False,
             amount=amount,
             reason=reason,
-            created_at=datetime.now()
+            refund_reason=refund_reason,
+            ticket_code=ticket_code,
+            user=user,
+            status=RefundStatus.PENDING
         )
-        refundRequest.save()
-        return refundRequest
 
-    def update(self, approved, approval_date, amount, reason):
-        self.approved = approved or self.approved
-        self.approval_date = approval_date or self.approval_date
-        self.amount = amount or self.amount
-        self.reason = reason or self.reason
-        self.save()
+        return True, None
+
+    @classmethod
+    def validate(cls, amount, reason, status, refund_reason, ticket_code, user):
+        errors = {}
+
+        if amount is None or amount <= 0:
+            errors["amount"] = "El monto debe ser mayor a 0."
+
+        if reason is None or reason.strip() == "":
+            errors["reason"] = "La razón es requerida."
+        elif len(reason) > 500:
+            errors["reason"] = "La razón no puede superar los 500 caracteres."
+
+        if status not in RefundStatus.values:
+            errors["status"] = "Estado inválido."
+
+        if refund_reason not in RefundReason.values:
+            errors["refund_reason"] = "Motivo de reembolso inválido."
+
+        if ticket_code is None:
+            errors["ticket_code"] = "Debe asociarse un ticket."
+        elif not Ticket.objects.filter(ticket_code=ticket_code).exists():
+            errors["ticket_code"] = "El ticket no existe."
+
+        if user is None:
+            errors["user"] = "Debe asociarse un usuario."
+        elif not User.objects.filter(id=user.id).exists():
+            errors["user"] = "El usuario no existe."
+
+        return errors
+
