@@ -86,7 +86,7 @@ class Ticket(models.Model):
 
     # Atributes
     buy_date = models.DateTimeField(verbose_name = 'Fecha de compra')
-    ticket_code = models.models.UUIDField(
+    ticket_code = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
         editable=False,
