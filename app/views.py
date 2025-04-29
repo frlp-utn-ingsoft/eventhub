@@ -3,6 +3,11 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from .forms import NotificationForm
+from .models import Notification
+from django.views import generic
+from django.urls import reverse_lazy
 
 from .models import Event, User
 
@@ -125,3 +130,43 @@ def event_form(request, id=None):
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
+
+
+# — mixin para chequear si es organizador —
+class OrganizerRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.is_organizer
+
+# LISTADO
+class NotificationList(LoginRequiredMixin, generic.ListView):
+    template_name = "notifications/list.html"
+    paginate_by   = 10
+
+    def get_queryset(self):
+        return self.request.user.notifications.all()
+
+# CREAR / EDITAR / BORRAR solo organizadores
+class NotificationCreate(OrganizerRequiredMixin, generic.CreateView):
+    model       = Notification
+    form_class  = NotificationForm
+    success_url = reverse_lazy("notifications:list")
+
+class NotificationUpdate(OrganizerRequiredMixin, generic.UpdateView):
+    model       = Notification
+    form_class  = NotificationForm
+    success_url = reverse_lazy("notifications:list")
+
+class NotificationDelete(OrganizerRequiredMixin, generic.DeleteView):
+    model       = Notification
+    success_url = reverse_lazy("notifications:list")
+
+# MARCAR COMO LEÍDA (POST)
+from django.views import View
+from django.shortcuts import redirect, get_object_or_404
+
+class NotificationMarkRead(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        notif = get_object_or_404(Notification, pk=pk, user=request.user)
+        notif.is_read = True
+        notif.save(update_fields=["is_read"])
+        return redirect("notifications:list")
