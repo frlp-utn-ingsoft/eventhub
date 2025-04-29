@@ -73,11 +73,11 @@ def login_view(request):
     return render(request, "accounts/login.html")
 
 def home(request):
-    return render(request, "home.html")
+    return render(request, "home.html",{"user_is_organizer": request.user.is_organizer})
 
 def verVenues(request):
     venues = Venue.objects.all() 
-    return render(request, 'app/venue_list.html', {'venues': venues})
+    return render(request, 'app/venue_list.html', {'venues': venues, "user_is_organizer": request.user.is_organizer})
 
 @login_required
 @organizer_required
@@ -89,7 +89,7 @@ def crearVenues(request):
             return redirect('venue_list')
     else:
         form = VenueForm() 
-    return render(request, 'app/venue_form.html', {'form': form})
+    return render(request, 'app/venue_form.html', {'form': form, "user_is_organizer": request.user.is_organizer})
 
 @login_required
 @organizer_required
@@ -102,7 +102,7 @@ def editarVenues(request, pk):
             return redirect('venue_list') 
     else:
         form = VenueForm(instance=venue)
-    return render(request, 'app/venue_form.html', {'form': form})
+    return render(request, 'app/venue_form.html', {'form': form, "user_is_organizer": request.user.is_organizer})
 
 @login_required
 @organizer_required
@@ -111,7 +111,7 @@ def eliminarVenue(request, pk):
     if request.method == 'POST':
         venue.delete() 
         return redirect('venue_list') 
-    return render(request, 'app/venue_confirm_delete.html', {'venue': venue})
+    return render(request, 'app/venue_confirm_delete.html', {'venue': venue, "user_is_organizer": request.user.is_organizer})
 
 
 @login_required
@@ -205,7 +205,7 @@ def category_delete(request, id):
 @organizer_required
 def category_detail(request, id):
     event = get_object_or_404(Category, pk=id)
-    return render(request, "app/category_detail.html", {"category": event})
+    return render(request, "app/category_detail.html", {"category": event, "user_is_organizer": request.user.is_organizer})
 
 
 @login_required
@@ -214,6 +214,18 @@ def events(request):
     return render(
         request,
         "app/events.html",
+        {"events": events, "user_is_organizer": request.user.is_organizer},
+    )
+
+@login_required
+def my_events(request):
+    if not request.user.is_organizer:
+        return redirect("events")
+    
+    events = Event.objects.filter(organizer=request.user).order_by("scheduled_at")
+    return render(
+        request,
+        "app/my_events.html",
         {"events": events, "user_is_organizer": request.user.is_organizer},
     )
 
@@ -236,6 +248,7 @@ def event_delete(request, id):
         return redirect("events")
 
     return redirect("events")
+
 @login_required
 @organizer_required
 def event_form(request, id=None):
@@ -323,7 +336,7 @@ def notifications(request):
         return render(
         request,
         "app/notifications_admin.html",
-        {"notifications": notifications})        
+        {"notifications": notifications, "user_is_organizer": request.user.is_organizer})        
 
     for notification in notifications:
         link = NotificationUser.objects.filter(notification=notification, user=user).first()
@@ -478,7 +491,8 @@ def buy_ticket(request, event_id):
     
     return render(request, 'app/buy_ticket.html', {
         'form': form,
-        'event': event
+        'event': event,
+        "user_is_organizer": request.user.is_organizer
     })
 
 @login_required
@@ -489,7 +503,7 @@ def ticket_detail(request, ticket_id):
         messages.error(request, 'No tienes permiso para ver este ticket')
         return redirect('home')
     
-    return render(request, 'app/ticket_detail.html', {'ticket': ticket})
+    return render(request, 'app/ticket_detail.html', {'ticket': ticket, "user_is_organizer": request.user.is_organizer})
 
 @login_required
 def edit_ticket(request, ticket_id):
@@ -543,7 +557,8 @@ def delete_ticket(request, ticket_id):
 @login_required
 def my_tickets(request):
     tickets = Ticket.objects.filter(user=request.user).order_by('-buy_date')
-    return render(request, 'app/my_tickets.html', {'tickets': tickets})
+    return render(request, 'app/my_tickets.html', {'tickets': tickets, "user_is_organizer": request.user.is_organizer})
+
 @organizer_required
 def notification_detail(request, id):
     notification = get_object_or_404(Notification, pk=id)

@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Eventos{% endblock %}
+
+{% block content %}
+<div class="container pt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Mis Eventos</h1>
+            <a
+                href="{% url 'event_form' %}"
+                class="btn btn-primary"
+            >
+                <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
+                Crear Evento
+            </a>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Descripción</th>
+                <th>Fecha</th>
+                <th>Categorías</th> <!-- Nueva columna Añadida -->
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in events%}
+                <tr>
+                    <td>{{ event.title }}</td>
+                    <td>{{ event.description }}</td>
+                    <td>{{ event.scheduled_at|date:"d M Y, H:i" }}</td>
+                    <td>
+                        {% if event.categories.all %}
+                            {% for category in event.categories.all %}
+                                <span class="badge bg-secondary me-1">{{ category.name }}</span>
+                            {% endfor %}
+                        {% else %}
+                            <em>-</em>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div class="hstack gap-1">
+                            <a href="{% url 'event_detail' event.id %}"
+                               class="btn btn-sm btn-outline-primary"
+                               aria-label="Ver detalle"
+                               title="Ver detalle">
+                                <i class="bi bi-eye" aria-hidden="true"></i>
+                            </a>
+                            {% if user_is_organizer %}
+                                <a href="{% url 'event_edit' event.id %}"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    aria-label="Editar"
+                                    title="Editar">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </a>
+                                <form action="{% url 'event_delete' event.id %}" method="POST" class="d-inline">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-outline-danger"
+                                        title="Eliminar"
+                                        type="submit"
+                                        aria-label="Eliminar">
+                                        <i class="bi bi-trash" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">No hay eventos disponibles</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
