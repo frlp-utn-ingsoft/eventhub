@@ -35,7 +35,43 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+    @classmethod
+    def validate(cls, name):
+        errors = {}
+
+        if not name.strip():
+            errors["name"] = "El nombre no puede estar vacío"
+        elif cls.objects.filter(name__iexact=name).exists():
+            errors["name"] = "Ya existe una categoría con ese nombre"
+
+        return errors
+
+    @classmethod
+    def new(cls, name, description, is_active):
+        name = name.strip()
+        errors = cls.validate(name)
+
+        if errors:
+            return False, errors
+
+        cls.objects.create(
+            name=name.strip(),
+            description=description.strip(),
+            is_active=is_active
+        )
+
+        return True, None
+
+    def update(self, name, description, is_active):
+        if name:
+            self.name = name.strip()
+        self.description = description.strip()
+        self.is_active = is_active
+        self.save()
+
+
 class Event(models.Model):
+
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
@@ -83,3 +119,4 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+        

@@ -136,7 +136,7 @@ def event_form(request, id=None):
 
 
 @login_required
-def category_list(request):
+def categories(request):
     categories = Category.objects.all()
     return render(
         request,
@@ -149,70 +149,47 @@ def category_list(request):
 
 
 @login_required
-def category_create(request):
+def category_form(request, id=None):
     if not request.user.is_organizer:
         return redirect("categories")
+
+    category = get_object_or_404(Category, pk=id) if id else None
 
     if request.method == "POST":
         name = request.POST.get("name", "").strip()
         description = request.POST.get("description", "").strip()
         is_active = request.POST.get("is_active") == "on"
 
-        if not name:
-            error = "El nombre no puede estar vacío"
-        elif Category.objects.filter(name__iexact=name).exists():
-            error = "Ya existe una categoría con ese nombre"
-        else:
-            Category.objects.create(name=name, description=description, is_active=is_active)
-            return redirect("categories")
+        errors = Category.validate(name)
 
-        return render(request, "app/category_form.html", {
-            "error": error,
-            "category": {
-                "name": name,
-                "description": description,
-                "is_active": is_active,
-            },
-            "is_edit": False,
-        })
+        if id and Category.objects.filter(name__iexact=name).exclude(pk=id).exists():
+            errors["name"] = "Ya existe otra categoría con ese nombre"
 
-    return render(request, "app/category_form.html", {"is_edit": False})
+        if errors:
+            return render(request, "app/category_form.html", {
+                "error": list(errors.values())[0],  # Mostrar solo un error
+                "category": {
+                    "name": name,
+                    "description": description,
+                    "is_active": is_active,
+                },
+                "is_edit": category is not None,
+            })
 
-
-@login_required
-def category_update(request, id):
-    if not request.user.is_organizer:
-        return redirect("categories")
-
-    category = get_object_or_404(Category, pk=id)
-
-    if request.method == "POST":
-        name = request.POST.get("name", "").strip()
-        description = request.POST.get("description", "").strip()
-        is_active = request.POST.get("is_active") == "on"
-
-        if not name:
-            error = "El nombre no puede estar vacío"
-        elif Category.objects.filter(name__iexact=name).exclude(id=category.pk).exists():
-            error = "Ya existe otra categoría con ese nombre"
-        else:
+        if category:
             category.name = name
             category.description = description
             category.is_active = is_active
             category.save()
-            return redirect("categories")
+        else:
+            Category.objects.create(name=name, description=description, is_active=is_active)
 
-        return render(request, "app/category_form.html", {
-            "error": error,
-            "category": category,
-            "is_edit": True,
-        })
+        return redirect("categories")
 
     return render(request, "app/category_form.html", {
         "category": category,
-        "is_edit": True,
+        "is_edit": category is not None,
     })
-
 
 
 @login_required
