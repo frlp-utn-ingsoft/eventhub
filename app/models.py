@@ -168,3 +168,54 @@ class Notification(models.Model):
         
         except cls.DoesNotExist:
             return False, "Notificacion no encontrada"
+        
+class Rating(models.Model):
+    title = models.CharField(max_length=255)
+    text = models.TextField()
+    rating = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    user = models.ForeignKey(get_user_model(), on_delete=models.CASCADE,related_name="ratings",null=True,blank=True)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="ratings", null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.title} ({self.rating/5})"
+    
+    @classmethod
+    def validate(cls,title,text,rating):
+        errors = {}
+
+        if not title:
+            errors["title"] = "El título no puede estar vacío."
+        if not text:
+            errors["text"] = "El texto no puede estar vacío."
+        if rating is None or not (1 <= rating <= 5):
+            errors["rating"] = "El rating debe ser un número entre 1 y 5."
+
+        return errors
+    @classmethod
+    def new(cls, title, text, rating, user=None, event=None):
+        errors = cls.validate(title, text, rating)
+
+        if errors:
+            return False, errors
+
+        rating_obj = cls.objects.create(
+            title=title,
+            text=text,
+            rating=rating,
+            user=user,
+            event=event
+        )
+        return True, rating_obj
+
+    def update(self, title, text, rating):
+        errors = Rating.validate(title, text, rating)
+        if errors:
+            return False, errors
+
+        self.title = title or self.title
+        self.text = text or self.text
+        self.rating = rating or self.rating
+        self.save()
+        return True, None
