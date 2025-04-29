@@ -59,6 +59,13 @@
                         </ul>
                     </div>
 
+                    <div class="collapse navbar-collapse" id="navbar-content">
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <li class="nav-item">
+                                {% navbar_link 'my_tickets' 'Mis Tickets' %}
+                            </li>
+                        </ul>
+                    </div>
                     {% if user_is_organizer %}
                     <div class="collapse navbar-collapse" id="navbar-content">
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
