@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.contrib import messages
 
 
 from .models import Event, User, Rating
@@ -88,19 +89,22 @@ def rating_create(request, id):
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
     ratings = Rating.objects.filter(event=event)
+    user_is_organizer = event.organizer == request.user
 
-    # Check if we're editing a rating (from either GET or POST)
     rating_to_edit = None
     rating_id = request.GET.get('rating_id') or request.POST.get('rating_id')
 
     if rating_id:
         rating_to_edit = get_object_or_404(Rating, pk=rating_id, event=event)
+        if user_is_organizer or rating_to_edit.user != request.user:
+            return redirect('event_detail', id=id)
 
     if request.method == 'POST':
-        if 'rating_id' in request.POST:  # If editing an existing rating
-            rating_to_edit = get_object_or_404(Rating, pk=request.POST['rating_id'], event=event)
+        if rating_to_edit:
             form = RatingForm(request.POST, instance=rating_to_edit)
-        else:  # Creating a new rating
+        else:
+            if user_is_organizer:
+                return redirect('event_detail', id=id)
             form = RatingForm(request.POST)
 
         if form.is_valid():
@@ -117,19 +121,22 @@ def event_detail(request, id):
         'ratings': ratings,
         'form': form,
         'rating_to_edit': rating_to_edit,
-        'user_is_organizer': event.organizer == request.user  # Assuming this is what determines if user is organizer
+        'user_is_organizer': user_is_organizer,
+        'show_rating_form': not user_is_organizer
     }
     return render(request, 'app/event_detail.html', context)
 
+
 @login_required
 def rating_delete(request, id, rating_id):
-    rating = get_object_or_404(Rating, pk=rating_id, event_id=id)
-
-    # Verificar si el usuario tiene permiso para eliminar la calificación (por ejemplo, si es el usuario que la creó o un organizador)
-    if request.user == rating.user or request.user.is_staff:
-        rating.delete()
-    return redirect('event_detail', id=id)
-
+    event = get_object_or_404(Event, pk=id)
+    rating = get_object_or_404(Rating, pk=rating_id, event=event)
+    if request.user == rating.user or request.user.is_organizer:
+        if request.method == "POST":
+            rating.delete()
+            return redirect("event_detail", id=id)
+        # opcional: mostrar confirmación
+    return redirect("event_detail", id=id)
 
 @login_required
 def event_delete(request, id):
