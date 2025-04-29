@@ -76,6 +76,8 @@ def verVenues(request):
     venues = Venue.objects.all() 
     return render(request, 'app/venue_list.html', {'venues': venues})
 
+@login_required
+@organizer_required
 def crearVenues(request):
     if request.method == 'POST':
         form = VenueForm(request.POST)
@@ -86,6 +88,8 @@ def crearVenues(request):
         form = VenueForm() 
     return render(request, 'app/venue_form.html', {'form': form})
 
+@login_required
+@organizer_required
 def editarVenues(request, pk):
     venue = get_object_or_404(Venue, pk=pk) 
     if request.method == 'POST':
@@ -97,6 +101,8 @@ def editarVenues(request, pk):
         form = VenueForm(instance=venue)
     return render(request, 'app/venue_form.html', {'form': form})
 
+@login_required
+@organizer_required
 def eliminarVenue(request, pk):
     venue = get_object_or_404(Venue, pk=pk) 
     if request.method == 'POST':
@@ -214,6 +220,7 @@ def event_detail(request, id):
     return render(request, "app/event_detail.html", {"event": event})
 
 @login_required
+@organizer_required
 def event_delete(request, id):
     user = request.user
     if not user.is_organizer:
@@ -226,6 +233,7 @@ def event_delete(request, id):
 
     return redirect("events")
 @login_required
+@organizer_required
 def event_form(request, id=None):
     user = request.user
 
@@ -284,7 +292,7 @@ def event_form(request, id=None):
 
     categories = list(Category.objects.all())
 
-    # Divide en 3 columnas
+   
     total = len(categories)
     per_column = math.ceil(total / 3)
     categories_chunks = [categories[i:i + per_column] for i in range(0, total, per_column)]
