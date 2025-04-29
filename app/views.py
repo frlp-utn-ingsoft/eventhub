@@ -2,11 +2,11 @@ import datetime
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect,Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.contrib import messages
-from .models import Category, Event, User, Venue, refund
+from .models import Category, Event, User, Venue, refund,Rating
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import ListView
 
@@ -75,7 +75,17 @@ def events(request):
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
     categories = Category.objects.all()
-    return render(request, "app/event/event_detail.html", {"event": event, "categories": categories, "user_is_organizer": request.user.is_organizer})
+     # Obtener todas las calificaciones de este evento
+    ratings = Rating.objects.filter(event=event)
+
+    # Llamar a la función `handle_rating` para manejar la calificación
+    rating_saved = create_rating(request, event)
+
+    # Si la calificación se guardó correctamente, actualizar las calificaciones
+    if rating_saved:
+        ratings = Rating.objects.filter(event=event)
+        
+    return render(request, "app/event/event_detail.html", {"event": event,'ratings': ratings ,"categories": categories, "user_is_organizer": request.user.is_organizer})
 
 
 @login_required
@@ -314,3 +324,48 @@ class RefundRequestsAdminView(LoginRequiredMixin, UserPassesTestMixin, ListView)
 
     def handle_no_permission(self):
         return redirect("events")
+    
+@login_required
+def create_rating(request, event):
+    """
+    Esta función maneja la lógica para guardar una calificación
+    """
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        stars = request.POST.get('stars')
+        comment = request.POST.get('comment')
+
+        # Guardar la nueva calificación en la base de datos
+        Rating.objects.create(
+            event=event,
+            user=request.user,  # Asumimos que el usuario está logueado
+            title=title,
+            rating=stars,
+            text=comment
+        )
+        return True
+    return False
+
+@login_required
+def editar_rating(request, rating_id):
+    rating = get_object_or_404(Rating, id=rating_id)
+
+
+    if request.method == 'POST':
+        if (request.user == rating.user or not request.user.is_organizer):
+            rating.title = request.POST.get('title')
+            rating.rating = int(request.POST.get('stars'))
+            rating.text = request.POST.get('comment')
+            rating.save()
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+
+
+@login_required
+def eliminar_rating(request, rating_id):
+    rating = get_object_or_404(Rating, id=rating_id)
+
+    # Solo el autor o un organizador puede eliminar
+    if request.user == rating.user or request.user.is_organizer:
+        rating.delete()
+
+    return redirect(request.META.get('HTTP_REFERER', '/'))
