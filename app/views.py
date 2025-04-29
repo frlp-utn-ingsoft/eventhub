@@ -328,7 +328,7 @@ def notifications(request):
         return render(
         request,
         "app/notifications_admin.html",
-        {"notifications": notifications})        
+        {"notifications": notifications, "user_is_organizer": user.is_organizer})      
 
     for notification in notifications:
         link = NotificationUser.objects.filter(notification=notification, user=user).first()
