@@ -1,0 +1,106 @@
+[
+  {
+    "model": "app.venue",
+    "pk": 1,
+    "fields": {
+      "name": "Mi primer venue",
+      "address": "123 Calle Principal",
+      "capacity" : 100,
+      "country" : "ARGENTINA",
+      "city" : "Buenos Aires",
+      "created_at": "2024-01-01T12:00:00Z",
+      "updated_at": "2024-01-01T12:00:00Z"
+    }
+  },
+  {
+   "model": "app.venue",
+    "pk": 2,
+    "fields": {
+      "name": "Mi primer venue",
+      "address": "123 Calle Principal",
+      "capacity" : 100,
+      "country" : "ARGENTINA",
+      "city" : "Buenos Aires",
+      "created_at": "2024-01-01T12:00:00Z",
+      "updated_at": "2024-01-01T12:00:00Z"
+    }
+  },
+  {
+    "model": "app.venue",
+    "pk": 3,
+    "fields": {
+      "name": "Teatro San Martín",
+      "address": "Av. Corrientes 1530, CABA, Buenos Aires",
+      "capacity": 1500,
+      "country": "AR",
+      "city": "CABA",
+      "created_at": "2023-04-01T00:00:00Z",
+      "updated_at": "2024-01-01T12:00:00Z"
+    }
+  },
+  {
+    "model": "app.venue",
+    "pk": 4,
+    "fields": {
+      "name": "Teatro Astral",
+      "address": "Av. Corrientes 1639, CABA, Buenos Aires",
+      "capacity": 800,
+      "country": "AR",
+      "city": "CABA",
+      "created_at": "2024-01-01T12:00:00Z",
+      "updated_at": "2024-01-01T12:00:00Z"
+    }
+  },
+  {
+    "model": "app.venue",
+    "pk": 5,
+    "fields": {
+      "name": "Luna Park",
+      "address": "Av. Madero 420, CABA, Buenos Aires",
+      "capacity": 10000,
+      "country": "AR",
+      "city": "CABA",
+      "created_at": "2024-01-01T12:00:00Z",
+      "updated_at": "2024-01-01T12:00:00Z"
+    }
+  },
+  {
+    "model": "app.venue",
+    "pk": 6,
+    "fields": {
+      "name": "Teatro El Nacional",
+      "address": "Av. Corrientes 960, CABA, Buenos Aires",
+      "capacity": 800,
+      "country": "AR",
+      "city": "CABA",
+      "created_at": "2024-01-01T12:00:00Z",
+      "updated_at": "2024-01-01T12:00:00Z"
+    }
+  },
+  {
+    "model": "app.venue",
+    "pk": 7,
+    "fields": {
+      "name": "Estadio de Gimnasia y Esgrima de La Plata",
+      "address": "Calle 4 y 60, La Plata, Buenos Aires",
+      "capacity": 40000,
+      "country": "AR",
+      "city": "La Plata",
+      "created_at": "2024-01-01T12:00:00Z",
+      "updated_at": "2024-01-01T12:00:00Z"
+    }
+  },
+  {
+    "model": "app.venue",
+    "pk": 8,
+    "fields": {
+      "name": "Teatro 25 de Mayo",
+      "address": "Calle 25 y 66, La Plata, Buenos Aires",
+      "capacity": 500,
+      "country": "AR",
+      "city": "La Plata",
+      "created_at": "2024-01-01T12:00:00Z",
+      "updated_at": "2024-01-01T12:00:00Z"
+    }
+  }
+]

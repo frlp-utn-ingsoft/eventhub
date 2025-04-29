@@ -1,0 +1,18 @@
+<!-- templates/venue_confirm_delete.html -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmar eliminación</title>
+</head>
+<body>
+    <h1>¿Estás seguro de que quieres eliminar este venue?</h1>
+    <form method="POST">
+        {% csrf_token %}
+        <button type="submit">Sí, eliminar</button>
+        <a href="{% url 'venue_list' %}">Cancelar</a>
+    </form>
+</body>
+</html>

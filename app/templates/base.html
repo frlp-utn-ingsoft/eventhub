@@ -59,6 +59,16 @@
                         </ul>
                     </div>
 
+                    {% if user_is_organizer %}
+                    <div class="collapse navbar-collapse" id="navbar-content">
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <li class="nav-item">
+                                {% navbar_link 'venue_list' 'Lugares' %}
+                            </li>
+                        </ul>
+                    </div>
+                    {%endif%}
+
                     <form class="d-flex" action={% url 'logout' %} method="POST">
                         {% csrf_token %}
                         <button class="btn btn-sm btn-outline-secondary" type="submit" name="logout">Salir</button>

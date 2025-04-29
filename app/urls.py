@@ -2,6 +2,8 @@ from django.contrib.auth.views import LogoutView
 from django.urls import path
 from . import views
 from django.urls import include
+from .views import verVenues, crearVenues, edit_ticket, eliminarVenue
+
 
 urlpatterns = [
     path("", views.home, name="home"),
@@ -30,4 +32,8 @@ urlpatterns = [
     path("categories/<int:id>/edit/", views.category_edit, name="category_edit"),
     path("categories/<int:id>/", views.category_detail, name="category_detail"),
     path("categories/<int:id>/delete/", views.category_delete, name="category_delete"),
+    path('venues/', views.verVenues, name='venue_list'),
+    path('venues/create/', views.crearVenues, name='venue_create'),
+    path('venues/<int:pk>/edit/', views.editarVenues, name='venue_edit'),
+    path('venues/<int:pk>/delete/', views.eliminarVenue, name='venue_delete'),
 ]
