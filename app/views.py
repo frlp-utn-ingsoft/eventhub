@@ -225,33 +225,65 @@ def event_detail(request, id):
         "form": form,
         "user_is_organizer": request.user.is_organizer
     })
+from django.contrib import messages
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib.auth.decorators import login_required
+from .models import Rating
 
 @login_required
 def rating_edit(request, rating_id):
     rating = get_object_or_404(Rating, id=rating_id)
 
+    # Solo el autor puede editar — organizadores no pueden editar
     if rating.user != request.user:
         messages.error(request, "No tienes permiso para editar esta reseña.")
         return redirect("event_detail", id=rating.event.id)
 
     if request.method == 'POST':
-        rating.title = request.POST.get("title")
-        rating.text = request.POST.get("text")
-        rating.rating = request.POST.get("rating")
+        title = request.POST.get("title", "").strip()
+        text = request.POST.get("text", "").strip()
+        rating_value = request.POST.get("rating")
+
+        # Validación del rating
+        if not rating_value or not rating_value.isdigit():
+            messages.error(request, "Debes seleccionar una calificación válida.")
+            return redirect("rating_edit", rating_id=rating.id)
+
+        rating_int = int(rating_value)
+        if rating_int < 1 or rating_int > 5:
+            messages.error(request, "La calificación debe estar entre 1 y 5.")
+            return redirect("rating_edit", rating_id=rating.id)
+
+        # Guardar cambios
+        rating.title = title
+        rating.text = text
+        rating.rating = rating_int
         rating.save()
+
         messages.success(request, "Reseña actualizada exitosamente.")
         return redirect("event_detail", id=rating.event.id)
 
     return render(request, "app/rating_form.html", {"rating": rating})
 
+
 @login_required
 def rating_delete(request, rating_id):
     rating = get_object_or_404(Rating, id=rating_id)
+    user = request.user
 
-    if rating.user != request.user:
+    # Permitir eliminación si:
+    # 1) El usuario es el autor de la reseña
+    # 2) El usuario es organizador del evento al que pertenece la reseña
+    if rating.user == user:
+        # autor elimina su propia reseña
+        pass
+    elif user.is_organizer:
+        pass
+    else:
         messages.error(request, "No tienes permiso para eliminar esta reseña.")
         return redirect("event_detail", id=rating.event.id)
 
+    # Si llegamos acá, permiso concedido
     event_id = rating.event.id
     rating.delete()
     messages.success(request, "Reseña eliminada correctamente.")

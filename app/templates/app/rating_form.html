@@ -11,16 +11,7 @@
             <input type="text" name="title" id="title" class="form-control" value="{{ rating.title }}" required>
         </div>
 
-        <div class="mb-2">
-            <label for="rating">Tu calificación *</label>
-            <div id="star-rating" class="star-rating">
-                {% for i in "12345" %}
-                    <span class="star" data-value="{{ forloop.counter }}">&#9733;</span>
-                {% endfor %}
-            </div>
-            <input type="hidden" name="rating" id="rating" value="0">
-            <small class="form-text text-muted">Selecciona una calificación</small>
-        </div>
+        {% include "components/star_rating.html" with name="rating" selected=rating.rating %}
 
         <div class="mb-3">
             <label for="text" class="form-label">Comentario</label>
@@ -32,36 +23,4 @@
     </form>
 </div>
 
-<style>
-    .star-rating {
-        direction: ltr;
-        font-size: 1.5rem;
-        color: #ccc;
-        cursor: pointer;
-    }
-    .star-rating .star.selected {
-        color: gold;
-    }
-</style>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function () {
-        const stars = document.querySelectorAll('.star-rating .star');
-        const ratingInput = document.getElementById('rating');
-    
-        stars.forEach(star => {
-            star.addEventListener('click', function () {
-                const rating = this.getAttribute('data-value');
-                ratingInput.value = rating;
-    
-                stars.forEach(s => {
-                    s.classList.remove('selected');
-                    if (s.getAttribute('data-value') <= rating) {
-                        s.classList.add('selected');
-                    }
-                });
-            });
-        });
-    });
-</script>
 {% endblock %}

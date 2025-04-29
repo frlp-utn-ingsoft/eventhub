@@ -1,0 +1,44 @@
+{% if not readonly %}
+<input type="hidden" name="{{ name }}" id="star-input-{{ name }}" value="{{ selected|default:0 }}">
+{% endif %}
+
+<div class="star-rating" data-input-id="star-input-{{ name }}">
+    {% for i in "12345" %}
+        {% with i_int=forloop.counter %}
+            <i class="bi {% if selected|default:0 >= i_int %}bi-star-fill{% else %}bi-star{% endif %} star"
+               data-value="{{ i_int }}"></i>
+        {% endwith %}
+    {% endfor %}
+</div>
+
+<style>
+    .star {
+        cursor: pointer;
+        color: gold;
+        font-size: 1.5rem;
+    }
+</style>
+
+{% if not readonly %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.star-rating').forEach(function (ratingEl) {
+            const inputId = ratingEl.getAttribute('data-input-id');
+            const input = document.getElementById(inputId);
+
+            ratingEl.querySelectorAll('.star').forEach(function (star, index) {
+                star.addEventListener('click', function () {
+                    const value = star.getAttribute('data-value');
+                    input.value = value;
+
+                    // Actualizar visualmente las estrellas
+                    ratingEl.querySelectorAll('.star').forEach((s, i) => {
+                        s.classList.remove('bi-star-fill', 'bi-star');
+                        s.classList.add(i < value ? 'bi-star-fill' : 'bi-star');
+                    });
+                });
+            });
+        });
+    });
+</script>
+{% endif %}
