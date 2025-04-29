@@ -1,10 +1,12 @@
 import datetime
+
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+from .forms import CategoryForm
+from .models import Category, Event, User
 
 
 def register(request):
@@ -125,3 +127,38 @@ def event_form(request, id=None):
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
+
+
+
+def list_categories(request):
+    categories = Category.objects.all()
+    return render(request, 'categories/list.html', {'categories': categories})
+
+def create_category(request):
+    if request.method == 'POST':
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('list_categories')
+    else:
+        form = CategoryForm()
+    return render(request, 'categories/form.html', {'form': form})
+
+def update_category(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            return redirect('list_categories')
+    else:
+        form = CategoryForm(instance=category)
+    return render(request, 'categories/form.html', {'form': form})
+
+def delete_category(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    if request.method == 'POST':
+        category.delete()
+        return redirect('list_categories')
+    return render(request, 'categories/confirm_delete.html', {'category': category})
+

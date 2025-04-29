@@ -180,6 +180,18 @@ class Category(models.Model):
         return self.name
     
     @classmethod
+    def validate(cls, name, description):
+        errors = {}
+
+        if name == "":
+            errors["name"] = "Por favor ingrese un titulo"
+
+        if description == "":
+            errors["description"] = "Por favor ingrese una descripcion"
+
+        return errors
+    
+    @classmethod
     def new(cls, name, description, active):
         category = cls(name=name, description=description, active=active)
         category.save()
