@@ -4,8 +4,24 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+from .models import Event, User, Comment
 
+def add_comment(request,id):
+    event = get_object_or_404(Event, pk=id)
+    if request.method == "POST":
+        title = request.POST.get("title")
+        text = request.POST.get("text")
+        Comment.objects.create(
+            title=title,
+            text=text,
+            event=event,
+        )
+        return redirect("event_detail", id=id)
+    return redirect("event_detail", id=id)
+        
+        
+        
+    
 
 def register(request):
     if request.method == "POST":
