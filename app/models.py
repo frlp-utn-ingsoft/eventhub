@@ -27,6 +27,14 @@ class User(AbstractUser):
         return errors
 
 
+class Category(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
 class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
@@ -34,6 +42,8 @@ class Event(models.Model):
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    categories = models.ManyToManyField(Category, blank=True)
+
 
     def __str__(self):
         return self.title
@@ -73,11 +83,3 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
-
-class Category(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    description = models.TextField(blank=True)
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.name

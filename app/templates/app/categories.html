@@ -30,7 +30,15 @@
                 <tr>
                     <td>{{ category.name }}</td>
                     <td>{{ category.description }}</td>
-                    <td>{{ category.event_set.count }} evento{{ category.event_set.count|pluralize }}</td>
+                    <td>
+                        {% with count=category.event_set.count %}
+                            {% if count > 0 %}
+                                {{ count }} evento{{ count|pluralize }}
+                            {% else %}
+                                <span class="text-muted">Sin eventos</span>
+                            {% endif %}
+                        {% endwith %}
+                    </td>                    
                     {% if user_is_organizer %}
                         <td>
                             <div class="hstack gap-1">
