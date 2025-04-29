@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h2 class="mb-4">Solicitudes de Reembolso</h2>
+
+        <div class="table-responsive">
+            <table class="table align-middle">
+                <thead class="table-light">
+                <tr>
+                    <th>Código de Entrada</th>
+                    <th>Evento</th>
+                    <th>Solicitante</th>
+                    <th>Fecha de Solicitud</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for refund in refunds %}
+                    <tr>
+                        <td>
+                            <a href="#" class="text-decoration-none">{{ refund.ticket.ticket_code }}</a>
+                        </td>
+                        <td>
+                            <a href="{% url 'event_detail' refund.ticket.event.id %}" class="text-decoration-none">
+                                {{ refund.ticket.event.title }}
+                            </a>
+                        </td>
+                        <td>{{ refund.user.get_full_name }}</td>
+                        <td>{{ refund.created_at|date:"d M Y, H:i" }}</td>
+                        <td>
+                            {% if refund.status == 'approved' %}
+                                <span class="badge bg-success">Aprobado</span>
+                            {% elif refund.status == 'pending' %}
+                                <span class="badge bg-warning text-dark">Pendiente</span>
+                            {% else %}
+                                <span class="badge bg-danger">Rechazado</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="hstack gap-1">
+                                <!-- Ver detalle -->
+                                <a href="{% url 'refund_detail' refund.id %}" class="btn btn-sm btn-outline-primary" title="Ver">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+
+                                {% if refund.status == 'pending' %}
+                                    <form method="post" action="{% url 'refund_action' refund.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="approve">
+                                        <button class="btn btn-sm btn-outline-success" title="Aprobar">
+                                            <i class="bi bi-check"></i>
+                                        </button>
+                                    </form>
+
+                                    <form method="post" action="{% url 'refund_action' refund.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="reject">
+                                        <button class="btn btn-sm btn-outline-danger" title="Rechazar">
+                                            <i class="bi bi-x"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock %}

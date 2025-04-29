@@ -608,6 +608,7 @@ def rating_delete(request, event_id, rating_id):
 
     return redirect('event_detail', id=event_id)
 
+@login_required
 def create_refund(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
     if request.method == 'POST':
@@ -657,6 +658,7 @@ def create_refund(request, ticket_id):
         })
     return redirect('Mis_tickets')
 
+@login_required
 def delete_refund(request, refund_id):
     refund = get_object_or_404(RefundRequest, id=refund_id)
     if request.method == 'POST':
@@ -665,15 +667,18 @@ def delete_refund(request, refund_id):
         return redirect('refund_user')
     return redirect('refund_user')
 
+@login_required
 def refund_user(request):
     user = request.user
     refunds = RefundRequest.objects.filter(user=user).order_by('-created_at')
     return render(request, 'app/refund_user.html', {'refunds': refunds})
 
+@login_required
 def refund_detail(request, refund_id):
     refund = get_object_or_404(RefundRequest, id=refund_id)
     return render(request, 'app/refund_detail.html', {'refund': refund})
 
+@login_required
 def update_refund(request, refund_id):
     refund = get_object_or_404(RefundRequest, id=refund_id)
     if request.method == 'POST':
@@ -689,3 +694,22 @@ def update_refund(request, refund_id):
         return render(request, 'app/refund_update.html', {'refund': refund,
                                                           'RefundReason': RefundReason})
     return redirect('refund_user')
+
+def refund_admin(request):
+    if not request.user.is_organizer:
+        return redirect('events')
+
+    refunds = RefundRequest.objects.all().order_by('-created_at')
+    return render(request, 'app/refund_admin.html', {'refunds': refunds})
+
+def approve_or_reject_refund(request, refund_id):
+    refund = get_object_or_404(RefundRequest, id=refund_id)
+    if request.method == 'POST':
+        if request.POST.get('action') == 'approve':
+            refund.update(approved=True)
+            messages.success(request, "Reembolso aprobado correctamente")
+        elif request.POST.get('action') == 'reject':
+            refund.update(approved=False, status=RefundStatus.REJECTED)
+            messages.success(request, "Reembolso rechazado correctamente")
+        return redirect('refund_admin')
+    return redirect('refund_admin')

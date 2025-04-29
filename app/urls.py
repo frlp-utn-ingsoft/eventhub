@@ -38,4 +38,6 @@ urlpatterns = [
     path('refunds/user/', views.refund_user, name='refund_user'),
     path('refunds/<int:refund_id>/', views.refund_detail, name='refund_detail'),
     path('update_refund/<int:refund_id>/', views.update_refund, name='update_refund'),
+    path('refunds/admin/', views.refund_admin, name='refund_admin'),
+    path('refunds/admin/<int:refund_id>/action/', views.approve_or_reject_refund, name='refund_action'),
 ]

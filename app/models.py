@@ -338,5 +338,6 @@ class RefundRequest(models.Model):
 
         if self.approved:
             self.approval_date = datetime.now()
+            self.status = RefundStatus.APPROVED
 
         self.save()
