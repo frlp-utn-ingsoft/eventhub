@@ -16,6 +16,7 @@ Capre Rodrigo 3187
 ## Instalar dependencias
 
 `pip install -r requirements.txt`
+`pip install django-localflavor`
 
 ## Iniciar la Base de Datos
 

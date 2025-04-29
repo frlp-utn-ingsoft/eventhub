@@ -34,6 +34,7 @@ class Event(models.Model):
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    venue= models.ForeignKey('Venue', on_delete=models.CASCADE, related_name='events', null=True, blank=True)
 
     def __str__(self):
         return self.title
@@ -80,3 +81,29 @@ class Venue(models.Model):
     city = models.CharField(max_length=100)
     capacity=models.IntegerField()
     contact=models.CharField(max_length=100)
+    
+    @classmethod
+    def new(cls, name, address, city, capacity,contact):
+        errors = {}
+
+        if len(errors.keys()) > 0:
+            return False, errors
+
+        Event.objects.create(
+            name=name,
+            address=address,
+            city=city,
+            capacity=capacity,
+            contact=contact,
+        )
+
+        return True, None
+    
+    def update(self, name, address, city, capacity,contact):
+        self.name = name or self.name
+        self.address = address or self.address
+        self.city = city or self.city
+        self.capacity = capacity or self.capacity
+        self.contact = contact or self.contact
+
+        self.save()

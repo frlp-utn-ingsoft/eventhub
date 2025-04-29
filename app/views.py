@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+from .models import Event, User, Venue
 
 
 def register(request):
@@ -124,4 +124,40 @@ def event_form(request, id=None):
         request,
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer},
+    )
+
+
+def venues(request):
+    venues = Venue.objects.all().order_by("name")
+    return render(
+        request,
+        "app/venues.html",
+        {"venues": venues, "user_is_organizer": request.user.is_organizer},
+    )
+
+def venue_form(request, id=None):
+
+    if request.method == "POST":
+        name = request.POST.get("name")
+        address = request.POST.get("address")
+        city = request.POST.get("city")
+        capacity = request.POST.get("capacity")
+        contact = request.POST.get("contact")
+
+        if id is None:
+            Venue.new(name, address, city, capacity, contact)
+        else:
+            venue = get_object_or_404(Venue, pk=id)
+            venue.update(name, address, city, capacity, contact)
+
+        return redirect("venues")
+
+    venue = {}
+    if id is not None:
+        venue = get_object_or_404(Venue, pk=id)
+
+    return render(
+        request,
+        "app/venue_form.html",
+        {"venue": venue, "user_is_organizer": request.user.is_organizer},
     )
