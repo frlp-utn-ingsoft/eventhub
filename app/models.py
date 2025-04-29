@@ -195,7 +195,7 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
         self.save()
 
-class refund(models.Model):
+class Refund(models.Model):
 
     aproved = models.BooleanField(default=False)
     aproval_date = models.DateTimeField(null=True, blank=True)
@@ -203,8 +203,6 @@ class refund(models.Model):
     reason = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refunded_tickets")
-    
-
     event = models.ForeignKey(Event, on_delete=models.CASCADE, null=True, blank=True, related_name="refunded_tickets")
 
     def __str__(self): return self.ticket_code
