@@ -8,7 +8,7 @@ from .forms import NotificationForm
 from .models import Notification
 from django.views import generic
 from django.urls import reverse_lazy
-
+from django.views import View
 from .models import Event, User
 
 
@@ -132,12 +132,11 @@ def event_form(request, id=None):
     )
 
 
-# — mixin para chequear si es organizador —
 class OrganizerRequiredMixin(UserPassesTestMixin):
     def test_func(self):
         return self.request.user.is_authenticated and self.request.user.is_organizer
 
-# LISTADO
+
 class NotificationList(LoginRequiredMixin, generic.ListView):
     template_name = "notifications/list.html"
     paginate_by   = 10
@@ -145,28 +144,24 @@ class NotificationList(LoginRequiredMixin, generic.ListView):
     def get_queryset(self):
         return self.request.user.notifications.all()
 
-# CREAR / EDITAR / BORRAR solo organizadores
 class NotificationCreate(OrganizerRequiredMixin, generic.CreateView):
     model       = Notification
     form_class  = NotificationForm
-    success_url = reverse_lazy("notifications:list")
+    success_url = reverse_lazy("notifications_list")
 
 class NotificationUpdate(OrganizerRequiredMixin, generic.UpdateView):
     model       = Notification
     form_class  = NotificationForm
-    success_url = reverse_lazy("notifications:list")
+    success_url = reverse_lazy("notifications_list")
 
 class NotificationDelete(OrganizerRequiredMixin, generic.DeleteView):
     model       = Notification
-    success_url = reverse_lazy("notifications:list")
+    success_url = reverse_lazy("notifications_list")
 
-# MARCAR COMO LEÍDA (POST)
-from django.views import View
-from django.shortcuts import redirect, get_object_or_404
 
 class NotificationMarkRead(LoginRequiredMixin, View):
     def post(self, request, pk):
         notif = get_object_or_404(Notification, pk=pk, user=request.user)
         notif.is_read = True
         notif.save(update_fields=["is_read"])
-        return redirect("notifications:list")
+        return redirect("notifications_list")
