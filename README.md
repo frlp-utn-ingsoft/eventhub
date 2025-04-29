@@ -35,3 +35,4 @@ Integrantes del proyecto:
 - Francisco Garcia Martinez
 - Santiago Montanari
 - Jano Stratakis
+- Tomás Ochoa
