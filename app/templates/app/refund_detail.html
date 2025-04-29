@@ -58,14 +58,20 @@
 
                 <!-- Acción de edición -->
                 <div class="text-end">
-                    {% if refund.status == 'pending' %}
+                    {% if refund.status == 'pending' and not user.is_organizer %}
                         <a href="{% url 'update_refund' refund.id %}" class="btn btn-outline-primary">
                             <i class="bi bi-pencil-square"></i> Editar Solicitud
                         </a>
                     {% endif %}
-                    <a href="{% url 'refund_user' %}" class="btn btn-outline-secondary ms-2">
-                        Volver
-                    </a>
+                    {% if user.is_organizer %}
+                        <a href="{% url 'refund_admin' %}" class="btn btn-outline-secondary ms-2">
+                            Volver
+                        </a>
+                    {% else %}
+                        <a href="{% url 'refund_user' %}" class="btn btn-outline-secondary ms-2">
+                            Volver
+                        </a>
+                    {% endif %}
                 </div>
             </div>
         </div>
