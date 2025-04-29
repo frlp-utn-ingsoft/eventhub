@@ -329,3 +329,14 @@ class RefundRequest(models.Model):
 
         return errors
 
+    def update(self, reason=None, refund_reason=None, status=None, approved=None):
+
+        self.reason = reason.strip() if reason else self.reason
+        self.refund_reason = refund_reason or self.refund_reason
+        self.status = status or self.status
+        self.approved = approved if approved is not None else self.approved
+
+        if self.approved:
+            self.approval_date = datetime.now()
+
+        self.save()

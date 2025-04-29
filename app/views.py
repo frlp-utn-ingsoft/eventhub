@@ -676,15 +676,16 @@ def refund_detail(request, refund_id):
 
 def update_refund(request, refund_id):
     refund = get_object_or_404(RefundRequest, id=refund_id)
-    if request.method == 'PATCH':
-        status = request.POST.get('status')
-        if status:
-            refund.status = status
-            refund.save()
-            messages.success(request, "Estado de reembolso actualizado correctamente")
-        else:
-            messages.error(request, "Error al actualizar el estado del reembolso")
+    if request.method == 'POST':
+        if refund.approved:
+            return redirect('refund_user')
+        refund.update(
+            reason=request.POST.get('reason'),
+            refund_reason=request.POST.get('refund_reason')
+        )
+        return redirect('refund_detail', refund_id=refund_id)
 
     if request.method == 'GET':
-        return render(request, 'app/update_refund.html', {'refund': refund})
+        return render(request, 'app/refund_update.html', {'refund': refund,
+                                                          'RefundReason': RefundReason})
     return redirect('refund_user')

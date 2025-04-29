@@ -58,9 +58,11 @@
 
                 <!-- Acción de edición -->
                 <div class="text-end">
-                    <a href="{% url 'create_refund' refund.id %}" class="btn btn-outline-primary">
-                        <i class="bi bi-pencil-square"></i> Editar Solicitud
-                    </a>
+                    {% if refund.status == 'pending' %}
+                        <a href="{% url 'update_refund' refund.id %}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil-square"></i> Editar Solicitud
+                        </a>
+                    {% endif %}
                     <a href="{% url 'refund_user' %}" class="btn btn-outline-secondary ms-2">
                         Volver
                     </a>
