@@ -1,10 +1,11 @@
 import datetime
+
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User, Category
+from .models import Category, Event, User
 
 
 def register(request):
@@ -126,6 +127,7 @@ def event_form(request, id=None):
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
 
+
 @login_required
 def category_list(request):
     categories = Category.objects.all()
@@ -138,31 +140,37 @@ def category_list(request):
         }
     )
 
+
 @login_required
 def category_create(request):
     if not request.user.is_organizer:
-        return redirect("category_list")
+        return redirect("categories")
 
     if request.method == "POST":
         name = request.POST.get("name", "").strip()
         description = request.POST.get("description", "").strip()
         is_active = request.POST.get("is_active") == "on"
 
-        if name:
+        if not name:
+            error = "El nombre no puede estar vacío"
+        elif Category.objects.filter(name__iexact=name).exists():
+            error = "Ya existe una categoría con ese nombre"
+        else:
             Category.objects.create(name=name, description=description, is_active=is_active)
             return redirect("categories")
-        else:
-            return render(request, "app/category_form.html", {
-                "error": "El nombre no puede estar vacío",
-                "category": {
-                    "name": name,
-                    "description": description,
-                    "is_active": is_active,
-                },
-                "is_edit": False,
-            })
+
+        return render(request, "app/category_form.html", {
+            "error": error,
+            "category": {
+                "name": name,
+                "description": description,
+                "is_active": is_active,
+            },
+            "is_edit": False,
+        })
 
     return render(request, "app/category_form.html", {"is_edit": False})
+
 
 @login_required
 def category_update(request, id):
@@ -176,23 +184,28 @@ def category_update(request, id):
         description = request.POST.get("description", "").strip()
         is_active = request.POST.get("is_active") == "on"
 
-        if name:
+        if not name:
+            error = "El nombre no puede estar vacío"
+        elif Category.objects.filter(name__iexact=name).exclude(id=category.pk).exists():
+            error = "Ya existe otra categoría con ese nombre"
+        else:
             category.name = name
             category.description = description
             category.is_active = is_active
             category.save()
             return redirect("categories")
-        else:
-            return render(request, "app/category_form.html", {
-                "error": "El nombre no puede estar vacío",
-                "category": category,
-                "is_edit": True,
-            })
+
+        return render(request, "app/category_form.html", {
+            "error": error,
+            "category": category,
+            "is_edit": True,
+        })
 
     return render(request, "app/category_form.html", {
         "category": category,
-        "is_edit": True
+        "is_edit": True,
     })
+
 
 
 @login_required
