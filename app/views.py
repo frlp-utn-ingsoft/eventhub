@@ -14,7 +14,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from .models import Venue
 from .forms import VenueForm
-from .models import Event, Rating, Rating_Form, User
+from .models import Event, Rating, Rating_Form, User, Comment
 
 def organizer_required(view_func):
     @wraps(view_func)
