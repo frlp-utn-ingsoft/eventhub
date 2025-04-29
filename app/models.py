@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
+from django.core.validators import MinValueValidator
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -73,3 +73,95 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+class Ticket(models.Model):
+    # Constants
+    GENERAL = 'GENERAL'
+    VIP = 'VIP'
+    TICKETS_TYPE_CHOICES = [
+        (GENERAL, 'General'),
+        (VIP, 'VIP')
+    ]
+
+    # Atributes
+    buy_date = models.DateTimeField(verbose_name = 'Fecha de compra')
+    ticket_code = models.CharField(max_length=45, unique=True, verbose_name = 'Código del ticket')
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)], verbose_name = 'Cantidad')
+    type = models.CharField(max_length=25, choices=TICKETS_TYPE_CHOICES, verbose_name = 'Tipo de ticket')
+
+    # Foreign keys
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='tickets')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tickets')
+
+    # Meta class
+    class Meta:
+        verbose_name = 'Ticket'
+        verbose_name_plural = 'Tickets'
+        # Default ordering: newest tickets first
+        ordering = ['-buy_date']
+
+    # Methods
+    def __str__(self):
+        return f"{self.ticket_code} - {self.get_type_display()} ({self.quantity})"
+    
+    @classmethod
+    def validate(cls, buy_date, ticket_code, quantity, type, event, user):
+        """Validate ticket data before creation"""
+        errors = {}
+
+        if not buy_date:
+            errors["buy_date"] = "Por favor ingrese una fecha de compra"
+
+        if not ticket_code or not ticket_code.strip():
+            errors["ticket_code"] = "Por favor ingrese un código para el ticket"
+
+        if not quantity or quantity < 1:
+            errors["quantity"] = "Por favor ingrese una cantidad válida (mínimo 1)"
+        
+        if not type or type not in dict(cls.TICKET_TYPE_CHOICES).keys():
+            errors["type"] = "Por favor seleccione un tipo válido"
+        
+        if not event:
+            errors["event"] = "Por favor seleccione un evento"
+        
+        if not user:
+            errors["user"] = "Por favor seleccione un usuario"
+        
+        return errors
+    
+    @classmethod
+    def new(cls, buy_date, ticket_code, quantity, type, event, user):
+        """Create a new ticket with validation"""
+        errors = cls.validate(buy_date, ticket_code, quantity, type, event, user)
+
+        if errors:
+            return False, errors
+
+        ticket = cls.objects.create(
+            buy_date = buy_date,
+            ticket_code = ticket_code,
+            quantity = quantity,
+            type = type,
+            event = event,
+            user = user
+        )
+
+        return True, ticket
+
+    def update(self, buy_date, ticket_code, quantity, type, event, user):
+        """Update ticket fields"""
+        if buy_date is not None:
+            self.buy_date = buy_date
+        if ticket_code is not None:
+            self.ticket_code = ticket_code
+        if quantity is not None:
+            self.quantity = quantity
+        if type is not None:
+            self.type = type
+        if event is not None:
+            self.event = event
+        if user is not None:
+            self.user = user
+        
+        self.save()
+        return self
