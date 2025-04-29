@@ -44,5 +44,36 @@
             </div>
         </div>
     </div>
+    <div class="card mt-4">
+        <div class="card-header">Reseñas ({{ ratings.count }})</div>
+        <div class="card-body">
+            {% for rating in ratings %}
+                <div class="mb-3 border-bottom pb-2">
+                    <strong>{{ rating.user.username }}</strong><br>
+                    <small>{{ rating.created_at|date:"d M Y, H:i" }}</small><br>
+                    <strong>{{ rating.title }}</strong><br>
+                    <span>
+                        {% for i in "12345"|slice:":rating.rating" %}
+                            ⭐
+                        {% endfor %}
+                    </span><br>
+                    <p>{{ rating.text }}</p>
+                </div>
+            {% empty %}
+                <p>Aún no hay reseñas.</p>
+            {% endfor %}
+
+            <hr>
+            <h5>Deja tu reseña</h5>
+            <form method="POST">
+                {% csrf_token %}
+                <div class="mb-2">{{ form.title.label_tag }}{{ form.title }}</div>
+                <div class="mb-2">{{ form.rating.label_tag }}{{ form.rating }}</div>
+                <div class="mb-2">{{ form.text.label_tag }}{{ form.text }}</div>
+                <button type="submit" class="btn btn-primary">Enviar calificación</button>
+            </form>
+        </div>
+    </div>
+
 </div>
 {% endblock %}

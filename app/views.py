@@ -5,8 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from datetime import timedelta
-from .models import Event, User, Ticket
-from .forms import TicketForm
+from .models import Event, User, Ticket, Rating
+from .forms import TicketForm,RatingForm
 
 
 def register(request):
@@ -199,3 +199,29 @@ def ticket_delete(request, ticket_id):
         messages.error(request, "No tienes permisos para eliminar este ticket.")
 
     return redirect("ticket_list")
+
+from .models import Rating
+from .forms import RatingForm
+
+@login_required
+def event_detail(request, id):
+    event = get_object_or_404(Event, pk=id)
+    ratings = Rating.objects.filter(event=event).order_by('-created_at')
+
+    if request.method == 'POST':
+        form = RatingForm(request.POST)
+        if form.is_valid():
+            rating = form.save(commit=False)
+            rating.user = request.user
+            rating.event = event
+            rating.save()
+            return redirect('event_detail', id=event.id)
+    else:
+        form = RatingForm()
+
+    return render(request, "app/event_detail.html", {
+        "event": event,
+        "ratings": ratings,
+        "form": form,
+        "user_is_organizer": request.user.is_organizer
+    })
