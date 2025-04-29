@@ -147,15 +147,18 @@ class NotificationList(LoginRequiredMixin, generic.ListView):
 class NotificationCreate(OrganizerRequiredMixin, generic.CreateView):
     model       = Notification
     form_class  = NotificationForm
+    template_name = "notifications/form.html" 
     success_url = reverse_lazy("notifications_list")
 
 class NotificationUpdate(OrganizerRequiredMixin, generic.UpdateView):
     model       = Notification
     form_class  = NotificationForm
+    template_name = "notifications/form.html" 
     success_url = reverse_lazy("notifications_list")
 
 class NotificationDelete(OrganizerRequiredMixin, generic.DeleteView):
     model       = Notification
+    template_name = "notifications/confirm_delete.html"
     success_url = reverse_lazy("notifications_list")
 
 
