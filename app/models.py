@@ -201,10 +201,9 @@ class Ticket(models.Model):
             user=user,
             event=event
         )
-        return True, None
 
-    def update(self, ticket_code, quantity):
-        self.ticket_code = ticket_code or self.ticket_code
+    def update(self, type, quantity):
+        self.type = type or self.type
         self.quantity = quantity or self.quantity
 
         self.save()

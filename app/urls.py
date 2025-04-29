@@ -40,4 +40,5 @@ urlpatterns = [
     path('update_refound/<int:refound_id>/', views.update_refound, name='update_refound'),
     path('refounds/admin/', views.refound_admin, name='refound_admin'),
     path('refounds/admin/<int:refound_id>/action/', views.approve_or_reject_refound, name='refound_action'),
+    path('tickets/update/<int:ticket_id>/', views.update_ticket, name='update_ticket'),
 ]

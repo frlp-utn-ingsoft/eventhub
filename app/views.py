@@ -541,7 +541,34 @@ def ticket_delete(request,event_id, ticket_id):
 @login_required
 def mis_tickets(request):
     tickets = Ticket.objects.filter(user=request.user).order_by('-buy_date')
+
+    for ticket in tickets:
+        if ticket.type == "general":
+            unit_price = 50
+        elif ticket.type == "vip":
+            unit_price = 100
+        else:
+            unit_price = 0
+
+        setattr(ticket, 'unit_price', unit_price)
+        setattr(ticket, 'total_price', unit_price * ticket.quantity)
+
     return render(request, 'app/mis_tickets.html', {'tickets': tickets})
+
+@login_required
+def update_ticket(request, ticket_id):
+    ticket = get_object_or_404(Ticket , pk = ticket_id)
+    if request.method == 'POST':
+        quantity = request.POST.get('quantity')
+        type = request.POST.get('type')
+        if quantity and type:
+            ticket.quantity = quantity
+            ticket.type = type
+            ticket.save()
+            return redirect('Mis_tickets')
+    return render(request, 'app/Mis_tickets', {'ticket': ticket})
+
+    
 
 def rating_create(request, event_id):
     event = get_object_or_404(Event, id=event_id)
