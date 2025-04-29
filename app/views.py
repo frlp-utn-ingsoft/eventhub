@@ -1,5 +1,6 @@
 import datetime
 from functools import wraps
+from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
@@ -13,8 +14,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from .models import Venue
 from .forms import VenueForm
-from .models import Event, User, Comment
-
+from .models import Event, Rating, Rating_Form, User
 
 def organizer_required(view_func):
     @wraps(view_func)
@@ -25,6 +25,7 @@ def organizer_required(view_func):
             return redirect('events')
         return view_func(request, *args, **kwargs)
     return wrapper
+
 
 
 def register(request):
@@ -279,6 +280,8 @@ def event_form(request, id=None):
         if id is None:
             # Crear evento
             venue = get_object_or_404(Venue, pk=venue_id) if venue_id else Venue.objects.first()
+            if venue is None:
+                raise ValueError("No se ha proporcionado un lugar de celebración y no se dispone de un lugar de celebración por defecto.")
             success, event_or_errors = Event.new(title, description, scheduled_at, request.user, category_ids, venue)
             if not success:
                 errors = event_or_errors
@@ -288,7 +291,10 @@ def event_form(request, id=None):
             event.update(title, description, scheduled_at, request.user)
             categories = Category.objects.filter(id__in=category_ids)
             event.categories.set(categories)
-            event.venue = get_object_or_404(Venue, pk=venue_id) if venue_id else Venue.objects.first() # type: ignore
+            venue = get_object_or_404(Venue, pk=venue_id) if venue_id else Venue.objects.first()
+            if venue is None:
+                raise ValueError("No se ha proporcionado un lugar de celebración y no se dispone de un lugar de celebración por defecto.")
+            event.venue = venue
             event.save()
 
             return redirect('event_detail', id=event.id)
@@ -694,3 +700,46 @@ def mark_as_read(request, id):
     notification.mark_as_read(user.id)
 
     return redirect("notifications")
+
+@login_required
+def event_rating(request, id):
+    evento = get_object_or_404(Event, pk=id)
+    resenas = Rating.objects.filter(evento=evento)
+    cantidad_resenas = resenas.count()
+
+    try:
+        resena_existente = Rating.objects.get(usuario=request.user, evento=evento)
+        editando = True
+    except Rating.DoesNotExist:
+        resena_existente = None
+        editando = False
+        
+    if request.method == 'POST':
+        if 'guardar' in request.POST:
+            form = Rating_Form(request.POST, instance=resena_existente)
+            if form.is_valid():
+                nueva_resena = form.save(commit=False)
+                nueva_resena.usuario = request.user 
+                nueva_resena.evento = evento
+                nueva_resena.save()
+                messages.success(request, "¡Tu reseña fue guardada exitosamente!")
+            return redirect('event_rating', id=evento.id) # type: ignore
+        
+        elif 'eliminar' in request.POST and resena_existente:
+            resena_existente.delete()
+            messages.success(request, "¡Tu reseña fue eliminada exitosamente!")
+            return redirect('event_rating', id=evento.id) # type: ignore
+
+        elif 'cancelar' in request.POST:
+            form = Rating_Form()
+            return redirect('event_rating', id=evento.id) #type: ignore
+
+    form = Rating_Form(instance=resena_existente)            
+        
+    return render(request, 'app/event_rating.html', {
+        'evento': evento,
+        'ratings' : resenas,
+        'form': form,
+        'editando': editando,
+        'cantidad_resenas': cantidad_resenas
+    })
