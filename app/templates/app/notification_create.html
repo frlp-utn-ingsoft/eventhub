@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5 d-flex justify-content-center">
+    <div class="col-md-8">
+        <h1 class="text-center mb-4">Crear Notificación</h1>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label for="{{ form.title.id_for_label }}" class="form-label">Título*</label>
+                {{ form.title }}
+                {% if form.title.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.title.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.message.id_for_label }}" class="form-label">Mensaje*</label>
+                {{ form.message }}
+                {% if form.message.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.message.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.event.id_for_label }}" class="form-label">Evento relacionado</label>
+                {{ form.event }}
+                {% if form.event.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.event.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Destinatarios*</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="tipo_usuario" id="user_events" value="all" checked>
+                    <label class="form-check-label" for="user_events">Todos los asistentes del evento</label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="tipo_usuario" id="user_specific" value="specific">
+                    <label class="form-check-label" for="user_specific">Usuario específico</label>
+                </div>
+            </div>
+
+            <div class="mb-3" id="user-select" style="display: none;">
+                <label for="{{ form.user.id_for_label }}" class="form-label">Selecciona un usuario</label>
+                {{ form.user }}
+                {% if form.user.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.user.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>            
+
+            <div class="mb-3">
+                <label for="{{ form.priority.id_for_label }}" class="form-label">Prioridad*</label>
+                {{ form.priority }}
+                {% if form.priority.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ form.priority.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Enviar Notificación</button>
+            </div>
+        </form>
+
+    </div>
+</div>
+
+<script>
+    const user_specific = document.getElementById("user_specific");
+    const user_events = document.getElementById("user_events");
+    const user_select = document.getElementById("user-select");
+
+    user_specific.addEventListener("change", function() {
+        if (this.checked) {
+            user_select.style.display = "block";
+        }
+    });
+
+    user_events.addEventListener("change", function() {
+        if (this.checked) {
+            user_select.style.display = "none";
+        }
+    });
+</script>
+{% endblock %}

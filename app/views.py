@@ -146,6 +146,47 @@ def notifications(request):
     )
 
 @login_required
+def notification_create(request):
+    if not request.user.is_organizer:
+        messages.error(request, "Debes ser organizador para crear notificaciones.")
+        return redirect("notification")
+
+    if request.method == "POST":
+        form = NotificationForm(request.POST)
+
+        if form.is_valid():
+            notif = form.save(commit=False)
+            notif.save()
+
+            tipo_usuario = request.POST.get("tipo_usuario")
+            event = form.cleaned_data.get("event")
+            specific_user = form.cleaned_data.get("user")
+
+            if tipo_usuario == "all" and event:
+                user_ids = (
+                    Ticket.objects.filter(event=event)
+                    .values_list("user_id", flat=True)
+                    .distinct()
+                )
+                notif.users.set(user_ids)
+
+            elif tipo_usuario == "specific" and specific_user:
+                notif.users.set([specific_user])
+
+            messages.success(request, "Notificación creada correctamente.")
+            return redirect("notifications")
+        else:
+            messages.error(request, "Errores en el formulario.")
+    else:
+        form = NotificationForm()
+
+    return render(request, "app/notification_create.html", {
+        "form": form,
+    })
+
+
+
+@login_required
 def notification_delete(request,id):
     user = request.user
     notification = get_object_or_404(Notification,id = id)

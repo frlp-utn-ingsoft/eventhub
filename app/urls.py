@@ -20,6 +20,7 @@ urlpatterns = [
     path("notifications/<int:id>/delete/",views.notification_delete, name = "notification_delete"),
     path("notifications/<int:notification_id>/read/", views.is_read, name="is_read"),
     path("notificacions/allread/", views.all_is_read, name="all_is_read"),
+    path("notificacions/create/", views.notification_create, name="notification_create"),
     #tickets
     path('tickets/', views.ticket_list, name="ticket_list"),
     path('tickets/<int:event_id>/create/', views.ticket_create, name="ticket_create"),
