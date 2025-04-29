@@ -18,7 +18,9 @@
                                 <strong>Cantidad:</strong> {{ ticket.quantity }}
                             </p>
                             <div class="d-flex justify-content-end">
+                                {% if not request.user.is_authenticated or not request.user.is_organizer %} <!-- si el user es ORGANIZER no puede visualizar el boton -->
                                 <a href="{% url 'ticket_update' ticket.id %}" class="btn btn-sm btn-primary me-2">Editar</a>
+                                {% endif %}
                                 <a href="{% url 'ticket_delete' ticket.id %}" class="btn btn-sm btn-danger">Eliminar</a>
                             </div>
                         </div>

@@ -292,6 +292,9 @@ def ticket_list(request):
 #Alta Ticket
 @login_required
 def ticket_create(request, event_id):
+    if request.user.is_organizer:
+        messages.error(request, "Los organizadores no crear tickets.")
+        return redirect('home')  # Redirige 
     event = get_object_or_404(Event, id=event_id)
 
     if request.method == "POST":
@@ -312,6 +315,9 @@ def ticket_create(request, event_id):
 #Editar Ticket (solo si es dueño)
 @login_required
 def ticket_update(request, ticket_id):
+    if request.user.is_organizer:
+        messages.error(request, "Los organizadores no modificar tickets.")
+        return redirect('home')  # Redirige
     ticket = get_object_or_404(Ticket, id=ticket_id)
 
     # Solo el dueño puede editar su ticket
