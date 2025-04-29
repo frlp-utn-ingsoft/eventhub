@@ -125,7 +125,7 @@ class Event(models.Model):
 class Notification(models.Model):
     title=models.CharField(max_length=200)
     massage=models.TextField()
-    created_at=models.DateField()
+    created_at=models.DateTimeField(auto_now_add=True)
 
     prioridadOpciones=[    
         ('High', 'HIGH'),

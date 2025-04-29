@@ -1,6 +1,7 @@
 import datetime
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -155,5 +156,26 @@ def category_form(request, id=None):
 
 def notification_list(request):
     notifications = Notification.objects.all()
-    print(notifications)  # Para ver qué se pasa al template
     return render(request, 'app/notification/list.html', {'notifications': notifications})
+
+
+def notification_create(request):
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        massage = request.POST.get('massage')
+        priority = request.POST.get('priority')
+        is_read = request.POST.get('is_read') == 'on'
+
+        # Creamos la notificación
+        Notification.objects.create(
+            title=title,
+            massage=massage,
+            created_at=timezone.now().date(), 
+            Priority=priority,
+            is_read=is_read,
+        )
+        return redirect('/events/notification/')  # Redirigimos a la lista de notificaciones (o donde prefieras)
+    
+    eventos= Event.objects.all()
+    
+    return render(request, 'app/notification/create.html', {'eventos': eventos})
