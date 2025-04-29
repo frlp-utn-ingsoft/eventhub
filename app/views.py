@@ -74,7 +74,7 @@ def login_view(request):
     return render(request, "accounts/login.html")
 
 def home(request):
-    return render(request, "home.html",{"user_is_organizer": request.user.is_organizer})
+    return render(request, "home.html")
 
 def verVenues(request):
     venues = Venue.objects.all() 

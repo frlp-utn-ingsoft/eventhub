@@ -17,95 +17,61 @@
 
 <body>
     
-    <nav class="navbar navbar-expand-md bg-body-tertiary">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="/">EventHub</a>
+   <nav class="navbar navbar-expand-md bg-body-tertiary">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="/">EventHub</a>
 
-            <div class="hstack gap-2">
-                {% if user.is_authenticated %}
-                    <button
-                        class="navbar-toggler"
-                        type="button"
-                        data-bs-toggle="collapse"
-                        data-bs-target="#navbar-content"
-                        aria-controls="navbar-content"
-                        aria-expanded="false"
-                        aria-label="Toggle navigation"
-                    >
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
+        <button
+            class="navbar-toggler"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbar-content"
+            aria-controls="navbar-content"
+            aria-expanded="false"
+            aria-label="Toggle navigation"
+        >
+            <span class="navbar-toggler-icon"></span>
+        </button>
 
+        <div class="collapse navbar-collapse" id="navbar-content">
+            {% if user.is_authenticated %}
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     {% if user_is_organizer %}
-                    <div                         
-                        class="collapse navbar-collapse"
-                        id="navbar-content"
-                    >
-                         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            <li class="nav-item">
-                                {% navbar_link 'comments' 'Comentarios' %}
-                            </li>
-                        </ul>
-                    </div>
-                    <div                         
-                        class="collapse navbar-collapse"
-                        id="navbar-content"
-                    >
-                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            <li class="nav-item">
-                                {% navbar_link 'my_events' 'Mis Eventos' %}
-                            </li>
-                        </ul>
-                    </div>     
+                        <li class="nav-item">
+                            {% navbar_link 'comments' 'Comentarios' %}
+                        </li>
+                        <li class="nav-item">
+                            {% navbar_link 'my_events' 'Mis Eventos' %}
+                        </li>
                     {% endif %}
-                    <div
-                        class="collapse navbar-collapse"
-                        id="navbar-content"
-                    >
-                    <div class="collapse navbar-collapse" id="navbar-content">
-                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            <li class="nav-item">
-                                {% navbar_link 'events' 'Eventos' %}
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div class="collapse navbar-collapse" id="navbar-content">
-                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            <li class="nav-item">
-                                {% navbar_link 'notifications' 'Notificaciones' %}
-                            </li>
-                        </ul>
-                    </div>
-
-                    <div class="collapse navbar-collapse" id="navbar-content">
-                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            <li class="nav-item">
-                                {% navbar_link 'categories' 'Categorias' %}
-                            </li>
-                        </ul>
-                    </div>
-
+                    <li class="nav-item">
+                        {% navbar_link 'events' 'Eventos' %}
+                    </li>
+                    <li class="nav-item">
+                        {% navbar_link 'notifications' 'Notificaciones' %}
+                    </li>
+                    <li class="nav-item">
+                        {% navbar_link 'categories' 'Categorias' %}
+                    </li>
                     {% if user_is_organizer %}
-                    <div class="collapse navbar-collapse" id="navbar-content">
-                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            <li class="nav-item">
-                                {% navbar_link 'venue_list' 'Lugares' %}
-                            </li>
-                        </ul>
-                    </div>
-                    {%endif%}
-
-                    <form class="d-flex" action={% url 'logout' %} method="POST">
-                        {% csrf_token %}
-                        <button class="btn btn-sm btn-outline-secondary" type="submit" name="logout">Salir</button>
-                    </form>
-                {% else %}
-                    <a class="btn btn-sm btn-outline-primary" href="{% url 'login' %}">Ingresá</a>
+                        <li class="nav-item">
+                            {% navbar_link 'venue_list' 'Lugares' %}
+                        </li>
+                    {% endif %}
+                </ul>
+                <form class="d-flex" action="{% url 'logout' %}" method="POST">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-secondary" type="submit" name="logout">Salir</button>
+                </form>
+            {% else %}
+                <div class="d-flex ms-auto">
+                    <a class="btn btn-sm btn-outline-primary me-2" href="{% url 'login' %}">Ingresá</a>
                     <a class="btn btn-sm btn-primary" href="{% url 'register' %}">Creá tu cuenta</a>
-                {% endif %}
-            </div>
+                </div>
+            {% endif %}
         </div>
-    </nav>
+    </div>
+</nav>
 
     
     {% block content %}
