@@ -73,3 +73,54 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+
+class Ticket(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="tickets")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tickets")
+    ticket_type = models.ForeignKey("TicketType", on_delete=models.CASCADE, related_name="tickets")
+    ticket_code = models.CharField(max_length=50, unique=True, blank=True)
+    buy_date = models.DateTimeField(auto_now_add=True)
+    quantity = models.PositiveIntegerField(default=1)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    @classmethod
+    def validate(cls, event, user, ticket_type, quantity):
+        errors = {}
+
+        if event is None:
+            errors["event"] = "El evento es requerido"
+        
+        if user is None:
+            errors["user"] = "El usuario es requerido"
+        
+        if ticket_type is None:
+            errors["ticket_type"] = "El tipo de ticket es requerido"
+
+        if quantity is None or quantity <= 0:
+            errors["quantity"] = "La cantidad de tickets debe ser mayor a 0"
+        
+        return errors
+    
+    @classmethod
+    def new(cls, event, user, ticket_type, quantity):
+        errors = Ticket.validate(event, user, ticket_type, quantity)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+
+        ticket = Ticket.objects.create(
+            event=event,
+            user=user,
+            ticket_type=ticket_type,
+            quantity=quantity,
+            total_price=ticket_type.price * quantity
+        )
+        ticket.ticket_code = str(ticket.id) #Figura como error, pero al crear ejectuar Ticket.create() se genera id, por lo que deberia poder copiarlo en ticket_code
+        ticket.save()
+
+        return True, None
+
+class TicketType(models.Model):
+    name = models.CharField(max_length=25)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
