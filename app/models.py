@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.timezone import now
 
 
 class User(AbstractUser):
@@ -81,8 +82,10 @@ class Ticket(models.Model):
     ticket_type = models.ForeignKey("TicketType", on_delete=models.CASCADE, related_name="tickets")
     ticket_code = models.CharField(max_length=50, unique=True, blank=True)
     buy_date = models.DateTimeField(auto_now_add=True)
+    modified_date = models.DateTimeField(null=True, blank=True)
     quantity = models.PositiveIntegerField(default=1)
     total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    old_total_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     @classmethod
     def validate(cls, event, user, ticket_type, quantity):
@@ -120,7 +123,43 @@ class Ticket(models.Model):
         ticket.save()
 
         return True, None
+    
+    def update(self, event, ticket_type, quantity):
+        self.event = event or self.event
+        self.ticket_type = ticket_type or self.ticket_type
+        self.quantity = quantity or self.quantity
+        if quantity is not None or ticket_type is not None:
+            self.old_total_price = self.total_price
+            self.total_price = ticket_type.price * self.quantity
+        self.modified_date = now()
+        errors= Ticket.validate(self.event, self.user, self.ticket_type, self.quantity)
+        if len(errors.keys()) > 0:
+            return False, errors
+        self.save()
+
+        return True, None
 
 class TicketType(models.Model):
     name = models.CharField(max_length=25)
     price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    @classmethod
+    def validate(cls, name, price):
+        errors = {}
+
+        if name == "":
+            errors["name"] = "El nombre es requerido"
+
+        if price is None or price <= 0:
+            errors["price"] = "El precio debe ser mayor a 0"
+
+        return errors
+
+    def update(self, price):
+        errors=TicketType.validate(self.name, price)
+        if len(errors.keys()) > 0:
+            return False, errors
+        self.price = price or self.price
+        self.save()
+
+        return True, None
