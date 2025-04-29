@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block title %}Categorías{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Categorías</h1>
+        {% if user_is_organizer %}
+            <a href="{% url 'category_create' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
+                Crear Categoría
+            </a>
+        {% endif %}
+    </div>
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Descripción</th>
+                <th>Eventos</th>
+                {% if user_is_organizer %}
+                    <th>Acciones</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for category in categories %}
+                <tr>
+                    <td>{{ category.name }}</td>
+                    <td>{{ category.description }}</td>
+                    <td>{{ category.event_set.count }} evento{{ category.event_set.count|pluralize }}</td>
+                    {% if user_is_organizer %}
+                        <td>
+                            <div class="hstack gap-1">
+                                <a href="{% url 'category_detail' category.id %}"
+                                   class="btn btn-sm btn-outline-primary"
+                                   title="Ver detalle">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'category_update' category.id %}"
+                                   class="btn btn-sm btn-outline-secondary"
+                                   title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <form action="{% url 'category_delete' category.id %}" method="POST">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            type="submit"
+                                            title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    {% endif %}
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">No hay categorías registradas</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

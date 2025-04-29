@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+from .models import Event, User, Category
 
 
 def register(request):
@@ -125,3 +125,91 @@ def event_form(request, id=None):
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
+
+@login_required
+def category_list(request):
+    categories = Category.objects.all()
+    return render(
+        request,
+        "app/categories.html",
+        {
+            "categories": categories,
+            "user_is_organizer": request.user.is_organizer,
+        }
+    )
+
+@login_required
+def category_create(request):
+    if not request.user.is_organizer:
+        return redirect("category_list")
+
+    if request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        description = request.POST.get("description", "").strip()
+        is_active = request.POST.get("is_active") == "on"
+
+        if name:
+            Category.objects.create(name=name, description=description, is_active=is_active)
+            return redirect("categories")
+        else:
+            return render(request, "app/category_form.html", {
+                "error": "El nombre no puede estar vacío",
+                "category": {
+                    "name": name,
+                    "description": description,
+                    "is_active": is_active,
+                },
+                "is_edit": False,
+            })
+
+    return render(request, "app/category_form.html", {"is_edit": False})
+
+@login_required
+def category_update(request, id):
+    if not request.user.is_organizer:
+        return redirect("categories")
+
+    category = get_object_or_404(Category, pk=id)
+
+    if request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        description = request.POST.get("description", "").strip()
+        is_active = request.POST.get("is_active") == "on"
+
+        if name:
+            category.name = name
+            category.description = description
+            category.is_active = is_active
+            category.save()
+            return redirect("categories")
+        else:
+            return render(request, "app/category_form.html", {
+                "error": "El nombre no puede estar vacío",
+                "category": category,
+                "is_edit": True,
+            })
+
+    return render(request, "app/category_form.html", {
+        "category": category,
+        "is_edit": True
+    })
+
+
+@login_required
+def category_delete(request, id):
+    if not request.user.is_organizer:
+        return redirect("categories")
+
+    category = get_object_or_404(Category, pk=id)
+
+    if request.method == "POST":
+        category.delete()
+        return redirect("categories")
+
+    return redirect("categories")
+
+@login_required
+def category_detail(request, id):
+    category = get_object_or_404(Category, pk=id)
+    return render(request, "app/category_detail.html", {"category": category})
+
