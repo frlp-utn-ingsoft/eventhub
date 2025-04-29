@@ -1,12 +1,14 @@
 import datetime
+from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .forms import NotificationForm
+from .forms import NotificationForm,TicketForm
+from .models import Event, User, Notification, User_Notification,Ticket
+from datetime import timedelta
 
-from .models import Event, User, Notification, User_Notification
 
 
 def register(request):
@@ -182,3 +184,74 @@ def all_is_read(request):
             un.is_read = True
             un.save()
     return redirect("notifications")
+
+#Listado de todos los tickets del user
+@login_required
+def ticket_list(request):
+    print(request.user)
+    tickets = Ticket.objects.filter(user=request.user)
+    print(tickets) 
+    if not tickets:
+        messages.info(request, "No tienes tickets registrados.")  
+    return render(request, "app/ticket_list.html", {"tickets": tickets})
+
+
+#Alta Ticket
+@login_required
+def ticket_create(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+
+    if request.method == "POST":
+        form = TicketForm(request.POST)
+        if form.is_valid():
+            ticket = form.save(commit=False)
+            ticket.user = request.user
+            ticket.event = event
+            ticket.save()
+            messages.success(request, "Ticket creado exitosamente.")
+            return redirect("ticket_list")
+    else:
+        form = TicketForm()
+
+    return render(request, "app/ticket_form.html", {"form": form, "event": event})
+
+
+#Editar Ticket (solo si es dueño)
+@login_required
+def ticket_update(request, ticket_id):
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+
+    # Solo el dueño puede editar su ticket
+    if ticket.user != request.user:
+        messages.error(request, "No tienes permisos para editar este ticket.")
+        return redirect("ticket_list")
+
+    if request.method == "POST":
+        form = TicketForm(request.POST, instance=ticket)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Ticket actualizado exitosamente.")
+            return redirect("ticket_list")
+    else:
+        form = TicketForm(instance=ticket)
+
+    return render(request, "app/ticket_form.html", {"form": form})
+
+
+# Eliminar Ticket
+@login_required
+def ticket_delete(request, ticket_id):
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+
+    # Caso 1: Usuario regular puede eliminar su propio ticket
+    if ticket.user == request.user:
+        ticket.delete()
+        messages.success(request, "Ticket eliminado exitosamente.")
+    # Caso 2: Organizador puede eliminar tickets de sus eventos
+    elif request.user.is_organizer and ticket.event.organizer == request.user:
+        ticket.delete()
+        messages.success(request, "Ticket eliminado exitosamente.")
+    else:
+        messages.error(request, "No tienes permisos para eliminar este ticket.")
+
+    return redirect("ticket_list")
