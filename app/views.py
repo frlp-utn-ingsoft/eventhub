@@ -4,8 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
-
+from .models import Event, User, Category
+from .forms import CategoryForm
 
 def register(request):
     if request.method == "POST":
@@ -125,3 +125,40 @@ def event_form(request, id=None):
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
+
+
+# Mostrar listado de categorías
+def category_list(request):
+    categories = Category.objects.all()
+    return render(request, 'app/category_list.html', {'categories': categories})
+
+# Crear o editar una categoría
+def category_form(request, id=None):
+    if id:
+        category = get_object_or_404(Category, pk=id)
+    else:
+        category = Category()
+
+    if request.method == 'POST':
+        category.name = request.POST.get('name')
+        # Si tienes los campos description e is_active deberías manejarlos aquí también
+        category.description = request.POST.get('description', '')
+        category.is_active = request.POST.get('is_active') == 'on'
+        category.save()
+        return redirect('category_list')  # Redirige al listado después de guardar
+    
+    # Este return faltaba para el caso de método GET
+    return render(request, 'app/category_form.html', {'category': category})
+
+# Mostrar detalle de una categoría
+def category_detail(request, id):
+    category = get_object_or_404(Category, pk=id)
+    return render(request, 'app/category_detail.html', {'category': category})
+
+# Eliminar categoría
+def category_delete(request, id):
+    category = get_object_or_404(Category, pk=id)
+    if request.method == 'POST':
+        category.delete()
+        return redirect('category_list')
+    return render(request, 'app/category_confirm_delete.html', {'category': category})
