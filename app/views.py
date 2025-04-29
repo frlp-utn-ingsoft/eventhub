@@ -4,7 +4,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+
+from .models import Event, User, Rating
+from .forms import RatingForm
+
 
 
 def register(request):
@@ -67,11 +70,65 @@ def events(request):
         {"events": events, "user_is_organizer": request.user.is_organizer},
     )
 
+@login_required
+def rating_create(request, id):
+    if request.method == "POST":
+        event = get_object_or_404(Event, pk=id)
+        title = request.POST.get("title", "").strip()
+        score = request.POST.get("score")
+        comment = request.POST.get("comment", "").strip()
+
+        Rating.objects.create(
+            event=event, user=request.user, title=title, score=score, comment=comment
+        )
+
+    return redirect("event_detail", id=id)
 
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
-    return render(request, "app/event_detail.html", {"event": event})
+    ratings = Rating.objects.filter(event=event)
+
+    # Check if we're editing a rating (from either GET or POST)
+    rating_to_edit = None
+    rating_id = request.GET.get('rating_id') or request.POST.get('rating_id')
+
+    if rating_id:
+        rating_to_edit = get_object_or_404(Rating, pk=rating_id, event=event)
+
+    if request.method == 'POST':
+        if 'rating_id' in request.POST:  # If editing an existing rating
+            rating_to_edit = get_object_or_404(Rating, pk=request.POST['rating_id'], event=event)
+            form = RatingForm(request.POST, instance=rating_to_edit)
+        else:  # Creating a new rating
+            form = RatingForm(request.POST)
+
+        if form.is_valid():
+            new_rating = form.save(commit=False)
+            new_rating.event = event
+            new_rating.user = request.user
+            new_rating.save()
+            return redirect('event_detail', id=id)
+    else:
+        form = RatingForm(instance=rating_to_edit)
+
+    context = {
+        'event': event,
+        'ratings': ratings,
+        'form': form,
+        'rating_to_edit': rating_to_edit,
+        'user_is_organizer': event.organizer == request.user  # Assuming this is what determines if user is organizer
+    }
+    return render(request, 'app/event_detail.html', context)
+
+@login_required
+def rating_delete(request, id, rating_id):
+    rating = get_object_or_404(Rating, pk=rating_id, event_id=id)
+
+    # Verificar si el usuario tiene permiso para eliminar la calificación (por ejemplo, si es el usuario que la creó o un organizador)
+    if request.user == rating.user or request.user.is_staff:
+        rating.delete()
+    return redirect('event_detail', id=id)
 
 
 @login_required
@@ -80,13 +137,15 @@ def event_delete(request, id):
     if not user.is_organizer:
         return redirect("events")
 
+    event = get_object_or_404(Event, pk=id)
+
+    # Verificar si el método de solicitud es POST (confirmación)
     if request.method == "POST":
-        event = get_object_or_404(Event, pk=id)
         event.delete()
         return redirect("events")
 
-    return redirect("events")
-
+    # No redirigimos, simplemente renderizamos el detalle del evento con el modal
+    return redirect("event_detail", id=id)
 
 @login_required
 def event_form(request, id=None):
