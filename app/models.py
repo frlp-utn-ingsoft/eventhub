@@ -125,7 +125,65 @@ class Event(models.Model):
 
         self.save()
 
+#comentarios
+class Comment(models.Model):
+    title = models.CharField(max_length=200)
+    text = models.CharField(max_length=140)
+    created_at = models.DateTimeField(auto_now=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="comments")
 
+    def __str__(self):
+        return f"{self.title} - {self.user.username}"
+
+    @classmethod
+    def validate(cls, title, text):
+        errors = {}
+
+        if title == "":
+            errors["title"] = "Por favor ingrese un titulo"
+        if len(title)>200:
+            errors["title"] = "El título no debe exceder los 200 caracteres" 
+        if not title.strip():
+            errors["title"] = "Por favor ingrese un título válido"      
+
+        if text == "":
+            errors["text"] = "Por favor ingrese un mensaje"
+        if len(text)>140:
+            errors["text"] = "El comentario no debe exceder los 140 caracteres"  
+        if not text.strip():
+            errors["text"] = "Por favor ingrese un comentario válido"     
+
+        return errors
+
+    @classmethod
+    def new(cls, title, text, user, event):
+        errors = Comment.validate(title, text)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+
+        Comment.objects.create(
+            title=title,
+            text=text,
+            user=user,
+            event=event
+        )
+
+        return True, None
+
+    def update(self, title, text):
+        errors = Comment.validate(title, text)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+        
+        self.title = title or self.title
+        self.text = text or self.text
+        self.save()
+
+        return True, None
+    
 class Ticket(models.Model):
     TICKET_TYPES= [('general', 'General'), ('vip', 'VIP')]
 

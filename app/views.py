@@ -14,7 +14,7 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from .models import Venue
 from .forms import VenueForm
-from .models import Event, Rating, Rating_Form, User
+from .models import Event, Rating, Rating_Form, User, Comment
 
 def organizer_required(view_func):
     @wraps(view_func)
@@ -78,7 +78,7 @@ def home(request):
 
 def verVenues(request):
     venues = Venue.objects.all() 
-    return render(request, 'app/venue_list.html', {'venues': venues})
+    return render(request, 'app/venue_list.html', {'venues': venues, "user_is_organizer": request.user.is_organizer})
 
 @login_required
 @organizer_required
@@ -90,7 +90,7 @@ def crearVenues(request):
             return redirect('venue_list')
     else:
         form = VenueForm() 
-    return render(request, 'app/venue_form.html', {'form': form})
+    return render(request, 'app/venue_form.html', {'form': form, "user_is_organizer": request.user.is_organizer})
 
 @login_required
 @organizer_required
@@ -103,7 +103,7 @@ def editarVenues(request, pk):
             return redirect('venue_list') 
     else:
         form = VenueForm(instance=venue)
-    return render(request, 'app/venue_form.html', {'form': form})
+    return render(request, 'app/venue_form.html', {'form': form, "user_is_organizer": request.user.is_organizer})
 
 @login_required
 @organizer_required
@@ -112,7 +112,7 @@ def eliminarVenue(request, pk):
     if request.method == 'POST':
         venue.delete() 
         return redirect('venue_list') 
-    return render(request, 'app/venue_confirm_delete.html', {'venue': venue})
+    return render(request, 'app/venue_confirm_delete.html', {'venue': venue, "user_is_organizer": request.user.is_organizer})
 
 
 @login_required
@@ -206,7 +206,7 @@ def category_delete(request, id):
 @organizer_required
 def category_detail(request, id):
     event = get_object_or_404(Category, pk=id)
-    return render(request, "app/category_detail.html", {"category": event})
+    return render(request, "app/category_detail.html", {"category": event, "user_is_organizer": request.user.is_organizer})
 
 
 @login_required
@@ -219,9 +219,22 @@ def events(request):
     )
 
 @login_required
+def my_events(request):
+    if not request.user.is_organizer:
+        return redirect("events")
+    
+    events = Event.objects.filter(organizer=request.user).order_by("scheduled_at")
+    return render(
+        request,
+        "app/my_events.html",
+        {"events": events, "user_is_organizer": request.user.is_organizer},
+    )
+
+@login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
-    return render(request, "app/event_detail.html", {"event": event})
+    comments = event.comments.all().order_by("-created_at") # type: ignore
+    return render(request, "app/event_detail.html", {"event": event, "user_is_organizer": request.user == event.organizer, "comments": comments})
 
 @login_required
 @organizer_required
@@ -236,6 +249,7 @@ def event_delete(request, id):
         return redirect("events")
 
     return redirect("events")
+
 @login_required
 @organizer_required
 def event_form(request, id=None):
@@ -328,7 +342,7 @@ def notifications(request):
         return render(
         request,
         "app/notifications_admin.html",
-        {"notifications": notifications})        
+        {"notifications": notifications, "user_is_organizer": request.user.is_organizer})        
 
     for notification in notifications:
         link = NotificationUser.objects.filter(notification=notification, user=user).first()
@@ -346,6 +360,123 @@ def notifications(request):
             "new_notifications_count": new_notifications_count
         },
     )
+
+###################################################################################
+
+@login_required
+def comments(request):
+    if not request.user.is_organizer:
+        return redirect("events")
+
+    comments = Comment.objects.filter(event__organizer=request.user).order_by("-created_at")
+    return render(
+        request,
+        "app/comments/comments.html",
+        {"comments": comments, "user_is_organizer": request.user.is_organizer},
+    )
+
+@login_required
+def comment_list(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+    comments = Comment.objects.filter(event=event).order_by('-created_at')
+    return render(
+        request,
+        "app/comments/comment_list.html",
+        {"comments": comments, "user": request.user, "user_is_organizer": request.user == event.organizer, "event": event}
+    )
+ 
+
+@login_required
+def comment_detail(request, comment_id):
+    if not request.user.is_organizer:
+        return redirect("events")
+    comment = get_object_or_404(Comment, pk=comment_id)
+    return render(request, "app/comments/comment_detail.html", {"comment": comment})
+
+
+@login_required
+def comment_delete(request, comment_id):
+    comment = get_object_or_404(Comment, pk=comment_id)
+
+    if comment.user != request.user and comment.event.organizer != request.user:
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
+    if request.method == "POST":
+        next_url = request.POST.get("next")
+        comment.delete()
+        return redirect(next_url)
+
+    return redirect(request.META.get("HTTP_REFERER", "/"))
+
+
+@login_required
+def comment_form(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+
+    if request.method == "POST":
+        title = request.POST.get("title")
+        text = request.POST.get("text")
+
+        success, result = Comment.new(title, text, request.user, event)
+
+        if success:
+            return redirect("event_detail", id=event_id)
+        else:
+            return render(
+                request,
+                "app/event_detail.html",{
+                    "errors": result,
+                    "event": event,
+                    "comment": {
+                        "title": title,
+                        "text": text
+                },
+                "comments": event.comments.all() # type: ignore
+                }
+            )
+        
+    return redirect("event_detail", id=event_id)
+
+@login_required
+def comment_edit(request, comment_id):
+    comment = get_object_or_404(Comment, pk=comment_id)
+
+    if comment.user != request.user and comment.event.organizer != request.user:
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+
+    if request.method == "POST":
+        title = request.POST.get("title")
+        text = request.POST.get("text")
+        next_url = request.POST.get("next")
+        
+        success, result = comment.update(title, text)
+
+        if success:
+            if next_url:
+                return redirect(next_url)
+            
+            if comment.user == comment.event.organizer:
+                return redirect("comments")
+            else:
+                return redirect("event_detail", id=comment.event.pk)
+        else:
+            return render(request, "app/comments/comment_edit.html", {
+                "comment": {
+                    "id": comment.pk,
+                    "title": title,
+                    "text": text,
+                    "user": comment.user,
+                    "event": comment.event
+                },
+                "errors": result,
+                "next_url": next_url
+            })
+    
+    next_url = request.GET.get("next", "/")
+    return render(request, "app/comments/comment_edit.html", {
+        "comment": comment,
+        "next_url": next_url
+    })
 
 @login_required
 def buy_ticket(request, event_id):
@@ -366,7 +497,8 @@ def buy_ticket(request, event_id):
     
     return render(request, 'app/buy_ticket.html', {
         'form': form,
-        'event': event
+        'event': event,
+        "user_is_organizer": request.user.is_organizer
     })
 
 @login_required
@@ -377,7 +509,7 @@ def ticket_detail(request, ticket_id):
         messages.error(request, 'No tienes permiso para ver este ticket')
         return redirect('home')
     
-    return render(request, 'app/ticket_detail.html', {'ticket': ticket})
+    return render(request, 'app/ticket_detail.html', {'ticket': ticket, "user_is_organizer": request.user.is_organizer})
 
 @login_required
 def edit_ticket(request, ticket_id):
@@ -431,7 +563,8 @@ def delete_ticket(request, ticket_id):
 @login_required
 def my_tickets(request):
     tickets = Ticket.objects.filter(user=request.user).order_by('-buy_date')
-    return render(request, 'app/my_tickets.html', {'tickets': tickets})
+    return render(request, 'app/my_tickets.html', {'tickets': tickets, "user_is_organizer": request.user.is_organizer})
+
 @organizer_required
 def notification_detail(request, id):
     notification = get_object_or_404(Notification, pk=id)
