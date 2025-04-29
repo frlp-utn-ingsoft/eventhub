@@ -73,3 +73,14 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+class Rating(models.Model):
+    event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='ratings')
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    title = models.CharField(max_length=100)
+    comment = models.TextField(blank=True, null=True)
+    score = models.PositiveSmallIntegerField()  # entre 1 y 5
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.score} estrellas"
