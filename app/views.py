@@ -5,7 +5,6 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .models import Event, User, Category, Notification
 
-
 def register(request):
     if request.method == "POST":
         email = request.POST.get("email")
@@ -219,23 +218,15 @@ def notification_form(request, id=None):
                     "notification": notification,
                 })
         else:  # Actualizar notificación existente
-            # Asegúrate de que notification existe antes de intentar actualizarlo
-            if notification:
+                notification = get_object_or_404(Notification, pk=id)
                 notification.update(
-                    title,
-                    message,
-                    priority,
-                    users,
-                    event
-                )
-            else:
-                # Si por alguna razón no existe, manejamos el error
-                return render(request, "app/notification_form.html", {
-                    "events": Event.objects.all(),
-                    "users": User.objects.all(),
-                    "errors": ["La notificación que intentas actualizar no existe."],
-                })
-        
+                title=title,
+                message=message,
+                priority=priority,
+                users=users,
+                event=event
+                 )
+
         return redirect("notification")
     
     # GET request
@@ -284,6 +275,7 @@ def notification(request):
             "current_event_filter": event_filter,
             "current_priority_filter": priority_filter,
             "search_query": search_query,
+            "user_is_organizer": request.user.is_organizer,
         },
     )
 
@@ -318,3 +310,33 @@ def notification_delete(request,id):
 
     return redirect("notification")
 
+@login_required
+def user_notifications(request):
+    # Obtener solo las notificaciones del usuario actual
+    notifications = Notification.objects.filter(users=request.user).order_by("-created_at")
+    
+    # Contar notificaciones no leídas
+    unread_count = notifications.filter(read=False).count()
+    
+    return render(
+        request,
+        "app/user_notifications.html",
+        {
+            "notifications": notifications,
+            "unread_count": unread_count,
+            "has_notifications": notifications.exists(),
+        },
+    )
+
+def mark_notification_read(request, id=None):
+    if request.method == "POST":
+        if id:
+            # Marcar una notificación específica como leída
+            notification = get_object_or_404(Notification, pk=id, users=request.user)
+            notification.read = True
+            notification.save()
+        else:
+            # Marcar todas las notificaciones como leídas
+            Notification.objects.filter(users=request.user, read=False).update(read=True)
+    
+    return redirect("user_notifications")
