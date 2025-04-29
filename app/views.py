@@ -619,15 +619,15 @@ def create_refund(request, ticket_id):
 
         if (ticket.event.scheduled_at-timezone.now()) > datetime.timedelta(days=7):
             if ticket.type == 'general':
-                amount = 50
+                amount = 50*ticket.quantity
             elif ticket.type == 'vip':
-                amount = 100
+                amount = 100*ticket.quantity
 
         if datetime.timedelta(days=7) > (ticket.event.scheduled_at - timezone.now()) > datetime.timedelta(days=2):
             if ticket.type == 'general':
-                amount = 25
+                amount = 25*ticket.quantity
             elif ticket.type == 'vip':
-                amount = 50
+                amount = 50*ticket.quantity
 
         if (ticket.event.scheduled_at-timezone.now()) < datetime.timedelta(days=2):
             status = RefundStatus.REJECTED
@@ -657,23 +657,18 @@ def create_refund(request, ticket_id):
         })
     return redirect('Mis_tickets')
 
-def delete_refund(request, ticket_id):
-    ticket = get_object_or_404(RefundRequest, id=ticket_id)
+def delete_refund(request, refund_id):
+    refund = get_object_or_404(RefundRequest, id=refund_id)
     if request.method == 'POST':
-        ticket.delete()
+        refund.delete()
         messages.success(request, "Reembolso eliminado correctamente")
-        return redirect('Mis_tickets')
-    return render(request, 'app/ticket_delete.html', {'ticket': ticket})
+        return redirect('refund_user')
+    return redirect('refund_user')
 
 def refund_user(request):
     user = request.user
     refunds = RefundRequest.objects.filter(user=user).order_by('-created_at')
     return render(request, 'app/refund_user.html', {'refunds': refunds})
 
-def refund_detail(request, ticket_id):
-    ticket = get_object_or_404(RefundRequest, id=ticket_id)
-    if request.method == 'POST':
-        ticket.delete()
-        messages.success(request, "Reembolso eliminado correctamente")
-        return redirect('Mis_tickets')
-    return render(request, 'app/ticket_delete.html', {'ticket': ticket})
+def refund_detail(request, refund_id):
+    refund = get_object_or_404(RefundRequest, id=refund_id)

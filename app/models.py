@@ -294,7 +294,7 @@ class RefundRequest(models.Model):
             ticket_code=ticket_code,
             user=user,
             status=status,
-            ticket=Ticket.objects.filter(ticket_code=ticket_code)
+            ticket=Ticket.objects.get(ticket_code=ticket_code)
         )
 
         return True, None
