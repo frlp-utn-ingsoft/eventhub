@@ -18,7 +18,15 @@ def add_comment(request,id):
         )
         return redirect("event_detail", id=id)
     return redirect("event_detail", id=id)
-        
+
+
+def delete_comment(request,id,comment_id):
+    comment = get_object_or_404(Comment, id=comment_id, event_id = id)
+    if request.method == "POST":
+        comment.delete()
+        return redirect("event_detail",id=id)
+    return redirect("event_detail",id=id)
+     
         
         
     

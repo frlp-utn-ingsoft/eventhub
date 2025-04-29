@@ -110,5 +110,6 @@ class Comment(models.Model):
             text = text,
             event = event
             )
+
             
     
