@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Count
 from django.http import HttpResponseForbidden
-from .models import Event, User, Category, Comment, Venue, Ticket, Rating, RefundRequest
+from .models import Event, User, Category, Comment, Venue, Ticket, Rating, RefundRequest, RefundReason, RefundStatus
 from django.contrib import messages
 import re
 import random
@@ -608,35 +608,72 @@ def rating_delete(request, event_id, rating_id):
 
     return redirect('event_detail', id=event_id)
 
-def create_refund(request):
+def create_refund(request, ticket_id):
+    ticket = get_object_or_404(Ticket, id=ticket_id)
     if request.method == 'POST':
         ticket_code = request.POST.get('ticket_code')
-        amount = request.POST.get('amount')
         reason = request.POST.get('reason')
         refund_reason = request.POST.get('refund_reason')
+        status = RefundStatus.PENDING
+        amount = 0
 
-        ticket = get_object_or_404(Ticket, ticket_code=ticket_code)
+        if (ticket.event.scheduled_at-timezone.now()) > datetime.timedelta(days=7):
+            if ticket.type == 'general':
+                amount = 50
+            elif ticket.type == 'vip':
+                amount = 100
+
+        if datetime.timedelta(days=7) > (ticket.event.scheduled_at - timezone.now()) > datetime.timedelta(days=2):
+            if ticket.type == 'general':
+                amount = 25
+            elif ticket.type == 'vip':
+                amount = 50
+
+        if (ticket.event.scheduled_at-timezone.now()) < datetime.timedelta(days=2):
+            status = RefundStatus.REJECTED
 
         success, errors = RefundRequest.new(
-            approved=False,
             amount=float(amount),
             reason=reason,
             refund_reason=refund_reason,
             ticket_code=ticket_code,
-            user=request.user
+            user=request.user,
+            status=status
         )
 
         if not success:
             return render(request, 'app/refund_form.html', {
                 'ticket': ticket,
+                'RefundReason': RefundReason,
                 'errors': errors,
-                'input': request.POST
+                'input': request.GET
             })
 
         return redirect('Mis_tickets')
     if request.method == 'GET':
-        #ticket_code = request.GET.get('ticket_code')
-        #ticket = get_object_or_404(Ticket, ticket_code=ticket_code)
-
-        return render(request, 'app/refund_form.html')
+        return render(request, 'app/refund_form.html', {
+            'ticket': ticket,
+            'RefundReason': RefundReason
+        })
     return redirect('Mis_tickets')
+
+def delete_refund(request, ticket_id):
+    ticket = get_object_or_404(RefundRequest, id=ticket_id)
+    if request.method == 'POST':
+        ticket.delete()
+        messages.success(request, "Reembolso eliminado correctamente")
+        return redirect('Mis_tickets')
+    return render(request, 'app/ticket_delete.html', {'ticket': ticket})
+
+def refund_user(request):
+    user = request.user
+    refunds = RefundRequest.objects.filter(user=user).order_by('-created_at')
+    return render(request, 'app/refund_user.html', {'refunds': refunds})
+
+def refund_detail(request, ticket_id):
+    ticket = get_object_or_404(RefundRequest, id=ticket_id)
+    if request.method == 'POST':
+        ticket.delete()
+        messages.success(request, "Reembolso eliminado correctamente")
+        return redirect('Mis_tickets')
+    return render(request, 'app/ticket_delete.html', {'ticket': ticket})

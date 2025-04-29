@@ -275,25 +275,26 @@ class RefundRequest(models.Model):
     status = models.CharField(max_length=10, choices=RefundStatus.choices, default=RefundStatus.PENDING)
     refund_reason = models.CharField(max_length=50, choices=RefundReason.choices, default=RefundReason.OTHER)
     ticket_code = models.CharField(max_length=100, unique=True)
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name="refund_requests", null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refund_requests")
     created_at = models.DateTimeField(auto_now_add=True)
 
 
     @classmethod
-    def new(cls, approved, amount, reason, refund_reason, ticket_code, user):
-        errors = cls.validate(approved, amount, reason)
+    def new(cls, amount, reason, refund_reason, ticket_code, user, status):
+        errors = cls.validate(amount, reason, status, refund_reason, ticket_code, user)
 
         if errors:
             return False, errors
 
         cls.objects.create(
-            approved=False,
             amount=amount,
             reason=reason,
             refund_reason=refund_reason,
             ticket_code=ticket_code,
             user=user,
-            status=RefundStatus.PENDING
+            status=status,
+            ticket=Ticket.objects.filter(ticket_code=ticket_code)
         )
 
         return True, None
@@ -302,7 +303,7 @@ class RefundRequest(models.Model):
     def validate(cls, amount, reason, status, refund_reason, ticket_code, user):
         errors = {}
 
-        if amount is None or amount <= 0:
+        if amount is None or amount < 0:
             errors["amount"] = "El monto debe ser mayor a 0."
 
         if reason is None or reason.strip() == "":
