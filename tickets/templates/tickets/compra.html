@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% load ticket_tags %}
 
-{% block title %}Comprar Entrada - {{ event.name }}{% endblock %}
+{% block title %}Comprar Entrada - {{ event.title }}{% endblock %}
 
 {% block content %}
 <div class="container my-4">
@@ -14,12 +14,12 @@
                 </div>
                 <div class="card-body">
                     <!-- Información del evento -->
-                    <h3>{{ event.name }}</h3>
+                    <h3>{{ event.title }}</h3>
                     <div class="mb-3">
-                        <i class="bi bi-calendar me-2"></i> {{ event.date|date:"l, j \d\e F \d\e Y, H:i" }}
+                        <i class="bi bi-calendar me-2"></i> {{ event.scheduled_at|date:"l, j \d\e F \d\e Y, H:i" }}
                     </div>
                     <div class="mb-3">
-                        <i class="bi bi-geo-alt me-2"></i> {{ event.location }}
+                        <i class="bi bi-geo-alt me-2"></i> {{ "aca iria el venue" }}
                     </div>
                     <div class="mb-3">
                         <i class="bi bi-people me-2"></i> {{ event.organizer }}
