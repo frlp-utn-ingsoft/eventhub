@@ -180,11 +180,59 @@ def notification_create(request):
     else:
         form = NotificationForm()
 
-    return render(request, "app/notification_create.html", {
+    return render(request, "app/notification_form.html", {
         "form": form,
+        "is_update": False,
     })
 
+@login_required
+def notification_update(request, id):
+    notif = get_object_or_404(Notification, id = id)
 
+    if not request.user.is_organizer:
+        messages.error(request, "No tenés permiso para editar esta notificación.")
+        return redirect("notifications")
+
+    if request.method == "POST":
+        form = NotificationForm(request.POST, instance=notif)
+
+        if form.is_valid():
+            notif = form.save(commit=False)
+            notif.save()
+
+            tipo_usuario = request.POST.get("tipo_usuario")
+            event = form.cleaned_data.get("event")
+            specific_user = form.cleaned_data.get("user")
+
+            notif.users.clear()
+
+            if tipo_usuario == "all" and event:
+                user_ids = (
+                    Ticket.objects.filter(event=event)
+                    .values_list("user_id", flat=True)
+                    .distinct()
+                )
+                notif.users.set(user_ids)
+
+            elif tipo_usuario == "specific" and specific_user:
+                notif.users.set([specific_user])
+
+            messages.success(request, "Notificación actualizada correctamente.")
+            return redirect("notifications")
+        else:
+            messages.error(request, "Errores en el formulario.")
+    else:
+        initial_data = {
+            "event": None,
+            "user": notif.users.first() if notif.users.count() == 1 else None,
+        }
+        form = NotificationForm(instance=notif, initial=initial_data)
+
+    return render(request, "app/notification_form.html", {
+        "form": form,
+        "notification": notif,
+        "is_update": True,
+    })
 
 @login_required
 def notification_delete(request,id):

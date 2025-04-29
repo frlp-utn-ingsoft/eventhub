@@ -19,7 +19,7 @@ class NotificationForm(forms.ModelForm):
 
     class Meta:
         model = Notification
-        fields = ["title", "message", "priority"]  # No incluyas users
+        fields = ["title", "message", "priority"]  
 
         widgets = {
             "title": forms.TextInput(attrs={
@@ -49,7 +49,7 @@ class NotificationForm(forms.ModelForm):
             self.add_error("title", "El título no puede estar vacío.")
         elif len(title) < 10:
             self.add_error("title", "El título debe tener al menos 10 caracteres.")
-        elif Notification.objects.filter(title=title).exists():
+        elif Notification.objects.filter(title=title).exclude(pk=self.instance.pk).exists():
             self.add_error("title", "Ese título ya existe.")
 
         if not message:
