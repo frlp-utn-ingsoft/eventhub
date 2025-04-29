@@ -1,7 +1,9 @@
 from django.contrib.auth.views import LogoutView
 from django.urls import path
-
 from . import views
+from django.urls import include
+from .views import verVenues, crearVenues, edit_ticket, eliminarVenue
+
 
 urlpatterns = [
     path("", views.home, name="home"),
@@ -18,5 +20,26 @@ urlpatterns = [
     path("events/comments/<int:comment_id>/", views.comment_detail, name="comment_detail"),
     path("events/<int:event_id>/comments/create/", views.comment_form, name="comment_form"),
     path("events/comments/<int:comment_id>/edit/", views.comment_edit, name="comment_edit"),
-    path("events/comments/<int:comment_id>/delete/", views.comment_delete, name="comment_delete")
+    path("events/comments/<int:comment_id>/delete/", views.comment_delete, name="comment_delete"),
+    path('events/<int:event_id>/buy_ticket/', views.buy_ticket, name='buy_ticket'),
+    path('ticket/<int:ticket_id>/', views.ticket_detail, name='ticket_detail'),
+    path('ticket/<int:ticket_id>/edit/', views.edit_ticket, name='edit_ticket'),
+    path('ticket/<int:ticket_id>/delete/', views.delete_ticket, name='delete_ticket'),
+    path('my-tickets/', views.my_tickets, name='my_tickets'),
+    path("notifications/", views.notifications, name="notifications"),
+    path("notifications/<int:id>", views.notification_detail, name="notification_detail"),
+    path("notifications/create", views.notification_form, name="notification_form"),
+    path("notifications/<int:id>/edit", views.notification_edit, name="notification_edit"),
+    path("notifications/<int:id>/delete", views.notification_delete, name="notification_delete"),
+    path("notifications/mark_all_as_read", views.mark_all_as_read, name="mark_all_as_read"),
+    path("notifications/<int:id>/mark_as_read", views.mark_as_read, name="mark_as_read"),
+    path("categories/", views.categories, name="categories"),
+    path("categories/create/", views.category_form, name="category_form"),
+    path("categories/<int:id>/edit/", views.category_edit, name="category_edit"),
+    path("categories/<int:id>/", views.category_detail, name="category_detail"),
+    path("categories/<int:id>/delete/", views.category_delete, name="category_delete"),
+    path('venues/', views.verVenues, name='venue_list'),
+    path('venues/create/', views.crearVenues, name='venue_create'),
+    path('venues/<int:pk>/edit/', views.editarVenues, name='venue_edit'),
+    path('venues/<int:pk>/delete/', views.eliminarVenue, name='venue_delete'),
 ]

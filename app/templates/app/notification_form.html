@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="mb-4">
+                {% if notification.id %}
+                    Editar notificación
+                {% else %}
+                    Crear notificación
+                {% endif %}
+            </h1>
+
+            <div class="card">
+                <div class="card-body">
+                    <form action="{% url 'notification_form' %}" method="POST">
+                        {% csrf_token %}
+                        <div class="vstack gap-3">
+                            <div>
+                                <label for="title" class="form-label {% if errors.title %}text-danger{% endif %}">Título *</label>
+                                <input class="form-control {% if errors.title %}is-invalid{% endif %}"
+                                    id="title"
+                                    type="text"
+                                    value="{{ notification.title }}"
+                                    name="title"
+                                    required
+                                />
+                                {% if errors.title %}
+                                    <div class="invalid-feedback">
+                                        {{ errors.title }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="message" class="form-label {% if errors.message %}text-danger{% endif %}">
+                                    Mensage *
+                                </label>
+                                <textarea
+                                    class="form-control {% if errors.message %}is-invalid{% endif %}"
+                                    id="message"
+                                    name="message"
+                                    
+                                    required
+                                >
+                                    {{ notification.message }}
+                                </textarea>
+                                {% if errors.message %}
+                                    <div class="invalid-feedback">
+                                        {{ errors.message }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="event" class="form-label {% if errors.priority %}text-danger{% endif %}">
+                                    Evento Relacionado *
+                                </label>
+                                <select class="form-select  {% if errors.event %}is-invalid{% endif %}" id="event" name="event" required>
+                                    <option value="">Seleccionar un evento</option>
+                                    {% for event in events%}
+                                    <option value="{{ event.id }}">{{ event.title }} - {{ event.description }} - {{ event.scheduled_at|date:"d b Y, H:i" }}</option>
+                                    {% empty %}
+                                        <option value="">No se encontraron eventos relacionados</option>
+                                    {% endfor %}
+                                </select>
+                                {% if errors.event %}
+                                    <div class="invalid-feedback">
+                                        {{ errors.event }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="user" class="form-label {% if errors.user %}text-danger{% endif %}">Destinatarios *</label>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" id="recipient_option_1" name="recipient_type" value="all_users" checked>
+                                    <label class="form-check-label" for="recipient_option_1">
+                                        Todos los asistentes de un evento
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" id="recipient_option_2" name="recipient_type" value="specific_user">
+                                    <label class="form-check-label" for="recipient_option_2">
+                                        Usuario específico
+                                    </label>
+                                </div>
+                                <select class="form-select {% if errors.user %}is-invalid{% endif %}" id="user" name="user">
+                                    <option value="">Seleccionar un usuario</option>
+                                    {% for user in users%}
+                                        <option value="{{ user.id }}">{{ user.username }}</option>
+                                    {% empty %}
+                                        <option value="">No se encontraron usuarios</option>
+                                    {% endfor %}
+                                </select>
+                                {% if errors.user %}
+                                    <div class="invalid-feedback">
+                                        {{ errors.user }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                <label for="priority" class="form-label {% if errors.priority %}text-danger{% endif %}">Prioridad *</label>
+                                <select class="form-select {% if errors.priority %}is-invalid{% endif %}" id="priority" name="priority" required>
+                                    <option value="">Seleccionar prioridad</option>
+                                    <option value="LOW" {% if notification.priority == "LOW" %}selected{% endif %}>Baja</option>
+                                    <option value="MEDIUM" {% if notification.priority == "MEDIUM" %}selected{% endif %}>Media</option>
+                                    <option value="HIGH" {% if notification.priority == "HIGH" %}selected{% endif %}>Alta</option>
+                                </select>
+                                {% if errors.priority %}
+                                    <div class="invalid-feedback">
+                                        {{ errors.priority }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div>
+                                {% if notification.id %}
+                                    <button type="submit" class="btn btn-primary">Guardar Notificación</button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-primary">Enviar Notificación</button>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

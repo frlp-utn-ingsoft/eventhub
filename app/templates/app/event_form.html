@@ -14,18 +14,20 @@
 
             <div class="card">
                 <div class="card-body">
-                    <form action="{% if event.id %}{% url 'event_edit' event.id %}{% else %}{% url 'event_form' %}{% endif %}" method="POST">
+                    <form action="" method="POST">
                         {% csrf_token %}
                         <div class="vstack gap-3">
+
                             <div>
                                 <label for="title" class="form-label">Título del Evento</label>
                                 <input class="form-control"
                                     id="title"
-                                    required=""
+                                    required
                                     type="text"
-                                    value="{{ event.title }}"
+                                    value="{{ event.title|default_if_none:'' }}"
                                     name="title" />
                             </div>
+
                             <div>
                                 <label for="description" class="form-label">Descripción</label>
                                 <textarea
@@ -33,17 +35,18 @@
                                     id="description"
                                     name="description"
                                     rows="4"
-                                    required="">{{ event.description }}</textarea>
+                                    required>{{ event.description|default_if_none:'' }}</textarea>
                             </div>
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <label for="date" class="form-label">Fecha</label>
                                     <input
                                         class="form-control"
                                         id="date"
-                                        required=""
+                                        required
                                         type="date"
-                                        value="{{ event.scheduled_at|date:'Y-m-d'}}"
+                                        value="{{ event.scheduled_at|date:'Y-m-d' }}"
                                         name="date" />
                                 </div>
                                 <div class="col-md-6">
@@ -51,25 +54,59 @@
                                     <input
                                         class="form-control"
                                         id="time"
-                                        required=""
+                                        required
                                         type="time"
-                                        value="{{ event.scheduled_at|date:'H:i'}}"
+                                        value="{{ event.scheduled_at|date:'H:i' }}"
                                         name="time" />
                                 </div>
                             </div>
-                            <div>
+
+                            <div class="row">
+                                {% for category_chunk in categories_chunks %}
+                                  <div class="col">
+                                    {% for category in category_chunk %}
+                                      <div class="form-check">
+                                        <input
+                                          class="form-check-input"
+                                          type="checkbox"
+                                          id="category_{{ category.id }}"
+                                          name="categories"
+                                          value="{{ category.id }}"
+                                          {% if category.id in event_categories_ids %}checked{% endif %}
+                                        >
+                                        <label class="form-check-label" for="category_{{ category.id }}">
+                                          {{ category.name }}
+                                        </label>
+                                      </div>
+                                    {% endfor %}
+                                  </div>
+                                {% endfor %}
+                            </div>
+
+                            <!-- Campo para seleccionar el venue (lugar) -->
+                            <div class="mb-3">
+                                <label for="venue" class="form-label">Lugar</label>
+                                <select class="form-select" id="venue" name="venue" required>
+                                    <option value="" disabled {% if not event.venue %}selected{% endif %}>Seleccionar un lugar</option>
+                                    {% for venue in venues %}
+                                        <option value="{{ venue.id }}" {% if venue.id == event.venue.id %}selected{% endif %}>
+                                            {{ venue.name }} - {{ venue.city }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mt-3">
                                 <button type="submit" class="btn btn-primary">
-                                    {% if event.id %}
-                                    Editar evento
-                                    {% else %}
-                                    Crear evento
-                                    {% endif %}
+                                    {% if event.id %}Guardar Cambios{% else %}Crear Evento{% endif %}
                                 </button>
                             </div>
+
                         </div>
                     </form>
                 </div>
             </div>
+
         </div>
     </div>
 </div>

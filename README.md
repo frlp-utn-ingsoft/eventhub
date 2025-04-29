@@ -7,7 +7,7 @@ Aplicaci√≥n web para venta de entradas utilizada en la cursada 2025 de Ingenier√
 2. Gonzalo Gerez
 3. Isabella Bresciani
 4. Silvia Romero
-5. Sofia Raggi
+5. Sofia Belen Raggi
 6. Sofia Lara Goszko
 
 ## Dependencias
@@ -26,6 +26,9 @@ Aplicaci√≥n web para venta de entradas utilizada en la cursada 2025 de Ingenier√
 
 `python manage.py migrate`
 
+## Migraciones de Django cities
+
+`python manage.py migrate cities_light`
 ### Crear usuario admin
 
 `python manage.py createsuperuser`

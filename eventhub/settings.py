@@ -38,6 +38,9 @@ INSTALLED_APPS = [
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
+    "widget_tweaks",
+    'django_countries',
+    'cities_light',
 ]
 
 MIDDLEWARE = [
@@ -134,3 +137,5 @@ LOGIN_REDIRECT_URL = "/events/"
 LOGIN_URL = "/accounts/login/"
 
 LOGOUT_REDIRECT_URL = "/accounts/login/"
+CITIES_LIGHT_INCLUDE_COUNTRIES = True
+CITIES_LIGHT_INCLUDE_CITIES = False

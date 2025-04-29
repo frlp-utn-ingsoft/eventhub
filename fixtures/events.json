@@ -1,14 +1,185 @@
 [
-    {
-        "model": "app.event",
-        "pk": 1,
-        "fields": {
-            "title": "Concierto de Jazz",
-            "description": "Una noche con los mejores músicos de jazz.",
-            "scheduled_at": "2025-06-20T20:00:00Z",
-            "organizer": 1,
-            "created_at": "2025-04-01T00:00:00Z",
-            "updated_at": "2025-04-01T00:00:00Z"
-        }
+  {
+    "model": "app.event",
+    "pk": 1,
+    "fields": {
+      "title": "Concierto de Rock",
+      "description": "Un evento con bandas locales de rock.",
+      "scheduled_at": "2025-05-01T19:00:00Z",
+      "categories": [1, 2],  
+      "organizer": 2,        
+      "venue": 1,            
+      "created_at": "2025-04-20T10:00:00Z",
+      "updated_at": "2025-04-20T10:00:00Z"
     }
+  },
+  {
+    "model": "app.event",
+    "pk": 2,
+    "fields": {
+      "title": "Exposición de Arte",
+      "description": "Una exposición de arte moderno.",
+      "scheduled_at": "2025-05-03T14:00:00Z",
+      "categories": [3],  
+      "organizer": 2,      
+      "venue": 2,          
+      "created_at": "2025-04-22T09:30:00Z",
+      "updated_at": "2025-04-22T09:30:00Z"
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 3,
+    "fields": {
+      "title": "Conferencia de Tecnología",
+      "description": "Conferencia sobre tendencias tecnológicas.",
+      "scheduled_at": "2025-06-10T10:00:00Z",
+      "categories": [4],  
+      "organizer": 2,      
+      "venue": 3,          
+      "created_at": "2025-05-01T15:00:00Z",
+      "updated_at": "2025-05-01T15:00:00Z"
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 4,
+    "fields": {
+      "title": "Festival de Música Electrónica",
+      "description": "Un evento para los amantes de la música electrónica con DJs internacionales.",
+      "scheduled_at": "2025-05-10T21:00:00Z",
+      "categories": [1, 5],
+      "organizer": 2,
+      "venue": 4,
+      "created_at": "2025-04-23T18:00:00Z",
+      "updated_at": "2025-04-23T18:00:00Z"
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 5,
+    "fields": {
+      "title": "Feria Internacional de Arte",
+      "description": "Una feria con obras de arte contemporáneo de artistas internacionales.",
+      "scheduled_at": "2025-06-15T11:00:00Z",
+      "categories": [3, 2],
+      "organizer": 2,
+      "venue": 5,
+      "created_at": "2025-04-25T14:00:00Z",
+      "updated_at": "2025-04-25T14:00:00Z"
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 6,
+    "fields": {
+      "title": "Torneo de Fútbol Amateur",
+      "description": "Un torneo para equipos amateurs de fútbol en Buenos Aires.",
+      "scheduled_at": "2025-07-01T09:00:00Z",
+      "categories": [1],
+      "organizer": 6,
+      "venue": 1,
+      "created_at": "2025-04-28T13:30:00Z",
+      "updated_at": "2025-04-28T13:30:00Z"
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 7,
+    "fields": {
+      "title": "Concierto de Jazz",
+      "description": "Concierto en vivo con una selección de músicos de jazz locales.",
+      "scheduled_at": "2025-05-20T20:00:00Z",
+      "categories": [2],
+      "organizer": 2,
+      "venue": 2,
+      "created_at": "2025-04-30T16:00:00Z",
+      "updated_at": "2025-04-30T16:00:00Z"
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 8,
+    "fields": {
+      "title": "Ciclo de Cine Independiente",
+      "description": "Proyecciones de películas independientes argentinas y latinoamericanas.",
+      "scheduled_at": "2025-05-25T18:30:00Z",
+      "categories": [3],
+      "organizer": 1,
+      "venue": 3,
+      "created_at": "2025-05-01T12:00:00Z",
+      "updated_at": "2025-05-01T12:00:00Z"
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 9,
+    "fields": {
+      "title": "Feria Gastronómica de Buenos Aires",
+      "description": "Feria con los mejores platos de la gastronomía argentina.",
+      "scheduled_at": "2025-06-05T10:00:00Z",
+      "categories": [8],
+      "organizer": 2,
+      "venue": 4,
+      "created_at": "2025-05-02T10:00:00Z",
+      "updated_at": "2025-05-02T10:00:00Z"
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 10,
+    "fields": {
+      "title": "Feria del Libro Infantil",
+      "description": "Un evento donde los niños pueden descubrir nuevos libros y participar en actividades literarias.",
+      "scheduled_at": "2025-07-10T12:00:00Z",
+      "categories": [3],
+      "organizer": 2,
+      "venue": 5,
+      "created_at": "2025-05-03T11:00:00Z",
+      "updated_at": "2025-05-03T11:00:00Z"
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 11,
+    "fields": {
+      "title": "Maratón Buenos Aires",
+      "description": "Un evento deportivo que atrae corredores de todo el mundo.",
+      "scheduled_at": "2025-08-01T08:00:00Z",
+      "categories": [7],
+      "organizer": 1,
+      "venue": 1,
+      "created_at": "2025-05-05T09:00:00Z",
+      "updated_at": "2025-05-05T09:00:00Z"
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 12,
+    "fields": {
+      "title": "Festival de Comedia",
+      "description": "Un festival con los mejores humoristas de Argentina.",
+      "scheduled_at": "2025-06-30T20:00:00Z",
+      "categories": [2],
+      "organizer": 2,
+      "venue": 2,
+      "created_at": "2025-05-07T10:30:00Z",
+      "updated_at": "2025-05-07T10:30:00Z"
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 13,
+    "fields": {
+      "title": "Exposición de Diseño Gráfico",
+      "description": "Exposición con los mejores diseñadores gráficos locales y internacionales.",
+      "scheduled_at": "2025-07-15T11:00:00Z",
+      "categories": [3],
+      "organizer": 2,
+      "venue": 3,
+      "created_at": "2025-05-10T15:00:00Z",
+      "updated_at": "2025-05-10T15:00:00Z"
+    }
+  }
 ]
+

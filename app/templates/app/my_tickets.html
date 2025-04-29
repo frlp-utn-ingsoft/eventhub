@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h2>Mis Tickets</h2>
+    
+    {% if tickets %}
+        <div class="row">
+            {% for ticket in tickets %}
+                <div class="col-md-6 mb-4">
+                    <div class="card">
+                        <div class="card-header">
+                            {{ ticket.event.title }}
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Código:</strong> {{ ticket.ticket_code }}</p>
+                            <p><strong>Fecha del evento:</strong> {{ ticket.event.scheduled_at }}</p>
+                            <p><strong>Tipo:</strong> {{ ticket.get_type_display }}</p>
+                            <p><strong>Cantidad:</strong> {{ ticket.quantity }}</p>
+                        </div>
+                        <div class="card-footer">
+                            <a href="{% url 'ticket_detail' ticket.id %}" class="btn btn-primary">Ver Detalle</a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            No tienes tickets comprados todavía.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
