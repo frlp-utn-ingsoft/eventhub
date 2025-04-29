@@ -172,3 +172,13 @@ def is_read(request, notification_id):
 
     return redirect("notifications")
 
+@login_required
+def all_is_read(request):
+    
+    if request.method == "POST":
+        notifications = Notification.objects.filter(users=request.user)
+        for n in notifications:
+            un, _ = User_Notification.objects.get_or_create(user=request.user, notification=n)
+            un.is_read = True
+            un.save()
+    return redirect("notifications")

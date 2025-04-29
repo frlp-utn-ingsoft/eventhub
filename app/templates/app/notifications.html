@@ -51,7 +51,7 @@
                     {% endif %}
                 {% endwith %}
             </h2>
-            <form method="post" action="{% url "home" %}">
+            <form method="post" action="{% url "all_is_read" %}">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-outline-secondary btn-sm">Marcar todas como leídas</button>
             </form>
