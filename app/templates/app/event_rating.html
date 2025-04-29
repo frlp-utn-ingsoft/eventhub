@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        {% if messages %}
+            {% for message in messages%}
+                <div class="alert alert-success" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <h1>{{ event.title }}</h1>
+            <div>
+            {% if user_is_organizer %}
+                <a
+                    href="{% url 'event_edit' event.id %}"
+                    class="btn btn-outline-primary me-2"
+                >
+                    <i class="bi bi-pencil me-1"></i>Editar
+                </a>
+            {% endif %}
+        </div>
+    </div>
+    <div class="row">
+        <div class="card mb-4 shadow-sm rounded-3">
+            <div class="card-body">
+                <h5 class="card-title">Detalles del Evento</h5>
+                <p class="card-text">{{ event.description }}</p>
+                <div class="mt-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-3 me-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
+                            <i class="bi bi-calendar-event text-primary fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Fecha y Hora</h6>
+                            <p class="mb-0">{{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-person text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Organizador</h6>
+                            <p class="mb-0">{{ event.organizer }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="card mb-4 shadow-sm rounded-3">
+                <div class="card-body">
+                    <h5 class="card-title">Calificaciones y Reseñas ({{ cantidad_resenas }})</h5>
+                        
+                    {% for rating in ratings %}
+                            <div class="card mb-4 shadow-sm">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ rating.usuario.username }}</h6>
+                                    <h6 class="card-subtitle mb-2 text-muted">{{ rating.fecha_creacion|date:"d/m/Y H:i" }}</h6>
+                                    <p class="card-text"><strong>{{ rating.titulo }}</strong></p>
+                                    <p class="card-text">
+                                        {% for i in "12345" %}
+                                            {% if forloop.counter <= rating.calificacion %}
+                                                <i class="bi bi-star-fill text-warning"></i>
+                                            {% else %}
+                                                <i class="bi bi-star text-warning"></i>
+                                            {% endif %}
+                                        {% endfor %}
+                                    </p>
+                                    <p class="card-text">{{ rating.texto }}</p>
+
+                                    {% if user.is_authenticated and user == rating.usuario or user.is_staff %}
+                                        <form method="post" style="display: inline;">
+                                            {% csrf_token %}
+                                            <button type="submit" name="eliminar" class="btn btn-sm btn-danger">Eliminar</button>
+                                        </form>
+                                        <a href="{% url 'event_rating' id=evento.id %}" class="btn btn-sm btn-warning">Editar</a>
+                                    {% endif %}
+
+                                    <hr>
+                                    
+                                </div>
+                            </div>
+                        {% empty %}
+                            <p>Aún no hay reseñas para este evento. ¡Sé el primero en opinar!</p>
+                        {% endfor %}
+                        
+                        <hr>
+
+                        {% if user.is_authenticated %}
+                        <h6>{% if editando %}Editar tu reseña{% else %}Crea una nueva reseña{% endif %}</h6>
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="card p-4 mb-4"> 
+                                <div class="mb-3">
+                                    <h6>Titulo de tu reseña *</h6>
+                                    {{ form.titulo }}
+                                </div>
+                        
+                                <div class="mb-3">
+                                    <h6>Tu calificación *</h6>
+                                    <div id="starRating" class="d-flex gap-1 fs-3">
+                                        {% for i in "12345" %}
+                                            <i class="bi bi-star" data-value="{{ forloop.counter }}"></i>
+                                        {% endfor %}
+                                    </div>
+                                    {{ form.calificacion }}
+                                    <p>Selecciona una calificacion</p>
+                                </div>
+                        
+                                <div class="mb-3">
+                                    <h6>Tu reseña (opcional)</h6>
+                                    {{ form.texto }}
+                                </div>
+
+                                {% if editando %}
+                                    <button type="submit" name="guardar" class="btn btn-primary w-100">Actualizar reseña</button>
+                                    <button type="submit" name="cancelar" class="btn btn-outline-secondary w-100 mt-2">Cancelar edición</button>
+                                {% else %}
+                                    <button type="submit" name="guardar" class="btn btn-primary w-100">Enviar reseña</button>
+                                {% endif %}
+                                
+                            </div>
+                        </form>
+
+                    {% else %}
+                        <p><a href="{% url 'login' %}">Iniciar sesion</a> para modificar este evento</p>
+                    {% endif %}
+                </div>
+            </div>
+    </div>
+</div>
+
+<!--Espacio JavaScript para desarrollar interaccion con estrellas-->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const stars = document.querySelectorAll('#starRating i');
+        const ratingInput = document.querySelector('input[name="calificacion"]');
+    
+        stars.forEach(star => {
+            star.addEventListener('mouseover', () => {
+                const val = star.getAttribute('data-value');
+                highlightStars(val);
+            });
+    
+            star.addEventListener('mouseout', () => {
+                highlightStars(ratingInput.value);
+            });
+    
+            star.addEventListener('click', () => {
+                const val = star.getAttribute('data-value');
+                ratingInput.value = val;
+                highlightStars(val);
+            });
+        });
+    
+        function highlightStars(count) {
+            stars.forEach(star => {
+                if (star.getAttribute('data-value') <= count) {
+                    star.classList.remove('bi-star');
+                    star.classList.add('bi-star-fill', 'text-warning');
+                } else {
+                    star.classList.add('bi-star');
+                    star.classList.remove('bi-star-fill', 'text-warning');
+                }
+            });
+        }
+    });
+    </script>
+
+{% endblock %}
