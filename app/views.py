@@ -225,3 +225,34 @@ def event_detail(request, id):
         "form": form,
         "user_is_organizer": request.user.is_organizer
     })
+
+@login_required
+def rating_edit(request, rating_id):
+    rating = get_object_or_404(Rating, id=rating_id)
+
+    if rating.user != request.user:
+        messages.error(request, "No tienes permiso para editar esta reseña.")
+        return redirect("event_detail", id=rating.event.id)
+
+    if request.method == 'POST':
+        rating.title = request.POST.get("title")
+        rating.text = request.POST.get("text")
+        rating.rating = request.POST.get("rating")
+        rating.save()
+        messages.success(request, "Reseña actualizada exitosamente.")
+        return redirect("event_detail", id=rating.event.id)
+
+    return render(request, "app/rating_form.html", {"rating": rating})
+
+@login_required
+def rating_delete(request, rating_id):
+    rating = get_object_or_404(Rating, id=rating_id)
+
+    if rating.user != request.user:
+        messages.error(request, "No tienes permiso para eliminar esta reseña.")
+        return redirect("event_detail", id=rating.event.id)
+
+    event_id = rating.event.id
+    rating.delete()
+    messages.success(request, "Reseña eliminada correctamente.")
+    return redirect("event_detail", id=event_id)
