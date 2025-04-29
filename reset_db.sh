@@ -41,9 +41,11 @@ fi
 
 if [ -d "$dir_data" ]; then
     echo "==> Cargando datos de prueba desde $dir_data..."
+    $python_interpreter manage.py loaddata "./fixtures/venues.json" && \
     $python_interpreter manage.py loaddata "./fixtures/categories.json" && \
     $python_interpreter manage.py loaddata "./fixtures/users.json" && \
     $python_interpreter manage.py loaddata "./fixtures/events.json" && \
+    $python_interpreter manage.py loaddata "./fixtures/tickets.json" && \
     $python_interpreter manage.py loaddata "./fixtures/notifications.json"
     
     echo "✅ Datos de prueba cargados."

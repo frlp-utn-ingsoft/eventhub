@@ -3,6 +3,8 @@ from django.db import models
 import uuid
 from django import forms
 from django.utils import timezone
+from django_countries.fields import CountryField
+from cities_light.models import City
 
 def save(method):
     def wrapper(self, *args, **kwargs):
@@ -34,6 +36,19 @@ class User(AbstractUser):
             errors["password"] = "Las contraseñas no coinciden"
 
         return errors
+    
+class Venue(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField("Nombre del Lugar", max_length=255)
+    address = models.CharField("Dirección", max_length=255)
+    capacity = models.IntegerField("Capacidad")
+    country = CountryField("País")
+    city = models.CharField("Ciudad", max_length=255)
+    created_at = models.DateTimeField("Fecha de Creación", auto_now_add=True)
+    updated_at = models.DateTimeField("Fecha de Actualización", auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} - {self.city}, {self.country}"
     
 class Category(models.Model):
     name = models.CharField(max_length=40)
@@ -67,6 +82,7 @@ class Event(models.Model):
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='events')
     
 
     def __str__(self):
@@ -85,13 +101,14 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, categories=None):
+    def new(cls, title, description, scheduled_at, organizer, categories=None, venue=None):
         # Validaciones y creación
         event = cls.objects.create(
             title=title,
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
+            venue=venue
         )
         if categories:
             event.categories.set(categories)
@@ -188,6 +205,8 @@ class NotificationUser(models.Model):
 
     class Meta:
         unique_together = ('notification', 'user')
+
+
 
 
 
