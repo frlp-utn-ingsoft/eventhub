@@ -45,15 +45,23 @@
                             {% navbar_link 'events' 'Eventos' %}
                         </li>
                         <!-- Ícono de notificaciones -->
-                        <li class="nav-item position-relative">
-                            <a class="nav-link" href="{% url 'notifications_list' %}">
-                                <i class="bi bi-bell fs-5"></i>
-                                {% if unread_notifications %}
-                                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                        {{ unread_notifications }}
-                                    </span>
-                                {% endif %}
+                        <li class="nav-item dropdown position-relative">   <!-- position-relative asegura alineación -->
+                            <a class="nav-link dropdown-toggle" href="#" id="notifMenu"
+                               role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                               <i class="bi bi-bell fs-5"></i>
+                               {% if unread_notifications %}
+                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                   {{ unread_notifications }}
+                                 </span>
+                               {% endif %}
                             </a>
+                          
+                            <!-- dropdown-menu-end alinea a la derecha -->
+                            <ul class="dropdown-menu dropdown-menu-end p-0"
+                                aria-labelledby="notifMenu" style="min-width:260px"
+                                id="notifDropdown">
+                                <!-- aquí se inyecta HTML por AJAX -->
+                            </ul>
                         </li>
                     </ul>
                 </div>
@@ -81,6 +89,18 @@
         integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq"
         crossorigin="anonymous"
     ></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const dropdown = document.getElementById("notifMenu");
+            dropdown?.addEventListener("show.bs.dropdown", () => {
+            fetch("{% url 'notifications_dropdown' %}")
+                .then(r => r.json())
+                .then(data => {
+                document.getElementById("notifDropdown").innerHTML = data.html;
+                });
+            });
+        });
+    </script>
 </body>
 
 </html>

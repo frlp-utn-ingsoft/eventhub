@@ -17,4 +17,5 @@ urlpatterns = [
     path("notifications/<int:pk>/edit/", views.NotificationUpdate.as_view(), name="notifications_edit"),
     path("notifications/<int:pk>/delete/", views.NotificationDelete.as_view(), name="notifications_delete"),
     path("notifications/<int:pk>/read/", views.NotificationMarkRead.as_view(), name="notifications_read"),
+    path("notifications/dropdown/", views.NotificationDropdown.as_view(), name="notifications_dropdown"),
 ]

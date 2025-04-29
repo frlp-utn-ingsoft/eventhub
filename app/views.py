@@ -10,7 +10,8 @@ from django.views import generic
 from django.urls import reverse_lazy
 from django.views import View
 from .models import Event, User
-
+from django.http import JsonResponse
+from django.template.loader import render_to_string
 
 def register(request):
     if request.method == "POST":
@@ -168,3 +169,14 @@ class NotificationMarkRead(LoginRequiredMixin, View):
         notif.is_read = True
         notif.save(update_fields=["is_read"])
         return redirect("notifications_list")
+    
+class NotificationDropdown(LoginRequiredMixin, View):
+    def get(self, request):
+        notifs = (request.user.notifications
+                    .order_by("-created_at")[:5])
+        html = render_to_string(
+            "notifications/_dropdown_items.html",
+            {"notifs": notifs},
+            request=request,
+        )
+        return JsonResponse({"html": html})

@@ -1,0 +1,19 @@
+{% load static %}
+{% for n in notifs %}
+  <li>
+    <a class="dropdown-item small {% if not n.is_read %}fw-semibold{% endif %}"
+       href="{% url 'notifications_read' n.pk %}">
+      {{ n.title|truncatechars:40 }}
+    </a>
+  </li>
+{% empty %}
+  <li><span class="dropdown-item text-muted small">Sin notificaciones</span></li>
+{% endfor %}
+
+<li><hr class="dropdown-divider"></li>
+<li>
+  <a class="dropdown-item text-center small text-primary"
+     href="{% url 'notifications_list' %}">
+     + Panel de notificaciones
+  </a>
+</li>
