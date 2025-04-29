@@ -1,0 +1,13 @@
+<div class="card mt-4">
+    <div class="card-header">Deja tu reseña</div>
+    <div class="card-body">
+        <!-- prettier-ignore -->
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }} <!-- Renderiza un form de Django como una lista de elementos <p> (parrafo) -->
+            <button type="submit" class="btn btn-primary">
+                Publicar reseña
+            </button>
+        </form>
+    </div>
+</div>
