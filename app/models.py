@@ -1,3 +1,4 @@
+import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import MinValueValidator
@@ -85,7 +86,12 @@ class Ticket(models.Model):
 
     # Atributes
     buy_date = models.DateTimeField(verbose_name = 'Fecha de compra')
-    ticket_code = models.CharField(max_length=45, unique=True, verbose_name = 'Código del ticket')
+    ticket_code = models.models.UUIDField(
+        default=uuid.uuid4,
+        unique=True,
+        editable=False,
+        verbose_name='Código del ticket'
+    ),
     quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)], verbose_name = 'Cantidad')
     type = models.CharField(max_length=25, choices=TICKETS_TYPE_CHOICES, verbose_name = 'Tipo de ticket')
 
@@ -132,14 +138,13 @@ class Ticket(models.Model):
     @classmethod
     def new(cls, buy_date, ticket_code, quantity, type, event, user):
         """Create a new ticket with validation"""
-        errors = cls.validate(buy_date, ticket_code, quantity, type, event, user)
+        errors = cls.validate(buy_date, quantity, type, event, user)
 
         if errors:
             return False, errors
 
         ticket = cls.objects.create(
             buy_date = buy_date,
-            ticket_code = ticket_code,
             quantity = quantity,
             type = type,
             event = event,
