@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h2 class="mb-4">Detalle de la Solicitud de Reembolso</h2>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+
+                <!-- Datos del Ticket -->
+                <h5 class="card-title mb-3">Información del Ticket</h5>
+                <ul class="list-group mb-4">
+                    <li class="list-group-item">
+                        <strong>Código de Ticket:</strong> {{ refund.ticket.ticket_code }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Evento:</strong> {{ refund.ticket.event.title }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Fecha del Evento:</strong> {{ refund.ticket.event.scheduled_at|date:"d/m/Y H:i" }}
+                    </li>
+                </ul>
+
+                <!-- Datos del Reembolso -->
+                <h5 class="card-title mb-3">Información del Reembolso</h5>
+                <ul class="list-group mb-4">
+                    <li class="list-group-item">
+                        <strong>Monto:</strong> ${{ refund.amount }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Motivo:</strong> {{ refund.reason }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Motivo específico:</strong> {{ refund.get_refund_reason_display }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Estado:</strong>
+                        {% if refund.status == 'approved' %}
+                            <span class="badge bg-success">Aprobado</span>
+                        {% elif refund.status == 'pending' %}
+                            <span class="badge bg-warning text-dark">Pendiente</span>
+                        {% else %}
+                            <span class="badge bg-danger">Rechazado</span>
+                        {% endif %}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Fecha de solicitud:</strong> {{ refund.created_at|date:"d/m/Y H:i" }}
+                    </li>
+                    <li class="list-group-item">
+                        <strong>Fecha de aprobación:</strong>
+                        {% if refund.approval_date %}
+                            {{ refund.approval_date|date:"d/m/Y H:i" }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </li>
+                </ul>
+
+                <!-- Acción de edición -->
+                <div class="text-end">
+                    <a href="{% url 'create_refund' refund.id %}" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil-square"></i> Editar Solicitud
+                    </a>
+                    <a href="{% url 'refund_user' %}" class="btn btn-outline-secondary ms-2">
+                        Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
