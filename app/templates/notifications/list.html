@@ -1,35 +1,50 @@
 {% extends "base.html" %}
+{% load static %}
 {% block content %}
-<h2 class="mb-3">Tus notificaciones</h2>
+<div class="container mt-5">
+  <div class="bg-white bg-opacity-75 backdrop-blur rounded shadow p-4 animate__animated animate__fadeIn">
+    <h2 class="mb-4">📥 Tus notificaciones</h2>
 
-<table class="table table-sm">
-  {% for n in object_list %}
-    <tr class="{% if not n.is_read %}table-warning{% endif %}">
-      <td>{{ n.created_at|date:"d/m/Y H:i" }}</td>
-      <td>
-        <strong>{{ n.title }}</strong><br>
-        {{ n.message }}
-      </td>
-      <td>{{ n.get_priority_display }}</td>
-      <td class="text-end">
-        {% if not n.is_read %}
-          <form action="{% url 'notifications:read' n.pk %}" method="post" style="display:inline">
-            {% csrf_token %}
-            <button class="btn btn-success btn-sm">Leer</button>
-          </form>
-        {% endif %}
-        {% if user.is_organizer %}
-          <a href="{% url 'notifications:edit' n.pk %}" class="btn btn-primary btn-sm">Editar</a>
-          <a href="{% url 'notifications:delete' n.pk %}" class="btn btn-danger btn-sm">Eliminar</a>
-        {% endif %}
-      </td>
-    </tr>
-  {% empty %}
-    <tr><td colspan="4">No tenés notificaciones.</td></tr>
-  {% endfor %}
-</table>
+    <table class="table table-hover table-bordered rounded shadow-sm">
+      <thead class="table-light">
+        <tr>
+          <th>Fecha</th>
+          <th>Contenido</th>
+          <th>Prioridad</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for n in object_list %}
+        <tr class="{% if not n.is_read %}table-warning{% endif %}">
+          <td>{{ n.created_at|date:"d/m/Y H:i" }}</td>
+          <td>
+            <strong>{{ n.title }}</strong><br>
+            <small class="text-muted">{{ n.message }}</small>
+          </td>
+          <td>{{ n.get_priority_display }}</td>
+          <td class="text-end">
+            {% if not n.is_read %}
+            <form action="{% url 'notifications_read' n.pk %}" method="post" class="d-inline">
+              {% csrf_token %}
+              <button class="btn btn-sm btn-success">Marcar como leída</button>
+            </form>
+            {% endif %}
+            {% if user.is_organizer %}
+              <a href="{% url 'notifications_edit' n.pk %}"   class="btn btn-sm btn-outline-primary">✎</a>
+              <a href="{% url 'notifications_delete' n.pk %}" class="btn btn-sm btn-outline-danger">🗑</a>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center">No hay notificaciones aún.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
-{% if user.is_organizer %}
-  <a href="{% url 'notifications:create' %}" class="btn btn-outline-primary">+ Nueva notificación</a>
-{% endif %}
+    {% if user.is_organizer %}
+      <a href="{% url 'notifications_create' %}" class="btn btn-primary mt-3">+ Nueva notificación</a>
+    {% endif %}
+  </div>
+</div>
 {% endblock %}
