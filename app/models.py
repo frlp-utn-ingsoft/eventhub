@@ -124,7 +124,7 @@ class Notification(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES)
-    is_read = models.BooleanField(default=False)
+    read = models.BooleanField(default=False)
 
     users = models.ManyToManyField(
         User,
@@ -187,11 +187,11 @@ class Notification(models.Model):
 
         return True, None
 
-    def update(self, title=None, message=None, priority=None, is_read=None, users=None, event=None):
+    def update(self, title=None, message=None, priority=None, read=None, users=None, event=None):
         self.title = title or self.title
         self.message = message or self.message
         self.priority = priority or self.priority
-        self.is_read = is_read if is_read is not None else self.is_read
+        self.read = read if read is not None else self.read
         
         # Actualizar el evento si se proporciona uno nuevo
         if event is not None:
@@ -202,3 +202,4 @@ class Notification(models.Model):
         # si recibo usuarios nuevos, actualizamos la relación
         if users is not None:
             self.users.set(users)  # Reemplaza los usuarios asociados por estos nuevos
+        
