@@ -62,5 +62,9 @@
             </div>
         </div>
     </div>
+    {% block extra_content %}
+        {% include "app/rating/create_rating.html" %}
+    {% endblock %}
 </div>
+
 {% endblock %}
