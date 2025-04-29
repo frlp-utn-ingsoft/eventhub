@@ -35,11 +35,11 @@
                             </div>
 
                             <div class="mb-3">
-                                <label for="refund_reason" class="form-label">Motivo del reembolso *</label>
-                                <select class="form-select" id="refund_reason" name="refund_reason" required>
+                                <label for="refound_reason" class="form-label">Motivo del reembolso *</label>
+                                <select class="form-select" id="refound_reason" name="refound_reason" required>
                                     <option disabled selected>Selecciona un motivo</option>
-                                    {% for value, label in RefundReason.choices %}
-                                        <option value="{{ value }}" {% if input.refund_reason == value %}selected{% endif %}>{{ label }}</option>
+                                    {% for value, label in refoundReason.choices %}
+                                        <option value="{{ value }}" {% if input.refound_reason == value %}selected{% endif %}>{{ label }}</option>
                                     {% endfor %}
                                 </select>
                             </div>

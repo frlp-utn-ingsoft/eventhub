@@ -257,32 +257,32 @@ class Rating(models.Model):
         self.save()
 
 
-class RefundStatus(models.TextChoices):
+class RefoundStatus(models.TextChoices):
     PENDING = "pending", "Pendiente"
     APPROVED = "approved", "Aprobado"
     REJECTED = "rejected", "Rechazado"
 
-class RefundReason(models.TextChoices):
+class RefoundReason(models.TextChoices):
     EVENT_CANCELLED = "event_cancelled", "Evento cancelado"
     TICKET_NOT_RECEIVED = "ticket_not_received", "Entrada no recibida"
     OTHER = "other", "Otro"
 
-class RefundRequest(models.Model):
+class RefoundRequest(models.Model):
     approved = models.BooleanField(default=False)
     approval_date = models.DateTimeField(null=True, blank=True)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     reason = models.TextField()
-    status = models.CharField(max_length=10, choices=RefundStatus.choices, default=RefundStatus.PENDING)
-    refund_reason = models.CharField(max_length=50, choices=RefundReason.choices, default=RefundReason.OTHER)
+    status = models.CharField(max_length=10, choices=RefoundStatus.choices, default=RefoundStatus.PENDING)
+    refound_reason = models.CharField(max_length=50, choices=RefoundReason.choices, default=RefoundReason.OTHER)
     ticket_code = models.CharField(max_length=100, unique=True)
-    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name="refund_requests", null=True, blank=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refund_requests")
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name="refound_requests", null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refound_requests")
     created_at = models.DateTimeField(auto_now_add=True)
 
 
     @classmethod
-    def new(cls, amount, reason, refund_reason, ticket_code, user, status):
-        errors = cls.validate(amount, reason, status, refund_reason, ticket_code, user)
+    def new(cls, amount, reason, refound_reason, ticket_code, user, status):
+        errors = cls.validate(amount, reason, status, refound_reason, ticket_code, user)
 
         if errors:
             return False, errors
@@ -290,7 +290,7 @@ class RefundRequest(models.Model):
         cls.objects.create(
             amount=amount,
             reason=reason,
-            refund_reason=refund_reason,
+            refound_reason=refound_reason,
             ticket_code=ticket_code,
             user=user,
             status=status,
@@ -300,7 +300,7 @@ class RefundRequest(models.Model):
         return True, None
 
     @classmethod
-    def validate(cls, amount, reason, status, refund_reason, ticket_code, user):
+    def validate(cls, amount, reason, status, refound_reason, ticket_code, user):
         errors = {}
 
         if amount is None or amount < 0:
@@ -311,11 +311,11 @@ class RefundRequest(models.Model):
         elif len(reason) > 500:
             errors["reason"] = "La razón no puede superar los 500 caracteres."
 
-        if status not in RefundStatus.values:
+        if status not in RefoundStatus.values:
             errors["status"] = "Estado inválido."
 
-        if refund_reason not in RefundReason.values:
-            errors["refund_reason"] = "Motivo de reembolso inválido."
+        if refound_reason not in RefoundReason.values:
+            errors["refound_reason"] = "Motivo de reembolso inválido."
 
         if ticket_code is None:
             errors["ticket_code"] = "Debe asociarse un ticket."
@@ -329,15 +329,15 @@ class RefundRequest(models.Model):
 
         return errors
 
-    def update(self, reason=None, refund_reason=None, status=None, approved=None):
+    def update(self, reason=None, refound_reason=None, status=None, approved=None):
 
         self.reason = reason.strip() if reason else self.reason
-        self.refund_reason = refund_reason or self.refund_reason
+        self.refound_reason = refound_reason or self.refound_reason
         self.status = status or self.status
         self.approved = approved if approved is not None else self.approved
 
         if self.approved:
             self.approval_date = datetime.now()
-            self.status = RefundStatus.APPROVED
+            self.status = RefoundStatus.APPROVED
 
         self.save()

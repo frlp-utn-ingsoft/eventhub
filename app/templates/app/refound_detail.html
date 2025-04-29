@@ -11,13 +11,13 @@
                 <h5 class="card-title mb-3">Información del Ticket</h5>
                 <ul class="list-group mb-4">
                     <li class="list-group-item">
-                        <strong>Código de Ticket:</strong> {{ refund.ticket.ticket_code }}
+                        <strong>Código de Ticket:</strong> {{ refound.ticket.ticket_code }}
                     </li>
                     <li class="list-group-item">
-                        <strong>Evento:</strong> {{ refund.ticket.event.title }}
+                        <strong>Evento:</strong> {{ refound.ticket.event.title }}
                     </li>
                     <li class="list-group-item">
-                        <strong>Fecha del Evento:</strong> {{ refund.ticket.event.scheduled_at|date:"d/m/Y H:i" }}
+                        <strong>Fecha del Evento:</strong> {{ refound.ticket.event.scheduled_at|date:"d/m/Y H:i" }}
                     </li>
                 </ul>
 
@@ -25,31 +25,31 @@
                 <h5 class="card-title mb-3">Información del Reembolso</h5>
                 <ul class="list-group mb-4">
                     <li class="list-group-item">
-                        <strong>Monto:</strong> ${{ refund.amount }}
+                        <strong>Monto:</strong> ${{ refound.amount }}
                     </li>
                     <li class="list-group-item">
-                        <strong>Motivo:</strong> {{ refund.reason }}
+                        <strong>Motivo:</strong> {{ refound.reason }}
                     </li>
                     <li class="list-group-item">
-                        <strong>Motivo específico:</strong> {{ refund.get_refund_reason_display }}
+                        <strong>Motivo específico:</strong> {{ refound.get_refound_reason_display }}
                     </li>
                     <li class="list-group-item">
                         <strong>Estado:</strong>
-                        {% if refund.status == 'approved' %}
+                        {% if refound.status == 'approved' %}
                             <span class="badge bg-success">Aprobado</span>
-                        {% elif refund.status == 'pending' %}
+                        {% elif refound.status == 'pending' %}
                             <span class="badge bg-warning text-dark">Pendiente</span>
                         {% else %}
                             <span class="badge bg-danger">Rechazado</span>
                         {% endif %}
                     </li>
                     <li class="list-group-item">
-                        <strong>Fecha de solicitud:</strong> {{ refund.created_at|date:"d/m/Y H:i" }}
+                        <strong>Fecha de solicitud:</strong> {{ refound.created_at|date:"d/m/Y H:i" }}
                     </li>
                     <li class="list-group-item">
                         <strong>Fecha de aprobación:</strong>
-                        {% if refund.approval_date %}
-                            {{ refund.approval_date|date:"d/m/Y H:i" }}
+                        {% if refound.approval_date %}
+                            {{ refound.approval_date|date:"d/m/Y H:i" }}
                         {% else %}
                             -
                         {% endif %}
@@ -58,17 +58,17 @@
 
                 <!-- Acción de edición -->
                 <div class="text-end">
-                    {% if refund.status == 'pending' and not user.is_organizer %}
-                        <a href="{% url 'update_refund' refund.id %}" class="btn btn-outline-primary">
+                    {% if refound.status == 'pending' and not user.is_organizer %}
+                        <a href="{% url 'update_refound' refound.id %}" class="btn btn-outline-primary">
                             <i class="bi bi-pencil-square"></i> Editar Solicitud
                         </a>
                     {% endif %}
                     {% if user.is_organizer %}
-                        <a href="{% url 'refund_admin' %}" class="btn btn-outline-secondary ms-2">
+                        <a href="{% url 'refound_admin' %}" class="btn btn-outline-secondary ms-2">
                             Volver
                         </a>
                     {% else %}
-                        <a href="{% url 'refund_user' %}" class="btn btn-outline-secondary ms-2">
+                        <a href="{% url 'refound_user' %}" class="btn btn-outline-secondary ms-2">
                             Volver
                         </a>
                     {% endif %}

@@ -19,15 +19,15 @@
                             </div>
                         {% endif %}
 
-                        <form method="post" action="{% url 'update_refund' refund.id %}">
+                        <form method="post" action="{% url 'update_refound' refound.id %}">
                             {% csrf_token %}
 
                             <div class="mb-3">
-                                <label for="refund_reason" class="form-label">Motivo del reembolso *</label>
-                                <select class="form-select" id="refund_reason" name="refund_reason" required>
+                                <label for="refound_reason" class="form-label">Motivo del reembolso *</label>
+                                <select class="form-select" id="refound_reason" name="refound_reason" required>
                                     <option disabled selected>Selecciona un motivo</option>
-                                    {% for value, label in RefundReason.choices %}
-                                        <option value="{{ value }}" {% if refund.refund_reason == value %}selected{% endif %}>
+                                    {% for value, label in refoundReason.choices %}
+                                        <option value="{{ value }}" {% if refound.refound_reason == value %}selected{% endif %}>
                                             {{ label }}
                                         </option>
                                     {% endfor %}
@@ -37,11 +37,11 @@
                             <div class="mb-3">
                                 <label for="reason" class="form-label">Detalles adicionales</label>
                                 <textarea class="form-control" id="reason" name="reason" rows="4"
-                                          placeholder="Proporciona más información sobre tu solicitud de reembolso...">{{ refund.reason }}</textarea>
+                                          placeholder="Proporciona más información sobre tu solicitud de reembolso...">{{ refound.reason }}</textarea>
                             </div>
 
                             <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                            <a href="{% url 'refund_user' %}" class="btn btn-outline-secondary ms-2">Cancelar</a>
+                            <a href="{% url 'refound_user' %}" class="btn btn-outline-secondary ms-2">Cancelar</a>
                         </form>
                     </div>
                 </div>

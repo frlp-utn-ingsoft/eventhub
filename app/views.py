@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Count
 from django.http import HttpResponseForbidden
-from .models import Event, User, Category, Comment, Venue, Ticket, Rating, RefundRequest, RefundReason, RefundStatus
+from .models import Event, User, Category, Comment, Venue, Ticket, Rating, RefoundRequest, RefoundReason, RefoundStatus
 from django.contrib import messages
 import re
 import random
@@ -609,13 +609,13 @@ def rating_delete(request, event_id, rating_id):
     return redirect('event_detail', id=event_id)
 
 @login_required
-def create_refund(request, ticket_id):
+def create_refound(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
     if request.method == 'POST':
         ticket_code = request.POST.get('ticket_code')
         reason = request.POST.get('reason')
-        refund_reason = request.POST.get('refund_reason')
-        status = RefundStatus.PENDING
+        refound_reason = request.POST.get('refound_reason')
+        status = RefoundStatus.PENDING
         amount = 0
 
         if (ticket.event.scheduled_at-timezone.now()) > datetime.timedelta(days=7):
@@ -631,85 +631,85 @@ def create_refund(request, ticket_id):
                 amount = 50*ticket.quantity
 
         if (ticket.event.scheduled_at-timezone.now()) < datetime.timedelta(days=2):
-            status = RefundStatus.REJECTED
+            status = RefoundStatus.REJECTED
 
-        success, errors = RefundRequest.new(
+        success, errors = RefoundRequest.new(
             amount=float(amount),
             reason=reason,
-            refund_reason=refund_reason,
+            refound_reason=refound_reason,
             ticket_code=ticket_code,
             user=request.user,
             status=status
         )
 
         if not success:
-            return render(request, 'app/refund_form.html', {
+            return render(request, 'app/refound_form.html', {
                 'ticket': ticket,
-                'RefundReason': RefundReason,
+                'refoundReason': RefoundReason,
                 'errors': errors,
                 'input': request.GET
             })
 
         return redirect('Mis_tickets')
     if request.method == 'GET':
-        return render(request, 'app/refund_form.html', {
+        return render(request, 'app/refound_form.html', {
             'ticket': ticket,
-            'RefundReason': RefundReason
+            'refoundReason': RefoundReason
         })
     return redirect('Mis_tickets')
 
 @login_required
-def delete_refund(request, refund_id):
-    refund = get_object_or_404(RefundRequest, id=refund_id)
+def delete_refound(request, refound_id):
+    refound = get_object_or_404(RefoundRequest, id=refound_id)
     if request.method == 'POST':
-        refund.delete()
+        refound.delete()
         messages.success(request, "Reembolso eliminado correctamente")
-        return redirect('refund_user')
-    return redirect('refund_user')
+        return redirect('refound_user')
+    return redirect('refound_user')
 
 @login_required
-def refund_user(request):
+def refound_user(request):
     user = request.user
-    refunds = RefundRequest.objects.filter(user=user).order_by('-created_at')
-    return render(request, 'app/refund_user.html', {'refunds': refunds})
+    refounds = RefoundRequest.objects.filter(user=user).order_by('-created_at')
+    return render(request, 'app/refound_user.html', {'refounds': refounds})
 
 @login_required
-def refund_detail(request, refund_id):
-    refund = get_object_or_404(RefundRequest, id=refund_id)
-    return render(request, 'app/refund_detail.html', {'refund': refund})
+def refound_detail(request, refound_id):
+    refound = get_object_or_404(RefoundRequest, id=refound_id)
+    return render(request, 'app/refound_detail.html', {'refound': refound})
 
 @login_required
-def update_refund(request, refund_id):
-    refund = get_object_or_404(RefundRequest, id=refund_id)
+def update_refound(request, refound_id):
+    refound = get_object_or_404(RefoundRequest, id=refound_id)
     if request.method == 'POST':
-        if refund.approved:
-            return redirect('refund_user')
-        refund.update(
+        if refound.approved:
+            return redirect('refound_user')
+        refound.update(
             reason=request.POST.get('reason'),
-            refund_reason=request.POST.get('refund_reason')
+            refound_reason=request.POST.get('refound_reason')
         )
-        return redirect('refund_detail', refund_id=refund_id)
+        return redirect('refound_detail', refound_id=refound_id)
 
     if request.method == 'GET':
-        return render(request, 'app/refund_update.html', {'refund': refund,
-                                                          'RefundReason': RefundReason})
-    return redirect('refund_user')
+        return render(request, 'app/refound_update.html', {'refound': refound,
+                                                          'refoundReason': RefoundReason})
+    return redirect('refound_user')
 
-def refund_admin(request):
+def refound_admin(request):
     if not request.user.is_organizer:
         return redirect('events')
 
-    refunds = RefundRequest.objects.all().order_by('-created_at')
-    return render(request, 'app/refund_admin.html', {'refunds': refunds})
+    refounds = RefoundRequest.objects.all().order_by('-created_at')
+    return render(request, 'app/refound_admin.html', {'refounds': refounds})
 
-def approve_or_reject_refund(request, refund_id):
-    refund = get_object_or_404(RefundRequest, id=refund_id)
+def approve_or_reject_refound(request, refound_id):
+    refound = get_object_or_404(RefoundRequest, id=refound_id)
     if request.method == 'POST':
         if request.POST.get('action') == 'approve':
-            refund.update(approved=True)
+            refound.update(approved=True)
             messages.success(request, "Reembolso aprobado correctamente")
         elif request.POST.get('action') == 'reject':
-            refund.update(approved=False, status=RefundStatus.REJECTED)
+            refound.update(approved=False, status=RefoundStatus.REJECTED)
             messages.success(request, "Reembolso rechazado correctamente")
-        return redirect('refund_admin')
-    return redirect('refund_admin')
+        return redirect('refound_admin')
+    return redirect('refound_admin')
