@@ -67,6 +67,16 @@
                             <li class="nav-item">
                                 {% navbar_link 'events' 'Eventos' %}
                             </li>
+                            {% if user_is_organizer %}
+                                <li class="nav-item">
+                                    {% navbar_link 'notification' 'Notificaciones' %}
+                                </li>
+                            {% else %}
+                            <li class="nav-item">
+                                {% navbar_link 'user_notifications' 'Notificacion' %}
+                            </li>
+
+                            {% endif%}
                         </ul>
                     </div>
 

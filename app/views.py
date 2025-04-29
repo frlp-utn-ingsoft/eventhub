@@ -1,11 +1,11 @@
 import datetime
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Count
 from django.http import HttpResponseForbidden
-from .models import Event, User, Category, Comment, Venue, Ticket, Rating
+from .models import Event, User, Category, Comment, Venue, Ticket, Rating, Notification
 from django.contrib import messages
 import re
 import random
@@ -207,8 +207,6 @@ def category_delete(request, id):
         return redirect("categorias") 
 
     return redirect("categorias")  
-
-
 
 def crear_comentario(request, event_id):
     evento = get_object_or_404(Event, id=event_id)
@@ -607,3 +605,167 @@ def rating_delete(request, event_id, rating_id):
         messages.error(request, "Error al eliminar la calificación")
 
     return redirect('event_detail', id=event_id)
+
+# notificacion
+User = get_user_model()
+
+def notification_form(request, id=None):
+    if not request.user.is_organizer:
+        return redirect("notification")
+    
+    notification = None
+    if id is not None:
+        notification = get_object_or_404(Notification, pk=id)
+    
+    if request.method == "POST":
+        # Campos
+        title = request.POST.get("title")
+        message = request.POST.get("message")
+        priority = request.POST.get("priority")
+        event_id = request.POST.get("event")
+        user_ids = request.POST.getlist("users")
+        
+        event = get_object_or_404(Event, pk=event_id)
+        print("user_ids:",title )
+
+        users = User.objects.filter(id__in=user_ids)
+        
+        if id is None:  # Crear nueva notificación
+            success, errors = Notification.new(
+                title=title,
+                message=message,
+                priority=priority,
+                users=users,
+                event=event
+            )
+            
+            if not success:
+                return render(request, "app/notification_form.html", {
+                    "events": Event.objects.all(),
+                    "users": User.objects.all(),
+                    "errors": errors,
+                    "notification": notification,
+                })
+        else:  # Actualizar notificación existente
+                notification = get_object_or_404(Notification, pk=id)
+                notification.update(
+                title=title,
+                message=message,
+                priority=priority,
+                users=users,
+                event=event
+                 )
+
+        return redirect("notification")
+    
+    # GET request
+    return render(request, "app/notification_form.html", {
+        "notification": notification,
+        "events": Event.objects.all(),
+        "users": User.objects.all(),
+        "user_is_organizer": request.user.is_organizer,
+    })
+
+@login_required
+def notification(request):
+    # Verifica si el usuario es un organizador
+    if not request.user.is_organizer:
+        # Si no es organizador, muestra un mensaje de error y redirige al inicio
+        return redirect("home")
+    
+    # Obtener todos los eventos para el filtro
+    events = Event.objects.all()
+
+    # Configurar los filtros
+    event_filter = request.GET.get('event', 'all')
+    priority_filter = request.GET.get('priority', 'all')
+    search_query = request.GET.get('search', '')
+    
+    # Consulta base de notificaciones  
+    notifications = Notification.objects.all().order_by("-created_at")
+    
+    # Aplicar filtros si están presentes
+    if search_query:
+        notifications = notifications.filter(title__icontains=search_query)
+    
+    if event_filter and event_filter != 'all':
+        notifications = notifications.filter(event__id=event_filter)
+    
+    if priority_filter and priority_filter != 'all':
+        notifications = notifications.filter(priority=priority_filter)
+    
+    return render(
+        request,
+        "app/notifications.html",
+        {
+            "notifications": notifications,
+            "events": events,
+            "has_notifications": notifications.exists(),
+            "current_event_filter": event_filter,
+            "current_priority_filter": priority_filter,
+            "search_query": search_query,
+            "user_is_organizer": request.user.is_organizer,
+        },
+    )
+
+def notification_detail(request, id):
+ 
+    # Verifica si el usuario es un organizador
+    if not request.user.is_organizer:
+
+        return redirect("home")
+    
+    notification = get_object_or_404(Notification, id=id)
+    
+    return render(
+        request,
+        "app/notification_detail.html",
+        {
+            "notification": notification,
+        },
+    )
+
+@login_required
+
+def notification_delete(request,id):
+    user = request.user
+    if not user.is_organizer:
+        return redirect("notification")
+
+    if request.method == "POST":
+        notification = get_object_or_404(Notification, pk=id)
+        notification.delete()
+        return redirect("notification")
+
+    return redirect("notification")
+
+@login_required
+def user_notifications(request):
+    # Obtener solo las notificaciones del usuario actual
+    notifications = Notification.objects.filter(users=request.user).order_by("-created_at")
+    
+    # Contar notificaciones no leídas
+    unread_count = notifications.filter(read=False).count()
+    
+    return render(
+        request,
+        "app/user_notifications.html",
+        {
+            "notifications": notifications,
+            "unread_count": unread_count,
+            "has_notifications": notifications.exists(),
+        },
+    )
+
+def mark_notification_read(request, id=None):
+    if request.method == "POST":
+        if id:
+            # Marcar una notificación específica como leída
+            notification = get_object_or_404(Notification, pk=id, users=request.user)
+            notification.read = True
+            notification.save()
+        else:
+            # Marcar todas las notificaciones como leídas
+            Notification.objects.filter(users=request.user, read=False).update(read=True)
+    
+    return redirect("user_notifications")
