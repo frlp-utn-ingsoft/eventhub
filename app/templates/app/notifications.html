@@ -23,15 +23,16 @@
                     <tr>
                         <td>{{ notification.title }}</td>
                         <td>
-                            {% for user in notification.users.all %}
-                                {{ user.username }}{% if not forloop.last %}, {% endif %}
-                            {% endfor %}
+                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                onclick="view_user({{ notification.id }})">
+                                {{ notification.users.count }} usuario{{ notification.users.count|pluralize }}
+                            </button>
                         </td>
                         <td>{{ notification.priority }}</td>
                         <td>{{ notification.created_at|date:"d/m/Y H:i" }}</td>
                         <td>
-                            <a href="{% url "notification_update" notification.id  %}" class="btn btn-sm btn-warning">Editar</a>
-                            <a href="{% url "notification_delete" notification.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+                            <a href="{% url 'notification_update' notification.id %}" class="btn btn-sm btn-warning">Editar</a>
+                            <a href="{% url 'notification_delete' notification.id %}" class="btn btn-sm btn-danger">Eliminar</a>
                         </td>
                     </tr>
                 {% empty %}
@@ -82,5 +83,38 @@
             <p>No hay notificaciones disponibles.</p>
         {% endfor %}
     {% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    const user_notifications = {
+        {% for notification in notifications %}
+            {{ notification.id }}: [
+                {% for user in notification.users.all %}
+                    "{{ user.username }}"{% if not forloop.last %}, {% endif %}
+                {% endfor %}
+            ]{% if not forloop.last %}, {% endif %}
+        {% endfor %}
+    };
+
+    function view_user(id) {
+        const user = user_notifications[id];
+        if (user.length > 0) {
+            Swal.fire({
+                title: 'Usuarios asociados',
+                html: '<ul style="text-align:left;">' + user.map(u => `<li>${u}</li>`).join('') + '</ul>',
+                icon: 'info',
+                confirmButtonText: 'Cerrar'
+            });
+        } else {
+            Swal.fire({
+                title: 'Sin usuarios',
+                text: 'No hay usuarios asociados a esta notificación.',
+                icon: 'warning',
+                confirmButtonText: 'Cerrar'
+            });
+        }
+    }
+</script>
 
 {% endblock %}

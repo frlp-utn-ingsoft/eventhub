@@ -133,7 +133,11 @@ def event_form(request, id=None):
 @login_required
 def notifications(request):
     user = request.user 
-    notifications = Notification.objects.all().order_by("priority")
+
+    if user.is_organizer:
+        notifications = Notification.objects.all().order_by("priority")
+    else:
+        notifications = Notification.objects.filter(users=user).order_by("priority")
 
     user_notifications = {
         un.notification.id: un.is_read

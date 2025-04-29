@@ -62,13 +62,18 @@
 
             <div class="mb-3">
                 <label for="{{ form.priority.id_for_label }}" class="form-label">Prioridad*</label>
-                {{ form.priority }}
+                <select class="form-select" name="priority" id="{{ form.priority.id_for_label }}">
+                    <option value="High" {% if form.priority.value == 'High' %}selected{% endif %}>Alto</option>
+                    <option value="Medium" {% if form.priority.value == 'Medium' %}selected{% endif %}>Medio</option>
+                    <option value="Low" {% if form.priority.value == 'Low' %}selected{% endif %}>Bajo</option>
+                </select>
                 {% if form.priority.errors %}
                     <div class="invalid-feedback d-block">
                         {{ form.priority.errors.0 }}
                     </div>
                 {% endif %}
             </div>
+            
 
             <div class="d-grid gap-2">
                 <button type="submit" class="btn btn-primary">
