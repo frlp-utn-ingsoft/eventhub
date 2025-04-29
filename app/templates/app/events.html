@@ -41,12 +41,14 @@
                             </a>
 
                             <!-- Botón para comprar un ticket -->
+                             {% if not request.user.is_authenticated or not request.user.is_organizer %} <!-- si el user es ORGANIZER no puede visualizar el boton -->
                             <a href="{% url 'ticket_create' event.id %}" 
                                class="btn btn-sm btn-outline-success" 
                                aria-label="Comprar Ticket" 
                                title="Comprar Ticket">
                                 <i class="bi bi-cart-plus" aria-hidden="true"></i> Comprar Ticket
                             </a>
+                            {% endif %}
                             
                             {% if user_is_organizer %}
                                 <a href="{% url 'event_edit' event.id %}"

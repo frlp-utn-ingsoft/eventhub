@@ -98,7 +98,6 @@ class Notification(models.Model):
     message = models.TextField()
     created_at = models.DateTimeField(auto_now_add = True)
     priority = models.CharField(max_length=6,choices=[("High","High"),("Medium","Medium"),("Low","Low")])
-    is_read = models.BooleanField(default=False)
     users = models.ManyToManyField(User, related_name= "notificaciones")
 
     def __str__(self):
@@ -219,3 +218,13 @@ class Rating(models.Model):
         self.rating = rating or self.rating
         self.save()
         return True, None
+
+class User_Notification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    notification = models.ForeignKey("Notification", on_delete=models.CASCADE)
+    is_read = models.BooleanField(default=False)
+    class Meta:
+        unique_together = ('user', 'notification')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.notification.title}"

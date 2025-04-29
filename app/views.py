@@ -1,12 +1,14 @@
 import datetime
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from .forms import NotificationForm,TicketForm,RatingForm
+from .models import Event, User, Notification, User_Notification,Ticket,Rating
 from datetime import timedelta
-from .models import Event, User, Ticket, Rating
-from .forms import TicketForm,RatingForm
+
 
 
 def register(request):
@@ -128,6 +130,153 @@ def event_form(request, id=None):
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
 
+@login_required
+def notifications(request):
+    user = request.user 
+
+    if user.is_organizer:
+        notifications = Notification.objects.all().order_by("priority")
+    else:
+        notifications = Notification.objects.filter(users=user).order_by("priority")
+
+    user_notifications = {
+        un.notification.id: un.is_read
+        for un in User_Notification.objects.filter(user = user)
+    }
+    return render(
+        request,
+        "app/notifications.html",
+        {"notifications": notifications, "user_is_organizer": request.user.is_organizer,"user_notifications": user_notifications,},
+    )
+
+@login_required
+def notification_create(request):
+    if not request.user.is_organizer:
+        messages.error(request, "Debes ser organizador para crear notificaciones.")
+        return redirect("notification")
+
+    if request.method == "POST":
+        form = NotificationForm(request.POST)
+
+        if form.is_valid():
+            notif = form.save(commit=False)
+            notif.save()
+
+            tipo_usuario = request.POST.get("tipo_usuario")
+            event = form.cleaned_data.get("event")
+            specific_user = form.cleaned_data.get("user")
+
+            if tipo_usuario == "all" and event:
+                user_ids = (
+                    Ticket.objects.filter(event=event)
+                    .values_list("user_id", flat=True)
+                    .distinct()
+                )
+                notif.users.set(user_ids)
+
+            elif tipo_usuario == "specific" and specific_user:
+                notif.users.set([specific_user])
+
+            messages.success(request, "Notificación creada correctamente.")
+            return redirect("notifications")
+        else:
+            messages.error(request, "Errores en el formulario.")
+    else:
+        form = NotificationForm()
+
+    return render(request, "app/notification_form.html", {
+        "form": form,
+        "is_update": False,
+    })
+
+@login_required
+def notification_update(request, id):
+    notif = get_object_or_404(Notification, id = id)
+
+    if not request.user.is_organizer:
+        messages.error(request, "No tenés permiso para editar esta notificación.")
+        return redirect("notifications")
+
+    if request.method == "POST":
+        form = NotificationForm(request.POST, instance=notif)
+
+        if form.is_valid():
+            notif = form.save(commit=False)
+            notif.save()
+
+            tipo_usuario = request.POST.get("tipo_usuario")
+            event = form.cleaned_data.get("event")
+            specific_user = form.cleaned_data.get("user")
+
+            notif.users.clear()
+
+            if tipo_usuario == "all" and event:
+                user_ids = (
+                    Ticket.objects.filter(event=event)
+                    .values_list("user_id", flat=True)
+                    .distinct()
+                )
+                notif.users.set(user_ids)
+
+            elif tipo_usuario == "specific" and specific_user:
+                notif.users.set([specific_user])
+
+            messages.success(request, "Notificación actualizada correctamente.")
+            return redirect("notifications")
+        else:
+            messages.error(request, "Errores en el formulario.")
+    else:
+        initial_data = {
+            "event": None,
+            "user": notif.users.first() if notif.users.count() == 1 else None,
+        }
+        form = NotificationForm(instance=notif, initial=initial_data)
+
+    return render(request, "app/notification_form.html", {
+        "form": form,
+        "notification": notif,
+        "is_update": True,
+    })
+
+@login_required
+def notification_delete(request,id):
+    user = request.user
+    notification = get_object_or_404(Notification,id = id)
+    
+    if not user.is_organizer:
+        return redirect("notifications")
+    
+    if request.method == "POST" :
+        notification.delete()
+        messages.success(request,"Notificacion eliminada correctamente.")
+        return redirect("notifications")
+    
+    return render(request,"app/notification_delete.html", {"notification":notification})
+
+@login_required
+def is_read(request, notification_id):
+    user = request.user
+
+    if request.method == "POST":
+        notification = get_object_or_404(Notification, id=notification_id)
+        user_notification, _ = User_Notification.objects.get_or_create(
+            user=user, notification=notification
+        )
+        user_notification.is_read = True
+        user_notification.save()
+
+    return redirect("notifications")
+
+@login_required
+def all_is_read(request):
+    
+    if request.method == "POST":
+        notifications = Notification.objects.filter(users=request.user)
+        for n in notifications:
+            un, _ = User_Notification.objects.get_or_create(user=request.user, notification=n)
+            un.is_read = True
+            un.save()
+    return redirect("notifications")
 
 #Listado de todos los tickets del user
 @login_required
@@ -143,6 +292,9 @@ def ticket_list(request):
 #Alta Ticket
 @login_required
 def ticket_create(request, event_id):
+    if request.user.is_organizer:
+        messages.error(request, "Los organizadores no crear tickets.")
+        return redirect('home')  # Redirige 
     event = get_object_or_404(Event, id=event_id)
 
     if request.method == "POST":
@@ -163,6 +315,9 @@ def ticket_create(request, event_id):
 #Editar Ticket (solo si es dueño)
 @login_required
 def ticket_update(request, ticket_id):
+    if request.user.is_organizer:
+        messages.error(request, "Los organizadores no modificar tickets.")
+        return redirect('home')  # Redirige
     ticket = get_object_or_404(Ticket, id=ticket_id)
 
     # Solo el dueño puede editar su ticket

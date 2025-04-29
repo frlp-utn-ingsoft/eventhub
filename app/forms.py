@@ -1,6 +1,69 @@
 from django import forms
-from .models import Ticket,Rating
+from .models import Notification,Ticket,Event,User,Rating
 from datetime import datetime
+
+class NotificationForm(forms.ModelForm):
+    event = forms.ModelChoiceField(
+        queryset=Event.objects.all(),
+        required=False,
+        label="Evento relacionado",
+        widget=forms.Select(attrs={"class": "form-select"})
+    )
+
+    user = forms.ModelChoiceField(
+        queryset=User.objects.all(),
+        required=False,
+        label="Usuario específico",
+        widget=forms.Select(attrs={"class": "form-select"})
+    )
+
+    class Meta:
+        model = Notification
+        fields = ["title", "message", "priority"]  
+
+        widgets = {
+            "title": forms.TextInput(attrs={
+                "class": "form-control",
+                "placeholder": "Ej: Cambio de horario del evento"
+            }),
+            "message": forms.Textarea(attrs={
+                "class": "form-control",
+                "rows": 3,
+                "placeholder": "Escribe tu mensaje aquí"
+            }),
+            "priority": forms.Select(attrs={
+                "class": "form-select"
+            }),
+        }
+
+    def clean(self):
+        cleaned_data = super().clean()
+        title = cleaned_data.get("title")
+        message = cleaned_data.get("message")
+        priority = cleaned_data.get("priority")
+        event = cleaned_data.get("event")
+        user = cleaned_data.get("user")
+        tipo_usuario = self.data.get("tipo_usuario")
+
+        if not title:
+            self.add_error("title", "El título no puede estar vacío.")
+        elif len(title) < 10:
+            self.add_error("title", "El título debe tener al menos 10 caracteres.")
+        elif Notification.objects.filter(title=title).exclude(pk=self.instance.pk).exists():
+            self.add_error("title", "Ese título ya existe.")
+
+        if not message:
+            self.add_error("message", "El mensaje no puede estar vacío.")
+        elif len(message) < 10:
+            self.add_error("message", "El mensaje debe tener al menos 10 caracteres.")
+
+        if priority not in ["High", "Medium", "Low"]:
+            self.add_error("priority", "Prioridad inválida.")
+
+        if tipo_usuario == "all" and not event:
+            self.add_error("event", "Debes seleccionar un evento.")
+        if tipo_usuario == "specific" and not user:
+            self.add_error("user", "Debes seleccionar un usuario.")
 
 class TicketForm(forms.ModelForm):
     # Campos de la tarjeta, validaciones específicas en los métodos clean_* correspondientes
