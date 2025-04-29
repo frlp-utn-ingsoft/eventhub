@@ -125,6 +125,9 @@ class Ticket(models.Model):
         return True, None
     
     def update(self, event, ticket_type, quantity):
+        if quantity < 0:
+            return False, {"quantity": "La cantidad de tickets debe ser mayor a 0"}
+        
         self.event = event or self.event
         self.ticket_type = ticket_type or self.ticket_type
         self.quantity = quantity or self.quantity
@@ -132,9 +135,6 @@ class Ticket(models.Model):
             self.old_total_price = self.total_price
             self.total_price = ticket_type.price * self.quantity
         self.modified_date = now()
-        errors= Ticket.validate(self.event, self.user, self.ticket_type, self.quantity)
-        if len(errors.keys()) > 0:
-            return False, errors
         self.save()
 
         return True, None
@@ -155,11 +155,25 @@ class TicketType(models.Model):
 
         return errors
 
+    @classmethod
+    def new(cls, name, price):
+        errors = TicketType.validate(name, price)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+
+        TicketType.objects.create(
+            name=name,
+            price=price,
+        )
+
+        return True, None
+
     def update(self, price):
         errors=TicketType.validate(self.name, price)
         if len(errors.keys()) > 0:
             return False, errors
-        self.price = price or self.price
+        self.price = price
         self.save()
 
         return True, None
