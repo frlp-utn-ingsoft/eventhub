@@ -1,34 +1,81 @@
-<div class="mt-5">
-    <h3>Reseñas</h3>
-    <ul class="list-group">
-        {% for rating in ratings %}
-        <li class="list-group-item">
-            <h5>{{ rating.title }}</h5>
-            <p>{{ rating.text }}</p>
-            <!-- prettier-ignore -->
-            <small><span style="color: blue;">{{ rating.rating }}</span>/5 - {{ rating.user.username }} - {{ rating.created_at|date:"d M Y, H:i" }}</small>
-        </li>
-        <li class="list-group-item">
-            Asististe a este evento? Deja tu reseña!
-        </li>
-        <!-- prettier-ignore -->
-        {% endfor %}
+<div class="mt-4 mb-5 pl-0 pr-0">
+    <div class="card mt-4 pl-0 pr-0">
+        <div class="card-header fw-semibold">
+            Reseñas ({{ ratings|length }})
+        </div>
+
+        <ul class="list-group list-group-flush">
+            {% for rating in ratings %}
+            <li class="list-group-item">
+                <div class="d-flex">
+                    <!-- Logo de usuario -->
+                    <div class="me-3">
+                        <i class="bi bi-person-circle fs-3"></i>
+                    </div>
+
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <!-- prettier-ignore -->
+                            <div>
+                                <span class="fw-semibold">{{ rating.user.username }}</span>
+                                <br />
+                                <small>{{ rating.created_at|date:"d b Y, H:i"}}</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-2 mb-1">
+                    <h6>{{ rating.title }}</h6>
+                    <h6>
+                        <span style="color: blue">{{ rating.rating }}</span>/5
+                    </h6>
+                </div>
+                <p class="mb-0">{{ rating.text }}</p>
+            </li>
+            {% empty %}
+            <li class="list-group-item text-muted">
+                Aun no hay reseñas. Se el primero en dejar una!
+            </li>
+            {% endfor %}
+        </ul>
+
         {% if user.is_authenticated %}
-        <div class="mt-4">
-            <div class="card-header">Deja tu opinion acerca del evento</div>
-            <div class="card-body">
-                <form
-                    method="post"
-                    action="{% url 'rating:rating_add' event.id %}"
-                >
+        <div class="card-body">
+            <form method="post" action="{% url 'rating:rating_add' event.id %}">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="{{ form.title.id_for_label }}"
+                        >Título de la reseña
+                        <span style="color: red">*</span></label
+                    >
                     <!-- prettier-ignore -->
-                    {% csrf_token %}
-                    {{ form.as_p }}
-                    <button type="submit" class="btn btn-primary">
-                        Publicar reseña
-                    </button>
-                </form>
-            </div>
+                    {{ form.title }}
+                    {{ form.title.errors }}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.text.id_for_label }}"
+                        >Contenido de la reseña
+                        <span style="color: red">*</span></label
+                    >
+                    <!-- prettier-ignore -->
+                    {{ form.text }}
+                    {{ form.text.errors }}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.rating.id_for_label }}"
+                        >Puntuación de la reseña (1-5)
+                        <span style="color: red">*</span></label
+                    >
+                    <!-- prettier-ignore -->
+                    {{ form.rating }}
+                    {{ form.rating.errors }}
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-primary">Publicar reseña</button>
+                </div>
+            </form>
         </div>
         {% else %}
         <div class="card-body">
@@ -40,5 +87,5 @@
             </p>
         </div>
         {% endif %}
-    </ul>
+    </div>
 </div>
