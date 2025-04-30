@@ -1,5 +1,5 @@
 from django import forms
-from .models import Notification,Ticket,Event,User
+from .models import Notification,Ticket,Event,User,RefundRequest
 from datetime import datetime
 
 class NotificationForm(forms.ModelForm):
@@ -160,4 +160,12 @@ class TicketForm(forms.ModelForm):
 
         return expiration_date
     
-    
+class RefundRequestForm(forms.ModelForm):
+    class Meta:
+        model = RefundRequest
+        fields = ['ticket_code', 'reason']
+        widgets = {
+            'ticket_code': forms.TextInput(attrs={'class': 'form-control'}),
+             'reason': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Explicá el motivo'}),
+        }   
+
