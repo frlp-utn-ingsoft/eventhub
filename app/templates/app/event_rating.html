@@ -47,15 +47,13 @@
                                     <p class="card-text">{{ rating.texto }}</p>
 
                                     {% if user.is_authenticated and user == rating.usuario or user.is_staff %}
-                                        <form method="post" style="display: inline;">
+                                        <form method="post" style="display: inline;" onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta reseña?');">
                                             {% csrf_token %}
                                             <button type="submit" name="eliminar" class="btn btn-sm btn-danger">Eliminar</button>
                                         </form>
                                         <a href="{% url 'event_rating' id=evento.id %}" class="btn btn-sm btn-warning">Editar</a>
                                     {% endif %}
-
                                     <hr>
-                                    
                                 </div>
                             </div>
                         {% empty %}
@@ -64,14 +62,19 @@
                         
                         <hr>
 
+                        {% if not editando %}
+                            <button id="mostrarFormulario" class="btn btn-success mb-3">Crear nueva reseña</button>
+                        {% endif %}
+
+
                         {% if user.is_authenticated %}
-                        <h6>{% if editando %}Editar tu reseña{% else %}Crea una nueva reseña{% endif %}</h6>
-                        <form method="post">
+                        <form method="post" id="formularioResena" class="{% if not editando %}d-none{% endif %}" onsubmit="return validarFormulario();">
+                            <h6>{% if editando %}Editar tu reseña{% else %}Crea una nueva reseña{% endif %}</h6>
                             {% csrf_token %}
                             <div class="card p-4 mb-4"> 
                                 <div class="mb-3">
                                     <h6>Titulo de tu reseña *</h6>
-                                    {{ form.titulo }}
+                                    {{ form.titulo|add_class:"form-control"}}
                                 </div>
                         
                                 <div class="mb-3">
@@ -81,7 +84,7 @@
                                             <i class="bi bi-star" data-value="{{ forloop.counter }}"></i>
                                         {% endfor %}
                                     </div>
-                                    {{ form.calificacion }}
+                                    {{ form.calificacion|add_class:"form-control" }}
                                     <p>Selecciona una calificacion</p>
                                 </div>
                         
@@ -108,11 +111,30 @@
     </div>
 </div>
 
+<!--Espacio JavaScript para mostrar formulario-->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const boton = document.getElementById("mostrarFormulario");
+        const formulario = document.getElementById("formularioResena");
+
+        if (boton && formulario) {
+            boton.addEventListener("click", function () {
+                formulario.classList.remove("d-none");
+                boton.classList.add("d-none");
+            });
+        }
+    });
+</script>
+
 <!--Espacio JavaScript para desarrollar interaccion con estrellas-->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const stars = document.querySelectorAll('#starRating i');
         const ratingInput = document.querySelector('input[name="calificacion"]');
+
+        if (ratingInput && ratingInput.value) {
+            highlightStars(ratingInput.value);
+        }
     
         stars.forEach(star => {
             star.addEventListener('mouseover', () => {
@@ -142,7 +164,33 @@
                 }
             });
         }
-    });
+    });    
     </script>
+
+    <!--Control de validaciones para el formulario-->
+    <script>
+        function validarFormulario() {
+            const tituloInput = document.querySelector('input[name="titulo"]');
+            const ratingInput = document.querySelector('input[name="calificacion"]');
+        
+            let mensaje = "";
+        
+            if (!tituloInput.value.trim()) {
+                mensaje += "El título no puede estar vacío.\n";
+            }
+        
+            if (!ratingInput.value || ratingInput.value === "0") {
+                mensaje += "Debes seleccionar una calificación con estrellas.\n";
+            }
+        
+            if (mensaje) {
+                alert(mensaje);
+                return false; 
+            }
+        
+            return true;
+        }
+        </script>
+        
 
 {% endblock %}

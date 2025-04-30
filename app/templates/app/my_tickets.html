@@ -18,14 +18,12 @@
                             <p><strong>Tipo:</strong> {{ ticket.get_type_display }}</p>
                             <p><strong>Cantidad:</strong> {{ ticket.quantity }}</p>
                         </div>
-                        <div class="card-footer">
+                        
+                        <div class="card-footer" data-event-date="{{ ticket.event.scheduled_at|date:'Y-m-d H:i' }}">
                             <a href="{% url 'ticket_detail' ticket.id %}" class="btn btn-primary">Ver Detalle</a>
-                            {% if ticket.event.scheduled_at %}
-                                <a href="{% url 'event_rating' event.id%}" class="btn btn-primary">Calificar evento</a>
-                            {% else %}
-                                
-                            {%endif%}
-                        </div>
+                            <a href="{% url 'event_rating' ticket.event.id %}" class="btn btn-primary rate-btn" data-event-date="{{ ticket.event.scheduled_at|date:'Y-m-d H:i' }}">Calificar evento</a>
+                        </div>                        
+                        
                     </div>
                 </div>
             {% endfor %}
@@ -36,4 +34,29 @@
         </div>
     {% endif %}
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const rateButtons = document.querySelectorAll(".rate-btn");
+
+        rateButtons.forEach(button => {
+            const dateString = button.dataset.eventDate;
+            if (!dateString) return;
+
+            const eventDate = new Date(dateString.replace(" ", "T"));
+
+            button.addEventListener("click", function (e) {
+                const now = new Date();
+
+                if (eventDate > now) {
+                    e.preventDefault(); // Evita que se siga el enlace
+                    alert("Todavía no se puede calificar este evento porque aún no ha ocurrido.");
+                }
+            });
+        });
+    });
+</script>
+
+
+
 {% endblock %}

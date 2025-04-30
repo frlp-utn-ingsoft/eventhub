@@ -16,6 +16,7 @@ from .models import Venue
 from .forms import VenueForm
 from .models import Event, Rating, Rating_Form, User, Comment
 
+
 def organizer_required(view_func):
     @wraps(view_func)
     def wrapper(request, *args, **kwargs):
