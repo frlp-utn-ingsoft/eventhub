@@ -125,3 +125,13 @@ def event_form(request, id=None):
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
+
+
+@login_required
+def refund_form(request):
+    return render(request, "app/refund_form.html")
+
+
+@login_required
+def refund_request(request):
+    return render(request, "app/refund_request.html")
