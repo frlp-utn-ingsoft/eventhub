@@ -66,57 +66,51 @@
 
 <!-- Script para actualizar el resumen de compra -->
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const quantityInput = document.getElementById('tickets-quantity');
-        const decreaseBtn = document.getElementById('decrease-qty');
-        const increaseBtn = document.getElementById('increase-qty');
-        const ticketTypeSelect = document.getElementById('ticket-type');
-        
-        const summaryQuantity = document.getElementById('summary-quantity');
-        const summarySubtotal = document.getElementById('summary-subtotal');
-        const summaryTax = document.getElementById('summary-tax');
-        const summaryTotal = document.getElementById('summary-total');
-        
-        const basePrice = {{ initial_price|floatformat:2 }};
-        const taxRate = {{ tax_rate|default:0.10 }};
-        
-        // Actualizar resumen cuando cambie la cantidad
-        function updateSummary() {
-            const quantity = parseInt(quantityInput.value);
-            const ticketTypeOptionEl = ticketTypeSelect.options[ticketTypeSelect.selectedIndex];
-            const ticketPrice = parseFloat(ticketTypeOptionEl.dataset.price || basePrice);
-            
-            const subtotal = quantity * ticketPrice;
-            const tax = subtotal * taxRate;
-            const total = subtotal + tax;
-            
-            summaryQuantity.textContent = quantity;
-            summarySubtotal.textContent = '$' + subtotal.toFixed(2);
-            summaryTax.textContent = '$' + tax.toFixed(2);
-            summaryTotal.textContent = '$' + total.toFixed(2);
-        }
-        
-        // Event listeners
-        decreaseBtn.addEventListener('click', function() {
-            if (quantityInput.value > 1) {
-                quantityInput.value = parseInt(quantityInput.value) - 1;
-                updateSummary();
-            }
-        });
-        
-        increaseBtn.addEventListener('click', function() {
-            const max = parseInt(quantityInput.getAttribute('max'));
-            if (parseInt(quantityInput.value) < max) {
-                quantityInput.value = parseInt(quantityInput.value) + 1;
-                updateSummary();
-            }
-        });
-        
-        quantityInput.addEventListener('change', updateSummary);
-        ticketTypeSelect.addEventListener('change', updateSummary);
-        
-        // Inicializar
-        updateSummary();
+    const inputCantidad = document.getElementById("cantidad");
+    const spanResumen = document.getElementById("resumen-cantidad");
+  
+    inputCantidad.addEventListener("input", () => {
+      spanResumen.textContent = inputCantidad.value;
     });
+
+    const precios = { GENERAL: 50, VIP: 100 };
+    const precioEntrada = document.getElementById("precio"); // precio base del ticket
+    const tipo = document.getElementById("tipoEntrada");
+    const cantidad = document.getElementById("cantidad");
+    const subtotal = document.getElementById("subtotal");
+    const impuestos = document.getElementById("impuestos");
+    const total = document.getElementById("total");
+  
+    function actualizarResumen() {
+      const precio = tipo.value === "GENERAL" ? 50 : 100;
+      const cant = parseInt(cantidad.value) || 0;
+      const sub = precio * cant;
+      const tax = sub * 0.10; // 10% de impuestos
+      subtotal.textContent = '$'+sub;
+      total.textContent = '$'+(sub+tax);
+      impuestos.textContent = '$'+tax;
+      if (tipo.value == "VIP") {
+        precioEntrada.textContent = '$'+precios.VIP + " (VIP)";
+      } else {
+        precioEntrada.textContent = '$'+precios.GENERAL + " (GENERAL)";
+      } 
+    }
+  
+    tipo.addEventListener("change", actualizarResumen);
+    cantidad.addEventListener("input", actualizarResumen);
+
+    const actualizarCantidad = (delta) => {
+        let nuevaCantidad = parseInt(cantidad.value) + delta;
+        if (nuevaCantidad < 1) return;
+        cantidad.value = nuevaCantidad;
+        spanResumen.textContent = nuevaCantidad;
+        actualizarResumen();
+      };
+      
+      document.getElementById("masCantidad").addEventListener("click", () => actualizarCantidad(1));
+      document.getElementById("menosCantidad").addEventListener("click", () => actualizarCantidad(-1));
+      
+      
+
 </script>
 {% endblock %}

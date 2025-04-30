@@ -11,27 +11,37 @@
             <div class="mb-3">
                 <label for="card-number" class="form-label">Número de tarjeta</label>
                 <input type="text" class="form-control" id="card-number" name="card_number" 
-                       placeholder="1234 5678 9012 3456" required>
+                       placeholder="1234 5678 9012 3456" required
+                       maxlength="19" pattern="\d{4}\s?\d{4}\s?\d{4}\s?\d{4}" 
+                       oninput="this.value = this.value.replace(/[^0-9\s]/g, '').replace(/(\d{4})(?=\d)/g, '$1 ').substring(0, 19)">
+                <div class="invalid-feedback">Ingrese un número de tarjeta válido (16 dígitos)</div>
             </div>
             
             <div class="row">
                 <div class="col-md-6 mb-3">
                     <label for="expiry-date" class="form-label">Fecha de expiración</label>
-                    <input type="text" class="form-control" id="expiry-date" name="expiry_date" 
-                           placeholder="MM/AA" required>
+                    <input type="month" class="form-control" id="expiry-date" required />
+                    <div class="invalid-feedback">Formato: MM/AA (ejemplo: 05/25)</div>
                 </div>
                 <div class="col-md-6 mb-3">
                     <label for="cvv" class="form-label">CVV</label>
                     <input type="text" class="form-control" id="cvv" name="cvv" 
-                           placeholder="123" required>
+                           placeholder="123" required
+                           maxlength="4" pattern="\d{3,4}"
+                           oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                    <div class="invalid-feedback">Ingrese un código CVV válido (3-4 dígitos)</div>
                 </div>
             </div>
             
             <div class="mb-3">
                 <label for="card-name" class="form-label">Nombre en la tarjeta</label>
                 <input type="text" class="form-control" id="card-name" name="card_name" 
-                       placeholder="Juan Pérez" required>
+                       placeholder="Juan Pérez" required
+                       pattern="[A-Za-zÀ-ÖØ-öø-ÿ\s]+"
+                       oninput="this.value = this.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s]/g, '')">
+                <div class="invalid-feedback">Ingrese un nombre válido (solo letras y espacios)</div>
             </div>
         </div>
     </div>
 </div>
+
