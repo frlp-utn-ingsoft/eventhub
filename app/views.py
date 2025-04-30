@@ -4,7 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+from .models import Event, User, RefoundRequest
+from .forms import RefoundRequestForm
 
 
 def register(request):
@@ -125,3 +126,21 @@ def event_form(request, id=None):
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
+
+@login_required
+def my_refunds(request):
+    refunds = RefoundRequest.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'app/my_refunds.html', {'reembolsos': refunds})
+
+def refound_request(request):
+    if request.method == 'POST':
+        form = RefoundRequestForm(request.POST)
+        if form.is_valid():
+            reembolso = form.save(commit=False)
+            reembolso.user = request.user
+            reembolso.save()
+            return redirect('my_refunds') 
+    else:
+        form = RefoundRequestForm()
+
+    return render(request, 'app/refound_request.html', {'form': form})

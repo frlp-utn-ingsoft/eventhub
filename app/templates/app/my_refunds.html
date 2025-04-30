@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+   <div class="d-flex justify-content-between align-items-center">
+    <h2>Mis Solicitudes de Reembolso</h2>
+    <a href="{% url 'refound_request' %}" class="btn btn-primary">
+      <i class="bi bi-plus-circle"></i> Solicitar Reembolso
+    </a>
+  </div>
+
+  {% if reembolsos %}
+    <table class="table table-striped mt-3">
+      <thead class="table-light">
+        <tr>
+          <th>Código Ticket</th>
+          <th>Motivo</th>
+          <th>Fecha de Solicitud</th>
+          <th>Aprobado</th>
+          <th>Fecha de Aprobación</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in reembolsos %}
+        <tr>
+          <td>{{ r.ticket_code }}</td>
+          <td>{{ r.reason }}</td>
+          <td>{{ r.created_at|date:"d/m/Y" }}</td>
+          <td>
+            {% if r.approved %}
+              <span class="badge bg-success">Sí</span>
+            {% else %}
+              <span class="badge bg-secondary">No</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if r.approval_date %}
+              {{ r.approval_date|date:"d/m/Y" }}
+            {% else %}
+              -
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="alert alert-info mt-3">
+      Aún no has solicitado ningún reembolso.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

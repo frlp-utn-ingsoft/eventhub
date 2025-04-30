@@ -73,3 +73,16 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+class RefoundRequest(models.Model):
+    id = models.CharField(max_length=100, unique=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refound_requests")
+    ticket_code = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name="refound_requests")
+    reason = models.TextField()
+    details= models.TextField(blank=True)
+    approved = models.BooleanField(default=False)
+    approval_date = models.DateField(null=True, blank=True)
+    created_at = models.DateField(auto_now_add=True)
+
+    def __str__(self):
+        return f"RefoundRequest for {self.event.title} by {self.user.username}"
