@@ -49,7 +49,7 @@
                             {% if event.categories.all %}
                                 <p class="mb-0">
                                     {% for category in event.categories.all %}
-                                        <span class="badge bg-secondary">{{ category.name }}</span>
+                                        <span class="badge bg-light text-dark">{{ category.name }}</span>
                                     {% endfor %}
                                 </p>
                             {% else %}
