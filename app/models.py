@@ -82,7 +82,7 @@ class Comment(models.Model):
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     event = models.ForeignKey(Event,on_delete=models.CASCADE, related_name="comments") ##Muchos comentarios tienen un evento
-    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments") ##Muchos comentarios tienen un usuario
     
     @classmethod
     def validate(cls,title, description):
@@ -98,7 +98,7 @@ class Comment(models.Model):
     
     
     @classmethod
-    def new(cls,text,title,event):
+    def new(cls,text,title,event,user):
         
         errors = Comment.validate(title, text)
 
@@ -108,8 +108,13 @@ class Comment(models.Model):
         Comment.objects.create(
             title = title,
             text = text,
-            event = event
+            event = event,
+            user = user
             )
-
+    
+    def update(self, title,text): ##self, porque es metodo de instancia / cls para clases
+        self.title = title or self.title
+        self.text = text or self.text
+        self.save()
             
     

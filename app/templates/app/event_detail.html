@@ -58,13 +58,23 @@
                 >
                     <div>
                         <h5>{{ comment.title }}</h5>
+                        <p>{{comment.user.email}}</p>
                         <p>{{ comment.text }}</p>
                         <small class="text-muted">
                             Publicado el {{ comment.created_at|date:"l, j \\d\\e
                             F \\d\\e Y, H:i" }}
                         </small>
                     </div>
-                    <div>
+                    {% if comment.user == request.user %}
+                    <div class="d-flex">
+                        <!-- Botón de Editar -->
+                        <a
+                            href="{% url 'update_comment' event.id comment.id %}"
+                            class="btn btn-warning btn-sm me-2"
+                        >
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <!-- Botón de Eliminar -->
                         <form
                             method="post"
                             action="{% url 'delete_comment' event.id comment.id %}"
@@ -75,6 +85,7 @@
                             </button>
                         </form>
                     </div>
+                    {% endif %}
                 </div>
                 {% empty %}
                 <p>No hay comentarios aún. ¡Sé el primero en comentar!</p>
