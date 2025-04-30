@@ -20,11 +20,11 @@
                             <div>
                                 <label for="title" class="form-label">Título del Evento</label>
                                 <input class="form-control"
-                                    id="title"
-                                    required=""
-                                    type="text"
-                                    value="{{ event.title }}"
-                                    name="title" />
+                                       id="title"
+                                       required=""
+                                       type="text"
+                                       value="{{ event.title }}"
+                                       name="title" />
                             </div>
                             <div>
                                 <label for="description" class="form-label">Descripción</label>
@@ -57,8 +57,36 @@
                                         name="time" />
                                 </div>
                             </div>
+
                             <div>
-                                <button type="submit" class="btn btn-primary">Crear Evento</button>
+                                <label class="form-label">Categorías</label>
+                                <div class="row">
+                                    {% for category in categories %}
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            <input class="form-check-input"
+                                                   type="checkbox"
+                                                   value="{{ category.id }}"
+                                                   id="category_{{ category.id }}"
+                                                   name="categories"
+                                                   {% if category.id in event_categories %}checked{% endif %}>
+                                            <label class="form-check-label" for="category_{{ category.id }}">
+                                                {{ category.name }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if event.id %}
+                                        Guardar Cambios
+                                    {% else %}
+                                        Crear Evento
+                                    {% endif %}
+                                </button>
                             </div>
                         </div>
                     </form>

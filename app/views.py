@@ -95,12 +95,21 @@ def event_form(request, id=None):
 
     if not user.is_organizer:
         return redirect("events")
+    
+    categories = Category.objects.filter(is_active=True)
+    event_categories = []
+    event = {}
+
+    if id is not None:
+        event = get_object_or_404(Event, pk=id)
+        event_categories = [category.id for category in event.categories.all()]
 
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
+        categories = request.POST.getlist("categories")
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
@@ -110,10 +119,10 @@ def event_form(request, id=None):
         )
 
         if id is None:
-            Event.new(title, description, scheduled_at, request.user)
+            Event.new(title, description, scheduled_at, request.user, categories)
         else:
             event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user)
+            event.update(title, description, scheduled_at, request.user, categories)
 
         return redirect("events")
 
@@ -124,7 +133,12 @@ def event_form(request, id=None):
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer},
+        {
+            "event": event,
+            "categories": categories,
+            "event_categories": event_categories,
+            "user_is_organizer": request.user.is_organizer
+        },
     )
 
 
