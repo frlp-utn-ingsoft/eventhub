@@ -1,40 +1,95 @@
+{# templates/app/refund/create_refund_request.html #}
 {% extends "base.html" %}
 {% block title %}Nueva solicitud de reembolso{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-  <h2>Crear nueva solicitud de reembolso</h2>
+  <div class="row">
+    {# === COLUMNA IZQUIERDA: FORMULARIO === #}
+    <div class="col-md-8">
+      <h2>Crear nueva solicitud de reembolso</h2>
 
-  <form method="post">
-    {% csrf_token %}
+      <form method="post" id="refund-form">
+        {% csrf_token %}
 
-    {# 1) Errores generales #}
-    {% if form.non_field_errors %}
-      <div class="alert alert-danger">
-        {{ form.non_field_errors }}
+        {# Errores generales #}
+        {% if form.non_field_errors %}
+          <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+          </div>
+        {% endif %}
+
+        <div class="alert alert-info">
+          <i class="bi bi-info-circle"></i>
+          Podés solicitar un reembolso hasta 48 horas antes del evento. 
+          Una vez procesada la solicitud, el reembolso se realizará 
+          en un plazo de 7 a 14 días hábiles.
+        </div>
+
+        <div class="mb-3">
+          {{ form.ticket_code.label_tag }}
+          {{ form.ticket_code }}
+          {{ form.ticket_code.errors }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.motivo.label_tag }}
+          {{ form.motivo }}
+          {{ form.motivo.errors }}
+        </div>
+
+        <div class="mb-3">
+          {{ form.detalles.label_tag }}
+          {{ form.detalles }}
+          {{ form.detalles.errors }}
+        </div>
+
+        {# Checkbox de políticas #}
+        <div class="form-check mb-3">
+          {{ form.acepta_politicas }}
+          {{ form.acepta_politicas.label_tag }}
+          {{ form.acepta_politicas.errors }}
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-3">
+        {# Botón inicialmente deshabilitado #}
+        
+        <a href="{% url 'my_refund_requests' %}" class="btn btn-secondary">Cancelar</a>
+        <button type="submit" class="btn btn-primary" id="submit-btn" disabled>
+          Enviar solicitud
+        </button>
       </div>
-    {% endif %}
-
-    <div class="mb-3">
-      {{ form.ticket_code.label_tag }}
-      {{ form.ticket_code }}
-      {{ form.ticket_code.errors }}
+      </form>
     </div>
 
-    <div class="mb-3">
-      {{ form.motivo.label_tag }}
-      {{ form.motivo }}
-      {{ form.motivo.errors }}
+    {# === COLUMNA DERECHA: POLÍTICAS === #}
+    <div class="col-md-4">
+      <div class="card">
+        <div class="card-header">
+          Políticas de Reembolso
+        </div>
+        <div class="card-body">
+          <ul class="list-unstyled">
+            <li><i class="bi bi-check-circle text-success"></i> Reembolso del 100% hasta 7 días antes del evento.</li>
+            <li><i class="bi bi-check-circle text-success"></i> Reembolso del 50% entre 2 y 7 días antes del evento.</li>
+            <li><i class="bi bi-x-circle text-danger"></i> Sin reembolso a menos de 48 horas del evento.</li>
+            <li><i class="bi bi-info-circle text-secondary"></i> El reembolso se realizará al mismo método de pago utilizado en la compra.</li>
+          </ul>
+        </div>
+      </div>
     </div>
-
-    <div class="mb-3">
-      {{ form.detalles.label_tag }}
-      {{ form.detalles }}
-      {{ form.detalles.errors }}
-    </div>
-
-    <button type="submit" class="btn btn-success">Enviar solicitud</button>
-    <a href="{% url 'my_refund_requests' %}" class="btn btn-secondary">Cancelar</a>
-  </form>
+  </div>
 </div>
+
+{# JavaScript para habilitar/deshabilitar el botón #}
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    const checkbox = document.querySelector('input[name="acepta_politicas"]');
+    const submitBtn = document.getElementById("submit-btn");
+
+    checkbox.addEventListener("change", function() {
+      submitBtn.disabled = !this.checked;
+    });
+  });
+</script>
 {% endblock %}

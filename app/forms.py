@@ -4,22 +4,33 @@ from django.core.exceptions import ValidationError
 
 class RefundRequestForm(forms.ModelForm):
     MOTIVO_CHOICES = [
-        ('vuelo_cancelado', 'Vuelo cancelado'),
-        ('equipaje_perdido', 'Equipaje perdido'),
-        ('cambio_itinerario', 'Cambio de itinerario'),
+        ('', 'Seleccione un motivo…'),          # <-- opción inicial vacía
+        ('enfermedad', 'Enfermedad comprobable'),
+        ('fuerza_mayor', 'Fuerza mayor (accidente, urgencia familiar)'),
+        ('clima_extremo', 'Clima extremo o fenómenos naturales'),
+        ('covid', 'Restricciones o contagio de COVID-19'),
+        ('problema_transporte', 'Problema de transporte terrestre'),
+        ('agenda_conflicto', 'Conflicto de agenda o cambio de planes'),
         ('otro', 'Otro'),
     ]
 
     motivo = forms.ChoiceField(
         choices=MOTIVO_CHOICES,
         label="Motivo de reembolso",
-        widget=forms.Select(attrs={"class": "form-select"})
+        widget=forms.Select(attrs={"class": "form-select"}),
+        error_messages={'required': 'Debes seleccionar un motivo.'}
     )
     detalles = forms.CharField(
         label="Detalles adicionales",
         required=False,
         widget=forms.Textarea(attrs={"rows": 4, "class": "form-control"})
     )
+    acepta_politicas = forms.BooleanField(
+        label="He leído y acepto las políticas de reembolso",
+        required=True,
+        error_messages={'required': 'Debes aceptar las políticas para continuar.'},
+    )
+
 
     class Meta:
         model = RefundRequest
