@@ -128,9 +128,12 @@ def event_form(request, id=None):
     )
 
 
+
+@login_required
 def ticket_list(request):
-    tickets = Ticket.objects.all()  # obtiene todos los tickets de la base
-    return render(request, 'app/ticket/ticket_list.html', {'tickets': tickets}) # muestra el template con la lista de tickets como variable 'tickets'
+    tickets = Ticket.objects.filter(user=request.user)
+    return render(request, 'app/ticket/ticket_list.html', {'tickets': tickets})
+
 
 
 def ticket_create(request, event_id):
