@@ -85,6 +85,46 @@ class Location(models.Model):
 
         self.save()
 
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+
+    def __str__(self):
+        return self.name
+    
+    @classmethod
+    def validate(cls, name, description):
+        errors ={}
+
+        if not name:
+            errors["name"] = "El nombre es requerido."
+
+        if not description:
+            errors["description"] = "La descripción es requerida."
+        
+        return errors
+    
+    @classmethod
+    def new(cls, name, description):
+        errors = cls.validate(name, description)
+        if errors:
+            return False, errors
+
+        Category.objects.create(
+            name=name,
+            description=description,
+        )
+
+        return True, None
+    
+    @classmethod
+    def update(self, name=None, description=None):
+        self.name = name or self.name
+        self.description = description or self.description
+
+        self.save()
+
+
 
 class Event(models.Model):
     title = models.CharField(max_length=200)
