@@ -10,14 +10,12 @@
                 {% else %}
                     Crear Categoría
                 {% endif %}
-            </h1>
-
-            {% if error %}
-                <div class="alert alert-danger">{{ error }}</div>
-            {% endif %}
-
+            </h1>            
             <div class="card">
                 <div class="card-body">
+                    {% if error %}
+                        <div class="alert alert-danger">{{ error }}</div>
+                    {% endif %}
                     <form method="post">
                         {% csrf_token %}
                         <div class="vstack gap-3">

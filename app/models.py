@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -85,27 +86,34 @@ class Event(models.Model):
         return self.title
 
     @classmethod
-    def validate(cls, title, description, scheduled_at):
+    def validate(cls, title, description, scheduled_at, current_event_id=None):
         errors = {}
 
-        if title == "":
-            errors["title"] = "Por favor ingrese un titulo"
+        if not title.strip():
+            errors["title"] = "Por favor ingrese un título"
+        elif cls.objects.filter(title__iexact=title).exclude(pk=current_event_id).exists():
+            errors["title"] = "Ya existe un evento con ese título"
 
-        if description == "":
-            errors["description"] = "Por favor ingrese una descripcion"
+        if not description.strip():
+            errors["description"] = "Por favor ingrese una descripción"
+
+        if scheduled_at is None:
+            errors["scheduled_at"] = "La fecha y hora del evento son requeridas"
+        elif scheduled_at <= timezone.now():
+            errors["scheduled_at"] = "La fecha del evento debe ser en el futuro"
 
         return errors
 
     @classmethod
     def new(cls, title, description, scheduled_at, organizer):
-        errors = Event.validate(title, description, scheduled_at)
+        errors = cls.validate(title, description, scheduled_at)
 
-        if len(errors.keys()) > 0:
+        if errors:
             return False, errors
 
-        Event.objects.create(
-            title=title,
-            description=description,
+        cls.objects.create(
+            title=title.strip(),
+            description=description.strip(),
             scheduled_at=scheduled_at,
             organizer=organizer,
         )
@@ -113,10 +121,16 @@ class Event(models.Model):
         return True, None
 
     def update(self, title, description, scheduled_at, organizer):
-        self.title = title or self.title
-        self.description = description or self.description
-        self.scheduled_at = scheduled_at or self.scheduled_at
-        self.organizer = organizer or self.organizer
+        errors = self.validate(title, description, scheduled_at, current_event_id=self.pk)
 
+        if errors:
+            return False, errors
+
+        self.title = title.strip()
+        self.description = description.strip()
+        self.scheduled_at = scheduled_at
+        self.organizer = organizer
         self.save()
+
+        return True, None
         

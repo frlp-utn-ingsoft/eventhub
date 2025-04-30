@@ -97,10 +97,16 @@ def event_form(request, id=None):
         return redirect("events")
     
     categories = Category.objects.filter(is_active=True)
+    errors = {}
+
+    event = {}
+
+    if id is not None:
+        event = get_object_or_404(Event, pk=id)
 
     if request.method == "POST":
-        title = request.POST.get("title")
-        description = request.POST.get("description")
+        title = request.POST.get("title", "").strip()
+        description = request.POST.get("description", "").strip()
         date = request.POST.get("date")
         time = request.POST.get("time")
         selected_categories = request.POST.getlist("categories")
@@ -117,21 +123,30 @@ def event_form(request, id=None):
             if success:
                 event = Event.objects.get(title=title, organizer=request.user)
                 event.categories.set(selected_categories)
+                return redirect("events")
+            else:
+                event = {
+                    "title": title,
+                    "description": description,
+                    "scheduled_at": scheduled_at,
+                    "categories": Category.objects.filter(id__in=selected_categories),
+                }
         else:
             event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user)
-            event.categories.set(selected_categories)
-
-        return redirect("events")
-
-    event = {}
-    if id is not None:
-        event = get_object_or_404(Event, pk=id)
+            success, errors = event.update(title, description, scheduled_at, request.user)
+            if success:
+                event.categories.set(selected_categories)
+                return redirect("events")
 
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "categories": categories, "user_is_organizer": request.user.is_organizer},
+        {
+            "event": event,
+            "categories": categories,
+            "user_is_organizer": request.user.is_organizer,
+            "errors": errors
+        },
     )
 
 
