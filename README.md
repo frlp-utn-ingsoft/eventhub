@@ -37,3 +37,4 @@ Aplicaci√≥n web para venta de entradas utilizada en la cursada 2025 de Ingenier√
 `Pietrantuono Franco`
 `Moscuzza Vicente`
 `Nicolas Valdes`
+`Valentino Siadore`
