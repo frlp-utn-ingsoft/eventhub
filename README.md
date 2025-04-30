@@ -3,6 +3,7 @@
 - Castro Braian
 - Aramberri Juan Bautista
 - Costa Tomas Agustin
+- Mazza Joaquin
 
 # Eventhub
 
