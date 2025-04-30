@@ -135,6 +135,28 @@ def venues(request):
         {"venues": venues, "user_is_organizer": request.user.is_organizer},
     )
 
+@login_required
+def venue_detail(request, id):
+    venue = get_object_or_404(Venue, pk=id)
+    return render(
+        request, 
+        "app/venue_detail.html", 
+        {"venue": venue ,"user_is_organizer": request.user.is_organizer},
+    )
+
+@login_required
+def venue_delete(request, id):
+    user = request.user
+    if not user.is_organizer:
+        return redirect("events")
+
+    if request.method == "POST":
+        event = get_object_or_404(Event, pk=id)
+        event.delete()
+        return redirect("events")
+
+    return redirect("events")
+
 def venue_form(request, id=None):
 
     if request.method == "POST":

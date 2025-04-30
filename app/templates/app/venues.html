@@ -33,7 +33,7 @@
                     <td>{{ venue.city }}</td>
                     <td>
                         <div class="hstack gap-1">
-                            <a href=""
+                            <a href="{% url 'venue_detail' venue.id %}"
                                class="btn btn-sm btn-outline-primary"
                                aria-label="View details"
                                title="View details">
