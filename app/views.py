@@ -221,7 +221,7 @@ def category_form(request, id=None):
 
     return render(
         request,
-        "app/category/category_form.html",
+        "category/category_form.html",
         {
             "form": form,
             "category": category,

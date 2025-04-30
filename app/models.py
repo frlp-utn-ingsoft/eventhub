@@ -77,8 +77,12 @@ class Event(models.Model):
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
 
-        self.save()
+        if categories:
+            self.categories.set(categories)             # ADD ----- crud-category
 
+        self.save()
+        
+    
 
 class Notification(models.Model):
     PRIORITY_CHOICES = [
@@ -105,10 +109,6 @@ class Notification(models.Model):
 
     def __str__(self):
         return f"{self.title} → {self.user.username}"
-
-        if categories:
-            self.categories.set(categories)             # ADD ----- crud-category
-
 
 ######### crud-category #########
 class Category(models.Model):
