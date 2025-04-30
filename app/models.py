@@ -27,54 +27,6 @@ class User(AbstractUser):
         return errors
 
 
-class Event(models.Model):
-    title = models.CharField(max_length=200)
-    description = models.TextField()
-    scheduled_at = models.DateTimeField()
-    organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    def __str__(self):
-        return self.title
-
-    @classmethod
-    def validate(cls, title, description, scheduled_at):
-        errors = {}
-
-        if title == "":
-            errors["title"] = "Por favor ingrese un titulo"
-
-        if description == "":
-            errors["description"] = "Por favor ingrese una descripcion"
-
-        return errors
-
-    @classmethod
-    def new(cls, title, description, scheduled_at, organizer):
-        errors = Event.validate(title, description, scheduled_at)
-
-        if len(errors.keys()) > 0:
-            return False, errors
-
-        Event.objects.create(
-            title=title,
-            description=description,
-            scheduled_at=scheduled_at,
-            organizer=organizer,
-        )
-
-        return True, None
-
-    def update(self, title, description, scheduled_at, organizer):
-        self.title = title or self.title
-        self.description = description or self.description
-        self.scheduled_at = scheduled_at or self.scheduled_at
-        self.organizer = organizer or self.organizer
-
-        self.save()
-
-
 class Location(models.Model):
     name = models.CharField(max_length=200)
     address = models.CharField(max_length=300)
@@ -130,5 +82,57 @@ class Location(models.Model):
         self.city = city or self.city
         self.capacity = capacity if capacity is not None else self.capacity
         self.contact = contact or self.contact
+
+        self.save()
+
+
+class Event(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    scheduled_at = models.DateTimeField()
+    organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    location = models.ForeignKey(Location, on_delete=models.SET_NULL, related_name="events", null=True, blank=True)
+
+
+    def __str__(self):
+        return self.title
+
+    @classmethod
+    def validate(cls, title, description, scheduled_at):
+        errors = {}
+
+        if title == "":
+            errors["title"] = "Por favor ingrese un titulo"
+
+        if description == "":
+            errors["description"] = "Por favor ingrese una descripcion"
+
+        return errors
+
+    @classmethod
+    def new(cls, title, description, scheduled_at, organizer, location=None):
+        errors = Event.validate(title, description, scheduled_at)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+
+        Event.objects.create(
+            title=title,
+            description=description,
+            scheduled_at=scheduled_at,
+            organizer=organizer,
+            location=location,
+        )
+
+        return True, None
+
+    def update(self, title, description, scheduled_at, organizer, location=None):
+        self.title = title or self.title
+        self.description = description or self.description
+        self.scheduled_at = scheduled_at or self.scheduled_at
+        self.organizer = organizer or self.organizer
+        self.location = location if location is not None else self.location
 
         self.save()

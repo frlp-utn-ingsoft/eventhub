@@ -26,8 +26,20 @@
                             <td>{{ location.capacity }}</td>
                             <td>{{ location.contact }}</td>
                             <td>
-                                <a href="{% url 'update_location' location.id %}" class="btn btn-sm btn-warning">Editar</a>
-                                <a href="{% url 'delete_location' location.id %}" class="btn btn-sm btn-danger" onclick="return confirm('¿Seguro que deseas eliminar esta ubicación?');">Eliminar</a>
+                                <a href="{% url 'update_location' location.id %}"
+                                 class="btn btn-sm btn-outline-secondary"
+                                 aria-label="Editar"
+                                 title="Editar">
+                                 <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </a>
+
+                                <a href="{% url 'delete_location' location.id %}"
+                                 class="btn btn-sm btn-outline-danger"
+                                 onclick="return confirm('¿Seguro que deseas eliminar esta ubicación?');"
+                                 title="Eliminar"
+                                 aria-label="Eliminar">
+                                 <i class="bi bi-trash" aria-hidden="true"></i>
+                                </a>
                             </td>
                         </tr>
                     {% endfor %}

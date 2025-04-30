@@ -99,6 +99,9 @@ def event_form(request, id=None):
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
+        location_id = request.POST.get("location")
+        location = Location.objects.filter(id=location_id).first() if location_id else None
+
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
@@ -108,22 +111,27 @@ def event_form(request, id=None):
         )
 
         if id is None:
-            Event.new(title, description, scheduled_at, request.user)
+            Event.new(title, description, scheduled_at, request.user, location)
         else:
             event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user)
+            event.update(title, description, scheduled_at, request.user, location)
 
         return redirect("events")
-
+    
+    
     event = {}
+    locations = Location.objects.all()
+
     if id is not None:
         event = get_object_or_404(Event, pk=id)
 
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer},
+        {"event": event, "user_is_organizer": request.user.is_organizer, "locations": locations},
     )
+
+
 
 @login_required
 def list_locations(request):
@@ -154,7 +162,6 @@ def create_location(request):
         return redirect('locations_list')  # Redirigimos a una lista o donde quieras
 
     return render(request, 'locations/create_location.html')
-
 
 def update_location(request, location_id):
     location = get_object_or_404(Location, id=location_id)

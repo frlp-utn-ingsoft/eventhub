@@ -21,6 +21,7 @@
             <tr>
                 <th>Título</th>
                 <th>Descripción</th>
+                <th>Ubicacion</th>
                 <th>Fecha</th>
                 <th>Acciones</th>
             </tr>
@@ -30,6 +31,7 @@
                 <tr>
                     <td>{{ event.title }}</td>
                     <td>{{ event.description }}</td>
+                    <td>{{ event.location }}</td>
                     <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
                     <td>
                         <div class="hstack gap-1">

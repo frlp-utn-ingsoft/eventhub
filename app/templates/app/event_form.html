@@ -14,7 +14,9 @@
 
             <div class="card">
                 <div class="card-body">
-                    <form action="{% url 'event_form' %}" method="POST">
+                    <form action="{% if event.id %}{% url 'event_edit' event.id %}
+                    {% else %}{% url 'event_form' %}
+                    {% endif %}" method="POST">
                         {% csrf_token %}
                         <div class="vstack gap-3">
                             <div>
@@ -58,7 +60,23 @@
                                 </div>
                             </div>
                             <div>
-                                <button type="submit" class="btn btn-primary">Crear Evento</button>
+                                <label for="location" class="form-label">Ubicación</label>
+                                <select class="form-select" name="location" id="location">
+                                    <option value="">-- Sin ubicación --</option>
+                                    {% for location in locations %}
+                                        <option value="{{ location.id }}"
+                                            {% if event.location and event.location.id == location.id %}selected{% endif %}>
+                                            {{ location.name }} - {{ location.city }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if event.id %}Guardar Cambios{% else %}Crear Evento{% endif %}
+                                </button>
+                                
                             </div>
                         </div>
                     </form>
