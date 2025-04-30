@@ -241,7 +241,8 @@ def ticket_type_form(request):
                 },
             )        
     else: return redirect("ticket_types")
-
+    
+@login_required
 def ticket_type_update(request, ticket_type_id):
     user = request.user
     if not user.is_organizer:
