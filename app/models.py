@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.conf import settings
 
 
 class User(AbstractUser):
@@ -34,7 +35,8 @@ class Event(models.Model):
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    attendees = models.ManyToManyField(User, related_name="attended_events", blank=True)
+    
     def __str__(self):
         return self.title
 
@@ -73,3 +75,26 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+class Notification(models.Model):
+    PRIORITY_CHOICES = [
+        ("HIGH", "High"),
+        ("MEDIUM", "Medium"),
+        ("LOW", "Low"),
+    ]
+
+    title = models.CharField(max_length=255)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    priority = models.CharField(
+        max_length=10, choices=PRIORITY_CHOICES, default="LOW"
+    )
+    is_read = models.BooleanField(default=False)
+    event = models.ForeignKey(
+        "Event", on_delete=models.CASCADE, related_name="notifications"
+    )
+    users = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, related_name="notifications"
+    )
+    def __str__(self):
+        return self.title
