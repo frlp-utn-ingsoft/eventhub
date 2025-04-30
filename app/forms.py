@@ -1,6 +1,7 @@
 from django import forms
 from .models import Category
 from .models import Notification
+from .models import Rating
 
 class NotificationForm(forms.ModelForm):
     class Meta:
@@ -21,4 +22,19 @@ class CategoryForm(forms.ModelForm):
             'name': 'Nombre',
             'description': 'Descripción',
             'is_active': 'Activo',
+        }
+
+class RatingForm(forms.ModelForm):
+    class Meta:
+        model = Rating
+        fields = ['title', 'rating', 'text']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Gran experiencia'}),
+            'rating': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 5}),
+            'text': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Comparte tu experiencia...', 'rows': 3}),
+        }
+        labels = {
+            'title': 'Título de tu reseña *',
+            'rating': 'Tu calificación *',
+            'text': 'Tu reseña (opcional)',
         }
