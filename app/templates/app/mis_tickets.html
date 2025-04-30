@@ -21,7 +21,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for ticket in tickets%}
+            {% for ticket in tickets %}
                 <tr>
                     <td>{{ ticket.event.title }}</td>
                     <td>{{ ticket.user.username }}</td>
@@ -29,21 +29,24 @@
                     <td>{{ ticket.type }}</td>
                     <td>{{ ticket.ticket_code }}</td>
                     <td>{{ ticket.quantity }}</td>
-                    <!---si el type es general muestra valor 50, si es vip 100-->
                     <td>
-                        {% if ticket.type == "general" %}
-                            50
-                        {% elif ticket.type == "vip" %}
-                            100
-                        {% else %}
-                            N/A
-                        {% endif %}
+                        {{ ticket.total_price }}
                     </td>
 
                     <td>
                         <div class="hstack gap-1">
-                            <a>
-                                <a href="{% url 'event_detail' ticket.event.id %}"
+                            <button class="btn btn-sm btn-outline-secondary"
+                                    aria-label="Editar"
+                                    title="Editar"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editTicketModal"
+                                    data-ticket-id="{{ ticket.id }}"
+                                    data-ticket-type="{{ ticket.type }}"
+                                    data-ticket-quantity="{{ ticket.quantity }}">
+                                <i class="bi bi-pencil" aria-hidden="true"></i>
+                            </button>
+
+                            <a href="{% url 'event_detail' ticket.event.id %}"
                                 class="btn btn-sm btn-outline-primary"
                                 aria-label="Ver detalle"
                                 title="Ver detalle">
@@ -54,8 +57,7 @@
                                 <button class="btn btn-sm btn-outline-danger"
                                         title="Eliminar"
                                         type="submit"
-                                        aria-label="Eliminar"
-                                        titile="Eliminar">
+                                        aria-label="Eliminar">
                                     <i class="bi bi-trash" aria-hidden="true"></i>
                                 </button>
                             </form>
@@ -66,8 +68,8 @@
                                 <i class="bi bi-cash-coin" aria-hidden="true"></i>
                             </a>
                         </div>
-
-
+                        
+                        
                     </td>
                 </tr>
             {% empty %}
@@ -78,4 +80,58 @@
         </tbody>
     </table>
 </div>
+
+<!-- Modal de edición -->
+<div class="modal fade" id="editTicketModal" tabindex="-1" aria-labelledby="editTicketModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <form method="POST" id="editTicketForm">
+            {% csrf_token %}
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editTicketModalLabel">Editar Ticket</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="ticketType" class="form-label">Tipo</label>
+                        <select class="form-select" name="type" id="ticketType" required>
+                            <option value="general">General</option>
+                            <option value="vip">VIP</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="ticketQuantity" class="form-label">Cantidad</label>
+                        <input type="number" class="form-control" name="quantity" id="ticketQuantity" required min="1">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Script para manejar el modal -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const editModal = document.getElementById('editTicketModal');
+    editModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const ticketId = button.getAttribute('data-ticket-id');
+        const ticketType = button.getAttribute('data-ticket-type');
+        const ticketQuantity = button.getAttribute('data-ticket-quantity');
+
+        const form = document.getElementById('editTicketForm');
+        const typeSelect = document.getElementById('ticketType');
+        const quantityInput = document.getElementById('ticketQuantity');
+
+        typeSelect.value = ticketType;
+        quantityInput.value = ticketQuantity;
+
+        form.action = `/tickets/update/${ticketId}/`;  // Ajusta si usás `reverse` en backend
+    });
+});
+</script>
 {% endblock %}

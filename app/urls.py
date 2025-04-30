@@ -40,4 +40,13 @@ urlpatterns = [
     path('update_refound/<int:refound_id>/', views.update_refound, name='update_refound'),
     path('refounds/admin/', views.refound_admin, name='refound_admin'),
     path('refounds/admin/<int:refound_id>/action/', views.approve_or_reject_refound, name='refound_action'),
+    path('tickets/update/<int:ticket_id>/', views.update_ticket, name='update_ticket'),
+    path('notificaciones/crear/', views.notification_form,name= 'create_notification'),
+    path('notificaciones/', views.notification, name='notification'),
+    path('notificaciones/<int:id>/detalle', views.notification_detail,name='notification_detail'),
+    path('notificaciones/<int:id>/editar', views.notification_form,name= 'notification_edit'),
+    path('notificaciones/<int:id>/eliminar', views.notification_delete, name='notification_delete'),
+    path('notifications/visualizacion', views.user_notifications, name='user_notifications'),
+    path('notifications/mark_read/<int:id>/', views.mark_notification_read, name='mark_notification_read'),
+    path('notifications/mark_all_read/', views.mark_notification_read, name='mark_all_read'),
 ]

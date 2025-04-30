@@ -201,10 +201,9 @@ class Ticket(models.Model):
             user=user,
             event=event
         )
-        return True, None
 
-    def update(self, ticket_code, quantity):
-        self.ticket_code = ticket_code or self.ticket_code
+    def update(self, type, quantity):
+        self.type = type or self.type
         self.quantity = quantity or self.quantity
 
         self.save()
@@ -341,3 +340,94 @@ class RefoundRequest(models.Model):
             self.status = RefoundStatus.APPROVED
 
         self.save()
+
+class Notification(models.Model):
+    PRIORITY_CHOICES = [
+        ("HIGH", "Alta"),
+        ("MEDIUM", "Media"),
+        ("LOW", "Baja"),
+    ]
+
+    title = models.CharField(max_length=50)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES)
+    read = models.BooleanField(default=False)
+
+    users = models.ManyToManyField(
+        User,
+        related_name="notifications"
+    )
+
+    event = models.ForeignKey(
+        'Event',
+        on_delete=models.CASCADE,
+        related_name="notifications",
+        null=True,  # Añadí null=True para que sea opcional
+        blank=True  # Añadí blank=True para formularios
+    )
+
+    def __str__(self):
+        user_count = self.users.count()
+        
+        if user_count == 1:
+            user = self.users.first()
+            if user is None:  # por seguridad si se elimina de la bbdd.
+                return f"Notificación: {self.title} con un usuario inconsistente"
+            return f"Notificación: {self.title} para {user.username}"
+        else:
+            return f"Notificación: {self.title} para {user_count} usuarios"
+
+
+    @classmethod
+    def validate(cls, title, message, priority, users= None):
+        errors = {}
+
+        if not title:
+            errors["title"] = "Por favor ingrese un título"
+        if not message:
+            errors["message"] = "Por favor ingrese un mensaje"
+        if priority not in dict(cls.PRIORITY_CHOICES):
+            errors["priority"] = "Prioridad inválida"
+        # Validación de usuarios
+        if not users:
+            errors["users"] = "Debe proporcionar al menos un usuario"
+
+        return errors
+
+    @classmethod
+    def new(cls, title, message, priority, users, event=None):
+        errors = cls.validate(title, message, priority,users)
+
+        if errors:
+            return False, errors
+
+        # Creamos la notificación
+        notification = cls.objects.create(
+            title=title,
+            message=message,
+            priority=priority,
+            event=event
+        )
+
+        # Asociamos los usuarios
+        notification.users.add(*users)
+
+        return True, None
+
+    def update(self, title=None, message=None, priority=None, read=None, users=None, event=None):
+        self.title = title or self.title
+        self.message = message or self.message
+        self.priority = priority or self.priority
+        self.read = read if read is not None else self.read
+        
+        # Actualizar el evento si se proporciona uno nuevo
+        if event is not None:
+            self.event = event
+        
+        self.save()
+        
+        # si recibo usuarios nuevos, actualizamos la relación
+        if users is not None:
+            self.users.set(users)  # Reemplaza los usuarios asociados por estos nuevos
+        
