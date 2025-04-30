@@ -98,7 +98,7 @@ def event_form(request, id=None):
     if not user.is_organizer:
         return redirect("events")
 
-    # Obtener todas las categorías disponibles
+   
     categories = Category.objects.all()
 
     if request.method == "POST":
@@ -106,7 +106,7 @@ def event_form(request, id=None):
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
-        category_ids = request.POST.getlist("categories")  # Recibe una lista de IDs
+        category_ids = request.POST.getlist("categories")  
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
@@ -115,17 +115,17 @@ def event_form(request, id=None):
             datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
         )
 
-        # Crear el evento y asignar las categorías
+        
         if id is None:
             event = Event.new(title, description, scheduled_at, request.user)
-            if event[0]:  # Si la creación fue exitosa
+            if event[0]:  
                 event_instance = Event.objects.get(title=title, description=description, scheduled_at=scheduled_at)
-                event_instance.categories.set(category_ids)  # Asigna las categorías seleccionadas
+                event_instance.categories.set(category_ids)  
                 event_instance.save()
         else:
             event_instance = get_object_or_404(Event, pk=id)
             event_instance.update(title, description, scheduled_at, request.user)
-            event_instance.categories.set(category_ids)  # Asigna las categorías seleccionadas
+            event_instance.categories.set(category_ids) 
             event_instance.save()
 
         return redirect("events")
