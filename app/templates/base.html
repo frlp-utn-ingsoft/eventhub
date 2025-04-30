@@ -50,7 +50,12 @@
                                 {% navbar_link 'events' 'Eventos' %}
                             </li>
                             <li class="nav-item">
-                                {% navbar_link 'my_refunds' 'Mis Reembolsos' %}
+                                {% if user.is_organizer %}
+                                    {% navbar_link 'manage_refunds' 'Reembolsos' %}
+                                {% else %}
+                                    {% navbar_link 'my_refunds' 'Mis Reembolsos' %}
+                                {% endif %}
+                            </li>
                         </ul>
                     </div>
 

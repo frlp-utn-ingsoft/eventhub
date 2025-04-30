@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Solicitudes de Reembolso</h2>
+
+  {% if refunds %}
+    <table class="table table-striped mt-3">
+      <thead class="table-light">
+        <tr>
+          <th>Código de entrada</th>
+          <th>Evento</th>
+          <th>Solicitante</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in refunds %}
+        <tr>
+          <td>{{ r.ticket_code }}</td>
+          <td>{{ r.event.title }}</td>
+          <td>{{ r.user.username }}</td>
+          <td>{{ r.created_at|date:"d/m/Y" }}</td>
+          <td>
+            {% if r.approved is None %}
+              <span class="badge bg-warning">Pendiente</span>
+            {% elif r.approved %}
+              <span class="badge bg-success">Aprobado</span>
+            {% else %}
+              <span class="badge bg-danger">Rechazado</span>
+            {% endif %}
+          </td>
+          <td>
+                <div class="hstack gap-1">
+                    <a href=""
+                        class="btn btn-sm btn-outline-primary"
+                        aria-label="Ver detalle"
+                        title="Ver detalle">
+                        <i class="bi bi-eye" aria-hidden="true"></i>
+                    </a>
+                        <a href=""
+                            class="btn btn-sm btn-outline-secondary"
+                            aria-label="Editar"
+                            title="Editar">
+                            <i class="bi bi-check-lg" aria-hidden="true"></i>
+                        </a>
+                        <form action="" method="POST">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-outline-danger"
+                                title="Eliminar"
+                                type="submit"
+                                aria-label="Eliminar"
+                                titile="Eliminar">
+                                <i class="bi bi-x-lg" aria-hidden="true"></i>
+                            </button>
+                        </form>
+                </div>
+            </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <div class="alert alert-info">No hay solicitudes por revisar.</div>
+  {% endif %}
+</div>
+{% endblock %}

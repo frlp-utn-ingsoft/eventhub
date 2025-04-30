@@ -1,8 +1,8 @@
 from django import forms
-from .models import RefoundRequest, Ticket
+from .models import RefundRequest, Ticket
 from django.utils import timezone
 
-class RefoundRequestForm(forms.ModelForm):
+class RefundRequestForm(forms.ModelForm):
     accept_policy = forms.BooleanField(
         label="Acepto la política de reembolso",
         error_messages={'required': 'Debes aceptar la política para enviar la solicitud.'}
@@ -15,34 +15,48 @@ class RefoundRequestForm(forms.ModelForm):
     )
 
     class Meta:
-        model = RefoundRequest
-        # Solo incluimos ticket_code, reason, details y accept_policy
+        model = RefundRequest
         fields = ['ticket_code', 'reason', 'details', 'accept_policy']
         widgets = {
             'ticket_code': forms.TextInput(attrs={'placeholder': 'Código de ticket'}),
+            'reason': forms.Select(attrs={'class': 'form-select'}),
+            'details': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
         labels = {
             'ticket_code': 'Código de ticket *',
+            'reason': 'Razón del reembolso *',
             'details': 'Detalles adicionales',
         }
 
     def clean_ticket_code(self):
         ticket_code = self.cleaned_data.get('ticket_code')
-        
-        # 1) Validar que el ticket exista
         try:
-            ticket = Ticket.objects.get(ticket_code=ticket_code)
+           ticket = Ticket.objects.get(code=ticket_code)
         except Ticket.DoesNotExist:
             raise forms.ValidationError(
                 "El código de ticket no es válido o no está registrado."
             )
-
-        # 2) Comprobar que el evento asociado tenga +48 h de anticipación
         event = ticket.event
         if event.scheduled_at and (event.scheduled_at - timezone.now()).total_seconds() < 48 * 3600:
             raise forms.ValidationError(
                 "No puedes solicitar un reembolso con menos de 48 horas de anticipación al evento."
             )
-
-        # No guardamos ni exponemos el `event` en el modelo, solo validamos
+        if RefundRequest.objects.filter(ticket_code=ticket_code).exists():
+            raise forms.ValidationError("Ya existe una solicitud de reembolso para este ticket.")
         return ticket_code
+
+class RefundApprovalForm(forms.ModelForm):
+    class Meta:
+        model = RefundRequest
+        fields = [] 
+
+    approve = forms.BooleanField(required=False, label='Aprobar')
+    reject = forms.BooleanField(required=False, label='Rechazar')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('approve') and cleaned_data.get('reject'):
+            raise forms.ValidationError("No puedes aprobar y rechazar al mismo tiempo.")
+        if not cleaned_data.get('approve') and not cleaned_data.get('reject'):
+            raise forms.ValidationError("Debes seleccionar una acción.")
+        return cleaned_data

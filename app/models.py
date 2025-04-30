@@ -74,15 +74,32 @@ class Event(models.Model):
 
         self.save()
 
-class RefoundRequest(models.Model):
-    id = models.CharField(max_length=100, unique=True)
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refound_requests")
-    ticket_code = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name="refound_requests")
-    reason = models.TextField()
+class Ticket(models.Model):
+    code = models.CharField(max_length=100, unique=True)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.code
+
+class RefundRequest(models.Model):
+    REASON_CHOICES = [
+    ('Salud', 'Problemas de salud'),
+    ('Emergencia Familiar', 'Emergencia familiar'),
+    ('Trabajo', 'Compromisos laborales'),
+    ('Transporte', 'Problemas de transporte'),
+    ('Evento cancelado', 'El evento fue pospuesto o cancelado'),
+    ('Otros', 'Otro motivo'),]
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refund_requests")
+    ticket_code = models.CharField(max_length=100)
+    reason = models.CharField(max_length=20, choices=REASON_CHOICES)
     details= models.TextField(blank=True)
-    approved = models.BooleanField(default=False)
+    approved = models.BooleanField(null=True, default=None)
     approval_date = models.DateField(null=True, blank=True)
     created_at = models.DateField(auto_now_add=True)
 
-    def __str__(self):
-        return f"RefoundRequest for {self.event.title} by {self.user.username}"
+    @property
+    def event(self):
+        from .models import Ticket
+        ticket = Ticket.objects.get(code=self.ticket_code)
+        return ticket.event

@@ -3,9 +3,8 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-
-from .models import Event, User, RefoundRequest
-from .forms import RefoundRequestForm
+from .models import Event, User, RefundRequest
+from .forms import RefundRequestForm, RefundApprovalForm
 
 
 def register(request):
@@ -129,18 +128,44 @@ def event_form(request, id=None):
 
 @login_required
 def my_refunds(request):
-    refunds = RefoundRequest.objects.filter(user=request.user).order_by('-created_at')
+    refunds = RefundRequest.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'app/my_refunds.html', {'reembolsos': refunds})
 
-def refound_request(request):
+def refund_request(request):
     if request.method == 'POST':
-        form = RefoundRequestForm(request.POST)
+        form = RefundRequestForm(request.POST)
         if form.is_valid():
             reembolso = form.save(commit=False)
             reembolso.user = request.user
             reembolso.save()
             return redirect('my_refunds') 
     else:
-        form = RefoundRequestForm()
+        form = RefundRequestForm()
 
-    return render(request, 'app/refound_request.html', {'form': form})
+    return render(request, 'app/refund_request.html', {'form': form})
+
+@login_required
+def manage_refunds(request):
+    if not request.user.is_organizer:
+        return redirect('my_refunds')
+
+    if request.method == "POST":
+        refund_id = request.POST.get("refund_id")
+        refund = RefundRequest.objects.get(id=refund_id)
+        form = RefundApprovalForm(request.POST, instance=refund)
+        if form.is_valid():
+            if form.cleaned_data["approve"]:
+                refund.approved = True
+                refund.approval_date = timezone.now()
+            elif form.cleaned_data["reject"]:
+                refund.approved = False
+                refund.approval_date = timezone.now()
+            refund.save()
+        return redirect('manage_refunds')
+
+    refunds = RefundRequest.objects.all().order_by("-created_at")
+    forms_dict = {r.id: RefundApprovalForm(instance=r) for r in refunds}
+    return render(request, 'app/manage_refund.html', {
+        'refunds': refunds,
+        'forms_dict': forms_dict
+    })

@@ -31,21 +31,21 @@
                         </div>
 
                         <div class="mb-3">
-                            {{ form.event.label_tag }}
-                            {{ form.event|add_class:"form-select" }}
-                            {% if form.event.errors %}
+                            {{ form.reason.label_tag }}
+                            {{ form.reason|add_class:"form-select" }}
+                            {% if form.reason.errors %}
                                 <div class="text-danger small mt-1">
-                                    {{ form.event.errors.0 }}
+                                    {{ form.reason.errors.0 }}
                                 </div>
                             {% endif %}
                         </div>
 
                         <div class="mb-3">
-                            {{ form.reason.label_tag }}
-                            {{ form.reason|add_class:"form-control" }}
-                            {% if form.reason.errors %}
+                            {{ form.details.label_tag }}
+                            {{ form.details|add_class:"form-control" }}
+                            {% if form.details.errors %}
                                 <div class="text-danger small mt-1">
-                                    {{ form.reason.errors.0 }}
+                                    {{ form.details.errors.0 }}
                                 </div>
                             {% endif %}
                         </div>
@@ -64,6 +64,7 @@
 
                         <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
                     </form>
+
                 </div>
             </div>
         </div>
