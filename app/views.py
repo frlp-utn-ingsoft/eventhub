@@ -169,41 +169,36 @@ def category_form(request, id=None):
         return redirect("categories")
 
     category = get_object_or_404(Category, pk=id) if id else None
+    is_edit = category is not None
+    errors = {}
 
     if request.method == "POST":
         name = request.POST.get("name", "").strip()
         description = request.POST.get("description", "").strip()
         is_active = request.POST.get("is_active") == "on"
 
-        errors = Category.validate(name)
-
-        if id and Category.objects.filter(name__iexact=name).exclude(pk=id).exists():
-            errors["name"] = "Ya existe otra categoría con ese nombre"
-
-        if errors:
-            return render(request, "app/category_form.html", {
-                "error": list(errors.values())[0],  # Mostrar solo un error
-                "category": {
-                    "name": name,
-                    "description": description,
-                    "is_active": is_active,
-                },
-                "is_edit": category is not None,
-            })
+        errors = Category.validate(name, description, exclude_id=id)
 
         if category:
             category.name = name
             category.description = description
             category.is_active = is_active
-            category.save()
         else:
-            Category.objects.create(name=name, description=description, is_active=is_active)
+            category = Category(name=name, description=description, is_active=is_active)
 
+        if errors:
+            return render(request, "app/category_form.html", {
+                "errors": errors,
+                "category": category,
+                "is_edit": is_edit,
+            })
+
+        category.save()
         return redirect("categories")
 
     return render(request, "app/category_form.html", {
         "category": category,
-        "is_edit": category is not None,
+        "is_edit": is_edit,
     })
 
 

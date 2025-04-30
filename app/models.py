@@ -37,20 +37,23 @@ class Category(models.Model):
         return self.name
 
     @classmethod
-    def validate(cls, name):
+    def validate(cls, name, description, exclude_id=None):
         errors = {}
 
         if not name.strip():
             errors["name"] = "El nombre no puede estar vacío"
-        elif cls.objects.filter(name__iexact=name).exists():
+        elif cls.objects.filter(name__iexact=name).exclude(pk=exclude_id).exists():
             errors["name"] = "Ya existe una categoría con ese nombre"
+
+        if not description.strip():
+            errors["description"] = "La descripción no puede estar vacía"
 
         return errors
 
     @classmethod
     def new(cls, name, description, is_active):
         name = name.strip()
-        errors = cls.validate(name)
+        errors = cls.validate(name, description)
 
         if errors:
             return False, errors
