@@ -16,7 +16,7 @@
 
     <table class="table">
         <thead>
-            <tr>
+            <tr class="table-light">
                 <th>Nombre</th>
                 <th>Descripción</th>
                 <th>Eventos</th>
@@ -28,12 +28,12 @@
         <tbody>
             {% for category in categories %}
                 <tr>
-                    <td>{{ category.name }}</td>
+                    <td class="text-primary fw-semibold">{{ category.name }}</td>
                     <td>{{ category.description }}</td>
                     <td>
                         {% with count=category.event_set.count %}
                             {% if count > 0 %}
-                                {{ count }} evento{{ count|pluralize }}
+                                <span class="badge bg-light text-dark">{{ count }} evento{{ count|pluralize }}</span>
                             {% else %}
                                 <span class="text-muted">Sin eventos</span>
                             {% endif %}
