@@ -5,7 +5,7 @@ from .models import Rating
 class RatingForm(forms.ModelForm):
     class Meta:
         model = Rating
-        fields = ['title', 'text', 'rating']
+        fields = ["title", "text", "rating"]
         error_messages = {
             "title": {
                 "required": "El título no puede quedar vacío.",
@@ -21,16 +21,19 @@ class RatingForm(forms.ModelForm):
             },
         }
         widgets = {
-            'title': forms.TextInput(attrs={
+            "title": forms.TextInput(attrs={
                 "class": "form-control",
                 "placeholder": "Titulo de la reseña",
                 "maxlength": 120,
             }),
-            'text': forms.Textarea(attrs={
+            "text": forms.Textarea(attrs={
                 "class": "form-control",
                 "rows": 3,
                 "placeholder": "Asististe a este evento? Escribe tu opinion acerca de el aqui...",
                 "style": "resize:vertical;",
             }),
-            'rating': forms.NumberInput(attrs={'min': 1, 'max': 5}),
+            "rating": forms.NumberInput(attrs={
+                "min": 1,
+                "max": 5,
+            }),
         }
