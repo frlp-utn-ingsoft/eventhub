@@ -800,17 +800,17 @@ def notification_form(request, id=None):
         message = request.POST.get("message")
         priority = request.POST.get("priority")
         event_id = request.POST.get("event")
-        user_ids = request.POST.getlist("users")
-        
+        recipient_type = request.POST.get("recipient_type")
         event = get_object_or_404(Event, pk=event_id)
-        # Usuarios con tickets del evento seleccionado
-        users = User.objects.filter(
-            id__in=user_ids,
-            tickets__event=event
-        ).distinct()
 
-        users = User.objects.filter(id__in=user_ids)
-        
+        #usuarios segun tipo de destinatario
+        # Usuarios con tickets del evento seleccionado
+        if recipient_type == "all":
+             users = User.objects.filter(tickets__event=event).distinct()
+        else:
+            user_ids = request.POST.getlist("users")
+            users = User.objects.filter(id__in=user_ids, tickets__event=event).distinct()
+
         if id is None:  # Crear nueva notificación
             success, errors = Notification.new(
                 title=title,
