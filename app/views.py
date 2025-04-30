@@ -10,6 +10,8 @@ from django.contrib import messages
 import re
 import random
 from django.db import IntegrityError
+from django.utils.timezone import now
+
 
 
 def register(request):
@@ -801,7 +803,11 @@ def notification_form(request, id=None):
         user_ids = request.POST.getlist("users")
         
         event = get_object_or_404(Event, pk=event_id)
-        print("user_ids:",title )
+        # Usuarios con tickets del evento seleccionado
+        users = User.objects.filter(
+            id__in=user_ids,
+            tickets__event=event
+        ).distinct()
 
         users = User.objects.filter(id__in=user_ids)
         
@@ -816,7 +822,7 @@ def notification_form(request, id=None):
             
             if not success:
                 return render(request, "app/notification_form.html", {
-                    "events": Event.objects.all(),
+                    "events": Event.objects.filter(scheduled_at__gte=now()),
                     "users": User.objects.all(),
                     "errors": errors,
                     "notification": notification,
@@ -833,11 +839,16 @@ def notification_form(request, id=None):
 
         return redirect("notification")
     
-    # GET request
+    events = Event.objects.filter(scheduled_at__gte=now())
+    users = User.objects.filter(
+        tickets__event__in=events,
+        tickets__event__scheduled_at__gte=now()
+    ).distinct()
+
     return render(request, "app/notification_form.html", {
         "notification": notification,
-        "events": Event.objects.all(),
-        "users": User.objects.all(),
+        "events": events,
+        "users": users,
         "user_is_organizer": request.user.is_organizer,
     })
 
