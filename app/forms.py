@@ -20,15 +20,15 @@ class RefundRequestForm(forms.ModelForm):
         def clean_ticket_code(self):
             ticket_code = self.cleaned_data.get("ticket_code")
 
-        # 🔍 Intentamos encontrar un ticket con ese código
+        #intentamos encontrar un ticket con ese código
             try:
-              Ticket.objects.get(ticket_code=ticket_code)
+                Ticket.objects.get(ticket_code=ticket_code)
             except Ticket.DoesNotExist:
-              raise forms.ValidationError("El ticket no existe.")
+                raise forms.ValidationError("El ticket no existe.")
 
-        # 🚫 Verificamos si ya hay una solicitud para ese ticket
-         if RefundRequest.objects.filter(ticket_code=ticket_code).exists():
-            raise forms.ValidationError("Ya existe una solicitud de reembolso para este ticket.")
+        #verifico si ya hay una solicitud para ese ticket
+            if RefundRequest.objects.filter(ticket_code=ticket_code).exists():
+                raise forms.ValidationError("Ya existe una solicitud de reembolso para este ticket.")
 
-        # ✅ Si todo está bien, devolvemos el código
-        return ticket_code
+        #devolvemos el código
+            return ticket_code
