@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+from .models import Event, User, Venue
 
 
 def register(request):
@@ -88,6 +88,10 @@ def event_delete(request, id):
     return redirect("events")
 
 
+from django.shortcuts import render, redirect, get_object_or_404
+from django.utils import timezone
+from .models import Event, Venue
+
 @login_required
 def event_form(request, id=None):
     user = request.user
@@ -96,32 +100,93 @@ def event_form(request, id=None):
         return redirect("events")
 
     if request.method == "POST":
+        # Datos del evento
         title = request.POST.get("title")
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
+        venue_id = request.POST.get("venue")
 
+        # Datos del nuevo Venue (si se crea uno nuevo)
+        new_venue_name = request.POST.get("new_venue_name")
+        new_venue_address = request.POST.get("new_venue_address")
+        new_venue_city = request.POST.get("new_venue_city")
+        new_venue_capacity = request.POST.get("new_venue_capacity")
+        new_venue_contact = request.POST.get("new_venue_contact")
+
+        # Crear el nuevo Venue si se proporcionaron datos
+        if new_venue_name and new_venue_address and new_venue_city:
+            venue = Venue.objects.create(
+                name=new_venue_name,
+                address=new_venue_address,
+                city=new_venue_city,
+                capacity=new_venue_capacity,
+                contact=new_venue_contact,
+            )
+        else:
+            venue = get_object_or_404(Venue, pk=venue_id)
+
+        # Crear o actualizar el evento
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
-
         scheduled_at = timezone.make_aware(
             datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
         )
 
         if id is None:
-            Event.new(title, description, scheduled_at, request.user)
+            Event.objects.create(
+                title=title,
+                description=description,
+                scheduled_at=scheduled_at,
+                organizer=user,
+                venue=venue,
+            )
         else:
             event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user)
+            event.title = title
+            event.description = description
+            event.scheduled_at = scheduled_at
+            event.venue = venue
+            event.save()
 
         return redirect("events")
 
+    # Si es una solicitud GET, cargar el formulario
     event = {}
     if id is not None:
         event = get_object_or_404(Event, pk=id)
 
+    venues = Venue.objects.all()
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer},
+        {"event": event, "venues": venues, "user_is_organizer": user.is_organizer},
     )
+
+@login_required
+def create_venue(request):
+    if request.method == "POST":
+        # Capturar los datos del formulario
+        name = request.POST.get("name")
+        address = request.POST.get("address")
+        city = request.POST.get("city")
+        capacity = request.POST.get("capacity")
+        contact = request.POST.get("contact")
+
+        # Validar que todos los campos estén presentes
+        if not all([name, address, city, capacity, contact]):
+            return render(request, "error.html", {"message": "Todos los campos son obligatorios."})
+
+        # Crear el nuevo Venue
+        Venue.objects.create(
+            name=name,
+            address=address,
+            city=city,
+            capacity=capacity,
+            contact=contact,
+        )
+
+        # Redirigir al formulario de eventos
+        return redirect("event_form")
+
+    return redirect("event_form")

@@ -6,9 +6,9 @@
         <div class="col-md-8 offset-md-2">
             <h1 class="mb-4">
                 {% if event.id %}
-                    Editar evento
+                Editar evento
                 {% else %}
-                    Crear evento
+                Crear evento
                 {% endif %}
             </h1>
 
@@ -19,42 +19,24 @@
                         <div class="vstack gap-3">
                             <div>
                                 <label for="title" class="form-label">Título del Evento</label>
-                                <input class="form-control"
-                                    id="title"
-                                    required=""
-                                    type="text"
-                                    value="{{ event.title }}"
+                                <input class="form-control" id="title" required="" type="text" value="{{ event.title }}"
                                     name="title" />
                             </div>
                             <div>
                                 <label for="description" class="form-label">Descripción</label>
-                                <textarea
-                                    class="form-control"
-                                    id="description"
-                                    name="description"
-                                    rows="4"
+                                <textarea class="form-control" id="description" name="description" rows="4"
                                     required="">{{ event.description }}</textarea>
                             </div>
                             <div class="row">
                                 <div class="col-md-6">
                                     <label for="date" class="form-label">Fecha</label>
-                                    <input
-                                        class="form-control"
-                                        id="date"
-                                        required=""
-                                        type="date"
-                                        value="{{ event.scheduled_at|date:'Y-m-d'}}"
-                                        name="date" />
+                                    <input class="form-control" id="date" required="" type="date"
+                                        value="{{ event.scheduled_at|date:'Y-m-d'}}" name="date" />
                                 </div>
                                 <div class="col-md-6">
                                     <label for="time" class="form-label">Hora</label>
-                                    <input
-                                        class="form-control"
-                                        id="time"
-                                        required=""
-                                        type="time"
-                                        value="{{ event.scheduled_at|date:'g:i'}}"
-                                        name="time" />
+                                    <input class="form-control" id="time" required="" type="time"
+                                        value="{{ event.scheduled_at|date:'g:i'}}" name="time" />
                                 </div>
                             </div>
                             <div>

@@ -26,12 +26,22 @@ class User(AbstractUser):
 
         return errors
 
+class Venue(models.Model):
+    name = models.TextField(max_length=200)
+    address = models.TextField()
+    city = models.TextField(max_length=100)
+    capacity = models.IntegerField()
+    contact = models.TextField(max_length=100)
+
+    def __str__(self):
+        return f"{self.name} - {self.city}"
 
 class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
+    venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name="events", null=True)  # Relación con Venue
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -73,3 +83,4 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
