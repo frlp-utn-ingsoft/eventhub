@@ -676,7 +676,10 @@ def refound_user(request):
 @login_required
 def refound_detail(request, refound_id):
     refound = get_object_or_404(RefoundRequest, id=refound_id)
-    return render(request, 'app/refound_detail.html', {'refound': refound})
+
+    if not request.user.is_organizer:
+        return render(request, 'app/refound_detail.html', {'refound': refound})
+    return render(request, 'app/refound_detail.html', {'refound': refound, 'user_is_organizer': True})
 
 @login_required
 def update_refound(request, refound_id):
@@ -700,9 +703,13 @@ def refound_admin(request):
         return redirect('events')
 
     refounds = RefoundRequest.objects.all().order_by('-created_at')
-    return render(request, 'app/refound_admin.html', {'refounds': refounds})
+    return render(request, 'app/refound_admin.html', {'refounds': refounds,
+                                                      'user_is_organizer': True})
 
 def approve_or_reject_refound(request, refound_id):
+    if not request.user.is_organizer:
+        return redirect('events')
+
     refound = get_object_or_404(RefoundRequest, id=refound_id)
     if request.method == 'POST':
         if request.POST.get('action') == 'approve':
