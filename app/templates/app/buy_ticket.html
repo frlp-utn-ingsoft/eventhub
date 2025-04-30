@@ -94,5 +94,18 @@
         </footer>
 
     </form>
+    <script>
+        document.getElementById("buyButton").addEventListener("click", function (e) {
+            const quantityInput = document.getElementById("id_quantity");
+            const quantity = parseInt(quantityInput.value);
+    
+            if (isNaN(quantity) || quantity < 1) {
+                e.preventDefault(); // Evita que se envíe el formulario
+                alert("Debe seleccionar al menos un ticket.");
+                quantityInput.focus();
+            }
+        });
+    </script>
+    
 </div>
 {% endblock %}
