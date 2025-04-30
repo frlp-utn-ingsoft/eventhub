@@ -20,6 +20,11 @@
                         </div>
                         <div class="card-footer">
                             <a href="{% url 'ticket_detail' ticket.id %}" class="btn btn-primary">Ver Detalle</a>
+                            {% if ticket.event.scheduled_at %}
+                                <a href="{% url 'event_rating' event.id%}" class="btn btn-primary">Calificar evento</a>
+                            {% else %}
+                                
+                            {%endif%}
                         </div>
                     </div>
                 </div>
