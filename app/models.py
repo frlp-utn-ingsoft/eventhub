@@ -131,3 +131,19 @@ class Category(models.Model):
 
 
         return errors
+    
+######### feature/rating #########    
+class Rating(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='ratings')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings')
+    title = models.CharField(max_length=100)
+    text = models.TextField(blank=True)
+    rating = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('event', 'user')  # Un usuario solo puede calificar una vez
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.rating}★ - {self.title} ({self.user.username})"
