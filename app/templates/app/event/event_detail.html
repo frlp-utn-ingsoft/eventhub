@@ -6,10 +6,14 @@
         <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex justify-content-center align-items-center my-4">
                 <h1 class="me-2 mb-0">{{ event.title }}</h1>
-                {% if event.category %}
-                    <div class="mx-3 align-self-center">
-                        <span class="badge badge-secondary bg-primary">{{ event.category.name }}</span>
+                {% if event_categories %}
+                {% for category in event_categories %}
+                    <div class="row align-items-center ml-2">
+                        <div class="mx-1 align-self-center">
+                            <span class="badge badge-secondary bg-primary">{{ category.name }}</span>
+                        </div>
                     </div>
+                    {% endfor %}
                 {% endif %}
             </div>
             <div>
