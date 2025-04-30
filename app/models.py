@@ -97,25 +97,37 @@ class RefundRequest(models.Model):
         (STATUS_REJECTED, "Rechazada"),
     ]
 
-    ticket = models.OneToOneField(Ticket, on_delete=models.CASCADE)
+    ticket_code = models.CharField(max_length=100)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     reason = models.TextField()
     status = models.CharField(max_length=1, choices=STATUS_CHOICES, default=STATUS_PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
+    approval_date = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):
-        return f"Solicitud de reembolso para #{self.pk} - Estado: {self.get_status_display()}"
+        return f"Solicitud de reembolso para {self.pk} - Ticket: {self.ticket_code} - Estado: {self.get_status_display()}"
     
     def is_valid_for_refund(self):
-        # Comprueba si la solicitud de reembolso es válida, si no esta usado, ni expirado (pasados los 30 dias), ni ya reembolsado
-        if self.ticket.used:
+        """
+        Este metodo valida si se puede pedir reembolso:
+        - Que el ticket no haya sido usado
+        - Que no esté reembolsado
+        - Que no hayan pasado más de 30 días desde la fecha del evento
+        """
+        from .models import Ticket
+
+        try:
+            ticket = Ticket.objects.get(ticket_code=self.ticket_code)
+        except Ticket.DoesNotExist:
             return False
-        if self.ticket.refunded:
+
+        if ticket.used or ticket.refunded:
             return False
-        event_date = self.ticket.event.scheduled_at
+
+        event_date = ticket.event.scheduled_at
         if timezone.now() > event_date + timedelta(days=30):
             return False
+
         return True
-    
-    @property
-    def user(self):
-        return self.ticket.user
+        
+ 
