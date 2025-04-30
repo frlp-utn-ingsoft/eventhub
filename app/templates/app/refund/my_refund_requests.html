@@ -1,0 +1,76 @@
+{# templates/app/refund/my_refund_requests.html #}
+{% extends "base.html" %}
+
+{% block title %}Mis Reembolsos{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Mis solicitudes de reembolso</h2>
+  <a href="{% url 'create_refund_request' %}" class="btn btn-primary mb-3">
+    Nueva solicitud
+  </a>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Código de Entrada</th>
+        <th>Evento</th>
+        <th>Fecha de Solicitud</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for refund in refunds %}
+        <tr>
+          <td>{{ refund.ticket_code }}</td>
+          <td>{{ refund.event_title }}</td>
+          <td>{{ refund.created_at|date:"d/m/Y H:i" }}</td>
+          <td>
+            {% if refund.approved == True %}
+                Aprobado
+            {% elif refund.approved == False %}
+                Rechazado
+            {% else %}
+                Pendiente
+            {% endif %}
+
+          </td>
+          <td class="d-flex gap-1">
+            {# Ver detalle siempre #}
+            <a href="{% url 'refund_detail' refund.id %}"
+               class="btn btn-sm btn-outline-primary"
+               title="Ver">
+              <i class="bi bi-eye"></i>
+            </a>
+
+            {# Solo si está pendiente, mostrar editar y eliminar #}
+            {% if refund.approved is None %}
+            <a href="{% url 'edit_refund_request' refund.id %}"
+                class="btn btn-sm btn-outline-secondary"
+                title="Editar">
+                <i class="bi bi-pencil"></i>
+            </a>
+
+            <form action="{% url 'delete_refund_request' refund.id %}" method="post" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit"
+                        class="btn btn-sm btn-outline-danger"
+                        title="Eliminar">
+                <i class="bi bi-trash"></i>
+                </button>
+            </form>
+            {% endif %}
+
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="5" class="text-center">
+            No tenés solicitudes de reembolso aún.
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -73,3 +74,50 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+class RefundRequest(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refund_requests")
+    ticket_code = models.CharField(max_length=100)
+    reason = models.TextField()
+    approved = models.BooleanField(null=True, blank=True)
+    approval_date = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    @classmethod
+    def validate(cls, ticket_code, reason):
+        errors = {}
+
+        if not ticket_code or ticket_code.strip() == "":
+            errors["ticket_code"] = "El código del ticket es obligatorio"
+
+        if not reason or reason.strip() == "":
+            errors["reason"] = "Debe indicar un motivo para el reembolso"
+
+        return errors
+
+    def approve(self):
+        self.approved = True
+        self.approval_date = timezone.now()
+        self.save()
+
+    def reject(self):
+        self.approved = False
+        self.approval_date = timezone.now()
+        self.save()
+
+    def __str__(self):
+        return f"RefundRequest {self.id} by {self.user.username}"  # type: ignore
+
+    @property
+    def event_title(self):
+        """
+        Asume que ticket_code es el ID numérico del Event.
+        Si usás otra convención, adaptá la conversión.
+        """
+        try:
+            event_id = int(self.ticket_code)
+            # get_object_or_404 lanzaría 404; en el admin lo mejor es usar get()
+            event = Event.objects.get(pk=event_id)
+            return event.title
+        except (ValueError, Event.DoesNotExist):
+            return "—"

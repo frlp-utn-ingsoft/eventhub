@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Nueva solicitud de reembolso{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Crear nueva solicitud de reembolso</h2>
+
+  <form method="post">
+    {% csrf_token %}
+
+    <div class="mb-3">
+      {{ form.ticket_code.label_tag }}
+      {{ form.ticket_code }}
+      {{ form.ticket_code.errors }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.motivo.label_tag }}
+      {{ form.motivo }}
+      {{ form.motivo.errors }}
+    </div>
+
+    <div class="mb-3">
+      {{ form.detalles.label_tag }}
+      {{ form.detalles }}
+      {{ form.detalles.errors }}
+    </div>
+
+    <button type="submit" class="btn btn-success">Enviar solicitud</button>
+    <a href="{% url 'my_refund_requests' %}" class="btn btn-secondary">Cancelar</a>
+  </form>
+</div>
+{% endblock %}
