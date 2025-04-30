@@ -8,6 +8,7 @@ AplicaciÃ³n web para venta de entradas utilizada en la cursada 2025 de IngenierÃ
 - Capra, Valentina
 - Kalpin, Sofia
 - Lopez, Martina
+- Gardiner, Ariadna
 
 ## Dependencias
 
