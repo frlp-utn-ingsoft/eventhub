@@ -1,15 +1,14 @@
 import datetime
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .forms import NotificationForm,TicketForm,RatingForm
+from .forms import NotificationForm,TicketForm,RatingForm,CommentForm
 from .models import Event, User, Notification, User_Notification,Ticket,Rating
 from datetime import timedelta
-
-
+from .models import Event, User, Ticket, Comment
+from django.db.models import Count
 
 def register(request):
     if request.method == "POST":
@@ -64,19 +63,58 @@ def home(request):
 
 @login_required
 def events(request):
-    events = Event.objects.all().order_by("scheduled_at")
+    events = Event.objects.all().order_by("scheduled_at") # Los eventos
+    events_with_comments = Event.objects.annotate(num_comment=Count('comment')).order_by('scheduled_at') # Los eventos pero con conteo de comentarios
+
     return render(
-        request,
-        "app/events.html",
-        {"events": events, "user_is_organizer": request.user.is_organizer},
-    )
+    request,
+    "app/events.html",
+    {
+        "events": events,
+        "events_with_comments": events_with_comments,
+        "user_is_organizer": request.user.is_organizer,
+    },
+)
 
+def event_detail(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+    user_is_organizer = request.user == event.organizer
 
-@login_required
-def event_detail(request, id):
-    event = get_object_or_404(Event, pk=id)
-    return render(request, "app/event_detail.html", {"event": event})
+    comments = Comment.objects.filter(event=event)
+    ratings = Rating.objects.filter(event=event)
 
+    rating_form = RatingForm()
+    comment_form = CommentForm()
+
+    if request.method == "POST":
+        if "rating" in request.POST:
+            rating_form = RatingForm(request.POST)
+            if rating_form.is_valid():
+                rating = rating_form.save(commit=False)
+                rating.event = event
+                rating.user = request.user
+                rating.save()
+                return redirect("event_detail", event_id=event.id)
+        elif "text" in request.POST:  
+            comment_form = CommentForm(request.POST)
+            if comment_form.is_valid():
+                comment = comment_form.save(commit=False)
+                comment.event = event
+                comment.user = request.user
+                comment.save()
+                return redirect("event_detail", event_id=event.id)
+
+    context = {
+        "event": event,
+        "user_is_organizer": user_is_organizer,
+        "comments": comments,
+        "ratings": ratings,
+        "form": rating_form,
+        "comment_form": comment_form,
+        "num_comments": comments.count(),
+        "num_ratings": ratings.count(),
+    }
+    return render(request, "app/event_detail.html", context)
 
 @login_required
 def event_delete(request, id):
@@ -359,40 +397,14 @@ from .models import Rating
 from .forms import RatingForm
 
 @login_required
-def event_detail(request, id):
-    event = get_object_or_404(Event, pk=id)
-    ratings = Rating.objects.filter(event=event).order_by('-created_at')
-
-    if request.method == 'POST':
-        form = RatingForm(request.POST)
-        if form.is_valid():
-            rating = form.save(commit=False)
-            rating.user = request.user
-            rating.event = event
-            rating.save()
-            return redirect('event_detail', id=event.id)
-    else:
-        form = RatingForm()
-
-    return render(request, "app/event_detail.html", {
-        "event": event,
-        "ratings": ratings,
-        "form": form,
-        "user_is_organizer": request.user.is_organizer
-    })
-from django.contrib import messages
-from django.shortcuts import get_object_or_404, redirect, render
-from django.contrib.auth.decorators import login_required
-from .models import Rating
-
-@login_required
 def rating_edit(request, rating_id):
     rating = get_object_or_404(Rating, id=rating_id)
 
     # Solo el autor puede editar — organizadores no pueden editar
     if rating.user != request.user:
         messages.error(request, "No tienes permiso para editar esta reseña.")
-        return redirect("event_detail", id=rating.event.id)
+        return redirect('event_detail', event_id=rating.event.id)
+
 
     if request.method == 'POST':
         title = request.POST.get("title", "").strip()
@@ -416,7 +428,8 @@ def rating_edit(request, rating_id):
         rating.save()
 
         messages.success(request, "Reseña actualizada exitosamente.")
-        return redirect("event_detail", id=rating.event.id)
+        return redirect('event_detail', event_id=rating.event.id)
+
 
     return render(request, "app/rating_form.html", {"rating": rating})
 
@@ -436,10 +449,32 @@ def rating_delete(request, rating_id):
         pass
     else:
         messages.error(request, "No tienes permiso para eliminar esta reseña.")
-        return redirect("event_detail", id=rating.event.id)
+        return redirect('event_detail', event_id=rating.event.id)
 
-    # Si llegamos acá, permiso concedido
+
+    #Permiso concedido
     event_id = rating.event.id
     rating.delete()
     messages.success(request, "Reseña eliminada correctamente.")
-    return redirect("event_detail", id=event_id)
+    return redirect("event_detail", event_id=event_id)
+
+#Mostrar Todos los comentarios de los eventos de un organizador
+@login_required
+def comentarios_organizador(request):
+    if not request.user.is_authenticated or not request.user.is_organizer:
+        return render(request, '403.html')  # O redirigir
+
+    # Filtrar los comentarios de eventos cuyo organizador es el usuario logueado
+    comentarios = Comment.objects.filter(event__organizer=request.user)
+
+    return render(request, 'app/organizator_comment.html', {'comentarios': comentarios})
+#Eliminar Comentarios
+
+def delete_comment(request, comment_id):
+    comentario = get_object_or_404(Comment, id=comment_id)
+
+    # Verificar que el usuario que intenta eliminar el comentario es el mismo que lo creó
+    if comentario.user == request.user:
+        comentario.delete()
+
+    return redirect('organizator_comment')  # Redirige a la vista de los comentarios o al listado de eventos

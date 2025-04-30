@@ -55,7 +55,9 @@ ROOT_URLCONF = "eventhub.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [
+            BASE_DIR / 'app/templates',
+        ],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -134,3 +136,6 @@ LOGIN_REDIRECT_URL = "/events/"
 LOGIN_URL = "/accounts/login/"
 
 LOGOUT_REDIRECT_URL = "/accounts/login/"
+
+TIME_ZONE = "America/Argentina/Buenos_Aires"
+USE_TZ = True

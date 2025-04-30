@@ -1,5 +1,5 @@
 from django import forms
-from .models import Notification,Ticket,Event,User,Rating
+from .models import Notification,Ticket,Event,User,Rating,Comment
 from datetime import datetime
 
 class NotificationForm(forms.ModelForm):
@@ -184,3 +184,12 @@ class RatingForm(forms.ModelForm):
             raise forms.ValidationError("El puntaje debe estar entre 1 y 5.")
         return rating
     
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['tittle', 'text']
+        widgets = {
+            'tittle': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingresa el título de tu comentario'}),
+            'text': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Escribe el contenido del comentario aquí', 'rows': 4}),
+        }
