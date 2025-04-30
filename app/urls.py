@@ -18,4 +18,9 @@ urlpatterns = [
     path("venues/<int:id>/edit", views.venue_form, name="venue_form"),
     path("venues/<int:id>/delete", views.venue_delete, name="venue_delete"),
     path("venues/<int:id>/", views.venue_detail, name="venue_detail"),
+    path("categories/", views.categories, name="categories"),
+    path("categories/create/", views.category_form, name="category_create"),
+    path("categories/<int:id>/edit/", views.category_form, name="category_update"),
+    path("categories/<int:id>/delete/", views.category_delete, name="category_delete"),
+    path("categories/<int:id>/", views.category_detail, name="category_detail"),
 ]
