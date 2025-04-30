@@ -17,6 +17,14 @@
                 <div class="card-body">
                     <h5 class="card-title">Detalles de la Categoría</h5>
                     <p class="card-text">Nombre: {{ category.name }}</p>
+                    <p class="card-text">Descripción: {{ category.description }} </p>
+                    <p class="card-text">
+                        Estado: 
+                        {% if category.is_active %}
+                            <span class="badge bg-success">Activo</span>
+                        {% else %}
+                            <span class="badge bg-danger">Inactivo</span>
+                        {% endif %}
                 </div>
             </div>
         </div>
