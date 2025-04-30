@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Count
+from .forms import CategoryForm 
 from .models import Event, User, Category
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .forms import NotificationForm
@@ -200,42 +201,32 @@ def category_delete(request, id):
     return redirect("categories")
 
 @login_required
-def category_form(request, id=None):                    # En la misma def esta el crear y editar.
+def category_form(request, id=None):
     user = request.user
-
     if not user.is_organizer:
         return redirect("categories")
 
-    if request.method == "POST":
-        name = request.POST.get("name")
-        description = request.POST.get("description")
-        is_active = request.POST.get("is_active") == "on"
-
-        if id is None:
-            # Crear
-            Category.objects.create(
-                name=name,
-                description=description,
-                is_active=is_active
-            )
-        else:
-            # Editar
-            category = get_object_or_404(Category, pk=id)
-            category.name = name
-            category.description = description
-            category.is_active = is_active
-            category.save()
-
-        return redirect("categories")
-
-    category = {}
-    if id is not None:
+    if id:
         category = get_object_or_404(Category, pk=id)
+    else:
+        category = None
+
+    if request.method == "POST":
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            return redirect("categories")
+    else:
+        form = CategoryForm(instance=category)
 
     return render(
         request,
-        "category/category_form.html",
-        {"category": category, "user_is_organizer": request.user.is_organizer},
+        "app/category/category_form.html",
+        {
+            "form": form,
+            "category": category,
+            "user_is_organizer": request.user.is_organizer,
+        },
     )
 
 

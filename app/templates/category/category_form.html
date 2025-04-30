@@ -5,7 +5,7 @@
     <div class="row">
         <div class="col-md-8 offset-md-2">
             <h1 class="mb-4">
-                {% if category.id %}
+                {% if category %}
                     Editar Categoría
                 {% else %}
                     Crear Categoría
@@ -14,27 +14,33 @@
 
             <div class="card">
                 <div class="card-body">
-                    <form action="{% if category.id %}{% url 'category_edit' category.id %}{% else %}{% url 'category_form' %}{% endif %}" method="POST">
+                    <form method="POST">
                         {% csrf_token %}
                         <div class="vstack gap-3">
                             <div>
-                                <label for="name" class="form-label">Nombre</label>
-                                <input class="form-control" id="name" type="text" name="name" value="{{ category.name|default:'' }}" required />
+                                {{ form.name.label_tag }}
+                                {{ form.name }}
+                                {% if form.name.errors %}
+                                    <div class="text-danger small">{{ form.name.errors }}</div>
+                                {% endif %}
                             </div>
 
                             <div>
-                                <label for="description" class="form-label">Descripción</label>
-                                <textarea class="form-control" id="description" name="description" rows="4">{{ category.description|default:'' }}</textarea>
+                                {{ form.description.label_tag }}
+                                {{ form.description }}
+                                {% if form.description.errors %}
+                                    <div class="text-danger small">{{ form.description.errors }}</div>
+                                {% endif %}
                             </div>
 
                             <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="is_active" name="is_active" {% if category.is_active %}checked{% endif %}>
-                                <label class="form-check-label" for="is_active">Activo</label>
+                                {{ form.is_active }}
+                                {{ form.is_active.label_tag }}
                             </div>
 
                             <div>
                                 <button type="submit" class="btn btn-primary">
-                                    {% if category.id %}
+                                    {% if category %}
                                         Editar Categoría
                                     {% else %}
                                         Crear Categoría
