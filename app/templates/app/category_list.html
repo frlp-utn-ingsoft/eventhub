@@ -25,27 +25,21 @@
                 <tr>
                     <td>{{ category.name }}</td>
                     <td>{{ category.description }}</td>
-                    <td>{{ category.event_set.count }}</td>
+                    <td>{{ category.event_count }}</td>
                     <td>
                         <div class="hstack gap-1">
                             <a href="{% url 'category_detail' category.id %}" 
-                               class="btn btn-sm btn-outline-primary" 
-                               aria-label="Ver detalle" 
-                               title="Ver detalle">
+                               class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-eye"></i>
                             </a>
                             <a href="{% url 'category_edit' category.id %}" 
-                               class="btn btn-sm btn-outline-secondary" 
-                               aria-label="Editar" 
-                               title="Editar">
+                               class="btn btn-sm btn-outline-secondary">
                                 <i class="bi bi-pencil"></i>
                             </a>
-                            <form action="{% url 'category_delete' category.id %}" method="POST" style="display:inline;">
+                            <form method="POST" action="{% url 'category_delete' category.id %}" class="d-inline">
                                 {% csrf_token %}
-                                <button class="btn btn-sm btn-outline-danger"
-                                        type="submit"
-                                        aria-label="Eliminar"
-                                        title="Eliminar">
+                                <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                        onclick="return confirm('¿Estás seguro de que deseas eliminar la categoría: {{ category.name }}?')">
                                     <i class="bi bi-trash"></i>
                                 </button>
                             </form>

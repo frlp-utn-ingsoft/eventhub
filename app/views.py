@@ -3,9 +3,10 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-
+from django.db.models import Count
 from .models import Event, User, Category
 from .forms import CategoryForm
+from django.contrib import messages
 
 def register(request):
     if request.method == "POST":
@@ -67,7 +68,6 @@ def events(request):
         {"events": events, "user_is_organizer": request.user.is_organizer},
     )
 
-
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
@@ -127,38 +127,38 @@ def event_form(request, id=None):
     )
 
 
-# Mostrar listado de categorías
 def category_list(request):
-    categories = Category.objects.all()
+    categories = Category.objects.annotate(event_count=Count('event'))
     return render(request, 'app/category_list.html', {'categories': categories})
 
-# Crear o editar una categoría
 def category_form(request, id=None):
     if id:
         category = get_object_or_404(Category, pk=id)
     else:
-        category = Category()
+        category = None
 
     if request.method == 'POST':
-        category.name = request.POST.get('name')
-        # Si tienes los campos description e is_active deberías manejarlos aquí también
-        category.description = request.POST.get('description', '')
-        category.is_active = request.POST.get('is_active') == 'on'
-        category.save()
-        return redirect('category_list')  # Redirige al listado después de guardar
-    
-    # Este return faltaba para el caso de método GET
-    return render(request, 'app/category_form.html', {'category': category})
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            if id:
+                messages.success(request, 'La categoría fue actualizada con éxito')
+            else:
+                messages.success(request, 'La categoría fue creada con éxito')
+            return redirect('category_list')
+    else:
+        form = CategoryForm(instance=category)
 
-# Mostrar detalle de una categoría
+    return render(request, 'app/category_form.html', {'form': form})
+
 def category_detail(request, id):
     category = get_object_or_404(Category, pk=id)
     return render(request, 'app/category_detail.html', {'category': category})
 
-# Eliminar categoría
 def category_delete(request, id):
     category = get_object_or_404(Category, pk=id)
     if request.method == 'POST':
         category.delete()
+        messages.success(request, 'La categoría fue eliminada con éxito')
         return redirect('category_list')
-    return render(request, 'app/category_confirm_delete.html', {'category': category})
+    return redirect('category_list')

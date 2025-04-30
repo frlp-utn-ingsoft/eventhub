@@ -28,7 +28,7 @@ class User(AbstractUser):
 class Category(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
-    is_active = models.BooleanField(default=True)
+    is_active = models.BooleanField(default=False)
 
     def __str__(self):
         return self.name
@@ -50,13 +50,13 @@ class Event(models.Model):
         errors = {}
 
         if title == "":
-            errors["title"] = "Por favor ingrese un título"
+            errors["title"] = "Por favor, ingrese un título"
 
         if description == "":
-            errors["description"] = "Por favor ingrese una descripción"
+            errors["description"] = "Por favor, ingrese una descripción"
 
         return errors
-
+    
     @classmethod
     def new(cls, title, description, scheduled_at, organizer, category=None):
         errors = Event.validate(title, description, scheduled_at)
