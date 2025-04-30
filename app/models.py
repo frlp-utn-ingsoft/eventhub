@@ -70,12 +70,83 @@ class Category(models.Model):
         self.is_active = is_active or self.is_active
         self.save()
 
+class Venue(models.Model):
+    name = models.CharField(max_length=200)
+    address = models.CharField(max_length=200)
+    city = models.CharField(max_length=200)
+    capacity = models.IntegerField(blank=True, null=True)
+    user = models.ForeignKey(User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='venues')
+    contact = models.CharField(max_length=200)
+
+    def __str__(self):
+        return self.name
+    
+    @classmethod
+    def validate(cls, name, address, city, capacity, contact):
+        errors = {}
+
+        if name == "":
+            errors["name"] = "El nombre del lugar es requerido"
+
+        if address == "":
+            errors["address"] = "La dirección del lugar es requerida"
+
+        if city == "":
+            errors["city"] = "La ciudad del lugar es requerida"
+        
+        if capacity is not None and not isinstance(capacity, int):
+            errors["capacity"] = "La capacidad del lugar debe ser numérica"
+
+        if contact == "":
+            errors["contact"] = "El contacto del lugar es requerida"
+        return errors
+
+    @classmethod
+    def new(cls, name, address, city, capacity, contact, user):
+        errors = Venue.validate(name, address, city, capacity, contact)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+
+        new_venue = Venue.objects.create(
+            name=name,
+            address=address,
+            city=city,
+            capacity=capacity,
+            contact=contact,
+            user=user,
+        )
+        return True, new_venue
+
+    def update(self, name, address, city, capacity, contact, user): # TO DO: validate this
+        self.name = name or self.name
+        self.address = address or self.address
+        self.city = city or self.city
+        self.capacity = capacity or self.capacity
+        self.contact = contact or self.contact
+        self.user = user or self.user
+        self.save()
+        return True, None
+
+    @classmethod
+    def get_venues_by_user(cls, user):
+        return cls.objects.filter(user=user)
+
 class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     category = models.ForeignKey(Category,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='events')
+    venue = models.ForeignKey(Venue,
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -87,7 +158,7 @@ class Event(models.Model):
         return self.title
 
     @classmethod
-    def validate(cls, title, category, description, scheduled_at):
+    def validate(cls, title, category, venue, description, scheduled_at):
         errors = {}
         if title == "":
             errors["title"] = "Por favor ingrese un titulo"
@@ -98,8 +169,8 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, category, description, scheduled_at, organizer):
-        errors = Event.validate(title, category, description, scheduled_at)
+    def new(cls, title, category, venue, description, scheduled_at, organizer):
+        errors = Event.validate(title, category, venue, description, scheduled_at)
 
         if len(errors.keys()) > 0:
             return False, errors
@@ -107,6 +178,7 @@ class Event(models.Model):
         Event.objects.create(
             title=title,
             category=category,
+            venue=venue,
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
@@ -114,15 +186,16 @@ class Event(models.Model):
 
         return True, None
 
-    def update(self, title, category, description, scheduled_at, organizer):
+    def update(self, title, category, venue, description, scheduled_at, organizer):
         self.title = title or self.title
         self.description = description or self.description
         self.category = category or self.category
+        self.venue = venue or self.venue
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
         self.save()
 
-class refund(models.Model):
+class Refund(models.Model):
 
     aproved = models.BooleanField(default=False)
     aproval_date = models.DateTimeField(null=True, blank=True)
@@ -130,8 +203,6 @@ class refund(models.Model):
     reason = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refunded_tickets")
-    
-
     event = models.ForeignKey(Event, on_delete=models.CASCADE, null=True, blank=True, related_name="refunded_tickets")
 
     def __str__(self): return self.ticket_code
@@ -148,4 +219,14 @@ class Comment(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.event.title}"
+
+class Rating(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    title=models.CharField(max_length=300)
+    text=models.TextField()
+    rating=models.IntegerField()
+    created_at=models.DateTimeField(auto_now_add=True)
     
+    def __str__(self):
+        return f'{self.title} {self.text}({self.rating})'

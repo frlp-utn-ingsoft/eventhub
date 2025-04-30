@@ -5,17 +5,12 @@
     <div class="row">
         <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex justify-content-center align-items-center my-4">
-                <h1 class="me-2 mb-0">{{ event.title }}</h1>
-                {% if event.category %}
-                    <div class="mx-3 align-self-center">
-                        <span class="badge badge-secondary bg-primary">{{ event.category.name }}</span>
-                    </div>
-                {% endif %}
+                <h1 class="me-2 mb-0">{{ venue.name }}</h1>
             </div>
             <div>
                 {% if user_is_organizer %}
                     <a
-                        href="{% url 'event_edit' event.id %}"
+                        href="{% url 'venue_edit' venue.id %}"
                         class="btn btn-outline-primary me-2"
                     >
                         <i class="bi bi-pencil me-1"></i>Editar
@@ -28,46 +23,51 @@
     <div class="row">
         <div class="card">
             <div class="card-body">
-                <h5 class="card-title">Detalles del Evento</h5>
-                <p class="card-text">{{ event.description }}</p>
+                <h5 class="card-title">Detalles del lugar</h5>
+                <p class="card-text">Todos los datos del lugar</p>
                 <div class="mt-4">
+                    {% if venue.capacity %}
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-arrows-fullscreen"></i>
+                        </div>
+                        
+                            <div>
+                                <h6 class="mb-0">Capacidad</h6>
+                                <p class="mb-0">{{ venue.capacity }}</p>
+                            </div>
+                        </div>
+                    {% endif %}
                     <div class="d-flex align-items-center mb-3">
                         <div class="bg-light rounded-circle p-2 me-3">
                             <i class="bi bi-geo-alt-fill"></i>
                         </div>
                         <div>
-                            <h6 class="mb-0">Lugar del evento</h6>
-                            <p class="mb-0">{{ event.venue }}</p>
+                            <h6 class="mb-0">Ciudad</h6>
+                            <p class="mb-0">{{ venue.city }}</p>
                         </div>
                     </div>
                     <div class="d-flex align-items-center mb-3">
                         <div class="bg-light rounded-circle p-2 me-3">
-                            <i class="bi bi-calendar-event text-primary"></i>
+                            <i class="bi bi-house"></i>
                         </div>
                         <div>
-                            <h6 class="mb-0">Fecha y Hora</h6>
-                            <p class="mb-0">{{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
+                            <h6 class="mb-0">Dirección</h6>
+                            <p class="mb-0">{{ venue.address }}</p>
                         </div>
                     </div>
                     <div class="d-flex align-items-center mb-3">
                         <div class="bg-light rounded-circle p-2 me-3">
-                            <i class="bi bi-person text-primary"></i>
+                            <i class="bi bi-person"></i>
                         </div>
                         <div>
-                            <h6 class="mb-0">Organizador</h6>
-                            <p class="mb-0">{{ event.organizer }}</p>
+                            <h6 class="mb-0">Contacto</h6>
+                            <p class="mb-0">{{ venue.contact }}</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Include comments section -->
-    {% include 'app/event/comments_section.html' %}
-    {% block extra_content %}
-        {% include "app/rating/create_rating.html" %}
-    {% endblock %}
 </div>
-
 {% endblock %}
