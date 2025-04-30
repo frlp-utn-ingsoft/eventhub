@@ -20,6 +20,7 @@
         <thead>
             <tr>
                 <th>Título</th>
+                <th>Ubicación</th>
                 <th>Descripción</th>
                 <th>Fecha</th>
                 <th>Acciones</th>
@@ -29,6 +30,7 @@
             {% for event in events%}
                 <tr>
                     <td>{{ event.title }}</td>
+                    <td>{{ event.venue.name }}</td>
                     <td>{{ event.description }}</td>
                     <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
                     <td>
