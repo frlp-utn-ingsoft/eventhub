@@ -127,6 +127,7 @@ class Notification(models.Model):
     massage=models.TextField()
     created_at=models.DateTimeField(auto_now_add=True)
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='notifications')
+    addressee=models.ManyToManyField(User)
 
     prioridadOpciones=[    
         ('High', 'HIGH'),
@@ -136,3 +137,5 @@ class Notification(models.Model):
     
     Priority=models.CharField(choices=prioridadOpciones, default='Medium')
     is_read=models.BooleanField(default=False)
+
+

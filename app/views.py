@@ -1,13 +1,14 @@
 import datetime
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.models import User
+#from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .form import NotificationForm
 
-from .models import Category, Event, Notification
+from .models import Category, Event, Notification, User
+
 
 
 def register(request):
@@ -165,23 +166,41 @@ def notification_create(request):
         massage = request.POST.get('massage')
         priority = request.POST.get('priority')
         is_read = request.POST.get('is_read') == 'on'
+        recipient = request.POST.get('recipient')
         event_id = request.POST.get('event')
-        
+        sprecific_user=request.POST.get('specific_user')
+   
         event=Event.objects.get(id = event_id)
 
-        Notification.objects.create(
+        notification=Notification.objects.create(
             title=title,
             massage=massage,
             created_at=timezone.now().date(), 
             Priority=priority,
             is_read=is_read,
-            event=event
+            event=event,
         )
+
+        if recipient == 'all':
+            addressee_users = User.objects.all()
+            notification.addressee.set(addressee_users)  # Usamos .set() para asignar todos los usuarios
+        elif recipient == 'specific':
+            try:
+                specific_user = User.objects.get(id=specific_user)
+                notification.addressee.set([specific_user])  # Usamos .set() con una lista de un solo usuario
+            except User.DoesNotExist:
+                # Manejar el caso en que el usuario específico no existe
+                eventos = Event.objects.all()
+                users = User.objects.all()
+                return render(request, 'app/notification/create.html', {'eventos': eventos, 'users': users, 'error': 'El usuario específico no existe.'})
+
+
         return redirect('/notification/')  
     
     eventos= Event.objects.all()
+    users = User.objects.all()
     
-    return render(request, 'app/notification/create.html', {'eventos': eventos})
+    return render(request, 'app/notification/create.html', {'eventos': eventos, 'users': users})
 
 def notification_detail(request, pk):
     notification = get_object_or_404(Notification, pk=pk)

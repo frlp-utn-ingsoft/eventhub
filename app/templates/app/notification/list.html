@@ -28,10 +28,10 @@
                 <a href="{% url 'event_detail' notification.event.id %}">{{ notification.event.title }}</a>
             </td>
             <td>
-                {% if notification.recipients == 'all' %}
-                    <span class="badge bg-info text-dark">Todos ({{ notification.total_users }})</span>
+                {% if notification.addressee.all|length == 1 %}
+                    <span class="badge bg-secondary bi-person">Usuario específico</span>
                 {% else %}
-                    <span class="badge bg-secondary">Usuario específico</span>
+                <span class="badge bg-info text-dark bi-person">Todos ({{ notification.addressee.all|length}})</span>
                 {% endif %}
             </td>
             <td>

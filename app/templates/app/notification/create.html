@@ -23,7 +23,7 @@
                     <div class="mb-3">
                         <label for="event" class="form-label">Evento relacionado *</label>
                         <select id="event" name="event" class="form-select">
-                            <option selected disabled>Selecciona un evento</option>
+                            <option selected disabled required>Selecciona un evento</option>
                             {% for evento in eventos %}
                             <option value="{{ evento.id }}">{{ evento.title }}</option>
                             {% endfor %}
@@ -42,9 +42,11 @@
                         </div>
                         <select id="specific_user" name="specific_user" class="form-select mt-2">
                             <option selected disabled>Selecciona un usuario</option>
-                            <!-- Opciones dinámicas -->
+                            {% for user in users %}
+                            <option value="{{ user.id }}">{{ user.username }}</option>
+                            {% endfor %}
                         </select>
-                    </div>
+                    </div> 
 
                     <div class="mb-4">
                         <label for="priority" class="form-label">Prioridad</label>
