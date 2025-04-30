@@ -5,7 +5,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+from .forms import CommentForm
+from .models import Comment, Event, User
 
 
 def register(request):
@@ -126,3 +127,86 @@ def event_form(request, id=None):
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
+# 🟢 Vista para listar todos los comentarios de un evento
+def comment_list(request, event_id):
+    # Obtener el evento mediante su ID, o mostrar un error 404 si no existe
+    event = get_object_or_404(Event, id=event_id)
+    
+    # Obtener todos los comentarios asociados a este evento
+    comments = Comment.objects.filter(event=event)
+    
+    # Renderizar el template 'comment_list.html' y pasarle el evento y los comentarios
+    return render(request, 'comments/comment_list.html', {'event': event, 'comments': comments})
+
+
+# 🔵 Vista para crear un comentario en un evento
+@login_required  # Asegura que el usuario esté autenticado
+def comment_create(request, event_id):
+    # Obtener el evento correspondiente al ID, o mostrar un error 404 si no existe
+    event = get_object_or_404(Event, id=event_id)
+
+    # Si el método de la solicitud es POST, significa que el usuario está enviando el formulario
+    if request.method == 'POST':
+        form = CommentForm(request.POST)  # Crear el formulario con los datos enviados
+
+        # Verificar si el formulario es válido
+        if form.is_valid():
+            comment = form.save(commit=False)  # Crear el comentario sin guardarlo aún
+            comment.user = request.user  # Asignar el usuario logueado al comentario
+            comment.event = event  # Asociar el comentario con el evento correspondiente
+            comment.save()  # Guardar el comentario en la base de datos
+            # Redirigir al usuario a la lista de comentarios del evento
+            return redirect('comment_list', event_id=event.pk)
+    else:
+        form = CommentForm()  # Si no es POST, crear un formulario vacío
+
+    # Renderizar el template 'comment_form.html' y pasarle el formulario y el evento
+    return render(request, 'comments/comment_form.html', {'form': form, 'event': event})
+
+
+# 🟠 Vista para editar un comentario
+@login_required  # Asegura que solo los usuarios autenticados puedan editar comentarios
+def comment_edit(request, pk):
+    # Obtener el comentario mediante su ID (primary key - pk), o mostrar error 404 si no existe
+    comment = get_object_or_404(Comment, pk=pk)
+
+    # Si el usuario no es el autor del comentario, redirigir a la lista de comentarios
+    if request.user != comment.user:
+        return redirect('comment_list', event_id=comment.event.pk)
+
+    # Si el método de la solicitud es POST, significa que el usuario está enviando el formulario de edición
+    if request.method == 'POST':
+        form = CommentForm(request.POST, instance=comment)  # Crear formulario con los datos del comentario existente
+
+        # Verificar si el formulario es válido
+        if form.is_valid():
+            form.save()  # Guardar los cambios en el comentario
+            return redirect('comment_list', event_id=comment.event.pk)  # Redirigir a la lista de comentarios
+    else:
+        form = CommentForm(instance=comment)  # Si no es POST, mostrar el formulario con los datos actuales del comentario
+
+    # Renderizar el template 'comment_form.html' para editar el comentario
+    return render(request, 'comments/comment_form.html', {'form': form, 'event': comment.event})
+
+
+# 🔴 Vista para eliminar un comentario
+@login_required  # Asegura que solo los usuarios autenticados puedan eliminar comentarios
+def comment_delete(request, pk):
+    # Obtener el comentario mediante su ID (primary key - pk), o mostrar error 404 si no existe
+    comment = get_object_or_404(Comment, pk=pk)
+
+    # Comprobar si el usuario es el autor del comentario o si es un organizador (usando is_staff)
+    is_organizer = request.user.is_staff  # Aquí se puede usar otro sistema de permisos si lo prefieres
+
+    # Si el usuario no es el autor ni un organizador, redirigir a la lista de comentarios
+    if request.user != comment.user and not is_organizer:
+        return redirect('comment_list', event_id=comment.event.pk)
+
+    # Si el método es POST, eliminar el comentario
+    if request.method == 'POST':
+        event_id = comment.event.pk  # Guardar el ID del evento para redirigir después
+        comment.delete()  # Eliminar el comentario de la base de datos
+        return redirect('comment_list', event_id=event_id)  # Redirigir a la lista de comentarios del evento
+
+    # Si el método no es POST, mostrar la confirmación de eliminación
+    return render(request, 'comments/comment_confirm_delete.html', {'comment': comment})
