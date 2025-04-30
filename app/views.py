@@ -148,45 +148,45 @@ def venue_list(request):
     if not request.user.is_organizer:
         return redirect("events")  # Redirigir a la lista de eventos si no es organizador
     venues = Venue.objects.all()
-    return render(request, "app/venue.html", {"venues": venues})
+    return render(request, "app/venue/venue.html", {"venues": venues})  # Actualizado
 
 @login_required
 def venue_form(request, id=None):
-    # Verificar si el usuario es organizador
     if not request.user.is_organizer:
         return redirect("events")  # Redirigir a la lista de eventos si no es organizador
 
-    # Si se proporciona un ID, obtener la ubicación existente
     if id:
         venue = get_object_or_404(Venue, pk=id)
     else:
         venue = None
 
-    # Procesar el formulario
     if request.method == "POST":
         form = VenueForm(request.POST, instance=venue)
         if form.is_valid():
             form.save()  # Guardar la nueva ubicación o actualizar la existente
-            return redirect("venue_list")  # Redirigir a la lista de ubicaciones
+            return redirect("venue_list")
     else:
         form = VenueForm(instance=venue)
 
-    # Renderizar el formulario
-    return render(request, "app/venue_form.html", {"form": form, "venue": venue})
+    return render(request, "app/venue/venue_form.html", {"form": form, "venue": venue})  # Actualizado
 
 @login_required
 def venue_detail(request, id):
     if not request.user.is_organizer:
         return redirect("events")  # Redirigir a la lista de eventos si no es organizador
     venue = get_object_or_404(Venue, pk=id)
-    return render(request, "app/venue_detail.html", {"venue": venue})
+    return render(request, "app/venue/venue_detail.html", {"venue": venue})  # Actualizado
 
 @login_required
 def venue_delete(request, id):
     if not request.user.is_organizer:
-        return redirect("events")  # Redirigir a la lista de eventos si no es organizador
+        return redirect("events")
+
     venue = get_object_or_404(Venue, pk=id)
+    print(f"Venue to delete: {venue.name}")  # Depuración
+
     if request.method == "POST":
         venue.delete()
         return redirect("venue_list")
-    return render(request, "app/venue_confirm_delete.html", {"venue": venue})
+
+    return render(request, "app/venue/venue_confirm_delete.html", {"venue": venue})
