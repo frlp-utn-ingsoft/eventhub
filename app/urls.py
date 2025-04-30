@@ -30,5 +30,12 @@ urlpatterns = [
     #Comentario
     path('organizator_comment/', views.comentarios_organizador, name='organizator_comment'),
     path('eliminar_comentario/<int:comment_id>/', views.delete_comment, name='delete_comment'),
+    #RefundRequest
+    path('refunds/', views.refund_list, name='refund_list'),
+    path('refunds/<int:refund_id>/approve/', views.approve_refund, name='approve_refund'),
+    path('refunds/<int:refund_id>/reject/', views.reject_refund, name='reject_refund'),
+    path('refunds/<int:refund_id>/delete/', views.delete_refund, name='delete_refund'),
+    path('refunds/create/', views.create_refund, name='create_refund'),
+    path('refunds/<int:refund_id>/update/', views.refund_update, name='refund_update'),
 ]
 
