@@ -17,7 +17,7 @@
         </div>
     </div>
     <div class="row">
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-body">
                 <h5 class="card-title">Detalles del Evento</h5>
                 <p class="card-text">{{ event.description }}</p>
@@ -43,6 +43,28 @@
                 </div>
             </div>
         </div>
+            <!-- Botón para mostrar comentarios -->
+            <div class="card mb-2 mt-2" style="background-color: lightgray;">
+                <nav>
+                    <button class="btn btn-secondary" style="border: none; background-color: lightgray; color: black ; font-size: 17pt;" onclick="toggleComments()">Comentarios ({{ num_comments|default:0 }})</button>
+                    <button class="btn btn-secondary" style="border: none; background-color: lightgray; color: black ; font-size: 17pt;" onclick="toggleRatings()">Ratings ({{ num_ratings|default:0 }})</button>
+                </nav>
+                
+            </div>
+            
+            <!-- Div contenedor de comentarios -->
+            <div class="card mb-4" id="comments-section" style="display: none;">
+                {% include "app/partials/comment.html" %}
+                <!--Aca usas lo mismo de arriba pero con partials/Ratings-->
+            </div>
+
+            <script>
+            function toggleComments() {
+                const section = document.getElementById('comments-section');
+                section.style.display = section.style.display === 'none' ? 'block' : 'none';
+            }
+            </script>
+
     </div>
 </div>
 {% endblock %}

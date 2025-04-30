@@ -8,6 +8,9 @@ from django.utils import timezone
 from .forms import NotificationForm,TicketForm
 from .models import Event, User, Notification, User_Notification,Ticket
 from datetime import timedelta
+from .models import Event, User, Ticket, Comment
+from .forms import TicketForm
+from django.db.models import Count
 
 
 
@@ -64,18 +67,43 @@ def home(request):
 
 @login_required
 def events(request):
-    events = Event.objects.all().order_by("scheduled_at")
+    events = Event.objects.all().order_by("scheduled_at") # Los eventos
+    events_with_comments = Event.objects.annotate(num_comment=Count('comment')).order_by('scheduled_at') # Los eventos pero con conteo de comentarios
+
     return render(
-        request,
-        "app/events.html",
-        {"events": events, "user_is_organizer": request.user.is_organizer},
-    )
+    request,
+    "app/events.html",
+    {
+        "events": events,
+        "events_with_comments": events_with_comments,
+        "user_is_organizer": request.user.is_organizer,
+    },
+)
 
 
 @login_required
 def event_detail(request, id):
-    event = get_object_or_404(Event, pk=id)
-    return render(request, "app/event_detail.html", {"event": event})
+    event = get_object_or_404(Event, id=id)
+    comments = event.comment.all()  # related_name='comment'
+
+    if request.method == 'POST':
+        tittle = request.POST.get('tittle')
+        text = request.POST.get('text')
+        Comment.objects.create(
+            tittle=tittle,
+            text=text,
+            user=request.user,
+            event=event,
+            created_date=timezone.now()
+        )
+        return redirect('event_detail', id=event.id)
+
+    return render(request, 'app/event_detail.html', {
+        'event': event,
+        'comments': Comment.objects.filter(event=event).order_by("-created_date"),
+        'num_comments': comments.count()
+    })
+
 
 
 @login_required
@@ -354,3 +382,23 @@ def ticket_delete(request, ticket_id):
         messages.error(request, "No tienes permisos para eliminar este ticket.")
 
     return redirect("ticket_list")
+#Mostrar Todos los comentarios de los eventos de un organizador
+@login_required
+def comentarios_organizador(request):
+    if not request.user.is_authenticated or not request.user.is_organizer:
+        return render(request, '403.html')  # O redirigir
+
+    # Filtrar los comentarios de eventos cuyo organizador es el usuario logueado
+    comentarios = Comment.objects.filter(event__organizer=request.user)
+
+    return render(request, 'app/organizator_comment.html', {'comentarios': comentarios})
+#Eliminar Comentarios
+
+def delete_comment(request, comment_id):
+    comentario = get_object_or_404(Comment, id=comment_id)
+
+    # Verificar que el usuario que intenta eliminar el comentario es el mismo que lo creó
+    if comentario.user == request.user:
+        comentario.delete()
+
+    return redirect('organizator_comment')  # Redirige a la vista de los comentarios o al listado de eventos
