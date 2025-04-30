@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+from .models import Event, User, Ticket
 
 
 def register(request):
@@ -125,3 +125,59 @@ def event_form(request, id=None):
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
+
+@login_required
+def buy_ticket(request, id):
+    event = get_object_or_404(Event, pk=id)
+
+    if request.method == "POST":
+        quantity = request.POST.get("quantity")
+        type = request.POST.get("type")
+        event = event
+        user = request.user
+
+        errors = Ticket.objects.validate(quantity, type, event, user)
+
+        if len(errors) > 0:
+            return render(
+                request,
+                "app/buy_ticket.html", {
+                "event": event,
+                "errors": errors,
+                "data": request.POST,
+            })
+
+        else:
+            user = Ticket.objects.new(quantity=quantity, type=type, event=event, user=user)
+            return redirect("events")
+
+
+    return render(request, "app/buy_ticket.html", {"event": event})
+
+"""def register(request):
+    if request.method == "POST":
+        email = request.POST.get("email")
+        username = request.POST.get("username")
+        is_organizer = request.POST.get("is-organizer") is not None
+        password = request.POST.get("password")
+        password_confirm = request.POST.get("password-confirm")
+
+        errors = User.validate_new_user(email, username, password, password_confirm)
+
+        if len(errors) > 0:
+            return render(
+                request,
+                "accounts/register.html",
+                {
+                    "errors": errors,
+                    "data": request.POST,
+                },
+            )
+        else:
+            user = User.objects.create_user(
+                email=email, username=username, password=password, is_organizer=is_organizer
+            )
+            login(request, user)
+            return redirect("events")
+
+    return render(request, "accounts/register.html", {})"""
