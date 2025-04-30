@@ -32,11 +32,11 @@
           <td>{{ r.created_at|date:"d/m/Y" }}</td>
           <td>
             {% if r.approved %}
-              <span class="badge bg-success">Sí</span>
+              <span class="badge bg-success">Aprobado</span>
             {% elif r.approved is None %}
               <span class="badge bg-warning">Pendiente</span>
             {% else %}
-              <span class="badge bg-danger">No</span>
+              <span class="badge bg-danger">Desaprobado</span>
             {% endif %}
           </td>
           <td>
@@ -48,7 +48,7 @@
           </td>
           <td>
             <div class="hstack gap-1">
-                <a href=""
+                <a href="{% url 'refund_detail' r.id %}"
                     class="btn btn-sm btn-outline-primary"
                     aria-label="Ver detalle"
                     title="Ver detalle">

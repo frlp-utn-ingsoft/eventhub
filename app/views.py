@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Event, User, RefundRequest
+from .models import Event, User, RefundRequest, Ticket
 from .forms import RefundRequestForm, RefundApprovalForm
 
 
@@ -168,4 +168,19 @@ def manage_refunds(request):
     return render(request, 'app/manage_refund.html', {
         'refunds': refunds,
         'forms_dict': forms_dict
+    })
+
+def refund_detail(request, id):
+    refund = get_object_or_404(RefundRequest, id=id)
+    try:
+        ticket = Ticket.objects.get(code=refund.ticket_code)
+        event = ticket.event
+    except Ticket.DoesNotExist:
+        ticket = None
+        event = None
+
+    return render(request, 'app/refund_detail.html', {
+        'refund': refund,
+        'event': event,
+        'ticket': ticket,
     })

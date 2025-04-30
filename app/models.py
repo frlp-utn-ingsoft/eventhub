@@ -95,8 +95,8 @@ class RefundRequest(models.Model):
     reason = models.CharField(max_length=20, choices=REASON_CHOICES)
     details= models.TextField(blank=True)
     approved = models.BooleanField(null=True, default=None)
-    approval_date = models.DateField(null=True, blank=True)
-    created_at = models.DateField(auto_now_add=True)
+    approval_date = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
 
     @property
     def event(self):
