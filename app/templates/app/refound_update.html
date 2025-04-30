@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Editar Solicitud de Reembolso</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if errors %}
+                            <div class="alert alert-danger">
+                                <ul class="mb-0">
+                                    {% for field, error in errors.items %}
+                                        <li><strong>{{ field }}:</strong> {{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+
+                        <form method="post" action="{% url 'update_refound' refound.id %}">
+                            {% csrf_token %}
+
+                            <div class="mb-3">
+                                <label for="refound_reason" class="form-label">Motivo del reembolso *</label>
+                                <select class="form-select" id="refound_reason" name="refound_reason" required>
+                                    <option disabled selected>Selecciona un motivo</option>
+                                    {% for value, label in refoundReason.choices %}
+                                        <option value="{{ value }}" {% if refound.refound_reason == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="reason" class="form-label">Detalles adicionales</label>
+                                <textarea class="form-control" id="reason" name="reason" rows="4"
+                                          placeholder="Proporciona más información sobre tu solicitud de reembolso...">{{ refound.reason }}</textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                            <a href="{% url 'refound_user' %}" class="btn btn-outline-secondary ms-2">Cancelar</a>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

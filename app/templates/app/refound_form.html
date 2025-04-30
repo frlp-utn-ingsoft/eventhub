@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mt-5">
+        <div class="row">
+            <!-- Formulario de Solicitud -->
+            <div class="col-md-8">
+                <div class="card border-primary">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Formulario de Solicitud</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle-fill"></i>
+                            Puedes solicitar un reembolso hasta 48 horas antes del evento. Una vez procesada la solicitud, el reembolso se realizará en un plazo de <strong>7 a 14 días hábiles</strong>.
+                        </div>
+
+                        {% if errors %}
+                            <div class="alert alert-danger">
+                                <ul class="mb-0">
+                                    {% for field, error in errors.items %}
+                                        <li><strong>{{ field }}:</strong> {{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
+
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="ticket_code" value="{{ ticket.ticket_code }}">
+
+                            <div class="mb-3">
+                                <label for="ticket_code_display" class="form-label">Código de ticket</label>
+                                <input type="text" id="ticket_code_display" class="form-control" value="{{ ticket.ticket_code }}" disabled>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="refound_reason" class="form-label">Motivo del reembolso *</label>
+                                <select class="form-select" id="refound_reason" name="refound_reason" required>
+                                    <option disabled selected>Selecciona un motivo</option>
+                                    {% for value, label in refoundReason.choices %}
+                                        <option value="{{ value }}" {% if input.refound_reason == value %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="reason" class="form-label">Detalles adicionales</label>
+                                <textarea class="form-control" id="reason" name="reason" rows="4" placeholder="Proporciona más información sobre tu solicitud de reembolso...">{{ input.reason|default_if_none:'' }}</textarea>
+                            </div>
+
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="terms" required>
+                                <label class="form-check-label" for="terms">
+                                    Entiendo y acepto la <a href="#">política de reembolsos</a>.
+                                </label>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Política de Reembolsos -->
+            <div class="col-md-4 mt-4 mt-md-0">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Política de Reembolsos</h6>
+                    </div>
+                    <div class="card-body small">
+                        <ul class="list-unstyled">
+                            <li><i class="bi bi-check-circle text-success me-2"></i>Reembolso del 100% hasta 7 días antes del evento.</li>
+                            <li><i class="bi bi-exclamation-circle text-warning me-2"></i>Reembolso del 50% entre 2 y 7 días antes del evento.</li>
+                            <li><i class="bi bi-x-circle text-danger me-2"></i>Sin reembolso a menos de 48 horas del evento.</li>
+                            <li><i class="bi bi-arrow-repeat text-primary me-2"></i>El reembolso se realizará al mismo método de pago utilizado en la compra.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

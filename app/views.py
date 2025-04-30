@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Count
 from django.http import HttpResponseForbidden
-from .models import Event, User, Category, Comment, Venue, Ticket, Rating, Notification
+from .models import Event, User, Category, Comment, Venue, Ticket, Rating, RefoundRequest, RefoundReason, RefoundStatus,Notification
 from django.contrib import messages
 import re
 import random
@@ -67,18 +67,18 @@ def home(request):
 
 
 
-@login_required
-def events(request):
+#@login_required
+#def events(request):
     #si el usuario es organizador recupera todos sus eventos, si el usuario no es organizador recupera todos los eventos siempre y cuando la fecha del evento sea posterior a la actual. De esta forma permitimos que el usuario que no es  organizador pueda comprar entradas.
-    if request.user.is_organizer:
-        events = Event.objects.filter(organizer=request.user).order_by("scheduled_at")
-    else:
-        events = Event.objects.filter(scheduled_at__gte=timezone.now()).order_by("scheduled_at")
-    return render(
-        request,
-        "app/events.html",
-        {"events": events, "user_is_organizer": request.user.is_organizer},
-    )
+#    if request.user.is_organizer:
+#        events = Event.objects.filter(organizer=request.user).order_by("scheduled_at")
+#    else:
+#        events = Event.objects.filter(scheduled_at__gte=timezone.now()).order_by("scheduled_at")
+#    return render(
+#        request,
+ #       "app/events.html",
+  #      {"events": events, "user_is_organizer": request.user.is_organizer},
+  #  )
 
 
 @login_required
@@ -152,6 +152,48 @@ def event_form(request, id=None):
         {"event": event, "user_is_organizer": request.user.is_organizer, "categories": categories, "venues": venues},
     )
 
+@login_required
+def events(request):
+    user = request.user
+    order = request.GET.get("order", "asc")
+    category_id = request.GET.get("category")
+    venue_id = request.GET.get("venue")
+
+    if user.is_organizer:
+        events = Event.objects.filter(organizer=user)
+    else:
+        events = Event.objects.filter(scheduled_at__gte=timezone.now())
+
+    if category_id:
+        events = events.filter(category_id=category_id)
+
+    if venue_id:
+        events = events.filter(venue_id=venue_id)
+
+    if order == "desc":
+        events = events.order_by("-scheduled_at")
+    else:
+        events = events.order_by("scheduled_at")
+
+    categories = Category.objects.filter(is_active=True)
+    venues = Venue.objects.all()
+
+    return render(
+        request,
+        "app/events.html",
+        {
+            "events": events,
+            "categories": categories,
+            "venues": venues,
+            "selected_category": category_id,
+            "selected_venue": venue_id,
+            "order": order,
+            "user_is_organizer": user.is_organizer,
+        },
+    )
+
+
+
 
 def categorias(request):
     category_list = Category.objects.annotate(num_events=Count('events'))
@@ -197,16 +239,16 @@ def category_delete(request, id):
 
     if request.method == "POST":
         category = get_object_or_404(Category, pk=id)
-        
+
         try:
-            category.delete() 
+            category.delete()
             messages.success(request, "Categoría eliminada exitosamente.")
         except IntegrityError:
             messages.warning(request, "No se puede eliminar esta categoría porque tiene eventos asociados.")
-        
-        return redirect("categorias") 
 
-    return redirect("categorias")  
+        return redirect("categorias")
+
+    return redirect("categorias")
 
 def crear_comentario(request, event_id):
     evento = get_object_or_404(Event, id=event_id)
@@ -443,7 +485,7 @@ def tickets(request, event_id):
 @login_required
 def comprar_ticket(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
-    
+
     if request.method == 'POST':
         # Obtener datos del formulario
         ticket_code = request.POST.get('ticket_code')
@@ -452,8 +494,8 @@ def comprar_ticket(request, event_id):
         try:
             quantity = int(quantity)
         except ValueError:
-            quantity = 0 
-        
+            quantity = 0
+
         # Datos de pago (estos se enviarían a una API externa en un caso real)
         payment_data = {
             'card_number': request.POST.get('card_number'),
@@ -461,30 +503,30 @@ def comprar_ticket(request, event_id):
             'card_cvv': request.POST.get('card_cvv'),
             'card_name': request.POST.get('card_name'),
         }
-        
+
         # Simulación de llamada a API de pago
         payment_success = simular_procesamiento_pago(payment_data)
-        
+
         if not payment_success:
             messages.error(request, "Error en el procesamiento del pago. Por favor, intenta nuevamente.")
             return render(request, 'app/ticket_compra.html', {
-                'event': event, 
+                'event': event,
                 'event_id': event_id,
                 'error': "Error en el procesamiento del pago"
             })
-        
+
         errors = Ticket.validate(ticket_code, quantity)
-        
+
         if errors:
             messages.error(request, "Error en la validación del ticket.")
             return render(request, 'app/ticket_compra.html', {
-                'errors': errors, 
-                'event': event, 
+                'errors': errors,
+                'event': event,
                 'event_id': event_id
             })
-        
+
         user = request.user
-        
+
         ticket = Ticket.objects.create(
             ticket_code=ticket_code,
             quantity=quantity,
@@ -492,11 +534,11 @@ def comprar_ticket(request, event_id):
             user=user,
             event=event
         )
-        
+
         messages.success(request, f"¡Compra exitosa! Tu código de ticket es: {ticket_code}")
         return redirect('events')
     return render(request, 'app/ticket_compra.html', {
-        'event': event, 
+        'event': event,
         'event_id': event_id
     })
 
@@ -506,21 +548,21 @@ def simular_procesamiento_pago(payment_data):
     En un entorno real, aquí se realizaría una llamada a la API de la pasarela de pagos.
     """
     card_number = payment_data.get('card_number', '').replace(' ', '')
-    
+
     # Comprobar que el número de tarjeta tiene 16 dígitos
     if not card_number.isdigit() or len(card_number) != 16:
         return False
-    
+
     # Comprobar que la fecha de expiración tiene el formato MM/AA
     expiry = payment_data.get('card_expiry', '')
     if not re.match(r'^\d{2}/\d{2}$', expiry):
         return False
-    
+
     # Comprobar que el CVV tiene 3-4 dígitos
     cvv = payment_data.get('card_cvv', '')
     if not cvv.isdigit() or not (3 <= len(cvv) <= 4):
         return False
-    
+
     # Simular un 95% de probabilidad de éxito en el pago
     return random.random() < 0.95
 
@@ -539,7 +581,34 @@ def ticket_delete(request,event_id, ticket_id):
 @login_required
 def mis_tickets(request):
     tickets = Ticket.objects.filter(user=request.user).order_by('-buy_date')
+
+    for ticket in tickets:
+        if ticket.type == "general":
+            unit_price = 50
+        elif ticket.type == "vip":
+            unit_price = 100
+        else:
+            unit_price = 0
+
+        setattr(ticket, 'unit_price', unit_price)
+        setattr(ticket, 'total_price', unit_price * ticket.quantity)
+
     return render(request, 'app/mis_tickets.html', {'tickets': tickets})
+
+@login_required
+def update_ticket(request, ticket_id):
+    ticket = get_object_or_404(Ticket , pk = ticket_id)
+    if request.method == 'POST':
+        quantity = request.POST.get('quantity')
+        type = request.POST.get('type')
+        if quantity and type:
+            ticket.quantity = quantity
+            ticket.type = type
+            ticket.save()
+            return redirect('Mis_tickets')
+    return render(request, 'app/Mis_tickets', {'ticket': ticket})
+
+    
 
 def rating_create(request, event_id):
     event = get_object_or_404(Event, id=event_id)
@@ -547,11 +616,11 @@ def rating_create(request, event_id):
     if Rating.objects.filter(user=request.user, event=event).exists():
         messages.error(request, "Ya has calificado este evento")
         return redirect('event_detail', id=event_id)
-    
+
     if not Ticket.objects.filter(user=request.user, event=event).exists():
         messages.error(request, "No puedes calificar un evento si no tienes un ticket")
         return redirect('event_detail', id=event_id)
-    
+
     if request.method == 'POST':
         title = request.POST.get('title')
         text = request.POST.get('text')
@@ -605,6 +674,112 @@ def rating_delete(request, event_id, rating_id):
         messages.error(request, "Error al eliminar la calificación")
 
     return redirect('event_detail', id=event_id)
+
+@login_required
+def create_refound(request, ticket_id):
+    ticket = get_object_or_404(Ticket, id=ticket_id)
+    if request.method == 'POST':
+        ticket_code = request.POST.get('ticket_code')
+        reason = request.POST.get('reason')
+        refound_reason = request.POST.get('refound_reason')
+        status = RefoundStatus.PENDING
+        amount = 0
+
+        if (ticket.event.scheduled_at-timezone.now()) > datetime.timedelta(days=7):
+            if ticket.type == 'general':
+                amount = 50*ticket.quantity
+            elif ticket.type == 'vip':
+                amount = 100*ticket.quantity
+
+        if datetime.timedelta(days=7) > (ticket.event.scheduled_at - timezone.now()) > datetime.timedelta(days=2):
+            if ticket.type == 'general':
+                amount = 25*ticket.quantity
+            elif ticket.type == 'vip':
+                amount = 50*ticket.quantity
+
+        if (ticket.event.scheduled_at-timezone.now()) < datetime.timedelta(days=2):
+            status = RefoundStatus.REJECTED
+
+        success, errors = RefoundRequest.new(
+            amount=float(amount),
+            reason=reason,
+            refound_reason=refound_reason,
+            ticket_code=ticket_code,
+            user=request.user,
+            status=status
+        )
+
+        if not success:
+            return render(request, 'app/refound_form.html', {
+                'ticket': ticket,
+                'refoundReason': RefoundReason,
+                'errors': errors,
+                'input': request.GET
+            })
+
+        return redirect('Mis_tickets')
+    if request.method == 'GET':
+        return render(request, 'app/refound_form.html', {
+            'ticket': ticket,
+            'refoundReason': RefoundReason
+        })
+    return redirect('Mis_tickets')
+
+@login_required
+def delete_refound(request, refound_id):
+    refound = get_object_or_404(RefoundRequest, id=refound_id)
+    if request.method == 'POST':
+        refound.delete()
+        messages.success(request, "Reembolso eliminado correctamente")
+        return redirect('refound_user')
+    return redirect('refound_user')
+
+@login_required
+def refound_user(request):
+    user = request.user
+    refounds = RefoundRequest.objects.filter(user=user).order_by('-created_at')
+    return render(request, 'app/refound_user.html', {'refounds': refounds})
+
+@login_required
+def refound_detail(request, refound_id):
+    refound = get_object_or_404(RefoundRequest, id=refound_id)
+    return render(request, 'app/refound_detail.html', {'refound': refound})
+
+@login_required
+def update_refound(request, refound_id):
+    refound = get_object_or_404(RefoundRequest, id=refound_id)
+    if request.method == 'POST':
+        if refound.approved:
+            return redirect('refound_user')
+        refound.update(
+            reason=request.POST.get('reason'),
+            refound_reason=request.POST.get('refound_reason')
+        )
+        return redirect('refound_detail', refound_id=refound_id)
+
+    if request.method == 'GET':
+        return render(request, 'app/refound_update.html', {'refound': refound,
+                                                          'refoundReason': RefoundReason})
+    return redirect('refound_user')
+
+def refound_admin(request):
+    if not request.user.is_organizer:
+        return redirect('events')
+
+    refounds = RefoundRequest.objects.all().order_by('-created_at')
+    return render(request, 'app/refound_admin.html', {'refounds': refounds})
+
+def approve_or_reject_refound(request, refound_id):
+    refound = get_object_or_404(RefoundRequest, id=refound_id)
+    if request.method == 'POST':
+        if request.POST.get('action') == 'approve':
+            refound.update(approved=True)
+            messages.success(request, "Reembolso aprobado correctamente")
+        elif request.POST.get('action') == 'reject':
+            refound.update(approved=False, status=RefoundStatus.REJECTED)
+            messages.success(request, "Reembolso rechazado correctamente")
+        return redirect('refound_admin')
+    return redirect('refound_admin')
 
 # notificacion
 User = get_user_model()

@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from datetime import datetime
 
 
 class User(AbstractUser):
@@ -165,7 +166,7 @@ class Venue(models.Model):
 
     def __str__(self):
         return self.name
-    
+
 
 class Ticket(models.Model):
     buy_date = models.DateTimeField(auto_now_add=True)
@@ -186,7 +187,7 @@ class Ticket(models.Model):
             errors["quantity"] = "La cantidad debe ser mayor a 0"
 
         return errors
-    
+
     @classmethod
     def new(cls, ticket_code, quantity, user, event):
         errors = cls.validate(ticket_code, quantity)
@@ -200,10 +201,9 @@ class Ticket(models.Model):
             user=user,
             event=event
         )
-        return True, None
-    
-    def update(self, ticket_code, quantity):
-        self.ticket_code = ticket_code or self.ticket_code
+
+    def update(self, type, quantity):
+        self.type = type or self.type
         self.quantity = quantity or self.quantity
 
         self.save()
@@ -224,10 +224,10 @@ class Rating(models.Model):
             errors["rating"] = "La calificación es requerida"
         elif rating < 1 or rating > 5:
             errors["rating"] = "La calificación debe estar entre 1 y 5"
-        
+
         if title is None or title.strip() == "":
             errors["title"] = "El título es requerido"
-        
+
 
 
         return errors
@@ -248,11 +248,97 @@ class Rating(models.Model):
         )
 
         return True, None
-    
+
     def update(self, rating, title, text):
         self.rating = rating if rating is not None else self.rating
         self.title = title.strip() if title else self.title
         self.text = text.strip() if text else self.text
+        self.save()
+
+
+class RefoundStatus(models.TextChoices):
+    PENDING = "pending", "Pendiente"
+    APPROVED = "approved", "Aprobado"
+    REJECTED = "rejected", "Rechazado"
+
+class RefoundReason(models.TextChoices):
+    EVENT_CANCELLED = "event_cancelled", "Evento cancelado"
+    TICKET_NOT_RECEIVED = "ticket_not_received", "Entrada no recibida"
+    OTHER = "other", "Otro"
+
+class RefoundRequest(models.Model):
+    approved = models.BooleanField(default=False)
+    approval_date = models.DateTimeField(null=True, blank=True)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    reason = models.TextField()
+    status = models.CharField(max_length=10, choices=RefoundStatus.choices, default=RefoundStatus.PENDING)
+    refound_reason = models.CharField(max_length=50, choices=RefoundReason.choices, default=RefoundReason.OTHER)
+    ticket_code = models.CharField(max_length=100, unique=True)
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name="refound_requests", null=True, blank=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refound_requests")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    @classmethod
+    def new(cls, amount, reason, refound_reason, ticket_code, user, status):
+        errors = cls.validate(amount, reason, status, refound_reason, ticket_code, user)
+
+        if errors:
+            return False, errors
+
+        cls.objects.create(
+            amount=amount,
+            reason=reason,
+            refound_reason=refound_reason,
+            ticket_code=ticket_code,
+            user=user,
+            status=status,
+            ticket=Ticket.objects.get(ticket_code=ticket_code)
+        )
+
+        return True, None
+
+    @classmethod
+    def validate(cls, amount, reason, status, refound_reason, ticket_code, user):
+        errors = {}
+
+        if amount is None or amount < 0:
+            errors["amount"] = "El monto debe ser mayor a 0."
+
+        if reason is None or reason.strip() == "":
+            errors["reason"] = "La razón es requerida."
+        elif len(reason) > 500:
+            errors["reason"] = "La razón no puede superar los 500 caracteres."
+
+        if status not in RefoundStatus.values:
+            errors["status"] = "Estado inválido."
+
+        if refound_reason not in RefoundReason.values:
+            errors["refound_reason"] = "Motivo de reembolso inválido."
+
+        if ticket_code is None:
+            errors["ticket_code"] = "Debe asociarse un ticket."
+        elif not Ticket.objects.filter(ticket_code=ticket_code).exists():
+            errors["ticket_code"] = "El ticket no existe."
+
+        if user is None:
+            errors["user"] = "Debe asociarse un usuario."
+        elif not User.objects.filter(id=user.id).exists():
+            errors["user"] = "El usuario no existe."
+
+        return errors
+
+    def update(self, reason=None, refound_reason=None, status=None, approved=None):
+
+        self.reason = reason.strip() if reason else self.reason
+        self.refound_reason = refound_reason or self.refound_reason
+        self.status = status or self.status
+        self.approved = approved if approved is not None else self.approved
+
+        if self.approved:
+            self.approval_date = datetime.now()
+            self.status = RefoundStatus.APPROVED
+
         self.save()
 
 class Notification(models.Model):
