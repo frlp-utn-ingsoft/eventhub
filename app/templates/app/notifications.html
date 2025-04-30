@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión de Notificaciones{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Gestión de Notificaciones</h1>
+        <a href={% url 'create_notification' %} class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i> Crear Notificación
+        </a>
+    </div>
+
+    <!-- Filtros -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="input-group">
+                <input type="text" class="form-control" placeholder="Buscar notificaciones..." 
+                       value="{{ search_query }}" id="searchInput">
+                <button class="btn btn-outline-secondary" type="button" id="searchButton">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="eventFilter">
+                <option value="all">Todos los eventos</option>
+                {% for event in events %}
+                    <option value="{{ event.id }}" {% if current_event_filter == event.id|stringformat:"i" %}selected{% endif %}>
+                        {{ event.title }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-3">
+            <select class="form-select" id="priorityFilter">
+                <option value="all">Todas las prioridades</option>
+                <option value="HIGH" {% if current_priority_filter == "HIGH" %}selected{% endif %}>Alta</option>
+                <option value="MEDIUM" {% if current_priority_filter == "MEDIUM" %}selected{% endif %}>Normal</option>
+                <option value="LOW" {% if current_priority_filter == "LOW" %}selected{% endif %}>Baja</option>
+            </select>
+        </div>
+        <div class="col-md-2">
+            <button class="btn btn-outline-primary w-100" id="filterButton">Filtrar</button>
+        </div>
+    </div>
+
+    <!-- Tabla de notificaciones -->
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Evento</th>
+                    <th>Destinatarios</th>
+                    <th>Prioridad</th>
+                    <th>Fecha de envío</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for notification in notifications %}
+                <tr>
+                    <td>{{ notification.title }}</td>
+                    <td>
+                        {% if notification.event %}
+                            <a href="#" class="text-decoration-none">{{ notification.event.title }}</a>
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% with user_count=notification.users.count %}
+                            {% if user_count > 1 %}
+                                <span class="badge bg-info text-dark">Todos ({{ user_count }})</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Usuario específico</span>
+                            {% endif %}
+                        {% endwith %}
+                    </td>
+                    <td>
+                        {% if notification.priority == "HIGH" %}
+                            <span class="badge bg-danger">Alta</span>
+                        {% elif notification.priority == "MEDIUM" %}
+                            <span class="badge bg-primary">Normal</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Baja</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ notification.created_at|date:"d M Y, H:i" }}</td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <button class="btn btn-sm btn-outline-primary" onclick="window.location.href='{% url 'notification_detail' id=notification.id %}'">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary" onclick="window.location.href='{% url 'notification_edit' id=notification.id %}'"">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <form action="{% url 'notification_delete' notification.id %}" method="POST" class="d-inline">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-outline-danger"
+                                            type="submit"
+                                            title="Eliminar"
+                                            aria-label="Eliminar">
+                                        <i class="bi bi-trash" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">No hay notificaciones disponibles</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const searchInput = document.getElementById('searchInput');
+        const eventFilter = document.getElementById('eventFilter');
+        const priorityFilter = document.getElementById('priorityFilter');
+        const filterButton = document.getElementById('filterButton');
+        const searchButton = document.getElementById('searchButton');
+
+        function applyFilters() {
+            const searchQuery = searchInput.value;
+            const eventValue = eventFilter.value;
+            const priorityValue = priorityFilter.value;
+
+            let url = window.location.pathname + '?';
+            
+            if (searchQuery) {
+                url += `search=${encodeURIComponent(searchQuery)}&`;
+            }
+            
+            if (eventValue && eventValue !== 'all') {
+                url += `event=${encodeURIComponent(eventValue)}&`;
+            }
+            
+            if (priorityValue && priorityValue !== 'all') {
+                url += `priority=${encodeURIComponent(priorityValue)}&`;
+            }
+
+            // Eliminar el último '&' si existe
+            if (url.endsWith('&')) {
+                url = url.slice(0, -1);
+            }
+
+            window.location.href = url;
+        }
+
+        filterButton.addEventListener('click', applyFilters);
+        searchButton.addEventListener('click', applyFilters);
+
+        // Permitir búsqueda con Enter
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                applyFilters();
+            }
+        });
+    });
+</script>
+{% endblock %}

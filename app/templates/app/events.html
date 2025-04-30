@@ -1,5 +1,4 @@
 {% extends "base.html" %}
-
 {% block title %}Eventos{% endblock %}
 
 {% block content %}
@@ -7,64 +6,79 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Eventos</h1>
         {% if user_is_organizer %}
-            <a
-                href="{% url 'event_form' %}"
-                class="btn btn-primary"
-            >
-                <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
-                Crear Evento
+            <a href="{% url 'event_form' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-2"></i> Crear Evento
             </a>
         {% endif %}
     </div>
+
+    <form method="get" id="filterForm" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <label for="category" class="form-label">Categoría</label>
+            <select name="category" id="category" class="form-select">
+                <option value="">Todas</option>
+                {% for category in categories %}
+                    <option value="{{ category.id }}" {% if selected_category|stringformat:"s" == category.id|stringformat:"s" %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="venue" class="form-label">Locación</label>
+            <select name="venue" id="venue" class="form-select">
+                <option value="">Todas</option>
+                {% for venue in venues %}
+                    <option value="{{ venue.id }}" {% if selected_venue|stringformat:"s" == venue.id|stringformat:"s" %}selected{% endif %}>
+                        {{ venue.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label for="order" class="form-label">Orden por fecha</label>
+            <select name="order" id="order" class="form-select">
+                <option value="asc" {% if order == "asc" %}selected{% endif %}>Ascendente</option>
+                <option value="desc" {% if order == "desc" %}selected{% endif %}>Descendente</option>
+            </select>
+        </div>
+    </form>
+
     <table class="table">
         <thead>
             <tr>
                 <th>Título</th>
                 <th>Descripción</th>
                 <th>Fecha</th>
-                <th>Categorias</th>
+                <th>Categoría</th>
                 <th>Locación</th>
                 <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
-            {% for event in events%}
+            {% for event in events %}
                 <tr>
                     <td>{{ event.title }}</td>
                     <td>{{ event.description }}</td>
                     <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
-                    <td> {{event.category.name}}</td>
+                    <td>{{ event.category.name }}</td>
                     <td>{{ event.venue.name }}</td>
                     <td>
                         <div class="hstack gap-1">
-                            <a href="{% url 'event_detail' event.id %}"
-                                class="btn btn-sm btn-outline-primary"
-                                aria-label="Ver detalle"
-                                title="Ver detalle">
-                                <i class="bi bi-eye" aria-hidden="true"></i>
+                            <a href="{% url 'event_detail' event.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i>
                             </a>
                             {% if user_is_organizer %}
-                                <a href="{% url 'event_edit' event.id %}"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    aria-label="Editar"
-                                    title="Editar">
-                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                <a href="{% url 'event_edit' event.id %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i>
                                 </a>
-                                <a href="{% url 'tickets' event.id %}"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    aria-label="ticket"
-                                    title="ticket">
-                                    <i class="bi bi-ticket" aria-hidden="true"></i>
+                                <a href="{% url 'tickets' event.id %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-ticket"></i>
                                 </a>
-
-                                <form action="{% url 'event_delete' event.id %}" method="POST">
+                                <form action="{% url 'event_delete' event.id %}" method="POST" class="d-inline">
                                     {% csrf_token %}
-                                    <button class="btn btn-sm btn-outline-danger"
-                                        title="Eliminar"
-                                        type="submit"
-                                        aria-label="Eliminar"
-                                        titile="Eliminar">
-                                        <i class="bi bi-trash" aria-hidden="true"></i>
+                                    <button class="btn btn-sm btn-outline-danger" type="submit">
+                                        <i class="bi bi-trash"></i>
                                     </button>
                                 </form>
                             {% endif %}
@@ -73,10 +87,21 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center">No hay eventos disponibles</td>
+                    <td colspan="6" class="text-center">No hay eventos disponibles</td>
                 </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<script>
+    const form = document.getElementById("filterForm");
+    form.querySelectorAll("select").forEach(select => {
+        select.addEventListener("change", () => {
+            console.log("Filtro cambiado, enviando formulario...");
+            form.submit();
+        });
+    });
+</script>
 {% endblock %}
+
