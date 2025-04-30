@@ -100,41 +100,31 @@ def event_form(request, id=None):
     if not user.is_organizer:
         return redirect("events")
 
+    if id:
+        event = get_object_or_404(Event, pk=id)
+    else:
+        event = None
+
     if request.method == "POST":
-        # Datos del evento
         title = request.POST.get("title")
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
         venue_id = request.POST.get("venue")
 
-        # Datos del nuevo Venue (si se crea uno nuevo)
-        new_venue_name = request.POST.get("new_venue_name")
-        new_venue_address = request.POST.get("new_venue_address")
-        new_venue_city = request.POST.get("new_venue_city")
-        new_venue_capacity = request.POST.get("new_venue_capacity")
-        new_venue_contact = request.POST.get("new_venue_contact")
-
-        # Crear el nuevo Venue si se proporcionaron datos
-        if new_venue_name and new_venue_address and new_venue_city:
-            venue = Venue.objects.create(
-                name=new_venue_name,
-                address=new_venue_address,
-                city=new_venue_city,
-                capacity=new_venue_capacity,
-                contact=new_venue_contact,
-            )
-        else:
-            venue = get_object_or_404(Venue, pk=venue_id)
-
-        # Crear o actualizar el evento
-        [year, month, day] = date.split("-")
-        [hour, minutes] = time.split(":")
         scheduled_at = timezone.make_aware(
-            datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
+            datetime.datetime.strptime(f"{date} {time}", "%Y-%m-%d %H:%M")
         )
 
-        if id is None:
+        venue = get_object_or_404(Venue, pk=venue_id) if venue_id else None
+
+        if event:
+            event.title = title
+            event.description = description
+            event.scheduled_at = scheduled_at
+            event.venue = venue
+            event.save()
+        else:
             Event.objects.create(
                 title=title,
                 description=description,
@@ -142,28 +132,16 @@ def event_form(request, id=None):
                 organizer=user,
                 venue=venue,
             )
-        else:
-            event = get_object_or_404(Event, pk=id)
-            event.title = title
-            event.description = description
-            event.scheduled_at = scheduled_at
-            event.venue = venue
-            event.save()
 
         return redirect("events")
-
-    # Si es una solicitud GET, cargar el formulario
-    event = {}
-    if id is not None:
-        event = get_object_or_404(Event, pk=id)
-
-    venues = Venue.objects.all()
-    return render(
-        request,
-        "app/event_form.html",
-        {"event": event, "venues": venues, "user_is_organizer": user.is_organizer},
-    )
-
+    else:
+        venues = Venue.objects.all()
+        venue_form = VenueForm()
+        return render(
+            request,
+            "app/event_form.html",
+            {"event": event, "venues": venues, "venue_form": venue_form},
+        )
 
 @login_required
 def venue_list(request):
