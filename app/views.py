@@ -67,18 +67,18 @@ def home(request):
 
 
 
-@login_required
-def events(request):
+#@login_required
+#def events(request):
     #si el usuario es organizador recupera todos sus eventos, si el usuario no es organizador recupera todos los eventos siempre y cuando la fecha del evento sea posterior a la actual. De esta forma permitimos que el usuario que no es  organizador pueda comprar entradas.
-    if request.user.is_organizer:
-        events = Event.objects.filter(organizer=request.user).order_by("scheduled_at")
-    else:
-        events = Event.objects.filter(scheduled_at__gte=timezone.now()).order_by("scheduled_at")
-    return render(
-        request,
-        "app/events.html",
-        {"events": events, "user_is_organizer": request.user.is_organizer},
-    )
+#    if request.user.is_organizer:
+#        events = Event.objects.filter(organizer=request.user).order_by("scheduled_at")
+#    else:
+#        events = Event.objects.filter(scheduled_at__gte=timezone.now()).order_by("scheduled_at")
+#    return render(
+#        request,
+ #       "app/events.html",
+  #      {"events": events, "user_is_organizer": request.user.is_organizer},
+  #  )
 
 
 @login_required
@@ -151,6 +151,48 @@ def event_form(request, id=None):
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer, "categories": categories, "venues": venues},
     )
+
+@login_required
+def events(request):
+    user = request.user
+    order = request.GET.get("order", "asc")
+    category_id = request.GET.get("category")
+    venue_id = request.GET.get("venue")
+
+    if user.is_organizer:
+        events = Event.objects.filter(organizer=user)
+    else:
+        events = Event.objects.filter(scheduled_at__gte=timezone.now())
+
+    if category_id:
+        events = events.filter(category_id=category_id)
+
+    if venue_id:
+        events = events.filter(venue_id=venue_id)
+
+    if order == "desc":
+        events = events.order_by("-scheduled_at")
+    else:
+        events = events.order_by("scheduled_at")
+
+    categories = Category.objects.filter(is_active=True)
+    venues = Venue.objects.all()
+
+    return render(
+        request,
+        "app/events.html",
+        {
+            "events": events,
+            "categories": categories,
+            "venues": venues,
+            "selected_category": category_id,
+            "selected_venue": venue_id,
+            "order": order,
+            "user_is_organizer": user.is_organizer,
+        },
+    )
+
+
 
 
 def categorias(request):
