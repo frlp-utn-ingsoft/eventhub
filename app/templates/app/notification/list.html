@@ -25,8 +25,7 @@
         <tr>
             <td>{{ notification.title }}</td>
             <td>
-                <!-- Suponiendo que tengas relación con evento -->
-                <a href="#">{{ notification.event.title }}</a>
+                <a href="{% url 'event_detail' notification.event.id %}">{{ notification.event.title }}</a>
             </td>
             <td>
                 {% if notification.recipients == 'all' %}
@@ -46,9 +45,9 @@
             </td>
             <td>{{ notification.created_at|date:"d/m/Y H:i" }}</td>
             <td>
-                <a href="#" class="btn btn-sm btn-outline-primary" title="Ver"><i class="bi bi-eye"></i></a>
-                <a href="#" class="btn btn-sm btn-outline-success" title="Editar"><i class="bi bi-pencil"></i></a>
-                <a href="#" class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="bi bi-trash"></i></a>
+                <a href="{% url 'notification_detail' notification.id %}" class="btn btn-sm btn-outline-primary" title="Ver"><i class="bi bi-eye"></i></a>
+                <a href="{% url 'notification_edit' notification.id %}" class="btn btn-sm btn-outline-success" title="Editar"><i class="bi bi-pencil"></i></a>
+                <a href="{% url 'notification_delete' notification.id %}" class="btn btn-sm btn-outline-danger" title="Eliminar"><i class="bi bi-trash"></i></a>
             </td>
         </tr>
         {% endfor %}

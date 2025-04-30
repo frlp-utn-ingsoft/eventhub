@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from .form import NotificationForm
 
 from .models import Category, Event, Notification
 
@@ -153,7 +154,6 @@ def category_form(request, id=None):
 
 
 
-
 def notification_list(request):
     notifications = Notification.objects.all()
     return render(request, 'app/notification/list.html', {'notifications': notifications})
@@ -165,17 +165,42 @@ def notification_create(request):
         massage = request.POST.get('massage')
         priority = request.POST.get('priority')
         is_read = request.POST.get('is_read') == 'on'
+        event_id = request.POST.get('event')
+        
+        event=Event.objects.get(id = event_id)
 
-        # Creamos la notificación
         Notification.objects.create(
             title=title,
             massage=massage,
             created_at=timezone.now().date(), 
             Priority=priority,
             is_read=is_read,
+            event=event
         )
-        return redirect('/events/notification/')  # Redirigimos a la lista de notificaciones (o donde prefieras)
+        return redirect('/notification/')  
     
     eventos= Event.objects.all()
     
     return render(request, 'app/notification/create.html', {'eventos': eventos})
+
+def notification_detail(request, pk):
+    notification = get_object_or_404(Notification, pk=pk)
+    return render(request, 'app/notification/detail.html', {'notification': notification})
+
+def notification_edit(request, pk):
+    notification = get_object_or_404(Notification, pk=pk)
+    if request.method == 'POST':
+        form = NotificationForm(request.POST, instance=notification)
+        if form.is_valid():
+            form.save()
+            return redirect('/notification/')
+    else:
+        form = NotificationForm(instance=notification)
+    return render(request, 'app/notification/edit.html', {'form': form})
+
+def notification_delete(request, pk):
+    notification = get_object_or_404(Notification, pk=pk)
+    if request.method == 'POST':
+        notification.delete()
+        return redirect('/notification/')
+    return render(request, 'app/notification/delete_confirm.html', {'notification': notification})
