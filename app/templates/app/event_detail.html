@@ -1,80 +1,77 @@
 {% extends 'base.html' %} {% block content %}
-<div class="container">
-    <div class="row">
+<div class="container py-5">
+    <div class="row mb-4">
         <div class="d-flex justify-content-between align-items-center">
-            <h1>{{ event.title }}</h1>
+            <h1 class="display-4 text-primary">{{ event.title }}</h1>
             <div>
                 {% if user_is_organizer %}
                 <a
                     href="{% url 'event_edit' event.id %}"
-                    class="btn btn-outline-primary me-2"
+                    class="btn btn-outline-primary btn-lg"
                 >
-                    <i class="bi bi-pencil me-1"></i>Editar
+                    <i class="bi bi-pencil me-1"></i> Editar
                 </a>
                 {% endif %}
             </div>
         </div>
-        <div class="row">
-            <div class="card">
-                <div class="card-body">
-                    <h5 class="card-title">Detalles del Evento</h5>
-                    <p class="card-text">{{ event.description }}</p>
-                    <div class="mt-4">
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="bg-light rounded-circle p-2 me-3">
-                                <i
-                                    class="bi bi-calendar-event text-primary"
-                                ></i>
-                            </div>
-                            <div>
-                                <h6 class="mb-0">Fecha y Hora</h6>
-                                <p class="mb-0">
-                                    {{ event.scheduled_at|date:"l, j \\d\\e F
-                                    \\d\\e Y, H:i" }}
-                                </p>
-                            </div>
+    </div>
+
+    <div class="row">
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-secondary">Detalles del Evento</h5>
+                <p class="card-text text-muted">{{ event.description }}</p>
+                <div class="mt-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="bg-light rounded-circle p-3 me-3 shadow-sm">
+                            <i
+                                class="bi bi-calendar-event text-primary fs-4"
+                            ></i>
                         </div>
-                        <div class="d-flex align-items-center mb-3">
-                            <div class="bg-light rounded-circle p-2 me-3">
-                                <i class="bi bi-person text-primary"></i>
-                            </div>
-                            <div>
-                                <h6 class="mb-0">Organizador</h6>
-                                <p class="mb-0">{{ event.organizer }}</p>
-                            </div>
+                        <div>
+                            <h6 class="mb-1 text-secondary">Fecha y Hora</h6>
+                            <p class="mb-0 text-muted">
+                                {{ event.scheduled_at }}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="bg-light rounded-circle p-3 me-3 shadow-sm">
+                            <i class="bi bi-person text-primary fs-4"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1 text-secondary">Organizador</h6>
+                            <p class="mb-0 text-muted">{{ event.organizer }}</p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Sección de comentarios -->
-        <div class="row mt-5">
-            <h3>Comentarios</h3>
-            <div class="list-group">
-                {% for comment in event.comments.all %}
-                <div
-                    class="list-group-item d-flex justify-content-between align-items-start"
-                >
+    <!-- Sección de comentarios -->
+    <div class="row mt-5">
+        <h3 class="text-primary">Comentarios</h3>
+        <div class="list-group">
+            {% for comment in event.comments.all %}
+            <div class="list-group-item list-group-item-action shadow-sm mb-3">
+                <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <h5>{{ comment.title }}</h5>
-                        <p>{{comment.user.email}}</p>
-                        <p>{{ comment.text }}</p>
+                        <h5 class="text-secondary">{{ comment.title }}</h5>
+                        <p class="text-muted mb-1">{{ comment.user.email }}</p>
+                        <p class="text-muted">{{ comment.text }}</p>
                         <small class="text-muted">
-                            Publicado el {{ comment.created_at|date:"l, j \\d\\e
-                            F \\d\\e Y, H:i" }}
+                            Publicado el {{ comment.created_at}}
                         </small>
                     </div>
                     {% if comment.user == request.user %}
                     <div class="d-flex">
-                        <!-- Botón de Editar -->
                         <a
                             href="{% url 'update_comment' event.id comment.id %}"
                             class="btn btn-warning btn-sm me-2"
                         >
                             <i class="bi bi-pencil"></i> Editar
                         </a>
-                        <!-- Botón de Eliminar -->
                         <form
                             method="post"
                             action="{% url 'delete_comment' event.id comment.id %}"
@@ -87,40 +84,52 @@
                     </div>
                     {% endif %}
                 </div>
-                {% empty %}
-                <p>No hay comentarios aún. ¡Sé el primero en comentar!</p>
-                {% endfor %}
             </div>
-        </div>
-
-        <!-- Formulario para agregar un nuevo comentario -->
-        <div class="row mt-4">
-            <h3>Agregar un comentario</h3>
-            <form method="post" action="{% url 'add_comment' event.id %}">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label for="title" class="form-label">Título</label>
-                    <input
-                        type="text"
-                        class="form-control"
-                        id="title"
-                        name="title"
-                        required
-                    />
-                </div>
-                <div class="mb-3">
-                    <label for="text" class="form-label">Comentario</label>
-                    <textarea
-                        class="form-control"
-                        id="text"
-                        name="text"
-                        rows="3"
-                        required
-                    ></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary">Publicar</button>
-            </form>
+            {% empty %}
+            <p class="text-muted">
+                No hay comentarios aún. ¡Sé el primero en comentar!
+            </p>
+            {% endfor %}
         </div>
     </div>
-    {% endblock %}
+
+    <!-- Formulario para agregar un nuevo comentario -->
+    <div class="row mt-4">
+        <h3 class="text-primary">Agregar un comentario</h3>
+        <form
+            method="post"
+            action="{% url 'add_comment' event.id %}"
+            class="shadow-sm p-4 bg-light rounded"
+        >
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="title" class="form-label text-secondary"
+                    >Título</label
+                >
+                <input
+                    type="text"
+                    class="form-control"
+                    id="title"
+                    name="title"
+                    required
+                />
+            </div>
+            <div class="mb-3">
+                <label for="text" class="form-label text-secondary"
+                    >Comentario</label
+                >
+                <textarea
+                    class="form-control"
+                    id="text"
+                    name="text"
+                    rows="3"
+                    required
+                ></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg">
+                Publicar
+            </button>
+        </form>
+    </div>
 </div>
+{% endblock %}
