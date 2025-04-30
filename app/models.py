@@ -123,7 +123,7 @@ class Ticket(models.Model):
         ticket.ticket_code = str(ticket.id) #Figura como error, pero al crear ejectuar Ticket.create() se genera id, por lo que deberia poder copiarlo en ticket_code
         ticket.save()
 
-        return True, None
+        return True, ticket.ticket_code
     
     def update(self, event, ticket_type, quantity):
         if quantity < 0:
