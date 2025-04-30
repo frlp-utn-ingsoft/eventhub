@@ -126,11 +126,11 @@ class Ticket(models.Model):
         return True, ticket.ticket_code
     
     def update(self, event, ticket_type, quantity):
-        if quantity < 0:
+        if quantity is None or quantity <= 0:
             return False, {"quantity": "La cantidad de tickets debe ser mayor a 0"}
         
         self.modified_date = now()
-        if now() > self.buy_date + timedelta(minutes=30):
+        if not self.user.is_organizer and now() > self.buy_date + timedelta(minutes=30):
             return False, {"error": "El ticket solo se puede modificar en los 30 minutos posteriores a su creacion"}
         self.event = event or self.event
         self.ticket_type = ticket_type or self.ticket_type
