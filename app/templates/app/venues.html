@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Venues</h1>
+        <h1>Ubicaciones</h1>
         {% if user_is_organizer %}
             <a
                 href="{% url 'venue_form' %}"
@@ -19,9 +19,10 @@
     <table class="table">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Address</th>
-                <th>Actions</th>
+                <th>Nombre</th>
+                <th>Dirrecion</th>
+                <th>Ciudad</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -29,22 +30,23 @@
                 <tr>
                     <td>{{ venue.name }}</td>
                     <td>{{ venue.address }}</td>
+                    <td>{{ venue.city }}</td>
                     <td>
                         <div class="hstack gap-1">
-                            <a href="{% url 'venue_detail' venue.id %}"
+                            <a href=""
                                class="btn btn-sm btn-outline-primary"
                                aria-label="View details"
                                title="View details">
                                 <i class="bi bi-eye" aria-hidden="true"></i>
                             </a>
                             {% if user_is_organizer %}
-                                <a href="{% url 'venue_edit' venue.id %}"
+                                <a href=""
                                    class="btn btn-sm btn-outline-secondary"
                                    aria-label="Edit"
                                    title="Edit">
                                     <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
-                                <form action="{% url 'venue_delete' venue.id %}" method="POST">
+                                <form action="" method="POST">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-danger"
                                         title="Delete"

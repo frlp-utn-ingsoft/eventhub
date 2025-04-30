@@ -159,5 +159,5 @@ def venue_form(request, id=None):
     return render(
         request,
         "app/venue_form.html",
-        {"venue": venue, "user_is_organizer": request.user.is_organizer},
+        {"venue": venue, "user_is_organizer": request.user.is_organizer,},
     )

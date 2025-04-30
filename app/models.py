@@ -89,7 +89,7 @@ class Venue(models.Model):
         if len(errors.keys()) > 0:
             return False, errors
 
-        Event.objects.create(
+        Venue.objects.create(
             name=name,
             address=address,
             city=city,
