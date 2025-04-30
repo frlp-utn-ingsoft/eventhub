@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import MinValueValidator
 from django.utils import timezone
+from datetime import timedelta
 
 class Venue(models.Model):
     # Atributes
@@ -272,3 +273,7 @@ class Ticket(models.Model):
         
         self.save()
         return self
+    
+    def is_recent_purchase(self, minutes=30):
+        """Verifica si la compra fue hace menos de X minutos"""
+        return (timezone.now() - self.buy_date) < timedelta(minutes=minutes)
