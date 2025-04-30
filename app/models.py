@@ -28,7 +28,58 @@ class User(AbstractUser):
             errors["password"] = "Las contraseñas no coinciden"
 
         return errors
+    
+class Category(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField(null=True, blank=True, default="Sin descripción")
+    active = models.BooleanField(default=True)
+    event = models.ForeignKey(
+        'app.Event',                # Ajusta 'app' al nombre real de tu app si es distinto
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='categoriesEvent'
+    )
+    
+    def __str__(self):
+        return self.name
+    
+    @classmethod
+    def validate(cls, name, description):
+        errors = {}
 
+        if name == "":
+            errors["name"] = "Por favor ingrese un titulo"
+
+        if description == "":
+            errors["description"] = "Por favor ingrese una descripcion"
+
+        return errors
+    
+    @classmethod
+    def new(cls, name, description, event=None, active=True):  # El evento puede ser None
+        if not description:
+            description = "Sin descripción"
+        category = cls(name=name, description=description, event=event, active=active)
+        category.save()
+        return category
+    
+    @classmethod
+    def update(cls, category_id, name=None, description=None, active=None, event=None):
+        try:
+            category = cls.objects.get(id=category_id)
+            if name:
+                category.name = name
+            if description is not None:
+                category.description = description if description else "Sin descripción"
+            if active is not None:
+                category.active = active
+            if event is not None:
+                category.event = event  # Permite actualizar la relación con el evento
+            category.save()
+            return True, category
+        except cls.DoesNotExist:
+            return False, "Categoria no encontrada"
 
 class Event(models.Model):
     title = models.CharField(max_length=200)
@@ -37,6 +88,7 @@ class Event(models.Model):
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True, related_name="event_categories")  # Allowing nulls 
 
     def __str__(self):
         return self.title
@@ -171,44 +223,3 @@ class Notification(models.Model):
             return False, "Notificacion no encontrada"
         
 
-class Category(models.Model):
-    name = models.CharField(max_length=200)
-    description = models.TextField()
-    active = models.BooleanField(default=True)
-    
-    def __str__(self):
-        return self.name
-    
-    @classmethod
-    def validate(cls, name, description):
-        errors = {}
-
-        if name == "":
-            errors["name"] = "Por favor ingrese un titulo"
-
-        if description == "":
-            errors["description"] = "Por favor ingrese una descripcion"
-
-        return errors
-    
-    @classmethod
-    def new(cls, name, description, active):
-        category = cls(name=name, description=description, active=active)
-        category.save()
-        return category
-    
-    @classmethod
-    def update(cls, category_id, name=None, description=None, active=None):
-        
-        try:
-            category = cls.objects.get(id=category_id)
-            if name:
-                category.name = name
-            if description is not None:
-                category.description = description
-            if active is not None:
-                category.active = active
-            category.save()
-            return True, category # retorno verdadero y la categoria.
-        except cls.DoesNotExist:
-            return False, "Categoria no encontrada"  # aca retorno falso si la categoria no se encontro.

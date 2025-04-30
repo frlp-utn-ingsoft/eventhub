@@ -128,21 +128,24 @@ def event_form(request, id=None):
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
 
-
-
 def list_categories(request):
-    categories = Category.objects.all()
-    return render(request, 'categories/list.html', {'categories': categories})
+    categories = Category.objects.select_related('event').all()
+    return render(request, 'app/category_list.html', {'categories': categories})
+
 
 def create_category(request):
     if request.method == 'POST':
         form = CategoryForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('list_categories')
+            return redirect('categories')  # Asegurate que esta URL exista
     else:
         form = CategoryForm()
-    return render(request, 'categories/form.html', {'form': form})
+
+    return render(request, 'app/category_form.html', {'form': form})
+
+
+
 
 def update_category(request, category_id):
     category = get_object_or_404(Category, id=category_id)
@@ -153,7 +156,8 @@ def update_category(request, category_id):
             return redirect('list_categories')
     else:
         form = CategoryForm(instance=category)
-    return render(request, 'categories/form.html', {'form': form})
+    return render(request, 'app/category_form.html', {'form': form})
+
 
 def delete_category(request, category_id):
     category = get_object_or_404(Category, id=category_id)
@@ -161,4 +165,3 @@ def delete_category(request, category_id):
         category.delete()
         return redirect('list_categories')
     return render(request, 'categories/confirm_delete.html', {'category': category})
-

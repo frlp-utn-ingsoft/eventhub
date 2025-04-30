@@ -9,3 +9,4 @@ class CategoryForm(forms.ModelForm):
         fields = ['name', 'description', 'active']
 
 
+
