@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>Comentarios para {{ event.title }}</h2>
+
+{% for comment in comments %}
+  <div>
+    <strong>{{ comment.user.username }}</strong> ({{ comment.created_at|date:"d/m/Y H:i" }}):<br>
+    {{ comment.content }}
+    {% if user == comment.user or user.is_staff %}
+      | <a href="{% url 'comment_edit' comment.pk %}">Editar</a>
+      | <a href="{% url 'comment_delete' comment.pk %}">Eliminar</a>
+    {% endif %}
+  </div>
+  <hr>
+{% endfor %}
+
+<a href="{% url 'comment_add' event.id %}">Agregar comentario</a>
+{% endblock %}

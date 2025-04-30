@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>¿Estás seguro que querés eliminar este comentario?</h2>
+
+<p><strong>{{ comment.content }}</strong></p>
+
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">Sí, eliminar</button>
+  <a href="{% url 'comment_list' comment.event.id %}">Cancelar</a>
+</form>
+{% endblock %}
