@@ -69,18 +69,6 @@ def home(request):
 
 
 
-#@login_required
-#def events(request):
-    #si el usuario es organizador recupera todos sus eventos, si el usuario no es organizador recupera todos los eventos siempre y cuando la fecha del evento sea posterior a la actual. De esta forma permitimos que el usuario que no es  organizador pueda comprar entradas.
-#    if request.user.is_organizer:
-#        events = Event.objects.filter(organizer=request.user).order_by("scheduled_at")
-#    else:
-#        events = Event.objects.filter(scheduled_at__gte=timezone.now()).order_by("scheduled_at")
-#    return render(
-#        request,
- #       "app/events.html",
-  #      {"events": events, "user_is_organizer": request.user.is_organizer},
-  #  )
 
 
 @login_required
@@ -599,7 +587,13 @@ def mis_tickets(request):
 
 @login_required
 def update_ticket(request, ticket_id):
-    ticket = get_object_or_404(Ticket , pk = ticket_id)
+    ticket = get_object_or_404(Ticket, pk=ticket_id)
+
+    # Verificamos si existe una solicitud de reembolso con el mismo ticket_code
+    if RefoundRequest.objects.filter(ticket_code=ticket.ticket_code).exists():
+        messages.error(request, "No se puede editar un ticket que tiene una solicitud de reembolso.")
+        return redirect('Mis_tickets')
+
     if request.method == 'POST':
         quantity = request.POST.get('quantity')
         type = request.POST.get('type')
@@ -608,7 +602,8 @@ def update_ticket(request, ticket_id):
             ticket.type = type
             ticket.save()
             return redirect('Mis_tickets')
-    return render(request, 'app/Mis_tickets', {'ticket': ticket})
+
+    return render(request, 'app/Mis_tickets.html', {'ticket': ticket})
 
     
 
