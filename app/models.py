@@ -2,7 +2,83 @@ import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import MinValueValidator
+from django.utils import timezone
 
+class Venue(models.Model):
+    # Atributes
+    name = models.CharField(max_length=255, verbose_name = 'Nombre')
+    adress = models.CharField(max_length=255, verbose_name = 'Dirección')
+    city = models.CharField(max_length=255, verbose_name = 'Ciudad')
+    capacity = models.PositiveIntegerField(validators=[MinValueValidator(1)], verbose_name = 'Capacidad')
+    contact = models.CharField(max_length=255, verbose_name = 'Contacto')
+
+    # Meta class
+    class Meta:
+        verbose_name = 'Venue'
+        verbose_name_plural = 'Venues'
+        ordering = ['-name']
+
+    # Methods
+    def __str__(self):
+        return f"{self.name}"
+    
+    @classmethod
+    def validate(cls, name, adress, city, capacity, contact):
+        """Validate venue data before creation"""
+        errors = {}
+
+        if not name or len(name) == 0:
+            errors["name"] = "Por favor ingrese un nombre"
+        
+        if not adress or len(adress) == 0:
+            errors["adress"] = "Por favor ingrese una dirección"
+        
+        if not city or len(city) == 0:
+            errors["city"] = "Por favor ingrese una ciudad"
+        
+        if not capacity or capacity < 1:
+            errors["capacity"] = "Por favor ingrese una capacidad válida (capacidad > 1)"
+        
+        if not contact or len(contact) == 0:
+            errors["contact"] = "Por favor ingrese un contacto"
+        
+        return errors
+    
+    @classmethod
+    def new(cls, name, adress, city, capacity, contact):
+        """Create a new ticketvenue with validation"""
+        errors = cls.validate(name, adress, city, capacity, contact)
+
+        if errors:
+            return False, errors
+
+        venue = cls.objects.create(
+            name = name,
+            adress = adress,
+            city = city,
+            capacity = capacity,
+            contact = contact
+        )
+
+        return True, venue
+
+    def update(self, name, adress, city, capacity, contact):
+        """Update venue fields"""
+        
+        if name is not None and len(name) != 0:
+            self.name = name
+        if adress is not None and len(adress) != 0:
+            self.adress = adress
+        if city is not None and len(city) != 0:
+            self.city = city
+        if capacity is not None and capacity >= 1:
+            self.capacity = capacity
+        if contact is not None and len(contact) != 0:
+            self.contact = contact
+        
+        self.save()
+        return self
+    
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
 
@@ -35,6 +111,8 @@ class Event(models.Model):
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
 
     def __str__(self):
         return self.title
@@ -74,6 +152,10 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+    
+   
+    def available_tickets(self):
+        return self.venue.capacity - self.tickets.count()
 
 class Ticket(models.Model):
     # Constants
@@ -85,7 +167,9 @@ class Ticket(models.Model):
     ]
 
     # Atributes
-    buy_date = models.DateTimeField(verbose_name = 'Fecha de compra')
+    buy_date = models.DateTimeField(
+        default=timezone.now(),
+        verbose_name = 'Fecha de compra')
     ticket_code = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
@@ -108,18 +192,12 @@ class Ticket(models.Model):
 
     # Methods
     def __str__(self):
-        return f"{self.ticket_code} - {self.get_type_display()} ({self.quantity})"
+        return f"{self.ticket_code}"
     
     @classmethod
-    def validate(cls, buy_date, ticket_code, quantity, type, event, user):
+    def validate(cls, quantity, type, event, user):
         """Validate ticket data before creation"""
         errors = {}
-
-        if not buy_date:
-            errors["buy_date"] = "Por favor ingrese una fecha de compra"
-
-        if not ticket_code or not ticket_code.strip():
-            errors["ticket_code"] = "Por favor ingrese un código para el ticket"
 
         if not quantity or quantity < 1:
             errors["quantity"] = "Por favor ingrese una cantidad válida (mínimo 1)"
@@ -136,15 +214,14 @@ class Ticket(models.Model):
         return errors
     
     @classmethod
-    def new(cls, buy_date, ticket_code, quantity, type, event, user):
+    def new(cls, quantity, type, event, user):
         """Create a new ticket with validation"""
-        errors = cls.validate(buy_date, quantity, type, event, user)
+        errors = cls.validate(quantity, type, event, user)
 
         if errors:
             return False, errors
 
         ticket = cls.objects.create(
-            buy_date = buy_date,
             quantity = quantity,
             type = type,
             event = event,
