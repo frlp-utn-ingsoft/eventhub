@@ -1,0 +1,70 @@
+/* 🔔 Dropdown de notificaciones - estilo glassmorphism */
+#notifDropdown {
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.85);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    animation: dropdownFade 0.3s ease-out;
+    border: 1px solid rgba(0,0,0,0.05);
+    padding: 0.2rem;
+  }
+  
+  /* 🔄 Animación de entrada */
+  @keyframes dropdownFade {
+    from {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* 🔘 Estilo de cada notificación */
+  #notifDropdown li {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    transition: background 0.2s ease;
+    cursor: pointer;
+  }
+  
+  #notifDropdown li:hover {
+    background-color: rgba(0, 123, 255, 0.07);
+  }
+  
+  /* 🧊 Notificación vacía */
+  #notifDropdown .empty {
+    color: #888;
+    text-align: center;
+    font-size: 0.9rem;
+    cursor: pointer; /* incluso si no tiene acción */
+    padding: 1rem;
+  }
+  
+  /* ➕ Enlace al panel completo */
+  #notifDropdown .footer-link {
+    text-align: center;
+    padding: 0.8rem;
+    font-weight: 500;
+    color: #007bff;
+    text-decoration: none;
+    display: block;
+  }
+  
+  #notifDropdown .footer-link:hover {
+    background: #f1f1f1;
+    text-decoration: underline;
+  }
+  
+  /* 🛑 Evita que el ítem clicado quede azul/focused */
+  #notifDropdown li:focus,
+  #notifDropdown li:active,
+  #notifDropdown a:focus,
+  #notifDropdown a:active {
+    background-color: transparent;
+    outline: none;
+    box-shadow: none;
+  }
+  
