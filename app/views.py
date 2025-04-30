@@ -1,10 +1,11 @@
 import datetime
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from .forms import CategoryForm
 
-from .models import Event, User
+from .models import Category, Event, User
 
 
 def register(request):
@@ -125,3 +126,83 @@ def event_form(request, id=None):
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
+
+
+def is_organizer(user):
+    return user.is_organizer
+
+@login_required
+def categories(request):
+    categories = Category.objects.all().order_by('name')
+    return render(request, 'app/categories.html', {'categories': categories})
+
+@login_required
+def category_form(request):
+    if request.method == "POST":
+        name = request.POST.get("name")
+        description = request.POST.get("description")
+        is_active = request.POST.get("is_active") == "on"
+        
+        success, result = Category.new(name, description, is_active)
+        
+        if success:
+            return redirect('categories')
+        
+        return render(request, 'app/category_form.html', {
+            'errors': result,
+            'data': {
+                'name': name,
+                'description': description,
+                'is_active': is_active
+            }
+        })
+        
+    return render(request, 'app/category_form.html', {
+        'data': {
+            'is_active': True  # Por defecto activa
+        }
+    })
+
+@login_required
+def category_edit(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    
+    if request.method == "POST":
+        name = request.POST.get("name")
+        description = request.POST.get("description")
+        is_active = request.POST.get("is_active") == "on"
+        
+        success, errors = category.update(
+            name=name,
+            description=description,
+            is_active=is_active
+        )
+        
+        if success:
+            return redirect('categories')
+            
+        return render(request, 'app/category_form.html', {
+            'category': category,
+            'errors': errors,
+            'data': {
+                'name': name,
+                'description': description,
+                'is_active': is_active
+            }
+        })
+    
+    return render(request, 'app/category_form.html', {
+        'category': category,
+        'data': {
+            'name': category.name,
+            'description': category.description,
+            'is_active': category.is_active
+        }
+    })
+
+@login_required
+def category_delete(request, category_id):
+    if request.method == "POST":
+        category = get_object_or_404(Category, id=category_id)
+        category.delete()
+    return redirect('categories')
