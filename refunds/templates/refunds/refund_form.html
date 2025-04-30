@@ -1,0 +1,41 @@
+{% extends "base.html" %} {% load static %} {% block content %}
+<div class="container">
+    <h3 class="mb-4">Formulario de Solicitud</h3>
+
+    <div class="alert alert-info" role="alert">
+        <i class="bi bi-info-circle-fill me-2"></i>Puedes solicitar un reembolso
+        hasta 48 horas antes del evento. Una vez procesada la solicitud, el
+        reembolso se realizará en un plazo de 7 a 14 días hábiles.
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="{{ form.ticket_code.id_for_label }}" class="form-label"
+                >Código de ticket</label
+            >
+            {{ form.ticket_code }} {{form.ticket_code.errors}}
+        </div>
+
+        <div class="mb-3">
+            <label for="{{ form.reason.id_for_label }}" class="form-label"
+                >Motivo del reembolso *</label
+            >
+            {{ form.reason }} {{ form.reason.errors }}
+        </div>
+
+        <div class="mb-3 form-check">
+            {{ form.accept_policy }}
+            <label
+                class="form-check-label"
+                for="{{ form.accept_policy.id_for_label }}"
+            >
+                Entiendo y acepto la
+                <a href="#" target="_blank">política de reembolsos</a>.
+            </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
+    </form>
+</div>
+{% endblock %}
