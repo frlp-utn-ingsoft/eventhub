@@ -14,6 +14,8 @@ from django.urls import reverse_lazy
 from django.views import View
 from django.http import JsonResponse
 from django.template.loader import render_to_string
+from .forms import RatingForm
+from .models import Rating
 
 def register(request):
     if request.method == "POST":
@@ -277,3 +279,53 @@ class NotificationDropdown(LoginRequiredMixin, View):
             request=request,
         )
         return JsonResponse({"html": html})
+      
+################### feature/rating ################### 
+@login_required
+def rating_create(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+
+    if request.method == "POST":
+        form = RatingForm(request.POST)
+        if form.is_valid():
+            rating = form.save(commit=False)
+            rating.user = request.user
+            rating.event = event
+            rating.save()
+            return redirect("event_detail", id=event_id)
+    else:
+        form = RatingForm()
+
+    return render(request, "app/rating_form.html", {"form": form, "event": event})
+
+
+@login_required
+def rating_edit(request, rating_id):
+    rating = get_object_or_404(Rating, pk=rating_id)
+
+    if rating.user != request.user:
+        return redirect("event_detail", id=rating.event.id) # type: ignore
+
+    if request.method == "POST":
+        form = RatingForm(request.POST, instance=rating)
+        if form.is_valid():
+            form.save()
+            return redirect("event_detail", id=rating.event.id) # type: ignore
+    else:
+        form = RatingForm(instance=rating)
+
+    return render(request, "app/rating_form.html", {"form": form, "event": rating.event})
+
+
+@login_required
+def rating_delete(request, rating_id):
+    rating = get_object_or_404(Rating, pk=rating_id)
+    user = request.user
+
+    if user == rating.user or user.is_organizer:
+        event_id = rating.event.id # type: ignore
+        rating.delete()
+        return redirect("event_detail", id=event_id)
+
+    return redirect("events") 
+    
