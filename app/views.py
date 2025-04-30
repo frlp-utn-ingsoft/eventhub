@@ -3,6 +3,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from django.contrib import messages
 
 from .models import Event, User, Ticket
 
@@ -130,54 +131,35 @@ def event_form(request, id=None):
 def buy_ticket(request, id):
     event = get_object_or_404(Event, pk=id)
 
+    print("Datos recibidos:", request.POST)
+
     if request.method == "POST":
-        quantity = request.POST.get("quantity")
+        try:
+            quantity = int(request.POST.get("quantity"))
+        except (TypeError, ValueError):
+            messages.error(request, "La cantidad debe ser un número entero")
+            return render(request, "app/buy_ticket.html", {"event": event})
+
         type = request.POST.get("type")
-        event = event
         user = request.user
 
-        errors = Ticket.objects.validate(quantity, type, event, user)
+        # Validación y creación
+        success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
-        if len(errors) > 0:
+        if success:
+            messages.success(request, "¡Ticket comprado!")
+            return redirect("events")
+        else:
+            # 'result' contiene los errores de validación
+            messages.error(request, "Error al comprar el ticket")
             return render(
                 request,
-                "app/buy_ticket.html", {
-                "event": event,
-                "errors": errors,
-                "data": request.POST,
-            })
-
-        else:
-            user = Ticket.objects.new(quantity=quantity, type=type, event=event, user=user)
-            return redirect("events")
-
+                "app/buy_ticket.html",
+                {
+                    "event": event,
+                    "errors": result,
+                    "data": request.POST,
+                }
+            )
 
     return render(request, "app/buy_ticket.html", {"event": event})
-
-"""def register(request):
-    if request.method == "POST":
-        email = request.POST.get("email")
-        username = request.POST.get("username")
-        is_organizer = request.POST.get("is-organizer") is not None
-        password = request.POST.get("password")
-        password_confirm = request.POST.get("password-confirm")
-
-        errors = User.validate_new_user(email, username, password, password_confirm)
-
-        if len(errors) > 0:
-            return render(
-                request,
-                "accounts/register.html",
-                {
-                    "errors": errors,
-                    "data": request.POST,
-                },
-            )
-        else:
-            user = User.objects.create_user(
-                email=email, username=username, password=password, is_organizer=is_organizer
-            )
-            login(request, user)
-            return redirect("events")
-
-    return render(request, "accounts/register.html", {})"""

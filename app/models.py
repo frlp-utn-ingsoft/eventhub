@@ -155,7 +155,12 @@ class Event(models.Model):
     
    
     def available_tickets(self):
-        return self.venue.capacity - self.tickets.count()
+        aux = 0
+
+        for t in self.tickets.all():
+            aux = aux + t.quantity
+
+        return self.venue.capacity - aux
 
 class Ticket(models.Model):
     # Constants
@@ -168,48 +173,66 @@ class Ticket(models.Model):
 
     # Atributes
     buy_date = models.DateTimeField(
-        default=timezone.now(),
-        verbose_name = 'Fecha de compra')
+        default=timezone.now,
+        verbose_name='Fecha de compra'
+    )
     ticket_code = models.UUIDField(
         default=uuid.uuid4,
         unique=True,
         editable=False,
         verbose_name='Código del ticket'
-    ),
-    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)], verbose_name = 'Cantidad')
-    type = models.CharField(max_length=25, choices=TICKETS_TYPE_CHOICES, verbose_name = 'Tipo de ticket')
+    )
+    quantity = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)],
+        verbose_name='Cantidad'
+    )
+    type = models.CharField(
+        max_length=25,
+        choices=TICKETS_TYPE_CHOICES,
+        verbose_name='Tipo de ticket'
+    )
 
     # Foreign keys
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='tickets')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tickets')
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.CASCADE,
+        related_name='tickets'
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='tickets'
+    )
 
-    # Meta class
     class Meta:
         verbose_name = 'Ticket'
         verbose_name_plural = 'Tickets'
-        # Default ordering: newest tickets first
         ordering = ['-buy_date']
 
-    # Methods
     def __str__(self):
-        return f"{self.ticket_code}"
+        return str(self.ticket_code)
     
     @classmethod
     def validate(cls, quantity, type, event, user):
         """Validate ticket data before creation"""
         errors = {}
 
-        if not quantity or quantity < 1:
-            errors["quantity"] = "Por favor ingrese una cantidad válida (mínimo 1)"
+        if quantity is None:
+            errors["quantity"] = "La cantidad es requerida"
+        elif not isinstance(quantity, int) or isinstance(quantity, bool):
+            errors["quantity"] = "La cantidad debe ser un número entero válido"
+        elif quantity < 1:
+            errors["quantity"] = "La cantidad debe ser al menos 1"
         
-        if not type or type not in dict(cls.TICKET_TYPE_CHOICES).keys():
-            errors["type"] = "Por favor seleccione un tipo válido"
+        valid_types = [choice[0] for choice in cls.TICKETS_TYPE_CHOICES]
+        if not type or type not in valid_types:
+            errors["type"] = f"Tipo inválido. Opciones válidas: {', '.join(valid_types)}"
         
         if not event:
-            errors["event"] = "Por favor seleccione un evento"
+            errors["event"] = "Evento es requerido"
         
         if not user:
-            errors["user"] = "Por favor seleccione un usuario"
+            errors["user"] = "Usuario es requerido"
         
         return errors
     
@@ -221,21 +244,23 @@ class Ticket(models.Model):
         if errors:
             return False, errors
 
-        ticket = cls.objects.create(
-            quantity = quantity,
-            type = type,
-            event = event,
-            user = user
-        )
+        try:
+            ticket = cls.objects.create(
+                quantity=quantity,
+                type=type,
+                event=event,
+                user=user
+            )
 
-        return True, ticket
+            print(ticket)
+            return True, ticket
+        except Exception as e:
+            return False, {"error": f"Error al crear ticket: {str(e)}"}
 
-    def update(self, buy_date, ticket_code, quantity, type, event, user):
+    def update(self, buy_date, quantity, type, event, user):
         """Update ticket fields"""
         if buy_date is not None:
             self.buy_date = buy_date
-        if ticket_code is not None:
-            self.ticket_code = ticket_code
         if quantity is not None:
             self.quantity = quantity
         if type is not None:

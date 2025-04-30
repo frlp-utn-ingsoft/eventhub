@@ -24,7 +24,7 @@
             </div>
             <div>
                 <h6 class="mb-0">Ubicación</h6>
-                <p class="mb-0">{{ event.location }}</p>
+                <p class="mb-0">{{ event.venue }} - {{ event.venue.adress }}, {{ event.venue.city }}</p>
             </div>
           </div>
           <div class="d-flex align-items-center mb-3">
@@ -43,18 +43,19 @@
             <div class="mb-3">
               <label for="quantity" class="form-label">Cantidad de entradas</label>
               <div class="input-group">
-                <button type="button" class="btn btn-outline-secondary">-</button>
-                <input type="number" name="quantity" id="quantity" class="form-control text-center" value="1" min="1" max="{{ event.available_tickets }}">
-                <button type="button" class="btn btn-outline-secondary">+</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="decrementQuantity()">-</button>
+                <input type="number" name="quantity" id="quantity" class="form-control text-center" value="1" min="1" max="5" onchange="setQuantity()">
+                <button type="button" class="btn btn-outline-secondary" onclick="incrementQuantity()">+</button>
               </div>
               <div class="form-text">{{ event.available_tickets }} entradas disponibles</div>
             </div>
 
             <div class="mb-3">
-              <label for="ticket_type" class="form-label">Tipo de entrada</label>
-              <select name="ticket_type" id="ticket_type" class="form-select">
-                <option value="general" data-price="45.99">Entrada General</option>
-                <option value="vip" data-price="89.99">Entrada VIP</option>
+              <label for="type" class="form-label">Tipo de entrada</label>
+              
+              <select name="type" id="type" class="form-select" required>
+                <option value="GENERAL" data-price="45.99">Entrada General</option>
+                <option value="VIP" data-price="89.99">Entrada VIP</option>
               </select>
             </div>
 
@@ -94,12 +95,12 @@
       <div class="card mb-3">
         <div class="card-body">
           <h6 class="card-title">Resumen de compra</h6>
-          <p class="mb-1">Precio por entrada: <span class="float-end"></span></p>
-          <p class="mb-1">Cantidad: <span class="float-end">1</span></p>
-          <p class="mb-1">Subtotal: <span class="float-end">${{ event.ticket_price }}</span></p>
-          <p class="mb-1">Impuestos (10%): <span class="float-end"></span></p>
+          <p class="mb-1">Precio por entrada: <span class="float-end" id="summary__ticket-price">45.99</span></p>
+          <p class="mb-1">Cantidad: <span class="float-end" id="summary__quantity">1</span></p>
+          <p class="mb-1">Subtotal: <span class="float-end" id="summary__subtotal">45.99</span></p>
+          <p class="mb-1">Impuestos (10%): <span class="float-end" id="summary__taxes">4.59</span></p>
           <hr>
-          <p class="fw-bold">Total: <span class="float-end"></span></p>
+          <p class="fw-bold">Total: <span class="float-end" id="total">50.58</span></p>
         </div>
       </div>
       <div class="card">
@@ -116,4 +117,122 @@
     </div>
   </div>
 </div>
+
+
+<!-- SCRIPTS -->
+<script>
+  function incrementQuantity() {
+    const quantityInput = document.getElementById('quantity');
+    const currentValue = parseInt(quantityInput.value) || 1;
+    const max = parseInt(quantityInput.max);
+
+    if (currentValue < max) {
+      const newValue = currentValue + 1;
+      quantityInput.value = newValue;
+
+      setQuantity(newValue);
+    }
+  }
+</script>
+
+<script>
+  function decrementQuantity() {
+    const quantityInput = document.getElementById('quantity');
+    const currentValue = parseInt(quantityInput.value) || 1;
+
+    if (currentValue > 1) {
+      const newValue = currentValue - 1;
+
+      quantityInput.value = newValue;
+
+      setQuantity(newValue);
+    }
+  }
+</script>
+
+<script>
+  function setQuantity(value) {
+    const summaryQuantity = document.getElementById('summary__quantity');
+
+    if (value !== undefined) {
+      summaryQuantity.innerText = '';
+      summaryQuantity.innerText = value;
+
+      setSubTotal();
+    }
+  }
+</script>
+
+<script>
+  const ticketTypeSelect = document.getElementById('type');
+  const summaryTicketPrice = document.getElementById('summary__ticket-price');
+  
+  ticketTypeSelect.addEventListener('change', () => {
+    const selectedOption = ticketTypeSelect.options[ticketTypeSelect.selectedIndex];
+    const price = selectedOption.getAttribute('data-price');
+    
+    if(summaryTicketPrice) {
+      summaryTicketPrice.textContent = price;
+      setSubTotal();
+    }
+  });
+</script>
+
+<script>
+  function setSubTotal() {
+    const quantityInput = document.getElementById('quantity');
+    const subTotalElement = document.getElementById('summary__subtotal');
+    const selectedOption = ticketTypeSelect.options[ticketTypeSelect.selectedIndex];
+    
+    const price = selectedOption.getAttribute('data-price');
+    const quantity = quantityInput.value;
+    
+    const subtotal = parseFloat(price * quantity).toFixed(2);
+
+    subTotalElement.innerText = '';
+    subTotalElement.innerText = subtotal;
+
+    setTaxes(subtotal);
+  }
+</script>
+
+
+<script>
+  function setTaxes(subtotal) {
+    const taxesElement = document.getElementById('summary__taxes');
+
+    const taxes = parseFloat(subtotal * 0.1).toFixed(2);
+
+    taxesElement.innerText = '';
+    taxesElement.innerText = taxes;
+
+    setTotal(subtotal, taxes)
+  }
+</script>
+
+<script>
+  function setTotal(subtotal, taxes) {
+    const totalElement = document.getElementById('total');
+
+    const total = parseFloat(parseFloat(subtotal) + parseFloat(taxes)).toFixed(2);
+
+    totalElement.innerText = '';
+    totalElement.innerText = total;
+  }
+</script>
+
+
+<!-- CUSTOM STYLES -->
+<style>
+  input[type=number]::-webkit-inner-spin-button, 
+  input[type=number]::-webkit-outer-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+  }
+
+  input[type=number] {
+      -moz-appearance: textfield;
+      appearance: textfield;
+  }
+</style>
 {% endblock %}
