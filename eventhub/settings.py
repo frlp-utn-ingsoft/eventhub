@@ -106,7 +106,8 @@ AUTH_PASSWORD_VALIDATORS = [
 STATIC_URL = "/static/"
 
 # Bootstrap 5
-STATICFILES_DIRS = [BASE_DIR / "static"]
+STATICFILES_DIRS = [BASE_DIR / "app" / "static"]
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
