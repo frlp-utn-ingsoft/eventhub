@@ -2,6 +2,7 @@
 
 - Castro Braian
 - Aramberri Juan Bautista
+- Costa Tomas Agustin
 
 # Eventhub
 
