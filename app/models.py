@@ -73,3 +73,13 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+class Comment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Comentario de {self.user.username} en {self.event.title}"
+
