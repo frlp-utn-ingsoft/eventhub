@@ -382,7 +382,10 @@ def edit_ticket(request, ticket_id):
     time_difference = timezone.now() - ticket.buy_date
     if time_difference.total_seconds() > 1800:
         messages.error(request, 'Solo puedes editar el ticket dentro de los primeros 30 minutos después de la compra')
-        return redirect('ticket_detail', ticket_id=ticket.id)
+        #return redirect('ticket_detail', ticket_id=ticket.id)
+    
+    time_difference = timezone.now() - ticket.buy_date
+    can_edit = time_difference.total_seconds() <= 1800  # Si el ticket se compró en los últimos 30 minutos
     
     if request.method == 'POST':
         form = TicketForm(request.POST, instance=ticket)
@@ -395,7 +398,8 @@ def edit_ticket(request, ticket_id):
     
     return render(request, 'app/edit_ticket.html', {
         'form': form,
-        'ticket': ticket
+        'ticket': ticket,
+        'can_edit': can_edit
     })
 
 @login_required

@@ -9,7 +9,7 @@
     
     <div id="time-remaining" class="alert alert-warning"></div>
 
-    <form method="post">
+    <form method="post" id="edit-form">
         {% csrf_token %}
         
         <div class="card">
@@ -57,6 +57,7 @@
                 <button type="submit" class="btn btn-primary">Guardar Cambios</button>
                 <a href="{% url 'ticket_detail' ticket.id %}" class="btn btn-secondary">Cancelar</a>
             </div>
+            
         </div>
     </form>
 </div>
@@ -76,17 +77,21 @@
     console.log("Tiempo límite: ", limitTime);
 
     function updateTimer() {
-        var now = new Date();
-        var remainingTime = limitTime - now;
-        
-        if (remainingTime <= 0) {
-            document.getElementById("time-remaining").innerHTML = "El tiempo ha expirado.";
-        } else {
-            var minutes = Math.floor(remainingTime / 60000); // Minutos restantes
-            var seconds = Math.floor((remainingTime % 60000) / 1000); // Segundos restantes
-            document.getElementById("time-remaining").innerHTML = minutes + " minutos y " + seconds + " segundos.";
-        }
+    var now = new Date();
+    var remainingTime = limitTime - now;
+    
+    if (remainingTime <= 0) {
+        document.getElementById("time-remaining").innerHTML = 'El tiempo ha expirado. <a href="{% url "home" %}" class="btn btn-link">¿Necesitás ayuda? <i class="bi bi-headset"></i></a>';
+
+        document.getElementById("edit-form").style.display = "none";
+        document.getElementById("refund-section").style.display = "block";
+    } else {
+        var minutes = Math.floor(remainingTime / 60000);
+        var seconds = Math.floor((remainingTime % 60000) / 1000);
+        document.getElementById("time-remaining").innerHTML = minutes + " minutos y " + seconds + " segundos.";
     }
+}
+
 
     setInterval(updateTimer, 1000);
 </script>
