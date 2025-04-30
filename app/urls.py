@@ -13,5 +13,9 @@ urlpatterns = [
     path("events/<int:id>/edit/", views.event_form, name="event_edit"),
     path("events/<int:id>/", views.event_detail, name="event_detail"),
     path("events/<int:id>/delete/", views.event_delete, name="event_delete"),
-    path("create-venue/", views.create_venue, name="create_venue"),
+    path("ubicaciones/", views.venue_list, name="venue_list"),  # Ruta para la lista de ubicaciones
+    path("ubicaciones/nueva/", views.venue_form, name="venue_form"),  # Ruta para crear una ubicación
+    path("ubicaciones/<int:id>/editar/", views.venue_form, name="venue_form"),  # Ruta para editar una ubicación
+    path("ubicaciones/<int:id>/", views.venue_detail, name="venue_detail"),  # Ruta para ver detalles de una ubicación
+    path("ubicaciones/<int:id>/eliminar/", views.venue_delete, name="venue_delete"),  # Ruta para eliminar una ubicación
 ]

@@ -164,33 +164,6 @@ def event_form(request, id=None):
         {"event": event, "venues": venues, "user_is_organizer": user.is_organizer},
     )
 
-@login_required
-def create_venue(request):
-    if request.method == "POST":
-        # Capturar los datos del formulario
-        name = request.POST.get("name")
-        address = request.POST.get("address")
-        city = request.POST.get("city")
-        capacity = request.POST.get("capacity")
-        contact = request.POST.get("contact")
-
-        # Validar que todos los campos estén presentes
-        if not all([name, address, city, capacity, contact]):
-            return render(request, "error.html", {"message": "Todos los campos son obligatorios."})
-
-        # Crear el nuevo Venue
-        Venue.objects.create(
-            name=name,
-            address=address,
-            city=city,
-            capacity=capacity,
-            contact=contact,
-        )
-
-        # Redirigir al formulario de eventos
-        return redirect("event_form")
-
-    return redirect("event_form")
 
 @login_required
 def venue_list(request):
@@ -201,22 +174,26 @@ def venue_list(request):
 
 @login_required
 def venue_form(request, id=None):
+    # Verificar si el usuario es organizador
     if not request.user.is_organizer:
         return redirect("events")  # Redirigir a la lista de eventos si no es organizador
 
+    # Si se proporciona un ID, obtener la ubicación existente
     if id:
         venue = get_object_or_404(Venue, pk=id)
     else:
         venue = None
 
+    # Procesar el formulario
     if request.method == "POST":
         form = VenueForm(request.POST, instance=venue)
         if form.is_valid():
-            form.save()
-            return redirect("venue_list")
+            form.save()  # Guardar la nueva ubicación o actualizar la existente
+            return redirect("venue_list")  # Redirigir a la lista de ubicaciones
     else:
         form = VenueForm(instance=venue)
 
+    # Renderizar el formulario
     return render(request, "app/venue_form.html", {"form": form, "venue": venue})
 
 @login_required

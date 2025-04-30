@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="mb-4">
+                {% if venue %}
+                Editar Ubicación
+                {% else %}
+                Crear Ubicación
+                {% endif %}
+            </h1>
+
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="vstack gap-3">
+                            <div>
+                                <label for="name" class="form-label">Nombre</label>
+                                <input class="form-control" id="name" required type="text" name="name"
+                                    value="{{ form.name.value|default_if_none:'' }}" />
+                            </div>
+                            <div>
+                                <label for="address" class="form-label">Dirección</label>
+                                <input class="form-control" id="address" required type="text" name="address"
+                                    value="{{ form.address.value|default_if_none:'' }}" />
+                            </div>
+                            <div>
+                                <label for="city" class="form-label">Ciudad</label>
+                                <input class="form-control" id="city" required type="text" name="city"
+                                    value="{{ form.city.value|default_if_none:'' }}" />
+                            </div>
+                            <div>
+                                <label for="capacity" class="form-label">Capacidad</label>
+                                <input class="form-control" id="capacity" required type="number" name="capacity"
+                                    value="{{ form.capacity.value|default_if_none:'' }}" />
+                            </div>
+                            <div>
+                                <label for="contact" class="form-label">Contacto</label>
+                                <input class="form-control" id="contact" required type="text" name="contact"
+                                    value="{{ form.contact.value|default_if_none:'' }}" />
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if venue %}Guardar Cambios{% else %}Crear Ubicación{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
