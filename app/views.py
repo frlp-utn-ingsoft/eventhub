@@ -4,7 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+from .models import Event, User, Ticket
+from .forms import TicketForm
 
 
 def register(request):
@@ -125,3 +126,42 @@ def event_form(request, id=None):
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer},
     )
+
+
+def ticket_list(request):
+    tickets = Ticket.objects.all()  # obtiene todos los tickets de la base
+    return render(request, 'app/ticket_list.html', {'tickets': tickets}) # muestra el template con la lista de tickets como variable 'tickets'
+
+
+def ticket_create(request):
+    if request.method == 'POST':
+        form = TicketForm(request.POST)  # si el usuario envió el formulario
+        if form.is_valid():              # si el formulario es válido
+            form.save()                  # guarda el ticket en la base
+            return redirect('ticket_list')  # redirige a la vista de listado
+    else:
+        form = TicketForm()             # si es GET, crea un formulario vacío
+    return render(request, 'app/ticket_form.html', {'form': form}) # muestra el formulario
+
+def ticket_update(request, pk):
+    ticket = get_object_or_404(Ticket, pk=pk)  # busca el ticket o lanza 404
+    if request.method == 'POST':
+        form = TicketForm(request.POST, instance=ticket)  # llena el form con los datos nuevos
+        if form.is_valid():
+            form.save()             # guarda los cambios
+            return redirect('ticket_list')
+    else:
+        form = TicketForm(instance=ticket)  # muestra el form con datos precargados
+    return render(request, 'app/ticket_form.html', {'form': form}) # muestra el formulario para editar
+
+def ticket_delete (request, pk):
+    ticket = get_object_or_404(Ticket, pk=pk) # busca el ticket o lanza 404
+    if request.method == 'POST':
+        ticket.delete() # lo borra
+        return redirect('ticket_list') # redirige a la viste de listado
+    return render(request, 'app/ticket_confirm_delete.html', {'ticket': ticket}) # muestra la pantalla de confirmacion
+
+
+
+
+
