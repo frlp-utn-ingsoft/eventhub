@@ -14,7 +14,7 @@
                 </div>
                 <div class="card-body">
                     <!-- Información del evento -->
-                    <h3>{{ event.title }}</h3>
+                    <h3>{{ event.title }},{{user.id}}</h3>
                     <div class="mb-3">
                         <i class="bi bi-calendar me-2"></i> {{ event.scheduled_at|date:"l, j \d\e F \d\e Y, H:i" }}
                     </div>
@@ -25,9 +25,10 @@
                         <i class="bi bi-people me-2"></i> {{ event.organizer }}
                     </div>
 
-                    <form method="POST">
+                    <form method="POST" action="{% url 'tickets:compra' event.id %}">
                         {% csrf_token %}
-                        
+                        <!--id del usuario -->
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
                         <!-- Componente: Formulario de compra -->
                         {% include "tickets/componentes/compra_form.html" %}
                         
@@ -61,8 +62,7 @@
         </div>
     </div>
 </div>
-
-{% calculate_ticket_price as initial_price %}
+    
 
 <!-- Script para actualizar el resumen de compra -->
 <script>
