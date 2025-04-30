@@ -4,8 +4,47 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+from .models import Event, User, Comment
 
+def add_comment(request,id):
+    event = get_object_or_404(Event, pk=id)
+    if request.method == "POST":
+        user = request.user
+        title = request.POST.get("title")
+        text = request.POST.get("text")
+        Comment.objects.create(
+            title=title,
+            text=text,
+            event=event,
+            user = user
+        )
+        return redirect("event_detail", id=id)
+    return redirect("event_detail", id=id)
+
+
+def delete_comment(request,id,comment_id):
+    comment = get_object_or_404(Comment, id=comment_id, event_id = id)
+    if comment.user == request.user:
+        if request.method == "POST":
+            comment.delete()
+            return redirect("event_detail",id=id)
+        return redirect("event_detail",id=id)
+    else:
+        return redirect("event_detail",id=id)
+     
+        
+def update_comment(request,id,comment_id):
+    comment = get_object_or_404(Comment, id=comment_id, event_id = id)
+    if comment.user == request.user:
+        if request.method == "POST":
+            title = request.POST.get("title")
+            text = request.POST.get("text")
+            comment.update(title, text)
+            return redirect("event_detail",id=id)
+    else:
+        return redirect("event_detail",id=id)
+    return render(request, "app/update_comment.html", {"comment": comment, "event_id": id})
+    
 
 def register(request):
     if request.method == "POST":

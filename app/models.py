@@ -1,5 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
+
+
 
 
 class User(AbstractUser):
@@ -73,3 +76,45 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+class Comment(models.Model):
+    title = models.CharField(max_length=200)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    event = models.ForeignKey(Event,on_delete=models.CASCADE, related_name="comments") ##Muchos comentarios tienen un evento
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments") ##Muchos comentarios tienen un usuario
+    
+    @classmethod
+    def validate(cls,title, description):
+        errors = {}
+
+        if title == "":
+            errors["title"] = "Por favor ingrese un titulo"
+
+        if description == "":
+            errors["description"] = "Por favor ingrese una descripcion"
+
+        return errors
+    
+    
+    @classmethod
+    def new(cls,text,title,event,user):
+        
+        errors = Comment.validate(title, text)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+        
+        Comment.objects.create(
+            title = title,
+            text = text,
+            event = event,
+            user = user
+            )
+    
+    def update(self, title,text): ##self, porque es metodo de instancia / cls para clases
+        self.title = title or self.title
+        self.text = text or self.text
+        self.save()
+            
+    
