@@ -1,6 +1,7 @@
 # Integrantes
 
 - Castro Braian
+- Aramberri Juan Bautista
 
 # Eventhub
 
