@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card p-4 shadow-sm">
+        <h2 class="mb-4">Crear Nueva Notificación</h2>
+
+        <form method="post">
+            {% csrf_token %}
+
+            <div class="mb-3">
+                <label class="form-label">Título de la notificación *</label>
+                <input type="text" name="title" class="form-control" placeholder="Ej: Nuevo evento!" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Mensaje *</label>
+                <textarea name="message" class="form-control" placeholder="Escriba aqui..." required></textarea>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Fecha de creación *</label>
+                <input type="date" name="create_at" class="form-control" placeholder="Ej: 1000" required min="1">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Prioridad *</label>
+                <select name="priority">
+                    <option value="" disabled selected>Seleccione una prioridad</option>
+                    <option value="low" >Low</option>
+                    <option value="medium">Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Crear Notificación</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

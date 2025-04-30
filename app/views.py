@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Event, User, Location
+from .models import Event, User, Location, Notification
 
 
 def register(request):
@@ -191,3 +191,15 @@ def delete_location(request, location_id):
     location = get_object_or_404(Location, id=location_id)
     location.delete()
     return redirect('locations_list')
+
+
+@login_required
+def create_notification(request):
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        message = request.POST.get('message')
+        create_at = timezone.now()
+        priority = request.POST.get('priority')
+        is_read = False
+    
+    return render(request, 'notifications/create_notification.html')

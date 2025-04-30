@@ -136,3 +136,13 @@ class Event(models.Model):
         self.location = location if location is not None else self.location
 
         self.save()
+
+class Notification(models.Model):
+    title = models.CharField(max_length=200)
+    message = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    priority = models.CharField(max_length=50, choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High')])
+    is_read = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"{self.title} - {self.created_at}"
