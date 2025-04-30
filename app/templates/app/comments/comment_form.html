@@ -1,0 +1,43 @@
+<div class="card-body">
+    <form action="{% if comment.id %}{% url 'comment_edit' comment.id %}{% else %}{% url 'comment_form' event.id %}{% endif %}" method="POST">
+        {% csrf_token %}
+        <div class="vstack gap-3">
+            <div>
+                <label for="title" class="form-label">Título del comentario *</label>
+                <input class="form-control"
+                    id="title"
+                    required="true"
+                    type="text"
+                    placeholder="Escribe un título para tu comentario"
+                    value="{{comment.title }}"
+                    name="title" />
+                {% if errors.title %}
+                <div class="text-danger mt-1">{{ errors.title }}</div>
+                {% endif %}    
+            </div>
+            <div>
+                <label for="text" class="form-label">Contenido del comentario *</label>
+                <textarea
+                    class="form-control"
+                    id="text"
+                    name="text"
+                    rows="4"
+                    placeholder="Escribe tu comentario aquí"
+                    required="true">{{ comment.text }}</textarea>
+                {% if errors.text %}
+                <div class="text-danger mt-1">{{ errors.text }}</div>
+                {% endif %}
+            </div>
+            <input type="hidden" name="next" value="{{ next_url }}" />
+            <div>
+                <button type="submit" class="btn btn-primary">
+                    {% if comment.id %}
+                    Editar Comentario
+                    {% else %}
+                    Crear Comentario
+                    {% endif %}
+                </button>
+            </div>
+        </div>
+    </form>
+</div> 

@@ -1,0 +1,56 @@
+<div class="card-body p-0">
+    <div class="bg-body-tertiary w-100 p-2 mb-3">
+        <h5 class="card-title m-0 ps-2">Comentarios ({{ comments|length }})</h5>
+    </div>
+    <div class="px-3">
+        {% for comment in comments %}
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-person-circle fs-3 me-2"></i>
+                        <div>
+                            <h6 class="mb-0">{{ comment.user.username }}</h6>
+                            <small class="text-muted">{{ comment.created_at|date:"d/m/Y H:i" }}</small>
+                        </div>
+                    </div>
+                    <div class="dropdown">
+                        <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                          <i class="bi bi-three-dots-vertical"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end bg-light rounded shadow">
+                            {% if comment.user == user %}
+                                <li>
+                                    <a href="{% url 'comment_edit' comment.id %}?next={% url 'event_detail' comment.event.id %}" class="dropdown-item">
+                                        Editar
+                                    </a>
+                                </li>
+                            {% endif %}   
+                            {% if comment.user == user or user_is_organizer  %}
+                                <li>
+                                    <form 
+                                        action="{% url 'comment_delete' comment.id %}" 
+                                        method="POST"
+                                        onsubmit="return confirm('¿Estás seguro de que querés eliminar este comentario?');"
+                                    >
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value={{ request.path }}>
+                                        <button class="dropdown-item">
+                                            Eliminar
+                                        </button>
+                                    </form>
+                                </li>
+                            {% endif %}   
+                        </ul>
+                      </div>
+                </div>
+                <div class="mt-3"> 
+                    <h6 class="mb-1">{{ comment.title }}</h6>
+                    <p class="mb-1">{{ comment.text }}</p> 
+                </div>
+     
+            </div>
+            <hr>
+        {% endfor %}
+    </div>   
+</div>
+       
