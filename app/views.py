@@ -296,7 +296,7 @@ def rating_create(request, event_id):
     else:
         form = RatingForm()
 
-    return render(request, "app/rating_form.html", {"form": form, "event": event})
+    return render(request, "rating/rating_form.html", {"form": form, "event": event})
 
 
 @login_required
@@ -314,7 +314,7 @@ def rating_edit(request, rating_id):
     else:
         form = RatingForm(instance=rating)
 
-    return render(request, "app/rating_form.html", {"form": form, "event": rating.event})
+    return render(request, "rating/rating_form.html", {"form": form, "event": rating.event})
 
 
 @login_required

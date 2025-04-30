@@ -58,6 +58,36 @@
                             </p>
                         </div>
                     </div>
+                    <div class="row mt-5">
+                        <h3>Calificaciones</h3>
+                        {% for r in event.ratings.all %}
+                            <div class="mb-3 p-3 bg-light border rounded">
+                                <div class="d-flex justify-content-between">
+                                    <strong>{{ r.user.username }}</strong>
+                                    <small class="text-muted">{{ r.created_at|date:"d/m/Y H:i" }}</small>
+                                </div>
+                                <div class="text-warning mb-1">
+                                    {{ r.rating }} ★
+                                </div>
+                                <h5>{{ r.title }}</h5>
+                                <p>{{ r.text }}</p>
+                    
+                                {% if request.user == r.user or user_is_organizer %}
+                                    <a href="{% url 'rating_edit' r.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <a href="{% url 'rating_delete' r.id %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                                {% endif %}
+                            </div>
+                        {% empty %}
+                            <p class="text-muted">Aún no hay calificaciones para este evento.</p>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if not user_is_organizer %}
+                        <div class="mt-4">
+                            <a href="{% url 'rating_create' event.id %}" class="btn btn-success">Agregar Calificación</a>
+                        </div>
+                    {% endif %}
+                    
                 </div>
             </div>
         </div>
