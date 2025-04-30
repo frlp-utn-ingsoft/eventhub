@@ -8,6 +8,13 @@
   <form method="post">
     {% csrf_token %}
 
+    {# 1) Errores generales #}
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger">
+        {{ form.non_field_errors }}
+      </div>
+    {% endif %}
+
     <div class="mb-3">
       {{ form.ticket_code.label_tag }}
       {{ form.ticket_code }}

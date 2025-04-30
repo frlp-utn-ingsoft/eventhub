@@ -1,5 +1,6 @@
 from django import forms
-from .models import RefundRequest
+from .models import RefundRequest, Event
+from django.core.exceptions import ValidationError
 
 class RefundRequestForm(forms.ModelForm):
     MOTIVO_CHOICES = [
@@ -27,8 +28,9 @@ class RefundRequestForm(forms.ModelForm):
             "ticket_code": forms.TextInput(attrs={"class": "form-control"}),
         }
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        self.user = user
 
         # Si estamos editando (hay instancia con reason)
         if self.instance and self.instance.pk:
@@ -54,6 +56,40 @@ class RefundRequestForm(forms.ModelForm):
                 self.initial['motivo'] = 'otro'  # fallback
 
             self.initial['detalles'] = detalles_text
+
+    def clean_ticket_code(self):
+        code = self.cleaned_data['ticket_code'].strip()
+        if not code:
+            raise ValidationError("El código de ticket es obligatorio.")
+        # Debe existir un Event con ese ID
+        try:
+            event_id = int(code)
+            Event.objects.get(pk=event_id)
+        except (ValueError, Event.DoesNotExist):
+            raise ValidationError("Código de ticket inválido: no existe ese evento.")
+        return code
+
+    def clean_detalles(self):
+        text = self.cleaned_data.get('detalles', '').strip()
+        if len(text) > 500:
+            raise ValidationError("Detalles demasiado largos (máx. 500 caracteres).")
+        return text
+
+    def clean(self):
+        cleaned = super().clean()
+        code = cleaned.get('ticket_code')
+
+        # Validación de duplicados solo en creación (instance.pk es None)
+        if code and self.user and self.instance.pk is None:
+            hay = RefundRequest.objects.filter(
+                user=self.user,
+                ticket_code=code,
+                approved__isnull=True
+            ).exists()
+            if hay:
+                raise ValidationError("Ya tenés una solicitud pendiente para ese ticket.")
+
+        return cleaned
 
     def save(self, commit=True):
         motivo = dict(self.MOTIVO_CHOICES)[self.cleaned_data['motivo']]

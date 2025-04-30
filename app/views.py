@@ -194,19 +194,17 @@ def reject_refund_request(request, id):
 @login_required
 def new_refund_request(request):
     if request.method == "POST":
-        form = RefundRequestForm(request.POST)
+        form = RefundRequestForm(request.POST, user=request.user)
         if form.is_valid():
             refund = form.save(commit=False)
             refund.user = request.user
             refund.save()
             return redirect("my_refund_requests")
     else:
-        form = RefundRequestForm()
-    return render(
-        request,
-        "app/refund/create_refund_request.html",
-        {"form": form}
-    )
+        form = RefundRequestForm(user=request.user)
+
+    return render(request, "app/refund/create_refund_request.html", {"form": form})
+
 
 @login_required
 def refund_detail(request, id):
@@ -221,19 +219,25 @@ def refund_detail(request, id):
         {"refund": refund}
     )
 
+@login_required
 def edit_refund_request(request, id):
-    # Usamos get_object_or_404 para buscar el reembolso por ID
-    refund_request = get_object_or_404(RefundRequest, pk=id)
-    
-    # Si el método es POST, procesamos el formulario
+    refund = get_object_or_404(RefundRequest, pk=id, user=request.user)
+    # Solo se edita si está pendiente
+    if refund.approved is not None:
+        return redirect("my_refund_requests")
+
     if request.method == "POST":
-        form = RefundRequestForm(request.POST, instance=refund_request)
+        form = RefundRequestForm(request.POST, instance=refund, user=request.user)
         if form.is_valid():
             form.save()
-            return redirect('my_refund_requests')  # Redirige después de guardar
+            return redirect("my_refund_requests")
     else:
-        form = RefundRequestForm(instance=refund_request)
-    
-    return render(request, 'app/refund/edit_refund_request.html', {'form': form})
+        form = RefundRequestForm(instance=refund, user=request.user)
+
+    return render(request, "app/refund/edit_refund_request.html", {
+        "form": form,
+        "refund": refund
+    })
+
 
 
