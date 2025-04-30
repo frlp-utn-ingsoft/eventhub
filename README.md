@@ -1,8 +1,10 @@
-## 🎓 **Integrantes del Grupo**  
+## 🎓 **Integrantes del Grupo**
 
 📌 Alesandro Patricio Borda
 📌 Matias Rau Bekerman
-
+📌 Enzo Daniel Pinotti
+📌 Tomas Pipolo
+📌 Emiliano Nahuel Rios
 ---
 
 

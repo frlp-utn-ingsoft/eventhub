@@ -1,6 +1,5 @@
 from django.contrib.auth.views import LogoutView
 from django.urls import path
-
 from . import views
 
 urlpatterns = [
@@ -13,10 +12,15 @@ urlpatterns = [
     path("events/<int:id>/edit/", views.event_form, name="event_edit"),
     path("events/<int:id>/", views.event_detail, name="event_detail"),
     path("events/<int:id>/delete/", views.event_delete, name="event_delete"),
-    # URLs para las categorías
-    path("categories/", views.categories, name="categories"),   # Ver todas las categorías
-    path("categories/create/", views.category_form, name="category_form"),  # Crear nueva categoría
-    path("categories/<int:id>/edit/", views.category_form, name="category_edit"),  # Editar categoría
-    path("categories/<int:id>/", views.category_detail, name="category_detail"),  # Detalle de una categoría
-    path("categories/<int:id>/delete/", views.category_delete, name="category_delete"),  # Eliminar categoría
+    path("categories/", views.categories, name="categories"),
+    path("categories/create/", views.category_form, name="category_form"), 
+    path("categories/<int:id>/edit/", views.category_form, name="category_edit"),
+    path("categories/<int:id>/", views.category_detail, name="category_detail"),
+    path("categories/<int:id>/delete/", views.category_delete, name="category_delete"),
+    path("notifications/", views.NotificationList.as_view(),            name="notifications_list"),
+    path("notifications/new/", views.NotificationCreate.as_view(),      name="notifications_create"),
+    path("notifications/<int:pk>/edit/", views.NotificationUpdate.as_view(), name="notifications_edit"),
+    path("notifications/<int:pk>/delete/", views.NotificationDelete.as_view(), name="notifications_delete"),
+    path("notifications/<int:pk>/read/", views.NotificationMarkRead.as_view(), name="notifications_read"),
+    path("notifications/dropdown/", views.NotificationDropdown.as_view(), name="notifications_dropdown"),
 ]

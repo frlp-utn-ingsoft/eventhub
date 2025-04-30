@@ -1,0 +1,68 @@
+/* Navbar general */
+.navbar {
+    background: rgba(255, 255, 255, 0.95);
+    border-bottom: 1px solid #dee2e6;
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+  .collapse {
+    display: flex !important;
+    justify-content: flex-end;
+  }
+  .navbar .navbar-brand {
+    font-weight: 600;
+    font-size: 1.5rem;
+    letter-spacing: -0.5px;
+  }
+  
+  .navbar .btn-outline-secondary {
+    border-radius: 8px;
+    transition: all 0.2s ease;
+  }
+  
+  .navbar .btn-outline-secondary:hover {
+    background-color: #f1f1f1;
+  }
+  .navbar-nav{
+    display: flex;
+    align-items: center;
+  }
+  /* Botones Login/Register */
+  .navbar .btn-outline-primary,
+  .navbar .btn-primary {
+    border-radius: 3px;
+    padding: 0.4rem 1rem;
+    font-weight: 500;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    -ms-border-radius: 3px;
+    -o-border-radius: 3px;
+    }
+  
+  /* Notificaciones - bell icon */
+  .navbar .bi-bell {
+    position: relative;
+    top: 2px;
+  }
+  
+  /* Badge de notificaciones */
+  .navbar .badge {
+    font-size: 0.65rem;
+    padding: 4px 6px;
+  }
+  .nav-item{
+    height: 100%;
+  }
+  .nav-item a{
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+  /* Responsive ajuste de paddings */
+  @media (max-width: 768px) {
+    .navbar {
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+  }
+  

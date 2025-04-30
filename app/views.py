@@ -4,9 +4,15 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Count
-
 from .models import Event, User, Category
-
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from .forms import NotificationForm
+from .models import Notification
+from django.views import generic
+from django.urls import reverse_lazy
+from django.views import View
+from django.http import JsonResponse
+from django.template.loader import render_to_string
 
 def register(request):
     if request.method == "POST":
@@ -164,21 +170,19 @@ def categories(request):
 
     return render(
         request,
-        "app/category/categories.html",
+        "category/categories.html",
         {
             "categories": categories,  
             "user_is_organizer": request.user.is_organizer,
         },
     )
 
-
-
 @login_required
 def category_detail(request, id):
     category = get_object_or_404(Category, pk=id)
     return render(
         request,
-        "app/category/category_detail.html",
+        "category/category_detail.html",
         {"category": category, "user_is_organizer": request.user.is_organizer},
     )
 
@@ -230,6 +234,55 @@ def category_form(request, id=None):                    # En la misma def esta e
 
     return render(
         request,
-        "app/category/category_form.html",
+        "category/category_form.html",
         {"category": category, "user_is_organizer": request.user.is_organizer},
     )
+
+
+class OrganizerRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.is_organizer
+
+
+class NotificationList(LoginRequiredMixin, generic.ListView):
+    template_name = "notifications/list.html"
+    paginate_by   = 10
+
+    def get_queryset(self):
+        return self.request.user.notifications.all()
+
+class NotificationCreate(OrganizerRequiredMixin, generic.CreateView):
+    model       = Notification
+    form_class  = NotificationForm
+    template_name = "notifications/form.html" 
+    success_url = reverse_lazy("notifications_list")
+
+class NotificationUpdate(OrganizerRequiredMixin, generic.UpdateView):
+    model       = Notification
+    form_class  = NotificationForm
+    template_name = "notifications/form.html" 
+    success_url = reverse_lazy("notifications_list")
+
+class NotificationDelete(OrganizerRequiredMixin, generic.DeleteView):
+    model       = Notification
+    template_name = "notifications/confirm_delete.html"
+    success_url = reverse_lazy("notifications_list")
+
+
+class NotificationMarkRead(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        notif = get_object_or_404(Notification, pk=pk, user=request.user)
+        notif.is_read = True
+        notif.save(update_fields=["is_read"])
+        return redirect("notifications_list")
+    
+class NotificationDropdown(LoginRequiredMixin, View):
+    def get(self, request):
+        notifs = (request.user.notifications
+                    .order_by("-created_at")[:5])
+        html = render_to_string(
+            "notifications/_dropdown_items.html",
+            {"notifs": notifs},
+            request=request,
+        )
+        return JsonResponse({"html": html})
