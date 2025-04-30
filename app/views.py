@@ -24,7 +24,7 @@ def add_comment(request,id):
 
 def delete_comment(request,id,comment_id):
     comment = get_object_or_404(Comment, id=comment_id, event_id = id)
-    if comment.user == request.user:
+    if comment.user == request.user or request.user.is_organizer == True:
         if request.method == "POST":
             comment.delete()
             return redirect("event_detail",id=id)
@@ -35,7 +35,7 @@ def delete_comment(request,id,comment_id):
         
 def update_comment(request,id,comment_id):
     comment = get_object_or_404(Comment, id=comment_id, event_id = id)
-    if comment.user == request.user:
+    if comment.user == request.user or request.user.is_organizer == True:
         if request.method == "POST":
             title = request.POST.get("title")
             text = request.POST.get("text")
@@ -110,7 +110,7 @@ def events(request):
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
-    return render(request, "app/event_detail.html", {"event": event})
+    return render(request, "app/event_detail.html", {"event": event, "user_is_organizer": request.user.is_organizer})
 
 
 @login_required
