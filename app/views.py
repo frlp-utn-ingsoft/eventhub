@@ -10,7 +10,7 @@ from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView
 
-from .models import Category, Comment, Event, Rating, User, refund
+from .models import Category, Comment, Event, User, refund
 
 
 def register(request):
