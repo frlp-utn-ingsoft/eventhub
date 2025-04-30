@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card shadow-sm">
+    <div class="card-header">
+      <h5>Comprar Entrada</h5>
+    </div>
+    <div class="card-body">
+      <h4>{{ event.title }}</h4>
+      <p><i class="bi bi-calendar-event"></i> {{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
+      <p><i class="bi bi-geo-alt"></i> {{ event.venue.name }}</p>
+      <p><i class="bi bi-person"></i> {{ event.organizer.username }}</p>
+
+      <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+          <label for="id_quantity" class="form-label">Cantidad de entradas</label>
+          <div class="input-group">
+            <button class="btn btn-outline-secondary" type="button" onclick="adjustQuantity(-1)">-</button>
+            {{ form.quantity }}
+            <button class="btn btn-outline-secondary" type="button" onclick="adjustQuantity(1)">+</button>
+          </div>
+          <div class="form-text text-muted">Disponibles: 120 entradas</div>
+        </div>
+        <div class="mb-3">
+          <label for="id_type" class="form-label">Tipo de entrada</label><br>
+          {{ form.type }}
+        </div>
+        <button type="submit" class="btn btn-primary w-100">Confirmar compra</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/script.js' %}"></script>
+{% endblock %}

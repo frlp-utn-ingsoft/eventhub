@@ -86,9 +86,12 @@ class Ticket(models.Model):
     buy_date = models.DateField(auto_now_add=True)
     ticket_code = models.CharField(max_length=100, unique=True)
     quantity = models.PositiveIntegerField()
-    type = models.CharField(max_length=10, choices=TICKETS_TYPES)
+    type = models.CharField(
+    max_length=10,
+    choices=TICKETS_TYPES,
+    default='GENERAL'
+)
 
     def __str__(self):
         return f"{self.ticket_code} - {self.type} - {self.event.title}"
-    
     

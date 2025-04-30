@@ -130,18 +130,34 @@ def event_form(request, id=None):
 
 def ticket_list(request):
     tickets = Ticket.objects.all()  # obtiene todos los tickets de la base
-    return render(request, 'app/ticket_list.html', {'tickets': tickets}) # muestra el template con la lista de tickets como variable 'tickets'
+    return render(request, 'app/ticket/ticket_list.html', {'tickets': tickets}) # muestra el template con la lista de tickets como variable 'tickets'
 
 
-def ticket_create(request):
+def ticket_create(request, event_id):
+    
+    event = get_object_or_404(Event, pk=event_id) # Busca el evento según el ID que vino en la URL
+
     if request.method == 'POST':
-        form = TicketForm(request.POST)  # si el usuario envió el formulario
-        if form.is_valid():              # si el formulario es válido
-            form.save()                  # guarda el ticket en la base
-            return redirect('ticket_list')  # redirige a la vista de listado
+        
+        form = TicketForm(request.POST) # Crea el formulario con los datos enviados
+        if form.is_valid():
+            # No guarda aún el ticket en la base
+            ticket = form.save(commit=False)
+            # Asigna el evento y el usuario actual
+            ticket.event = event
+            ticket.user = request.user
+            # Ahora sí, guarda el ticket
+            ticket.save()
+            return redirect('ticket_list')  # o podés redirigir a event_detail si querés
     else:
-        form = TicketForm()             # si es GET, crea un formulario vacío
-    return render(request, 'app/ticket_form.html', {'form': form}) # muestra el formulario
+        # GET: crea un formulario vacío
+        form = TicketForm()
+
+    # Renderiza el formulario pasando también el evento
+    return render(request, 'app/ticket/ticket_form.html', {
+        'form': form,
+        'event': event
+    })
 
 def ticket_update(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)  # busca el ticket o lanza 404
@@ -152,14 +168,14 @@ def ticket_update(request, pk):
             return redirect('ticket_list')
     else:
         form = TicketForm(instance=ticket)  # muestra el form con datos precargados
-    return render(request, 'app/ticket_form.html', {'form': form}) # muestra el formulario para editar
+    return render(request, 'app/ticket/ticket_form.html', {'form': form}) # muestra el formulario para editar
 
 def ticket_delete (request, pk):
     ticket = get_object_or_404(Ticket, pk=pk) # busca el ticket o lanza 404
     if request.method == 'POST':
         ticket.delete() # lo borra
         return redirect('ticket_list') # redirige a la viste de listado
-    return render(request, 'app/ticket_confirm_delete.html', {'ticket': ticket}) # muestra la pantalla de confirmacion
+    return render(request, 'app/ticket/ticket_confirm_delete.html', {'ticket': ticket}) # muestra la pantalla de confirmacion
 
 
 

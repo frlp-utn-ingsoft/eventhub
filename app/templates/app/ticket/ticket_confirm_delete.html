@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="card p-4 shadow-sm">
+    <h4 class="mb-3">Eliminar Ticket</h4>
+    <p>¿Estás seguro que querés eliminar el ticket <strong>{{ ticket.ticket_code }}</strong>?</p>
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">Sí, eliminar</button>
+      <a href="{% url 'ticket_list' %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
