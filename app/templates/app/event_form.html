@@ -85,14 +85,13 @@
             parseInt(selectedDateParts[1], 10) - 1,
             parseInt(selectedDateParts[2], 10)
         );
-        selectedDate.setHours(0, 0, 0, 0); // limpiar la hora
+        selectedDate.setHours(0, 0, 0, 0);
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
 
-        // Solo importa que la fecha sea igual o posterior a mañana
         if (selectedDate.getTime() < tomorrow.getTime()) {
             alert('La fecha debe ser posterior a la actual.');
             event.preventDefault();

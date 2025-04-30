@@ -73,6 +73,10 @@ def events(request):
 
 @login_required
 def rating_create(request, id):
+    if request.user.is_organizer:
+        messages.error(request, "Los organizadores no pueden dejar calificaciones.")
+        return redirect("event_detail", id=id)
+
     if request.method == "POST":
         event = get_object_or_404(Event, pk=id)
         title = request.POST.get("title", "").strip()
@@ -84,6 +88,7 @@ def rating_create(request, id):
         )
 
     return redirect("event_detail", id=id)
+
 
 @login_required
 def event_detail(request, id):
@@ -135,7 +140,6 @@ def rating_delete(request, id, rating_id):
         if request.method == "POST":
             rating.delete()
             return redirect("event_detail", id=id)
-        # opcional: mostrar confirmación
     return redirect("event_detail", id=id)
 
 @login_required
@@ -146,12 +150,11 @@ def event_delete(request, id):
 
     event = get_object_or_404(Event, pk=id)
 
-    # Verificar si el método de solicitud es POST (confirmación)
     if request.method == "POST":
         event.delete()
         return redirect("events")
 
-    # No redirigimos, simplemente renderizamos el detalle del evento con el modal
+
     return redirect("event_detail", id=id)
 
 @login_required
