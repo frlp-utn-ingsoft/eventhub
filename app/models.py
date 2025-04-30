@@ -65,21 +65,12 @@ class Category(models.Model):
         return category
     
     @classmethod
-    def update(cls, category_id, name=None, description=None, active=None, event=None):
-        try:
-            category = cls.objects.get(id=category_id)
-            if name:
-                category.name = name
-            if description is not None:
-                category.description = description if description else "Sin descripción"
-            if active is not None:
-                category.active = active
-            if event is not None:
-                category.event = event  # Permite actualizar la relación con el evento
-            category.save()
-            return True, category
-        except cls.DoesNotExist:
-            return False, "Categoria no encontrada"
+    def update(self , name=None, description=None, active=None, event=None): # type: ignore
+        
+        self.name = name or self.name
+        self.description = description or self.description
+        self.active = active or self.active
+        self.save() # type: ignore
 
 class Event(models.Model):
     title = models.CharField(max_length=200)
@@ -88,7 +79,7 @@ class Event(models.Model):
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    category = models.ForeignKey('Category', on_delete=models.SET_NULL, null=True, blank=True, related_name="event_categories")  # Allowing nulls 
+    categories = models.ManyToManyField('Category', related_name="event_categories", blank=True)  # Allowing nulls 
 
     def __str__(self):
         return self.title

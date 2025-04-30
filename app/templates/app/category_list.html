@@ -4,8 +4,8 @@
     <div class="container mt-4">
         <!-- Contenedor para el título y el botón alineados a la derecha -->
         <div class="d-flex justify-content-between mb-3">
-            <h2 class="mb-0" >Categorías</h2>
-            <a href="{% url 'create_category' %}" class="btn btn-primary">Crear Categoría</a>
+            <h2 class="mb-0">Categorías</h2>
+            <a href="{% url 'category_form' %}" class="btn btn-primary">Crear Categoría</a>
         </div>
 
         {% if categories %}
@@ -14,7 +14,8 @@
                     <tr>
                         <th>Nombre</th>
                         <th>Descripción</th>
-                        <th>Cantidad de eventos</th>
+                        <th>Eventos Asociados</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -22,8 +23,25 @@
                         <tr>
                             <td>{{ category.name }}</td>
                             <td>{{ category.description }}</td>
+                            <td>{{ category.event_set.count }}</td>  <!-- Cambié a count() -->
                             <td>
-                                {{ category.event_set.count }}
+                                <div class="hstack gap-1">
+                                    <a href="{% url 'update_category' category.id %}"
+                                       class="btn btn-sm btn-outline-secondary"
+                                       aria-label="Editar"
+                                       title="Editar">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                                    </a>
+                                    <form action="{% url 'delete_category' category.id %}" method="POST">
+                                        {% csrf_token %}
+                                        <button class="btn btn-sm btn-outline-danger"
+                                                title="Eliminar"
+                                                type="submit"
+                                                aria-label="Eliminar">
+                                            <i class="bi bi-trash" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     {% endfor %}
