@@ -71,27 +71,7 @@
                       </div>
                     </div>
                   </div>
-                   <!-- Modal de confirmación de eliminación -->
-                    <div class="modal fade" id="deleteModal{{ ratingg.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ ratingg.id }}" aria-hidden="true">
-                        <div class="modal-dialog">
-                        <div class="modal-content">
-                            <form method="post" action="{% url 'eliminar_rating' ratingg.id %}">
-                            {% csrf_token %}
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="deleteModalLabel{{ ratingg.id }}">Confirmar eliminación</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                            </div>
-                            <div class="modal-body">
-                                ¿Estás seguro de que deseas eliminar esta reseña?
-                            </div>
-                            <div class="modal-footer">
-                                <button type="submit" class="btn btn-danger">Eliminar</button>
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            </div>
-                            </form>
-                        </div>
-                        </div>
-                    </div>
+                  {% include "app/common/delete_modal.html" with object=ratingg delete_url_name='eliminar_rating' title='Confirmar eliminación' message="¿Estás seguro de que deseas eliminar esta reseña?" %}
             </div>
         {% empty %}
             <p>No hay calificaciones aún.</p>
@@ -124,50 +104,3 @@
         </form>
     </div>
 </div>
-
-<style>
-    .star-rating {
-        direction: rtl;
-        font-size: 1.8rem;
-        unicode-bidi: bidi-override;
-        display: inline-flex;
-    }
-
-    .star-rating input[type="radio"] {
-        display: none;
-    }
-
-    .star-rating label {
-        color: #ccc;
-        cursor: pointer;
-    }
-
-    .star-rating input[type="radio"]:checked ~ label,
-    .star-rating label:hover,
-    .star-rating label:hover ~ label {
-        color: gold;
-    }
-    .rating-container {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        margin-bottom: 1rem;
-    }
-
-    .rating-buttons {
-        display: flex;
-        gap: 0.5rem;
-    }
-
-    .rating-buttons button {
-        background-color: transparent;
-        border: 1px solid #ccc;
-        padding: 0.3rem 0.5rem;
-        cursor: pointer;
-        border-radius: 4px;
-    }
-
-    .rating-buttons button:hover {
-        background-color: #f0f0f0;
-    }
-</style>

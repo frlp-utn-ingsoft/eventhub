@@ -46,16 +46,17 @@
                                     title="Editar">
                                     <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
-                                <form action="{% url 'venue_delete' venue.id %}" method="POST">
-                                    {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-danger"
                                         title="Eliminar"
                                         type="submit"
                                         aria-label="Eliminar"
-                                        titile="Eliminar">
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal{{ venue.id }}">
                                         <i class="bi bi-trash" aria-hidden="true"></i>
                                     </button>
-                                </form>
+                                    {% with title_text="Eliminar lugar: "|add:venue.name %}
+                                        {% include "app/common/delete_modal.html" with object=venue delete_url_name='venue_delete' title=title_text message="¿Estás seguro de que deseas eliminar este lugar?" %}
+                                    {% endwith %}
                         </div>
                     </td>
                 </tr>
