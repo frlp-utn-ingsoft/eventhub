@@ -1,5 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+import uuid
+
 
 
 class User(AbstractUser):
@@ -81,17 +83,42 @@ class Ticket(models.Model):
         ('VIP', 'Vip'),  
     ]
 
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='tickets')
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tickets')
-    buy_date = models.DateField(auto_now_add=True)
-    ticket_code = models.CharField(max_length=100, unique=True)
-    quantity = models.PositiveIntegerField()
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.CASCADE,
+        related_name='tickets',
+        verbose_name="Evento"
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='tickets',
+        verbose_name="Comprador"
+    )
+    buy_date = models.DateField(
+        auto_now_add=True,
+        verbose_name="Fecha de compra"
+    )
+    ticket_code = models.CharField(
+        max_length=100,
+        unique=True,
+        blank=True,
+        verbose_name="Código del ticket"
+    )
+    quantity = models.PositiveIntegerField(
+        verbose_name="Cantidad de entradas"
+    )
     type = models.CharField(
-    max_length=10,
-    choices=TICKETS_TYPES,
-    default='GENERAL'
-)
+        max_length=10,
+        choices=TICKETS_TYPES,
+        default='GENERAL',
+        verbose_name="Tipo de entrada"
+    )
 
     def __str__(self):
         return f"{self.ticket_code} - {self.type} - {self.event.title}"
-    
+
+    def save(self, *args, **kwargs):
+        if not self.ticket_code:
+            self.ticket_code = str(uuid.uuid4()).replace('-', '')[:10].upper()
+        super().save(*args, **kwargs)
