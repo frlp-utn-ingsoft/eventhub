@@ -16,6 +16,7 @@ class TicketForm(forms.ModelForm):
             'inputmode': 'numeric'
         })
 
+        self.fields['quantity'].initial = 1
         self.fields['type'].initial = 'GENERAL'
         self.fields['type'].widget.attrs.update({
             'class': 'form-select'
