@@ -100,10 +100,8 @@ def event_form(request, id=None):
     if not user.is_organizer:
         return redirect("events")
 
-    if id:
-        event = get_object_or_404(Event, pk=id)
-    else:
-        event = None
+    # Si se proporciona un ID, se intenta obtener el evento existente
+    event = get_object_or_404(Event, pk=id) if id else None
 
     if request.method == "POST":
         title = request.POST.get("title")
@@ -118,13 +116,13 @@ def event_form(request, id=None):
 
         venue = get_object_or_404(Venue, pk=venue_id) if venue_id else None
 
-        if event:
+        if event:  # Si el evento existe, se actualiza
             event.title = title
             event.description = description
             event.scheduled_at = scheduled_at
             event.venue = venue
             event.save()
-        else:
+        else:  # Si no existe, se crea uno nuevo
             Event.objects.create(
                 title=title,
                 description=description,
@@ -140,7 +138,11 @@ def event_form(request, id=None):
         return render(
             request,
             "app/event_form.html",
-            {"event": event, "venues": venues, "venue_form": venue_form},
+            {
+                "event": event,  # Pasar el evento existente (si lo hay) al formulario
+                "venues": venues,
+                "venue_form": venue_form,
+            },
         )
 
 @login_required
