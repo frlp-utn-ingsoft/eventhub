@@ -15,15 +15,14 @@
 
             <div class="card">
                 <div class="card-body">
-                    <form action="{% url 'venue_form' %}" method="POST">
+                    <form action="{% if venue.id %}{% url 'venue_form' id=venue.id %}{% else %}{% url 'venue_form' %}{% endif %}" method="POST">
                         {% csrf_token %}
                         <div class="vstack gap-3">
                             <div>
                                 <label for="name" class="form-label">Nombre de la ubicacion
                                     <span class="text-danger">*</span></label>
                                 <input class="form-control" id="name" required="" type="text" value="{{ venue.name }}"
-                                    name="name"
-                                    placeholder="Ej: Estadio Unico" />
+                                    name="name" placeholder="Ej: Estadio Unico" />
                             </div>
                             <div>
                                 <label for="address" class="form-label">Dirección
@@ -52,8 +51,7 @@
                                 <label for="capacity" class="form-label">Capacidad (numero de personas)
                                     <span class="text-danger">*</span></label>
                                 <input class="form-control" id="capacity" required="" type="number"
-                                    value="{{ venue.capacity }}" name="capacity" 
-                                    placeholder="Ej: 1000"/>
+                                    value="{{ venue.capacity }}" name="capacity" placeholder="Ej: 1000" />
                             </div>
                             <div>
                                 <label for="contact" class="form-label">Contacto
@@ -63,9 +61,14 @@
                                     placeholder="Ej: Juan Pérez - 1123456789" />
                             </div>
                             <div>
-                                <button type="submit" class="btn btn-primary">Crear Ubicación</button>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if venue.id %}
+                                    Guardar Cambios
+                                    {% else %}
+                                    Crear Ubicación
+                                    {% endif %}
+                                </button>
                             </div>
-
                         </div>
                     </form>
                 </div>
@@ -81,31 +84,11 @@
     let provinces = [];
     let cities = [];
 
-    fetch(provincesUrl)
-        .then(response => response.json())
-        .then(data => {
-            provinces = data;
-            const provinceSelect = document.getElementById('province');
-            data.forEach(p => {
-                const option = document.createElement('option');
-                option.value = p.code;
-                option.textContent = p.name;
-                provinceSelect.appendChild(option);
-            });
-        });
-
-    fetch(citiesUrl)
-        .then(response => response.json())
-        .then(data => {
-            cities = data;
-        });
-
-    function updateCities(province_code) {
+    function updateCities(code) {
         const citySelect = document.getElementById('city');
-        console.log("Selected province:", province_code);
         citySelect.innerHTML = '<option value="">Seleccionar Ciudad</option>';
 
-        const filteredCities = cities.filter(c => c.code === province_code);
+        const filteredCities = cities.filter(c => c.code === code);
         filteredCities.forEach(c => {
             const option = document.createElement('option');
             option.value = c.name;
@@ -117,6 +100,32 @@
     document.addEventListener('DOMContentLoaded', function () {
         const provinceSelect = document.getElementById('province');
         const citySelect = document.getElementById('city');
+        const selectedCity = "{{ venue.city|escapejs }}";
+
+        Promise.all([
+            fetch(provincesUrl).then(r => r.json()),
+            fetch(citiesUrl).then(r => r.json())
+        ]).then(([provincesData, citiesData]) => {
+            provinces = provincesData;
+            cities = citiesData;
+
+            provinces.forEach(p => {
+                const option = document.createElement('option');
+                option.value = p.code;
+                option.textContent = p.name;
+                provinceSelect.appendChild(option);
+            });
+
+            const matchedCity = cities.find(c => c.name === selectedCity);
+            if (matchedCity) {
+                provinceSelect.value = matchedCity.code;
+                updateCities(matchedCity.code);
+
+                setTimeout(() => {
+                    citySelect.value = matchedCity.name;
+                }, 100);
+            }
+        });
 
         provinceSelect.addEventListener('change', function () {
             const selectedProvinceCode = provinceSelect.value;

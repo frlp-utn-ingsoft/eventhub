@@ -148,17 +148,16 @@ def venue_detail(request, id):
 def venue_delete(request, id):
     user = request.user
     if not user.is_organizer:
-        return redirect("events")
+        return redirect("venues")
 
     if request.method == "POST":
-        event = get_object_or_404(Event, pk=id)
-        event.delete()
-        return redirect("events")
+        venue = get_object_or_404(Venue, pk=id)
+        venue.delete()
+        return redirect("venues")
 
-    return redirect("events")
+    return redirect("venues")
 
-def venue_form(request, id=None):
-
+def venue_form(request, id):
     if request.method == "POST":
         name = request.POST.get("name")
         address = request.POST.get("address")
@@ -168,11 +167,11 @@ def venue_form(request, id=None):
 
         if id is None:
             Venue.new(name, address, city, capacity, contact)
+            return redirect("venues")
         else:
             venue = get_object_or_404(Venue, pk=id)
             venue.update(name, address, city, capacity, contact)
-
-        return redirect("venues")
+            return redirect("venue_detail",id)
 
     venue = {}
     if id is not None:
