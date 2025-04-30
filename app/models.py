@@ -73,3 +73,22 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+
+class Ticket(models.Model):
+    TICKETS_TYPES = [
+        ('GENERAL', 'General'),
+        ('VIP', 'Vip'),  
+    ]
+
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='tickets')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tickets')
+    buy_date = models.DateField(auto_now_add=True)
+    ticket_code = models.CharField(max_length=100, unique=True)
+    quantity = models.PositiveIntegerField()
+    type = models.CharField(max_length=10, choices=TICKETS_TYPES)
+
+    def __str__(self):
+        return f"{self.ticket_code} - {self.type} - {self.event.title}"
+    
+    
