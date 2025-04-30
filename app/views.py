@@ -131,8 +131,6 @@ def event_form(request, id=None):
 def buy_ticket(request, id):
     event = get_object_or_404(Event, pk=id)
 
-    print("Datos recibidos:", request.POST)
-
     if request.method == "POST":
         try:
             quantity = int(request.POST.get("quantity"))
@@ -163,3 +161,29 @@ def buy_ticket(request, id):
             )
 
     return render(request, "app/buy_ticket.html", {"event": event})
+
+@login_required
+def tickets(request):
+    user = request.user
+
+    return render(request, "app/tickets.html", {"tickets": user.tickets.all()})
+
+@login_required
+def ticket_detail(request, id):
+    ticket = get_object_or_404(Ticket, pk=id)
+
+    return render(request, "app/ticket_detail.html", {"ticket": ticket})
+
+@login_required
+def ticket_delete(request, id):
+    user = request.user
+
+    if request.method == "POST":
+        ticket = get_object_or_404(Ticket, pk=id)
+
+        if (ticket.user == user):
+            ticket.delete()
+
+    return redirect("tickets")
+
+
