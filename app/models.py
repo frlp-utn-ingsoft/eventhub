@@ -95,6 +95,8 @@ class RefundRequest(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     accepted_policy = models.BooleanField(default=False)
 
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refund_requests")
+
     def __str__(self):
         return f"Refund Request for Ticket: {self.ticket_code}"
    

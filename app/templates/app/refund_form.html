@@ -1,55 +1,137 @@
-{% extends "base.html" %}
-
-{% block content %}
+{% extends "base.html" %} {% block content %}
 <div class="container mt-5">
     <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <h1 class="mb-4">Solicitar Reembolso</h1>
+        <h1>Solicitar Reembolso</h1>
+        <!-- Formulario -->
+        <div class="col-md-8">
             <div class="card">
+                <div
+                    class="card-header text-black"
+                    style="background-color: rgba(165, 209, 255, 0.641)"
+                >
+                    <h5 class="mb-0">Formulario de solicitud</h5>
+                </div>
                 <div class="card-body">
                     <div class="mb-3">
                         <div class="alert alert-info" role="alert">
-                            Puedes solicitar un reembolso hasta 48 horas antes del evento. Una vez procesada la solicitud, el reembolso se realizará en un plazo de 7 a 14 días hábiles.
+                            <i
+                                class="bi bi-info-circle-fill text-info me-2"
+                            ></i>
+                            Puedes solicitar un reembolso hasta 48 horas antes
+                            del evento. Una vez procesada la solicitud, el
+                            reembolso se realizará en un plazo de 7 a 14 días
+                            hábiles.
                         </div>
                     </div>
                     <form method="post">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <label for="ticket_code" class="form-label">Código de ticket</label>
-                            <input type="text" class="form-control" id="ticket_code" name="ticket_code" required>
+                            <label for="ticket_code" class="form-label"
+                                >Código de ticket</label
+                            >
+                            <input
+                                type="text"
+                                class="form-control"
+                                id="ticket_code"
+                                name="ticket_code"
+                                required
+                            />
                         </div>
                         <div class="mb-3">
-                            <label for="reason" class="form-label">Motivo del reembolso *</label>
-                            <select class="form-select" id="reason" name="reason" required>
-                                <option value="" selected>Selecciona un motivo</option>
-                                <option value="event_cancelled">Evento cancelado</option>
-                                <option value="unable_to_attend">No podré asistir</option>
-                                <option value="mistake_purchase">Compra por error</option>
+                            <label for="reason" class="form-label"
+                                >Motivo del reembolso *</label
+                            >
+                            <select
+                                class="form-select"
+                                id="reason"
+                                name="reason"
+                                required
+                            >
+                                <option value="" selected>
+                                    Selecciona un motivo
+                                </option>
+                                <option value="event_cancelled">
+                                    Evento cancelado
+                                </option>
+                                <option value="unable_to_attend">
+                                    No podré asistir
+                                </option>
+                                <option value="mistake_purchase">
+                                    Compra por error
+                                </option>
                                 <option value="other">Otro</option>
                             </select>
                         </div>
                         <div class="mb-3">
-                            <label for="additional_details" class="form-label">Detalles adicionales</label>
-                            <textarea class="form-control" id="additional_details" name="additional_details" rows="3" placeholder="Proporciona más información sobre tu solicitud de reembolso..."></textarea>
+                            <label for="additional_details" class="form-label"
+                                >Detalles adicionales</label
+                            >
+                            <textarea
+                                class="form-control"
+                                id="additional_details"
+                                name="additional_details"
+                                rows="3"
+                                placeholder="Proporciona más información sobre tu solicitud de reembolso..."
+                            ></textarea>
                         </div>
                         <div class="mb-3 form-check">
-                            <input type="checkbox" class="form-check-input" id="accepted_policy" name="accepted_policy" required>
-                            <label class="form-check-label" for="accepted_policy">Entiendo y acepto la <a href="#">política de reembolsos</a>.</label>
+                            <input
+                                type="checkbox"
+                                class="form-check-input"
+                                id="accepted_policy"
+                                name="accepted_policy"
+                                required
+                            />
+                            <label
+                                class="form-check-label"
+                                for="accepted_policy"
+                                >Entiendo y acepto la
+                                <a href="#">política de reembolsos</a>.</label
+                            >
                         </div>
-                        <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                Enviar Solicitud
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>
         </div>
+        <!-- Política de Reembolsos -->
         <div class="col-md-4">
             <div class="card">
+                <div
+                    class="card-header text-black"
+                    style="background-color: rgba(165, 209, 255, 0.641)"
+                >
+                    <h5 class="mb-0">Política de Reembolsos</h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">Política de Reembolsos</h5>
                     <ul class="list-unstyled">
-                        <li><i class="bi bi-check-circle-fill text-success me-2"></i> Reembolso del 100% hasta 7 días antes del evento.</li>
-                        <li><i class="bi bi-exclamation-circle-fill text-warning me-2"></i> Reembolso del 50% entre 2 y 7 días antes del evento.</li>
-                        <li><i class="bi bi-x-circle-fill text-danger me-2"></i> Sin reembolso a menos de 48 horas del evento.</li>
-                        <li><i class="bi bi-info-circle-fill text-info me-2"></i> El reembolso se realizará al mismo método de pago utilizado en la compra.</li>
+                        <li>
+                            <i
+                                class="bi bi-check-circle-fill text-success me-2"
+                            ></i>
+                            Reembolso del 100% hasta 7 días antes del evento.
+                        </li>
+                        <li>
+                            <i
+                                class="bi bi-exclamation-circle-fill text-warning me-2"
+                            ></i>
+                            Reembolso del 50% entre 2 y 7 días antes del evento.
+                        </li>
+                        <li>
+                            <i class="bi bi-x-circle-fill text-danger me-2"></i>
+                            Sin reembolso a menos de 48 horas del evento.
+                        </li>
+                        <li>
+                            <i
+                                class="bi bi-info-circle-fill text-info me-2"
+                            ></i>
+                            El reembolso se realizará al mismo método de pago
+                            utilizado en la compra.
+                        </li>
                     </ul>
                 </div>
             </div>
