@@ -4,10 +4,9 @@ from .forms import RatingForm
 from .models import Rating
 from app.models import Event
 
-@login_required
-def ratingCreateView(request, id):
+def ratingCreateView(request, pk):
     user = request.user
-    event = get_object_or_404(Event, id=id)
+    event = get_object_or_404(Event, pk=pk)
 
     if not user.is_authenticated:
         return redirect("events")
@@ -24,3 +23,33 @@ def ratingCreateView(request, id):
         form = RatingForm()
 
     return render(request, "rating/rating_form.html", {"form": form, "event": event})
+
+@login_required
+def ratingDeleteView(request, pk):
+    user = request.user
+    rating = get_object_or_404(Rating, pk=pk)
+
+    if not (user == rating.user or (user.is_organizer and user == rating.event.organizer)):
+        return redirect("events")
+    
+    if request.method == "POST":
+        rating.delete()
+        return redirect("/events/"+str(rating.event.pk)+"/")
+    return render(request, "rating/rating_confirm_delete.html", {"rating": rating})
+
+@login_required
+def ratingUpdateView(request, pk):
+    user = request.user
+    rating = get_object_or_404(Rating, pk=pk)
+
+    if not (user == rating.user or (user.is_organizer and user == rating.event.organizer)):
+        return redirect("events")
+    
+    if request.method == "POST":
+        form = RatingForm(request.POST, instance=rating)
+        if form.is_valid():
+            form.save()
+            return redirect("/events/"+str(rating.event.pk)+"/")
+    else:
+        form = RatingForm(instance=rating)
+    return render(request, "rating/rating_form.html", {"form": form, "rating": rating})

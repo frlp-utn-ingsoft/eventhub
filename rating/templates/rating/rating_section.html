@@ -21,6 +21,44 @@
                                 <br />
                                 <small>{{ rating.created_at|date:"d b Y, H:i"}}</small>
                             </div>
+
+                            <!-- prettier-ignore -->
+                            {% if user == rating.user or user.is_organizer and user == event.organizer %}
+                            <div class="dropdown">
+                                <button
+                                    class="btn btn-sm btn-light"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                >
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    {% if user == rating.user %}
+                                    <li>
+                                        <a
+                                            class="dropdown-item"
+                                            href="{% url 'rating:rating_update' rating.pk %}"
+                                        >
+                                            <i
+                                                class="bi bi-pencil-square me-2"
+                                            ></i
+                                            >Editar
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                    <li>
+                                        <a
+                                            class="dropdown-item text-danger"
+                                            href="{% url 'rating:rating_delete' rating.pk %}"
+                                        >
+                                            <i class="bi bi-trash me-2"></i
+                                            >Eliminar
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -41,7 +79,7 @@
 
         {% if user.is_authenticated %}
         <div class="card-body">
-            <form method="post" action="{% url 'rating:rating_add' event.id %}">
+            <form method="post" action="{% url 'rating:rating_add' event.pk %}">
                 {% csrf_token %}
                 <div class="mb-3">
                     <label for="{{ form.title.id_for_label }}"

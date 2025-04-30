@@ -1,13 +1,55 @@
-<div class="card mt-4">
-    <div class="card-header">Deja tu reseña</div>
-    <div class="card-body">
-        <!-- prettier-ignore -->
-        <form method="post">
+<!-- prettier-ignore -->
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="container my-4" style="max-width: 600px">
+    <h5>Reseña</h5>
+    <div class="card mt-3 py-2 px-3">
+        <form method="post" action="{% url 'rating:rating_update' rating.pk %}">
             {% csrf_token %}
-            {{ form.as_p }} <!-- Renderiza un form de Django como una lista de elementos <p> (parrafo) -->
-            <button type="submit" class="btn btn-primary">
-                Publicar reseña
-            </button>
+            <div class="mb-3">
+                <label for="{{ form.title.id_for_label }}"
+                    >Título de la reseña
+                    <span style="color: red">*</span></label
+                >
+                <!-- prettier-ignore -->
+                {{ form.title }}
+                {{ form.title.errors }}
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.text.id_for_label }}"
+                    >Contenido de la reseña
+                    <span style="color: red">*</span></label
+                >
+                <!-- prettier-ignore -->
+                {{ form.text }}
+                {{ form.text.errors }}
+            </div>
+
+            <div class="mb-3">
+                <label for="{{ form.rating.id_for_label }}"
+                    >Puntuación de la reseña (1-5)
+                    <span style="color: red">*</span></label
+                >
+                <!-- prettier-ignore -->
+                {{ form.rating }}
+                {{ form.rating.errors }}
+            </div>
+            <div class="text-end">
+                <button
+                    type="button"
+                    class="btn btn-secondary"
+                    onClick="history.back()"
+                >
+                    Cancelar
+                </button>
+                <button type="submit" class="btn btn-primary">
+                    Guardar reseña
+                </button>
+            </div>
         </form>
     </div>
 </div>
+{% endblock %}
