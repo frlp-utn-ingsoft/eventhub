@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from .models import Event, User, Venue
+from .forms import VenueForm
 
 
 def register(request):
@@ -190,3 +191,47 @@ def create_venue(request):
         return redirect("event_form")
 
     return redirect("event_form")
+
+@login_required
+def venue_list(request):
+    if not request.user.is_organizer:
+        return redirect("events")  # Redirigir a la lista de eventos si no es organizador
+    venues = Venue.objects.all()
+    return render(request, "app/venue.html", {"venues": venues})
+
+@login_required
+def venue_form(request, id=None):
+    if not request.user.is_organizer:
+        return redirect("events")  # Redirigir a la lista de eventos si no es organizador
+
+    if id:
+        venue = get_object_or_404(Venue, pk=id)
+    else:
+        venue = None
+
+    if request.method == "POST":
+        form = VenueForm(request.POST, instance=venue)
+        if form.is_valid():
+            form.save()
+            return redirect("venue_list")
+    else:
+        form = VenueForm(instance=venue)
+
+    return render(request, "app/venue_form.html", {"form": form, "venue": venue})
+
+@login_required
+def venue_detail(request, id):
+    if not request.user.is_organizer:
+        return redirect("events")  # Redirigir a la lista de eventos si no es organizador
+    venue = get_object_or_404(Venue, pk=id)
+    return render(request, "app/venue_detail.html", {"venue": venue})
+
+@login_required
+def venue_delete(request, id):
+    if not request.user.is_organizer:
+        return redirect("events")  # Redirigir a la lista de eventos si no es organizador
+    venue = get_object_or_404(Venue, pk=id)
+    if request.method == "POST":
+        venue.delete()
+        return redirect("venue_list")
+    return render(request, "app/venue_confirm_delete.html", {"venue": venue})
