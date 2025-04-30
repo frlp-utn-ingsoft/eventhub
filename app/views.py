@@ -199,4 +199,68 @@ def ticket_update(request, ticket_code):
         request, "app/ticket_update.html", {"ticket": ticket}
     )
 
-        
+@login_required
+def ticket_types(request):
+    user = request.user
+    if not user.is_organizer:
+        return redirect("events")
+    ticket_types = TicketType.objects.all().order_by("price")
+    return render(request, "app/ticket_types.html", {"ticket_types": ticket_types})
+
+@login_required
+def ticket_type_delete(request, ticket_type_id):
+    if request.method == "POST":
+        user = request.user
+        if not user.is_organizer:
+            return redirect("events")
+        ticket_type = get_object_or_404(TicketType, pk=ticket_type_id)
+        ticket_type.delete()
+        return redirect("ticket_types")
+    else:
+        return redirect("ticket_types")
+
+@login_required
+def ticket_type_form(request):
+    user = request.user
+    if not user.is_organizer:
+        return redirect("events")
+    if request.method == "POST":
+        name = request.POST.get("name")
+        price = float(request.POST.get("price"))
+        success, result = TicketType.new(name, price)
+        if success:
+            return redirect("ticket_types")
+        else:
+            errors = result
+            return render(
+                request,
+                "app/ticket_type_form.html",
+                {
+                    "errors": errors,
+                    "data": request.POST,
+                },
+            )        
+    else: return redirect("ticket_types")
+
+def ticket_type_update(request, ticket_type_id):
+    user = request.user
+    if not user.is_organizer:
+        return redirect("events")
+    ticket_type = get_object_or_404(TicketType, pk=ticket_type_id)
+    if request.method == "POST":
+        price = float(request.POST.get("price"))
+        success, result = ticket_type.update(price)
+        if success:
+            return redirect("ticket_types")
+        else:
+            errors = result
+            return render(
+                request,
+                "app/ticket_type_update.html",
+                {
+                    "errors": errors,
+                    "data": request.POST,
+                    "ticket_type": ticket_type,
+                },
+            )
+    else: return redirect("ticket_types")
