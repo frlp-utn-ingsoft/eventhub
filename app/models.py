@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.conf import settings
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -33,12 +34,25 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+class Venue(models.Model):
+    name = models.CharField("Nombre", max_length=100)
+    address = models.CharField("Dirección", max_length=200)
+    city = models.CharField("Ciudad", max_length=100)
+    capacity = models.PositiveIntegerField("Capacidad")
+    contact = models.TextField("Información de contacto")
+    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
+
 class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     categories = models.ManyToManyField('Category', related_name='events', blank=True)
+    venue = models.ForeignKey(Venue, on_delete=models.SET_NULL, null=True, blank=True)  
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -58,7 +72,7 @@ class Event(models.Model):
         return errors
     
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, categories=None):
+    def new(cls, title, description, scheduled_at, organizer, venue=None, categories=None):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -69,24 +83,24 @@ class Event(models.Model):
         description=description,
         scheduled_at=scheduled_at,
         organizer=organizer,
-        )
-
+        venue=venue,  
+        )   
         if categories:
             event.categories.set(categories) 
-
         return event
 
-    def update(self, title, description, scheduled_at, organizer, categories=None):
-        self.title = title or self.title
-        self.description = description or self.description
-        self.scheduled_at = scheduled_at or self.scheduled_at
-        self.organizer = organizer or self.organizer
-        self.save()
-        
-        if categories is not None:
-            self.categories.set(categories)
+def update(self, title, description, scheduled_at, organizer, venue=None, categories=None):
+    self.title = title or self.title
+    self.description = description or self.description
+    self.scheduled_at = scheduled_at or self.scheduled_at
+    self.organizer = organizer or self.organizer
+    self.venue = venue or self.venue
+    self.save()
 
-        return self  
+    if categories is not None:
+        self.categories.set(categories)
+    return self
+
 
 class Rating(models.Model):
     event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='ratings')
@@ -98,4 +112,3 @@ class Rating(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.score} estrellas"
-

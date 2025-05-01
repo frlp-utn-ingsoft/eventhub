@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container mt-4" style="max-width: 600px;">
+    <h2 class="mb-4">Editar ubicación</h2>
+
+    <form method="post" novalidate>
+      {% csrf_token %}
+      {% for field in form %}
+        <div class="mb-3">
+          {{ field.label_tag }}
+          {{ field }}
+          {% if field.errors %}
+            <div class="text-danger small mt-1">
+              {% for error in field.errors %}
+                {{ error }}
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-circle"></i> Guardar cambios
+      </button>
+      <a href="{% url 'venue_list' %}" class="btn btn-outline-secondary ms-2">
+        Cancelar
+      </a>
+    </form>
+  </div>
+{% endblock %}
+

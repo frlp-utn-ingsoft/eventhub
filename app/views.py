@@ -4,10 +4,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.contrib import messages
-from .models import Event, User, Rating, Category
-from .forms import RatingForm, CategoryForm
+from django.http import HttpResponseForbidden
 from django.db.models import Count
-from django.contrib import messages
+from .models import Event, User, Rating, Category, Venue
+from .forms import RatingForm, CategoryForm, VenueForm
 
 def register(request):
     if request.method == "POST":
@@ -30,13 +30,12 @@ def register(request):
             )
         else:
             user = User.objects.create_user(
-                email=email, username=username, password=password, is_organizer=is_organizer
+            email=email, username=username, password=password, is_organizer=is_organizer
             )
             login(request, user)
             return redirect("events")
 
     return render(request, "accounts/register.html", {})
-
 
 def login_view(request):
     if request.method == "POST":
@@ -54,7 +53,6 @@ def login_view(request):
         return redirect("events")
 
     return render(request, "accounts/login.html")
-
 
 def home(request):
     return render(request, "home.html")
@@ -78,11 +76,13 @@ def events(request):
     return render(
         request,
         "app/events.html",
-        {"events": events,
-         "user_is_organizer": request.user.is_organizer, 
-         "categorias": categorias,
+        {
+            "events": events,
+            "user_is_organizer": request.user.is_organizer, 
+            "categorias": categorias,
         },
     )
+
 
 @login_required
 def rating_create(request, id):
@@ -154,6 +154,7 @@ def rating_delete(request, id, rating_id):
             return redirect("event_detail", id=id)
     return redirect("event_detail", id=id)
 
+
 @login_required
 def event_delete(request, id):
     user = request.user
@@ -168,6 +169,7 @@ def event_delete(request, id):
 
     return redirect("event_detail", id=id)
 
+
 @login_required
 def event_form(request, id=None):
     user = request.user
@@ -180,6 +182,14 @@ def event_form(request, id=None):
 
     event = None
 
+    if id is not None:
+        event = get_object_or_404(Event, pk=id)
+
+    
+    venues = Venue.objects.filter(organizer=request.user)
+    today = timezone.localtime().date()
+    min_date = today + datetime.timedelta(days=1)
+
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
@@ -188,13 +198,25 @@ def event_form(request, id=None):
         selected_categories = [
             int(cat_id) for cat_id in request.POST.getlist("categories") if cat_id.isdigit()
         ]
+        venue_id = request.POST.get("venue")
+
+        
+        if not venue_id:
+            return render(
+                request,
+                "app/event_form.html",
+                {
+                    "event": event,
+                    "user_is_organizer": user.is_organizer,
+                    "min_date": min_date,
+                    "venues": venues,
+                    "error": "Debe seleccionar un lugar para el evento.",
+                },
+            )
 
         [year, month, day] = map(int, date.split("-"))
         [hour, minutes] = map(int, time.split(":"))
-
-        scheduled_at = timezone.make_aware(
-            datetime.datetime(year, month, day, hour, minutes)
-        )
+        scheduled_at = timezone.make_aware(datetime.datetime(year, month, day, hour, minutes))
 
         today = timezone.localtime().date()
         if scheduled_at.date() <= today:
@@ -205,36 +227,42 @@ def event_form(request, id=None):
                     "event": event,
                     "categories": categories,
                     "user_is_organizer": request.user.is_organizer,
+                    "user_is_organizer": user.is_organizer,
+                    "min_date": min_date,
+                    "venues": venues,
                     "error": "La fecha debe ser a partir de mañana.",
                     "min_date": (today + datetime.timedelta(days=1)),
                 },
             )
 
+        venue = get_object_or_404(Venue, pk=venue_id, organizer=user)
+
         if id is None:
-            Event.new(title, description, scheduled_at, request.user)
+            Event.new(title, description, scheduled_at, user, venue)
         else:
-            event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user)
+            event.update(title, description, scheduled_at, user, venue)
 
         return redirect("events")
+        if id is not None:
+            event = get_object_or_404(Event, pk=id)
 
-    if id is not None:
-        event = get_object_or_404(Event, pk=id)
+            today = timezone.localtime().date()
+            min_date = today + datetime.timedelta(days=1)
 
-    today = timezone.localtime().date()
-    min_date = today + datetime.timedelta(days=1)
-
-    return render(
-        request,
-        "app/event_form.html",
-        {
+        return render(
+            request,
+            "app/event_form.html",
+        {   
             "event": event,
-            "categories": categories,  
-            "selected_categories": selected_categories,  
+            "categories": categories,
+            "selected_categories": selected_categories,
             "user_is_organizer": request.user.is_organizer,
-            "min_date": min_date
+            "min_date": min_date, 
+            "venues": venues,
+            "no_venues": not venues.exists(), 
         },
     )
+
 
 @login_required
 def category_list(request):
@@ -292,3 +320,65 @@ def category_delete(request, id):
         messages.success(request, 'La categoría fue eliminada con éxito')
         return redirect('category_list')  
     return redirect('category_list')
+
+
+@login_required
+def venue_list(request):
+    if request.user.is_organizer:
+        venues = Venue.objects.filter(organizer=request.user)
+    else:
+        venues = Venue.objects.all()  
+    return render(request, 'venues/venue_list.html', {'venues': venues})
+
+@login_required
+def create_venue(request):
+    if not request.user.is_organizer:
+        return HttpResponseForbidden("Solo los organizadores pueden crear ubicaciones.")
+    
+    form = VenueForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        venue = form.save(commit=False)
+        venue.organizer = request.user
+        venue.save()
+        messages.success(request, "¡Ubicacion creada con éxito!")
+        return redirect('venue_list')
+    return render(request, 'venues/create_venue.html', {'form': form})
+
+
+@login_required
+def edit_venue(request, venue_id):
+    venue = get_object_or_404(Venue, id=venue_id)
+
+    if not request.user.is_organizer or venue.organizer != request.user:
+        return HttpResponseForbidden("No tenés permiso para editar esta ubicación.")
+    
+    form = VenueForm(request.POST or None, instance=venue)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        messages.success(request, "¡Ubicacion editada con éxito!")
+        return redirect('venue_list')
+    return render(request, 'venues/edit_venue.html', {'form': form})
+
+
+
+@login_required
+def delete_venue(request, venue_id):
+    venue = get_object_or_404(Venue, id=venue_id)
+
+    if not request.user.is_organizer or venue.organizer != request.user:
+        return HttpResponseForbidden("No tenés permiso para eliminar esta ubicación.")
+    
+    if request.method == 'POST':
+        venue.delete()
+        messages.success(request, "¡Ubicacion eliminada con éxito!")
+        return redirect('venue_list')
+    return render(request, 'venues/delete_venue.html', {'venue': venue})
+
+
+
+@login_required
+def venue_detail(request, venue_id):
+    venue = get_object_or_404(Venue, id=venue_id)
+    return render(request, 'venues/venue_detail.html', {'venue': venue})
+
+

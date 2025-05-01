@@ -1,120 +1,90 @@
-{% extends "base.html" %}
+<div class="card">
+    <div class="card-body">
+        <form id="eventForm" action="{% if event.id %}{% url 'event_edit' id=event.id %}{% else %}{% url 'event_form' %}{% endif %}" method="POST">
+            {% csrf_token %}
+            <div class="vstack gap-3">
+                <div>
+                    <label for="title" class="form-label">Título del Evento</label>
+                    <input class="form-control"
+                        id="title"
+                        required
+                        type="text"
+                        value="{{ event.title }}"
+                        name="title" />
+                </div>
+                <div>
+                    <label for="description" class="form-label">Descripción</label>
+                    <textarea
+                        class="form-control"
+                        id="description"
+                        name="description"
+                        rows="4"
+                        required>{{ event.description }}</textarea>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <label for="date" class="form-label">Fecha</label>
+                        <input
+                            class="form-control"
+                            id="date"
+                            required
+                            type="date"
+                            name="date"
+                            value="{{ event.scheduled_at|date:'Y-m-d' }}"
+                            min="{{ min_date }}" />
+                    </div>
+                    <div class="col-md-6">
+                        <label for="time" class="form-label">Hora</label>
+                        <input
+                            class="form-control"
+                            id="time"
+                            required
+                            type="time"
+                            value="{{ event.scheduled_at|date:'H:i' }}"
+                            name="time" />
+                    </div>
+                </div>
 
-{% block content %}
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <h1 class="mb-4">
-                {% if event.id %}
-                    Editar evento
-                {% else %}
-                    Crear evento
-                {% endif %}
-            </h1>
+                <div>
+                    <label for="venue" class="form-label">Ubicación del evento</label>
+                    <select class="form-select" id="venue" name="venue" required {% if not venues %}disabled{% endif %}>
+                        <option value="">Seleccionar lugar</option>
+                        {% for venue in venues %}
+                            <option value="{{ venue.id }}" {% if event.venue.id == venue.id %}selected{% endif %}>
+                                {{ venue.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-            <div class="card">
-                <div class="card-body">
-                    <form id="eventForm" action="{% if event.id %}{% url 'event_edit' id=event.id %}{% else %}{% url 'event_form' %}{% endif %}" method="POST">
-                        {% csrf_token %}
-                        <div class="vstack gap-3">
-                            <div>
-                                <label for="title" class="form-label">Título del Evento</label>
-                                <input class="form-control"
-                                    id="title"
-                                    required
-                                    type="text"
-                                    value="{{ event.title }}"
-                                    name="title" />
-                            </div>
-                            <div>
-                                <label for="description" class="form-label">Descripción</label>
-                                <textarea
-                                    class="form-control"
-                                    id="description"
-                                    name="description"
-                                    rows="4"
-                                    required>{{ event.description }}</textarea>
-                            </div>
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <label for="date" class="form-label">Fecha</label>
-                                    <input
-                                        class="form-control"
-                                        id="date"
-                                        required
-                                        type="date"
-                                        name="date"
-                                        value="{{ event.scheduled_at|date:'Y-m-d' }}"
-                                        min="{{ min_date }}" />
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="time" class="form-label">Hora</label>
-                                    <input
-                                        class="form-control"
-                                        id="time"
-                                        required
-                                        type="time"
-                                        value="{{ event.scheduled_at|date:'H:i' }}"
-                                        name="time" />
+                <div class="mb-3">
+                    <label class="form-label">Categorías</label>
+                    <div class="row">
+                        {% for cat in categories %}
+                            <div class="col-md-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="categories" value="{{ cat.id }}"
+                                        {% if cat in event.categories.all %}checked{% endif %}>
+                                    <label class="form-check-label">{{ cat.name }}</label>
                                 </div>
                             </div>
-                            <div>
-                            <div class="mb-3">
-                                <label class="form-label">Categorías</label>
-                                <div class="row">
-                                    {% for cat in categories %}
-                                        <div class="col-md-4">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" name="categories" value="{{ cat.id }}"
-                                                    {% if cat in event.categories.all %}checked{% endif %}>
-                                                <label class="form-check-label">{{ cat.name }}</label>
-                                            </div>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-                            </div>                                
-                                <button type="submit" class="btn btn-primary">
-                                    {% if event.id %}
-                                        Guardar Cambios
-                                    {% else %}
-                                        Crear Evento
-                                    {% endif %}
-                                </button>
-                            </button>
-                            <a href="{% url 'events' %}" class="btn btn-outline-secondary ms-2">
-                                Cancelar
-                            </a>
-                            </div>
-                        </div>
-                    </form>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div>
+                    <button type="submit" class="btn btn-primary">
+                        {% if event.id %}
+                            Guardar Cambios
+                        {% else %}
+                            Crear Evento
+                        {% endif %}
+                    </button>
+                    <a href="{% url 'events' %}" class="btn btn-outline-secondary ms-2">
+                        Cancelar
+                    </a>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
 </div>
-
-<script>
-    document.getElementById('eventForm').addEventListener('submit', function(event) {
-        const dateInput = document.getElementById('date');
-        const selectedDateParts = dateInput.value.split('-');
-
-        const selectedDate = new Date(
-            parseInt(selectedDateParts[0], 10),
-            parseInt(selectedDateParts[1], 10) - 1,
-            parseInt(selectedDateParts[2], 10)
-        );
-        selectedDate.setHours(0, 0, 0, 0);
-
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-
-        if (selectedDate.getTime() < tomorrow.getTime()) {
-            alert('La fecha debe ser posterior a la actual.');
-            event.preventDefault();
-        }
-    });
-</script>
-
-{% endblock %}
