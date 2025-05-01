@@ -181,6 +181,7 @@ def approve_refund_request(request, id):
     refund = get_object_or_404(RefundRequest, pk=id)
     #verificar si la solicitud de reembolso ya fue aprobada o rechazada
     refund.approval = True
+    refund.approval_date = timezone.now()
     refund.save()
     return redirect("organizer_refund")
 
@@ -192,6 +193,7 @@ def reject_refund_request(request, id):
     refund = get_object_or_404(RefundRequest, pk=id)
     #verificar si la solicitud de reembolso ya fue aprobada o rechazada
     refund.approval = False
+    refund.approval_date = timezone.now()
     refund.save()
     return redirect("organizer_refund")
 
