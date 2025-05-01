@@ -306,15 +306,15 @@ class RefoundRequest(models.Model):
             errors["amount"] = "El monto debe ser mayor a 0."
 
         if reason is None or reason.strip() == "":
-            errors["reason"] = "La razón es requerida."
+            errors["Detalles"] = "Se necesita ingresar los detalles adicionales del motivo."
         elif len(reason) > 500:
-            errors["reason"] = "La razón no puede superar los 500 caracteres."
+            errors["Detalles"] = "Los detalles no pueden superar los 500 caracteres."
 
         if status not in RefoundStatus.values:
             errors["status"] = "Estado inválido."
 
         if refound_reason not in RefoundReason.values:
-            errors["refound_reason"] = "Motivo de reembolso inválido."
+            errors["Motivo del reembolso"] = "Motivo de reembolso inválido."
 
         if ticket_code is None:
             errors["ticket_code"] = "Debe asociarse un ticket."
@@ -369,7 +369,7 @@ class Notification(models.Model):
 
     def __str__(self):
         user_count = self.users.count()
-        
+
         if user_count == 1:
             user = self.users.first()
             if user is None:  # por seguridad si se elimina de la bbdd.
@@ -420,14 +420,13 @@ class Notification(models.Model):
         self.message = message or self.message
         self.priority = priority or self.priority
         self.read = read if read is not None else self.read
-        
+
         # Actualizar el evento si se proporciona uno nuevo
         if event is not None:
             self.event = event
-        
+
         self.save()
-        
+
         # si recibo usuarios nuevos, actualizamos la relación
         if users is not None:
             self.users.set(users)  # Reemplaza los usuarios asociados por estos nuevos
-        

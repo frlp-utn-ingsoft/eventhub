@@ -608,7 +608,7 @@ def update_ticket(request, ticket_id):
             return redirect('Mis_tickets')
     return render(request, 'app/Mis_tickets', {'ticket': ticket})
 
-    
+
 
 def rating_create(request, event_id):
     event = get_object_or_404(Event, id=event_id)
@@ -678,6 +678,15 @@ def rating_delete(request, event_id, rating_id):
 @login_required
 def create_refound(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
+    event_date = ticket.event.scheduled_at
+    if event_date < timezone.now():
+        messages.error(request, 'No se puede solicitar el reembolso: Ll evento ya pasó.')
+        return redirect('Mis_tickets')
+
+    if (event_date - timezone.now()) > datetime.timedelta(days=30):
+        messages.error(request, 'No se puede solicitar el reembolso: Faltan más de 30 días para el evento.')
+        return redirect('Mis_tickets')
+
     if request.method == 'POST':
         ticket_code = request.POST.get('ticket_code')
         reason = request.POST.get('reason')
@@ -765,6 +774,7 @@ def update_refound(request, refound_id):
                                                           'refoundReason': RefoundReason})
     return redirect('refound_user')
 
+@login_required
 def refound_admin(request):
     if not request.user.is_organizer:
         return redirect('events')
@@ -773,6 +783,7 @@ def refound_admin(request):
     return render(request, 'app/refound_admin.html', {'refounds': refounds,
                                                       'user_is_organizer': True})
 
+@login_required
 def approve_or_reject_refound(request, refound_id):
     if not request.user.is_organizer:
         return redirect('events')
@@ -794,11 +805,11 @@ User = get_user_model()
 def notification_form(request, id=None):
     if not request.user.is_organizer:
         return redirect("notification")
-    
+
     notification = None
     if id is not None:
         notification = get_object_or_404(Notification, pk=id)
-    
+
     if request.method == "POST":
         # Campos
         title = request.POST.get("title")
@@ -806,12 +817,12 @@ def notification_form(request, id=None):
         priority = request.POST.get("priority")
         event_id = request.POST.get("event")
         user_ids = request.POST.getlist("users")
-        
+
         event = get_object_or_404(Event, pk=event_id)
         print("user_ids:",title )
 
         users = User.objects.filter(id__in=user_ids)
-        
+
         if id is None:  # Crear nueva notificación
             success, errors = Notification.new(
                 title=title,
@@ -820,7 +831,7 @@ def notification_form(request, id=None):
                 users=users,
                 event=event
             )
-            
+
             if not success:
                 return render(request, "app/notification_form.html", {
                     "events": Event.objects.all(),
@@ -839,7 +850,7 @@ def notification_form(request, id=None):
                  )
 
         return redirect("notification")
-    
+
     # GET request
     return render(request, "app/notification_form.html", {
         "notification": notification,
@@ -854,7 +865,7 @@ def notification(request):
     if not request.user.is_organizer:
         # Si no es organizador, muestra un mensaje de error y redirige al inicio
         return redirect("home")
-    
+
     # Obtener todos los eventos para el filtro
     events = Event.objects.all()
 
@@ -862,20 +873,20 @@ def notification(request):
     event_filter = request.GET.get('event', 'all')
     priority_filter = request.GET.get('priority', 'all')
     search_query = request.GET.get('search', '')
-    
-    # Consulta base de notificaciones  
+
+    # Consulta base de notificaciones
     notifications = Notification.objects.all().order_by("-created_at")
-    
+
     # Aplicar filtros si están presentes
     if search_query:
         notifications = notifications.filter(title__icontains=search_query)
-    
+
     if event_filter and event_filter != 'all':
         notifications = notifications.filter(event__id=event_filter)
-    
+
     if priority_filter and priority_filter != 'all':
         notifications = notifications.filter(priority=priority_filter)
-    
+
     return render(
         request,
         "app/notifications.html",
@@ -891,14 +902,14 @@ def notification(request):
     )
 
 def notification_detail(request, id):
- 
+
     # Verifica si el usuario es un organizador
     if not request.user.is_organizer:
 
         return redirect("home")
-    
+
     notification = get_object_or_404(Notification, id=id)
-    
+
     return render(
         request,
         "app/notification_detail.html",
@@ -925,10 +936,10 @@ def notification_delete(request,id):
 def user_notifications(request):
     # Obtener solo las notificaciones del usuario actual
     notifications = Notification.objects.filter(users=request.user).order_by("-created_at")
-    
+
     # Contar notificaciones no leídas
     unread_count = notifications.filter(read=False).count()
-    
+
     return render(
         request,
         "app/user_notifications.html",
@@ -949,5 +960,5 @@ def mark_notification_read(request, id=None):
         else:
             # Marcar todas las notificaciones como leídas
             Notification.objects.filter(users=request.user, read=False).update(read=True)
-    
+
     return redirect("user_notifications")
