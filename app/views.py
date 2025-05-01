@@ -448,44 +448,70 @@ def delete_rating(request, rating_id):
 @login_required
 def add_comment(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
+    
+    # Verificar si el usuario ya ha comentado en este evento
+    if Comment.objects.filter(event=event, user=request.user).exists():
+        messages.error(request, "Ya has comentado en este evento. Puedes editar tu comentario existente.")
+        return redirect("event_detail", event_id=event_id)
+    
     if request.method == "POST":
-        user = request.user
         title = request.POST.get("title")
         text = request.POST.get("text")
+        
+        if not title or not text:
+            messages.error(request, "El título y el comentario son obligatorios.")
+            return redirect("event_detail", event_id=event_id)
+        
         Comment.objects.create(
             title=title,
             text=text,
             event=event,
-            user=user
+            user=request.user
         )
-        return redirect("event_detail", event_id=event_id)
+        messages.success(request, "Tu comentario ha sido publicado.")
+        
     return redirect("event_detail", event_id=event_id)
 
 
 @login_required
 def delete_comment(request, event_id, comment_id):
     comment = get_object_or_404(Comment, id=comment_id, event_id=event_id)
-    if comment.user == request.user or request.user.is_organizer:
-        if request.method == "POST":
-            comment.delete()
-            return redirect("event_detail", event_id=event_id)
+    
+    # Verificar que el usuario es el dueño del comentario o es el organizador del evento
+    if comment.user != request.user and not request.user.is_organizer:
+        messages.error(request, "No tienes permiso para eliminar este comentario.")
         return redirect("event_detail", event_id=event_id)
-    else:
-        return redirect("event_detail", event_id=event_id)
+    
+    if request.method == "POST":
+        comment.delete()
+        messages.success(request, "El comentario ha sido eliminado.")
+        
+    return redirect("event_detail", event_id=event_id)
 
 
 @login_required
 def update_comment(request, event_id, comment_id):
     comment = get_object_or_404(Comment, id=comment_id, event_id=event_id)
-    if comment.user == request.user or request.user.is_organizer:
-        if request.method == "POST":
-            title = request.POST.get("title")
-            text = request.POST.get("text")
-            comment.update(title, text)
-            return redirect("event_detail", event_id=event_id)
-    else:
+    
+    # Verificar que el usuario es el dueño del comentario
+    if comment.user != request.user:
+        messages.error(request, "No tienes permiso para editar este comentario.")
         return redirect("event_detail", event_id=event_id)
-    return render(request, "app/update_comment.html", {"comment": comment, "event_id": event_id})
+    
+    if request.method == "POST":
+        title = request.POST.get("title")
+        text = request.POST.get("text")
+        
+        if not title or not text:
+            messages.error(request, "El título y el comentario son obligatorios.")
+            return redirect("event_detail", event_id=event_id)
+        
+        comment.title = title
+        comment.text = text
+        comment.save()
+        messages.success(request, "Tu comentario ha sido actualizado.")
+        
+    return redirect("event_detail", event_id=event_id)
 
 
 @login_required
