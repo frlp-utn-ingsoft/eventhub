@@ -1,6 +1,4 @@
 {% extends "base.html" %}
-{% load static %}
-
 {% block content %}
 <div class="container mt-4">
     <h1 class="mb-4">Solicitudes de Reembolso</h1>
@@ -45,15 +43,13 @@
                             <span class="badge bg-success">Aprobado</span>
                         {% elif refund.status == 'rejected' %}
                             <span class="badge bg-danger">Rechazado</span>
-                        {% else %}
-                            <span class="badge bg-secondary">{{ refund.get_status_display }}</span>
                         {% endif %}
                     </td>
                     <td>
                          <div class="btn-group btn-group-sm" role="group">
                             <a href="#" class="btn btn-outline-secondary disabled" title="Ver Detalles"><i class="bi bi-info-circle"></i></a>
 
-                            {% if refund.is_pending %}
+                            {% if refund.status == 'pending' %}
                                 <a href="#" class="btn btn-outline-success disabled" title="Aprobar"><i class="bi bi-check"></i></a>
                                 <a href="#" class="btn btn-outline-danger disabled" title="Rechazar"><i class="bi bi-x"></i></a>
                             {% endif %}
@@ -70,7 +66,6 @@
 
     {% else %}
 
-        <h2>Mis Solicitudes de Reembolso</h2>
         <table class="table">
             <thead>
                 <tr>
@@ -129,4 +124,5 @@
 
 
 </div>
+
 {% endblock %}
