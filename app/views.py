@@ -185,8 +185,7 @@ def event_form(request, id=None):
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer, "categories": categories},
-        {"event": event, "user_is_organizer": request.user.is_organizer, "venues": venues,  } # <-- lo agg para la relacion events/ venue # type: ignore
+        {"event": event, "user_is_organizer": request.user.is_organizer, "categories": categories, "venues": venues}, # <-- lo agg para la relacion events/ venue # type: ignore
     )
 
 @login_required
