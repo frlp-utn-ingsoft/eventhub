@@ -21,7 +21,7 @@
 </head>
 
 <body>
-    <!-- Navbar solo visible si el usuario está autenticado -->
+    
     <nav class="navbar navbar-expand-md bg-body-tertiary">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">EventHub</a>
@@ -79,6 +79,30 @@
             </div>
         </div>
     </nav>
+    <div class="container mt-3">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    <script>
+        // Espera 3 segundos (3000 ms) y cierra la alerta con animación
+        setTimeout(() => {
+            document.querySelectorAll('.alert').forEach((alertEl) => {
+                alertEl.classList.remove('show'); // empieza la transición
+    
+                alertEl.addEventListener('transitionend', () => {
+                    const bsAlert = bootstrap.Alert.getOrCreateInstance(alertEl);
+                    bsAlert.close(); // cierra definitivamente
+                });
+            });
+        }, 3000);
+    </script>
+    
 
     {% block content %}
     {% endblock %}
