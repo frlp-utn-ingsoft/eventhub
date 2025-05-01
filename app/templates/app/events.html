@@ -5,7 +5,7 @@
 {% block content %}
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Eventos</h1>
+        <h1>Eventos</h1>     
         {% if user_is_organizer %}
             <a
                 href="{% url 'event_form' %}"
@@ -16,6 +16,44 @@
             </a>
         {% endif %}
     </div>
+    <form method="get" class="mb-4 p-3 border rounded shadow-sm bg-light">
+        <div class="row align-items-end gy-3 gx-3">
+            <div class="col-md-3">
+                <label for="category" class="form-label fw-semibold">Categoría</label>
+                <select class="form-select" name="category" id="category">
+                    <option value="">Todas</option>
+                    {% for category in categories %}
+                        <option value="{{ category.id }}" {% if request.GET.category == category.id|stringformat:"s" %}selected{% endif %}>
+                            {{ category.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+    
+            <div class="col-md-3">
+                <label for="venue" class="form-label fw-semibold">Ubicación</label>
+                <select class="form-select" name="venue" id="venue">
+                    <option value="">Todas</option>
+                    {% for venue in venues %}
+                        <option value="{{ venue.id }}" {% if request.GET.venue == venue.id|stringformat:"s" %}selected{% endif %}>
+                            {{ venue.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+    
+            <div class="col-md-3">
+                <label for="date" class="form-label fw-semibold">Fecha</label>
+                <input type="date" name="date" id="date" class="form-control" value="{{ request.GET.date }}">
+            </div>
+    
+            <div class="col-md-3 d-flex gap-3">
+                <button type="submit" class="btn btn-outline-primary w-100">Filtrar</button>
+                <a href="{% url 'events' %}" class="btn btn-outline-secondary w-100">Limpiar</a>
+            </div>
+        </div>
+    </form>
+      
     <table class="table">
         <thead>
             <tr class="table-light">
@@ -76,7 +114,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center">No hay eventos disponibles</td>
+                    <td colspan="6" class="text-center">No hay eventos disponibles</td>
                 </tr>
             {% endfor %}
         </tbody>

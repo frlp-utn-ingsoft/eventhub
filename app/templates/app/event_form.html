@@ -26,7 +26,7 @@
                         {% csrf_token %}
                         <div class="vstack gap-3">
                             <div>
-                                <label for="title" class="form-label">Título del Evento</label>
+                                <label for="title" class="form-label">Título del Evento <span class="text-danger">*</span></label>
                                 <input class="form-control"
                                     id="title"
                                     required=""
@@ -35,7 +35,7 @@
                                     name="title" />
                             </div>
                             <div>
-                                <label for="description" class="form-label">Descripción</label>
+                                <label for="description" class="form-label">Descripción <span class="text-danger">*</span></label>
                                 <textarea
                                     class="form-control"
                                     id="description"
@@ -44,7 +44,7 @@
                                     required="">{{ event.description }}</textarea>
                             </div>
                             <div>
-                                <label for="venue" class="form-label">Ubicación</label>
+                                <label for="venue" class="form-label">Ubicación <span class="text-danger">*</span></label>
                                 <select
                                     class="form-control"
                                     id="venue"
@@ -60,7 +60,7 @@
                             </div>
                             <div class="row">
                                 <div class="col-md-6">
-                                    <label for="date" class="form-label">Fecha</label>
+                                    <label for="date" class="form-label">Fecha <span class="text-danger">*</span></label>
                                     <input
                                         class="form-control"
                                         id="date"
@@ -70,7 +70,7 @@
                                         name="date" />
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="time" class="form-label">Hora</label>
+                                    <label for="time" class="form-label">Hora <span class="text-danger">*</span></label>
                                     <input
                                         class="form-control"
                                         id="time"

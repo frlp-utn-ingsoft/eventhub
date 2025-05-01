@@ -62,10 +62,32 @@ def home(request):
 @login_required
 def events(request):
     events = Event.objects.all().order_by("scheduled_at")
+
+    category_id = request.GET.get("category")
+    venue_id = request.GET.get("venue")
+    date = request.GET.get("date")
+
+    if category_id:
+        events = events.filter(categories__id=category_id)
+
+    if venue_id:
+        events = events.filter(venue__id=venue_id)
+
+    if date:
+        events = events.filter(scheduled_at__date=date)
+
+    categories = Category.objects.filter(is_active=True)
+    venues = Venue.objects.all()
+
     return render(
         request,
         "app/events.html",
-        {"events": events, "user_is_organizer": request.user.is_organizer},
+        {
+            "events": events,
+            "categories": categories,
+            "venues": venues,
+            "user_is_organizer": request.user.is_organizer,
+        }
     )
 
 
