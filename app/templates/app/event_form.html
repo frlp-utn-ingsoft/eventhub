@@ -71,7 +71,28 @@
                                     {% endfor %}
                                 </select>
                             </div>
-                            
+                            <div>
+                                <label for="categories" class="form-label">Categorías</label>
+                                <div class="row">
+                                    {% for category in categories %}
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input
+                                                    class="form-check-input"
+                                                    type="checkbox"
+                                                    name="categories"
+                                                    value="{{ category.id }}"
+                                                    id="category-{{ category.id }}"
+                                                    {% if event.categories.all and category in event.categories.all %}checked{% endif %}
+                                                />
+                                                <label class="form-check-label" for="category-{{ category.id }}">
+                                                    {{ category.name }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
                             <div>
                                 <button type="submit" class="btn btn-primary">
                                     {% if event.id %}Guardar Cambios{% else %}Crear Evento{% endif %}

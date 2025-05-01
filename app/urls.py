@@ -16,5 +16,9 @@ urlpatterns = [
     path('locations/new/', views.create_location, name='create_location'),
     path('locations/', views.list_locations, name='locations_list'),
     path('locations/<int:location_id>/edit/', views.update_location, name='update_location'),
-    path('locations/<int:location_id>/delete/', views.delete_location, name='delete_location')
+    path('locations/<int:location_id>/delete/', views.delete_location, name='delete_location'),
+    path('categories', views.list_categories, name='categories_list'),
+    path('categories/new', views.manage_category, name='create_category'),
+    path('categories/<int:category_id>/edit/', views.manage_category, name='update_category'),
+    path('categories/<int:category_id>/delete/', views.delete_category, name='delete_category'),
 ]
