@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
+from category.models import Category
+
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -34,6 +36,7 @@ class Event(models.Model):
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    categories = models.ManyToManyField(Category, related_name="events")
 
     def __str__(self):
         return self.title

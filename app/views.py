@@ -7,6 +7,8 @@ from django.utils import timezone
 
 from tickets.models import Ticket
 
+from category.models import Category
+
 from .models import Event, User
 
 
@@ -102,11 +104,14 @@ def event_form(request, id=None):
     if not user.is_organizer:
         return redirect("events")
 
+    categories = Category.objects.filter(is_active=True)
+
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
+        category_ids = request.POST.getlist("categories")
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
@@ -116,10 +121,12 @@ def event_form(request, id=None):
         )
 
         if id is None:
-            Event.new(title, description, scheduled_at, request.user)
+            event = Event.objects.create( title=title, description=description, scheduled_at=scheduled_at, organizer=request.user)
+            event.categories.set(category_ids)
         else:
             event = get_object_or_404(Event, pk=id)
             event.update(title, description, scheduled_at, request.user)
+            event.categories.set(category_ids)
 
         return redirect("events")
 
@@ -130,5 +137,20 @@ def event_form(request, id=None):
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer},
+        {
+            "event": event,
+            "categories": categories,
+            "user_is_organizer": request.user.is_organizer,
+        },
     )
+
+
+@login_required
+def event_form_view(request, id):
+    categories = Category.objects.filter(is_active=True)
+    event = get_object_or_404(Event, pk=id)
+
+    return render(request, "event_form.html", {
+        "event": event,
+        "categories": categories,
+    })
