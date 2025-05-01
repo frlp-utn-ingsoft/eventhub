@@ -1,5 +1,7 @@
 from django import forms
 from .models import RefundRequest
+from .models import Category
+
 from .models import Ticket
 
 class RefundRequestForm(forms.ModelForm):
@@ -32,3 +34,10 @@ class RefundRequestForm(forms.ModelForm):
 
         #devolvemos el código
             return ticket_code
+class CategoryForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ['name', 'description']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 4}),
+        }
