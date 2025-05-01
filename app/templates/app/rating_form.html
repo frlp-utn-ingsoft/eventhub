@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}
+    {% if rating %}
+        Editar Calificación - {{ event.title }}
+    {% else %}
+        Calificar - {{ event.title }}
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">
+                        {% if rating %}
+                            Editar Calificación
+                        {% else %}
+                            Calificar Evento
+                        {% endif %}
+                    </h2>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if errors %}
+                            <div class="alert alert-danger">
+                                {% for field, error in errors.items %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="score" class="form-label">Calificación</label>
+                            <select class="form-select" id="score" name="score" required>
+                                <option value="">Seleccione una calificación</option>
+                                {% for i in "12345"|make_list %}
+                                    <option value="{{ i }}" {% if score == i|add:"0" %}selected{% endif %}>
+                                        {{ i }} estrella{{ i|pluralize }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="comment" class="form-label">Comentario (opcional)</label>
+                            <textarea class="form-control" id="comment" name="comment" rows="3" maxlength="500">{{ comment }}</textarea>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'event_detail' event.id %}" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">
+                                {% if rating %}
+                                    Actualizar Calificación
+                                {% else %}
+                                    Enviar Calificación
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 
