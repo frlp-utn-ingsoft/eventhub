@@ -141,14 +141,12 @@ def buy_ticket(request, id):
         type = request.POST.get("type")
         user = request.user
 
-        # Validación y creación
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
         if success:
             messages.success(request, "¡Ticket comprado!")
-            return redirect("events")
+            return redirect("tickets")
         else:
-            # 'result' contiene los errores de validación
             messages.error(request, "Error al comprar el ticket")
             return render(
                 request,
@@ -185,5 +183,40 @@ def ticket_delete(request, id):
             ticket.delete()
 
     return redirect("tickets")
+
+@login_required
+def ticket_edit(request, id):
+    ticket = get_object_or_404(Ticket, pk=id)
+
+    if request.method == "POST":
+        print ("Entraste al POST")
+        try:
+            quantity = int(request.POST.get("quantity"))
+        except (TypeError, ValueError):
+            messages.error(request, "La cantidad debe ser un número entero")
+            return render(request, "app/buy_ticket.html", {"ticket": ticket})
+
+        type = request.POST.get("type")
+
+        success, result = Ticket.update(self=ticket, buy_date=timezone.now(), quantity=quantity, type=type, event=ticket.event, user=ticket.user)
+
+        if success:
+            messages.success(request, "¡Ticket modificado!")
+            return redirect("tickets")
+        else:
+            messages.error(request, "Error al modificar el ticket")
+            return render(
+                request,
+                "app/buy_ticket.html",
+                {
+                    "ticket": ticket,
+                    "errors": result,
+                    "data": request.POST,
+                }
+            )
+    else:
+        print ("NO entraste al POST")
+
+    return render(request, "app/ticket_edit.html", {"ticket": ticket})
 
 

@@ -260,6 +260,7 @@ class Ticket(models.Model):
 
     def update(self, buy_date, quantity, type, event, user):
         """Update ticket fields"""
+        
         if buy_date is not None:
             self.buy_date = buy_date
         if quantity is not None:
@@ -272,7 +273,7 @@ class Ticket(models.Model):
             self.user = user
         
         self.save()
-        return self
+        return True, self
     
     def is_recent_purchase(self, minutes=30):
         """Verifica si la compra fue hace menos de X minutos"""
