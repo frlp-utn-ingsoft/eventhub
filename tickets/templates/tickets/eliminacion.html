@@ -25,17 +25,47 @@
                 <td>{{ ticket.quantity }}</td>
                 <td>{{ ticket.type }}</td>
                 <td>
-                    <form method="POST" action="{% url 'tickets:eliminacion' %}">
-                        {% csrf_token %}
-                        <input type="hidden" name="ticket_code" value="{{ ticket.ticket_code }}">
-                        <button type="submit" class="btn btn-danger btn-sm">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </form>
+                    <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#confirmarEliminar" data-ticket-id="{{ ticket.ticket_code }}">
+                        <i class="bi bi-trash me-1"></i>Eliminar
+                    </button>
                 </td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 </div>
+
+<!-- Modal Confirmar Eliminación -->
+<div class="modal fade" id="confirmarEliminar" tabindex="-1" aria-labelledby="confirmarEliminarLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmarEliminarLabel">Confirmar eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que deseas eliminar esta entrada?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form method="post" action="{% url 'tickets:eliminacion' %}" id="eliminarEntradaForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="ticket_code" id="ticketIdToDelete">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Script para pasar el ID del ticket al modal -->
+<script>
+    const confirmarEliminar = document.getElementById('confirmarEliminar');
+    confirmarEliminar.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const ticketId = button.getAttribute('data-ticket-id');
+        const inputHidden = confirmarEliminar.querySelector('#ticketIdToDelete');
+        inputHidden.value = ticketId;
+    });
+</script>
 {% endblock %}

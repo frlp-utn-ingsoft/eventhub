@@ -1,8 +1,11 @@
 import datetime
+
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+
+from tickets.models import Ticket
 
 from .models import Event, User
 
@@ -71,7 +74,11 @@ def events(request):
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
-    return render(request, "app/event_detail.html", {"event": event,  "user_is_organizer": request.user.is_organizer})
+    if request.user.is_authenticated:
+        user_has_tickets = Ticket.objects.filter(event=event, user=request.user).exists()
+    return render(request, "app/event_detail.html", {"event": event,  
+                                                     "user_is_organizer": request.user.is_organizer,
+                                                     'user_has_tickets': user_has_tickets})
 
 
 @login_required
