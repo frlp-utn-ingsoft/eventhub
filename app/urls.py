@@ -1,9 +1,10 @@
 from django.contrib.auth.views import LogoutView
+from django.contrib import admin
 from django.urls import path
-
 from . import views
 
 urlpatterns = [
+    path("admin/", admin.site.urls),
     path("", views.home, name="home"),
     path("accounts/register/", views.register, name="register"),
     path("accounts/logout/", LogoutView.as_view(), name="logout"),
@@ -16,4 +17,18 @@ urlpatterns = [
     path("events/<int:event_id>/ratings/create/", views.create_rating, name="create_rating"),
     path("ratings/<int:rating_id>/edit/", views.edit_rating, name="edit_rating"),
     path("ratings/<int:rating_id>/delete/", views.delete_rating, name="delete_rating"),
+    path("events/<int:event_id>/comment/", views.add_comment, name="add_comment"),
+    path("events/<int:event_id>/comment/<int:comment_id>/delete/", views.delete_comment, name="delete_comment"),
+    path("events/<int:event_id>/comment/<int:comment_id>/update/", views.update_comment, name="update_comment"),
+    path("notifications/", views.notification_list, name="notification_list"),
+    path("notifications/create/", views.notification_create, name="notification_create"),
+    path("notifications/<int:notification_id>/edit/", views.notification_edit, name="notification_edit"),
+    path("notifications/<int:notification_id>/", views.notification_detail, name="notification_detail"),
+    path("notifications/<int:notification_id>/delete/", views.notification_delete, name="notification_delete"),
+    path("notifications/<int:notification_id>/read/", views.notification_mark_read, name="notification_mark_read"),
+    path('notifications/mark_all_read/', views.mark_all_notifications_read, name='notification_mark_all_read'),
+    path("categories/", views.categories, name="categories"),
+    path("categories/create/", views.category_form, name="category_form"),
+    path("categories/<int:category_id>/edit/", views.category_edit, name="category_edit"),
+    path("categories/<int:category_id>/delete/", views.category_delete, name="category_delete"),
 ]
