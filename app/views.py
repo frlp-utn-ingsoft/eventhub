@@ -171,7 +171,10 @@ def ticket_update(request, pk):
             return redirect('ticket_list')
     else:
         form = TicketForm(instance=ticket)  # muestra el form con datos precargados
-    return render(request, 'app/ticket/ticket_form.html', {'form': form}) # muestra el formulario para editar
+    return render(request, 'app/ticket/ticket_form.html', {
+        'form': form,
+        'event': ticket.event
+        }) # muestra el formulario para editar
 
 def ticket_delete (request, pk):
     ticket = get_object_or_404(Ticket, pk=pk) # busca el ticket o lanza 404

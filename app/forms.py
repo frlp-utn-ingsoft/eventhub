@@ -4,7 +4,7 @@ from .models import Ticket
 class TicketForm(forms.ModelForm):
     class Meta:
         model = Ticket
-        fields = ['quantity', 'type']  # Solo lo que el usuario ve y completa
+        fields = ['quantity', 'type'] 
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
