@@ -9,33 +9,16 @@
       <div class="card mb-3">
         <div class="card-body">
           <h5 class="card-title">{{ c.title }}</h5>
-          <p class="mb-1">
-            <strong>Evento:</strong>
-            <a href="{% url 'event_detail' c.event.id %}">
-              {{ c.event.title }}
-            </a>
+          <p class="mb-1"><strong>Evento:</strong>
+            <a href="{% url 'event_detail' c.event.id %}">{{ c.event.title }}</a>
           </p>
-          <p class="mb-1">
-            <strong>Usuario:</strong> {{ c.user.username }}
-          </p>
+          <p class="mb-1"><strong>Usuario:</strong> {{ c.user.username }}</p>
           <p class="mb-1">{{ c.content }}</p>
           <small class="text-muted">{{ c.created_at|date:"d/m/Y H:i" }}</small>
 
           <div class="mt-2">
-            {# Autor del comentario puede editar y eliminar #}
-            {% if request.user == c.user %}
-              <a href="{% url 'comment_edit' c.pk %}" class="btn btn-sm btn-primary">
-                Editar
-              </a>
-              <form action="{% url 'comment_delete' c.pk %}" method="post" class="d-inline">
-                {% csrf_token %}
-                <button class="btn btn-sm btn-outline-danger" type="submit">
-                  Eliminar
-                </button>
-              </form>
-
-            {# Organizador del evento (pero no autor) solo puede eliminar #}
-            {% elif request.user == c.event.organizer %}
+            {# Solo autor o organizador del evento puede eliminar #}
+            {% if request.user == c.user or request.user == c.event.organizer %}
               <form action="{% url 'comment_delete' c.pk %}" method="post" class="d-inline">
                 {% csrf_token %}
                 <button class="btn btn-sm btn-outline-danger" type="submit">
@@ -44,7 +27,6 @@
               </form>
             {% endif %}
           </div>
-
         </div>
       </div>
     {% endfor %}

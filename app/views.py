@@ -158,15 +158,9 @@ def event_form(request, id=None):
     )
 # 🟢 Vista para listar todos los comentarios de un evento
 def comment_list(request, event_id):
-    # Obtener el evento mediante su ID, o mostrar un error 404 si no existe
     event = get_object_or_404(Event, id=event_id)
-    
-    # Obtener todos los comentarios asociados a este evento
     comments = Comment.objects.filter(event=event)
-    
-    # Renderizar el template 'comment_list.html' y pasarle el evento y los comentarios
     return render(request, 'comments/comment_list.html', {'event': event, 'comments': comments})
-
 
 # 🔵 Vista para crear un comentario en un evento
 @login_required  # Asegura que el usuario esté autenticado
