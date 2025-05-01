@@ -1,10 +1,11 @@
 from django import forms
-from .models import RefundRequest, Event
+from .models import RefundRequest, Ticket, Event
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 class RefundRequestForm(forms.ModelForm):
     MOTIVO_CHOICES = [
-        ('', 'Seleccione un motivo…'),          # <-- opción inicial vacía
+        ('', 'Seleccione un motivo…'),
         ('enfermedad', 'Enfermedad comprobable'),
         ('fuerza_mayor', 'Fuerza mayor (accidente, urgencia familiar)'),
         ('clima_extremo', 'Clima extremo o fenómenos naturales'),
@@ -31,7 +32,6 @@ class RefundRequestForm(forms.ModelForm):
         error_messages={'required': 'Debes aceptar las políticas para continuar.'},
     )
 
-
     class Meta:
         model = RefundRequest
         fields = ["ticket_code"]
@@ -43,42 +43,43 @@ class RefundRequestForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.user = user
 
-        # Si estamos editando (hay instancia con reason)
+        # Precarga motivo y detalles al editar
         if self.instance and self.instance.pk:
             reason = self.instance.reason or ""
+            motivo_text, detalles_text = (reason.split(": ", 1) + [""])[:2]
+            # asignar initial
+            key = next((k for k,v in self.MOTIVO_CHOICES if v == motivo_text), 'otro')
+            self.initial.update({'motivo': key, 'detalles': detalles_text})
 
-            # Separamos en motivo y detalles (si hay ": ")
-            motivo_text = reason
-            detalles_text = ""
-            if ": " in reason:
-                motivo_text, detalles_text = reason.split(": ", 1)
-
-            # Ahora buscamos la clave en MOTIVO_CHOICES que tenga ese motivo
-            motivo_key = None
-            for key, val in self.MOTIVO_CHOICES:
-                if val == motivo_text:
-                    motivo_key = key
-                    break
-
-            # Si encontramos, asignamos los valores iniciales
-            if motivo_key:
-                self.initial['motivo'] = motivo_key
-            else:
-                self.initial['motivo'] = 'otro'  # fallback
-
-            self.initial['detalles'] = detalles_text
-
+    # clean_ticket_code
     def clean_ticket_code(self):
-        code = self.cleaned_data['ticket_code'].strip()
-        if not code:
+        ticket_code = self.cleaned_data['ticket_code'].strip()
+        if not ticket_code:
             raise ValidationError("El código de ticket es obligatorio.")
-        # Debe existir un Event con ese ID
+
+        # 1) Buscamos el Ticket
         try:
-            event_id = int(code)
-            Event.objects.get(pk=event_id)
-        except (ValueError, Event.DoesNotExist):
-            raise ValidationError("Código de ticket inválido: no existe ese evento.")
-        return code
+            ticket = Ticket.objects.get(ticket_code=ticket_code)
+        except Ticket.DoesNotExist:
+            raise ValidationError("Código de ticket inválido: no existe ese Ticket.")
+
+        # 2) Tomamos la fecha del evento (DateField o DateTimeField)
+        event_date = ticket.event.date  
+
+        # 3) Calculamos cuántos días pasaron
+        dias = (timezone.now().date() - event_date).days
+
+        if dias > 30:
+            # Mensaje bien formateado
+            raise ValidationError(
+                f"Han pasado {dias} días desde el evento ({event_date}); "
+                "ya no se aceptan reembolsos."
+            )
+
+        # guardamos el ticket por si lo necesitás en save()
+        self.cleaned_data['ticket_obj'] = ticket
+        return ticket_code
+
 
     def clean_detalles(self):
         text = self.cleaned_data.get('detalles', '').strip()
@@ -88,28 +89,26 @@ class RefundRequestForm(forms.ModelForm):
 
     def clean(self):
         cleaned = super().clean()
-        code = cleaned.get('ticket_code')
+        ticket_code = cleaned.get('ticket_code')
 
-        # Validación de duplicados solo en creación (instance.pk es None)
-        if code and self.user and self.instance.pk is None:
-            hay = RefundRequest.objects.filter(
+        # Validación de duplicados de solicitudes pendientes
+        if ticket_code and self.user and self.instance.pk is None:
+            if RefundRequest.objects.filter(
                 user=self.user,
-                ticket_code=code,
+                ticket_code=ticket_code,
                 approved__isnull=True
-            ).exists()
-            if hay:
+            ).exists():
                 raise ValidationError("Ya tenés una solicitud pendiente para ese ticket.")
-
         return cleaned
 
     def save(self, commit=True):
-        motivo = dict(self.MOTIVO_CHOICES)[self.cleaned_data['motivo']]
+        motivo_label = dict(self.MOTIVO_CHOICES).get(self.cleaned_data['motivo'], '')
         detalles = self.cleaned_data.get('detalles', '').strip()
-        razon = motivo
-        if detalles:
-            razon += f": {detalles}"
+        razon = motivo_label + (f": {detalles}" if detalles else "")
+
         instance = super().save(commit=False)
         instance.reason = razon
+
         if commit:
             instance.save()
         return instance
