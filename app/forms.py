@@ -1,6 +1,7 @@
-from django import forms
-from .models import Notification,Ticket,Event,User,RefundRequest,Venue
 from datetime import datetime
+from django import forms
+from .models import Event, Notification, RefundRequest, Ticket, User, Venue
+
 
 class NotificationForm(forms.ModelForm):
     event = forms.ModelChoiceField(
