@@ -24,4 +24,4 @@ def refundCreateView(request):
     else:
         form = RefundForm()
 
-    return render(request, "refunds/refund_form.html", {"form": form})
+    return render(request, "refunds/refund_page.html", {"form": form})

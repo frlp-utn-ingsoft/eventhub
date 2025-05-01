@@ -1,4 +1,4 @@
-{% extends "base.html" %} {% load static %} {% block content %}
+{% block content %}
 <div class="container">
     <h3 class="mb-4">Formulario de Solicitud</h3>
 
@@ -23,6 +23,14 @@
             >
             {{ form.reason }} {{ form.reason.errors }}
         </div>
+
+        <div class="mb-3">
+            <label for="{{ form.details.id_for_label }}" class="form-label">
+                Detalles adicionales
+            </label>
+             {{ form.detail }}
+        </div>
+
 
         <div class="mb-3 form-check">
             {{ form.accept_policy }}
