@@ -212,3 +212,17 @@ class Notification(models.Model):
     is_read=models.BooleanField(default=False)
 
 
+class refund(models.Model):
+
+    aproved = models.BooleanField(default=False)
+    aproval_date = models.DateTimeField(null=True, blank=True)
+    ticket_code = models.CharField(max_length=200)
+    reason = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refunded_tickets")
+    
+
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, null=True, blank=True, related_name="refunded_tickets")
+
+    def __str__(self): return self.ticket_code
+
