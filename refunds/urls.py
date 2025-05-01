@@ -6,4 +6,5 @@ app_name = "refunds"
 
 urlpatterns = [
     path("add/", views.refundCreateView, name="refund_add"),
+    path("list/",views.refundListView,name="refund_list"),
 ]

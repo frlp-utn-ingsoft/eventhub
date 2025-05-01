@@ -25,3 +25,14 @@ def refundCreateView(request):
         form = RefundForm()
 
     return render(request, "refunds/refund_page.html", {"form": form})
+
+@login_required
+def refundListView(request):
+    logged_user = request.user
+
+    if not logged_user.is_organizer:
+        refunds = Refund.objects.filter(user=logged_user).order_by("created_at")
+    else:
+        refunds = Refund.objects.all().order_by("created_at")
+    
+    return render(request, "refunds/refunds_list.html", {"refunds": refunds})

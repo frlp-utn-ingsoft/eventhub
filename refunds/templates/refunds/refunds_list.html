@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Solicitudes de Reembolso</h1>
+
+    {% if user.is_organizer %}
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Código de Entrada</th>
+                    <th scope="col">Evento</th>
+                    <th scope="col">Solicitante</th>
+                    <th scope="col">Fecha de Solicitud</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Acciones</th> 
+                </tr>
+            </thead>
+            <tbody>
+                {% for refund in refunds %}
+                <tr>
+                    <td>
+                        {# <a href="{% url 'link a detalle de la entrada (o detalle del evento)' refund.id %}"> #}
+                        <a href="#">
+                            {{ refund.ticket_code }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="#">
+                            Evento de la Entrada 
+                        </a>
+                    </td>
+                    <td>
+                        {{ refund.user.username }}
+                    </td>
+                    <td>
+                        {{ refund.created_at|date:"d M Y, H:i" }}
+                    </td>
+                    <td>
+                        {% if refund.status == 'pending' %}
+                            <span class="badge text-dark bg-warning">Pendiente</span>
+                        {% elif refund.status == 'approved' %}
+                            <span class="badge bg-success">Aprobado</span>
+                        {% elif refund.status == 'rejected' %}
+                            <span class="badge bg-danger">Rechazado</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ refund.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                         <div class="btn-group btn-group-sm" role="group">
+                            <a href="#" class="btn btn-outline-secondary disabled" title="Ver Detalles"><i class="bi bi-info-circle"></i></a>
+
+                            {% if refund.is_pending %}
+                                <a href="#" class="btn btn-outline-success disabled" title="Aprobar"><i class="bi bi-check"></i></a>
+                                <a href="#" class="btn btn-outline-danger disabled" title="Rechazar"><i class="bi bi-x"></i></a>
+                            {% endif %}
+                         </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center">No hay solicitudes de reembolso para mostrar.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    {% else %}
+
+        <h2>Mis Solicitudes de Reembolso</h2>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th scope="col">Código de Entrada</th>
+                    <th scope="col">Evento</th>
+                    <th scope="col">Fecha de Solicitud</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for refund in refunds %} 
+                <tr>
+                    <td>
+                        {# Enlace vacío #}
+                        <a href="#">
+                            {{ refund.ticket_code }}
+                        </a>
+                    </td>
+                    <td>
+                        <a href="#">
+                            Evento de la Entrada 
+                        </a>
+                    </td>
+                    <td>
+                        {{ refund.created_at|date:"d M Y, H:i" }}
+                    </td>
+                    <td>
+                        {# Lógica del badge de estado #}
+                        {% if refund.status == 'pending' %}
+                            <span class="badge bg-warning">Pendiente</span>
+                        {% elif refund.status == 'approved' %}
+                            <span class="badge bg-success">Aprobado</span>
+                        {% elif refund.status == 'rejected' %}
+                            <span class="badge bg-danger">Rechazado</span>
+                        {% else %}
+                            <span class="badge bg-secondary">{{ refund.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                         <div class="btn-group btn-group-sm" role="group">
+                            <a href="#" class="btn btn-outline-secondary disabled" title="Ver Detalles"><i class="bi bi-info-circle"></i></a>
+                         </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center">No has realizado solicitudes de reembolso.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+
+    {% endif %} {# Fin del if user.is_organizer #}
+
+
+</div>
+{% endblock %}
