@@ -245,3 +245,22 @@ def comment_delete(request, pk):
 
     # Si el método no es POST, mostrar la confirmación de eliminación
     return render(request, 'comments/comment_confirm_delete.html', {'comment': comment})
+
+@login_required
+def organizer_comments(request):
+    # 1️⃣ Solo los organizadores pueden entrar
+    if not request.user.is_organizer:
+        return redirect("events")  # redirige al listado de eventos
+
+    # 2️⃣ Traer todos los eventos creados por este organizador
+    eventos = Event.objects.filter(organizer=request.user)
+
+    # 3️⃣ Filtrar todos los comentarios de esos eventos
+    comentarios = Comment.objects.filter(
+        event__in=eventos
+    ).select_related("event", "user").order_by("-created_at")
+
+    # 4️⃣ Renderizar el template con la lista de comentarios
+    return render(request, "comments/organizer_comments.html", {
+        "comentarios": comentarios
+    })

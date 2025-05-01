@@ -1,0 +1,30 @@
+{# app/templates/comments/organizer_comments.html #}
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+  <h1 class="mb-4">Comentarios en tus eventos</h1>
+
+  {% if comentarios %}
+    {% for c in comentarios %}
+      <div class="card mb-3">
+        <div class="card-body">
+          <h5 class="card-title">{{ c.title }}</h5>
+          <p class="mb-1"><strong>Evento:</strong>
+            <a href="{% url 'event_detail' c.event.id %}">
+              {{ c.event.title }}
+            </a>
+          </p>
+          <p class="mb-1"><strong>Usuario:</strong> {{ c.user.username }}</p>
+          <p class="mb-1">{{ c.content }}</p>
+          <small class="text-muted">
+            {{ c.created_at|date:"d/m/Y H:i" }}
+          </small>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p>No hay comentarios en tus eventos.</p>
+  {% endif %}
+</div>
+{% endblock %}
