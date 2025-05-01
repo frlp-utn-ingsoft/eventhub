@@ -1,20 +1,74 @@
 {% extends 'base.html' %}
 
 {% block content %}
+<div class="text-start mt-3 ms-0">
+  <a href="{% url 'venue_list' %}" class="text-decoration-none text-secondary">
+    <i class="bi bi-arrow-left"></i> Volver a Lugares
+  </a>
+</div>
 <div class="container mt-4">
-  <div class="card">
-    <div class="card-body">
-      <h3 class="card-title mb-4">{{ venue.name }}</h3>
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="fw-bold">{{ venue.name }}</h1>
 
-      <p><strong>Ciudad:</strong> {{ venue.city }}</p>
-      <p><strong>Dirección:</strong> {{ venue.address }}</p>
-      <p><strong>Capacidad:</strong> {{ venue.capacity }} personas</p>
-      <p><strong>Contacto:</strong> {{ venue.contact }}</p>
-
-      <a href="{% url 'venue_list' %}" class="btn btn-outline-secondary mt-3">
-        <i class="bi bi-arrow-left"></i> Volver
-      </a>
+    <div>
+      {% if user.is_authenticated and user.is_superuser or user.is_authenticated and user.profile.is_organizer %}
+        <a href="{% url 'venue_edit' venue.id %}" class="btn btn-outline-primary me-2">
+          <i class="bi bi-pencil"></i> Editar
+        </a>
+        <a href="{% url 'venue_delete' venue.id %}" class="btn btn-outline-danger">
+          <i class="bi bi-trash"></i> Eliminar
+        </a>
+      {% endif %}
     </div>
   </div>
-</div>
+
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h4 class="fw-semibold mb-3">Detalles del Lugar</h4>
+      <div class="text-start mt-3 ms-0">
+    <a href="{% url 'venue_list' %}" class="text-decoration-none text-secondary">
+      <i class="bi bi-arrow-left"></i> Volver a Lugares
+    </a>
+  </div>
+
+      <div class="d-flex align-items-center mb-3">
+        <div class="me-3 text-primary">
+          <i class="bi bi-geo-alt" style="font-size: 1.5rem;"></i>
+        </div>
+        <div>
+          <strong>Ciudad:</strong> {{ venue.city }}
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center mb-3">
+        <div class="me-3 text-primary">
+          <i class="bi bi-signpost" style="font-size: 1.5rem;"></i>
+        </div>
+        <div>
+          <strong>Dirección:</strong> {{ venue.address }}
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center mb-3">
+        <div class="me-3 text-primary">
+          <i class="bi bi-people" style="font-size: 1.5rem;"></i>
+        </div>
+        <div>
+          <strong>Capacidad:</strong> {{ venue.capacity }} personas
+        </div>
+      </div>
+
+      <div class="d-flex align-items-center">
+        <div class="me-3 text-primary">
+          <i class="bi bi-envelope" style="font-size: 1.5rem;"></i>
+        </div>
+        <div>
+          <strong>Contacto:</strong> {{ venue.contact }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  
+</div>  
 {% endblock %}
