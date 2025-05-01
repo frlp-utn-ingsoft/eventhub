@@ -37,5 +37,10 @@ urlpatterns = [
     path('refunds/<int:refund_id>/delete/', views.delete_refund, name='delete_refund'),
     path('refunds/create/', views.create_refund, name='create_refund'),
     path('refunds/<int:refund_id>/update/', views.refund_update, name='refund_update'),
+    #Venue
+    path('venues/', views.venue_list, name='venue_list'),
+    path('venues/create/', views.venue_create, name='venue_create'),
+    path('venues/<int:venue_id>/edit/', views.venue_update, name='venue_edit'),
+    path('venues/<int:venue_id>/delete/', views.venue_delete, name='venue_delete'),
 ]
 
