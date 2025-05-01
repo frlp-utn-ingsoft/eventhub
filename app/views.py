@@ -195,6 +195,8 @@ def delete_location(request, location_id):
 
 @login_required
 def create_notification(request):
+    events = Event.objects.all()
+    users = User.objects.all()
     if request.method == 'POST':
         title = request.POST.get('title')
         message = request.POST.get('message')
@@ -202,4 +204,5 @@ def create_notification(request):
         priority = request.POST.get('priority')
         is_read = False
     
-    return render(request, 'notifications/create_notification.html')
+        # Notification.new(title, message, create_at, priority, is_read)
+    return render(request, 'notifications/create_notification.html', {'events': events, 'users': users})
