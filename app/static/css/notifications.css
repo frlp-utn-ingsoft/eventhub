@@ -133,6 +133,18 @@
 
 .form-notif label{font-weight:500;}
 
+/* select con scroll fino */
+.select-user {
+  scrollbar-width: thin;
+  scrollbar-color: var(--notif-accent) transparent;
+}
+
+.select-user::-webkit-scrollbar { width: 6px; }
+.select-user::-webkit-scrollbar-thumb {
+  background: var(--notif-accent);
+  border-radius: 10px;
+}
+
 /*----------- 6. RESPONSIVE ---------------------------------*/
 @media (max-width: 576px){
   .table-notifs{font-size:.8rem;}

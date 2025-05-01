@@ -69,6 +69,10 @@
     color: #dee2e6;
     font-weight: 700;
   }
+  .navbar-nav .nav-link.active{
+    color: #fff !important;
+    background-color: #1e1e2f;
+  }
   /* Responsive ajuste de paddings */
   @media (max-width: 768px) {
     .navbar {
