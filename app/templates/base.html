@@ -11,10 +11,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
     <!-- CSS principal -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20250501">
+
 
     <!-- CSS por módulo (opcional si hay estilos específicos) -->
-    <link rel="stylesheet" href="{% static 'css/notifications.css' %}">
+    <link rel="stylesheet" href="{% static 'css/notifications.css' %}?v=20250502">
     <link rel="stylesheet" href="{% static 'css/events.css' %}">
     <link rel="stylesheet" href="{% static 'css/accounts.css' %}">
 
@@ -27,7 +28,7 @@
         <div class="container-fluid align-items-center justify-content-between">
       
           <a class="navbar-brand d-flex align-items-center gap-2" href="/">
-            <img src="{% static 'img/logo.png' %}" alt="EventHub logo" width="80" height="70">
+            <img src="{% static 'img/logo2.png' %}" class="logo" alt="EventHub logo" width="130"  height="70">
           </a>
       
           {% if user.is_authenticated %}
@@ -62,9 +63,9 @@
               </ul>
       
               <!-- Botón cerrar sesión -->
-              <form class="d-flex ms-3" action="{% url 'logout' %}" method="POST">
+              <form class="d-flex ms-3 justify-content-center" action="{% url 'logout' %}" method="POST">
                 {% csrf_token %}
-                <button class="btn btn-outline-secondary btn-sm" type="submit">Salir</button>
+                <button class="btn btn-outline-secondary btn-sm logout" type="submit">Cerrar Sesión</button>
               </form>
             </div>
       

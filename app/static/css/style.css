@@ -1,9 +1,13 @@
 /* Navbar general */
 .navbar {
-    background: linear-gradient(135deg, #1e1e2f, #2c2c54) !important;
+    background: linear-gradient(135deg, #1e1e2f, #2c2c54);
     border-bottom: 1px solid #dee2e6;
     padding-left: 2rem;
     padding-right: 2rem;
+  }
+  .logo{
+    position: relative;
+    bottom: 0.2rem;
   }
   .collapse {
     justify-content: flex-end;
@@ -13,7 +17,10 @@
     font-size: 1.5rem;
     letter-spacing: -0.5px;
   }
-  
+  .logout{
+    border: #dee2e6 1px solid;
+    color: #dee2e6;
+  }
   .navbar .btn-outline-secondary {
     border-radius: 8px;
     transition: all 0.2s ease;
@@ -48,14 +55,19 @@
   .navbar .badge {
     font-size: 0.65rem;
     padding: 4px 6px;
+    position: absolute;
+    top: 5px !important;
   }
   .nav-item{
     height: 100%;
+    color: #dee2e6;
   }
   .nav-item a{
     height: 100%;
     display: flex;
     align-items: center;
+    color: #dee2e6;
+    font-weight: 700;
   }
   /* Responsive ajuste de paddings */
   @media (max-width: 768px) {
@@ -65,18 +77,3 @@
     }
   }
   
-
-  @keyframes slideDown {
-    from { opacity: 0; transform: translateY(-10px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  .animate-slide-down { animation: slideDown .25s ease-out both; }
-  
-
-  /* solo alineamos cuando está mostrado en desktop */
-  @media (min-width: 768px){
-    .navbar-collapse {
-      display: flex !important;
-      justify-content: flex-end;
-    }
-  }
