@@ -1,32 +1,16 @@
-{% extends 'base.html' %}
 
-{% block content %}
-<div class="container">
-    <div class="row">
-        {% if messages %}
-            {% for message in messages%}
-                <div class="alert alert-success" role="alert">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-        
-        <div class="d-flex justify-content-between align-items-center">
-            <h1>{{ event.title }}</h1>
-            <div>
-            {% if user_is_organizer %}
-                <a
-                    href="{% url 'event_edit' event.id %}"
-                    class="btn btn-outline-primary me-2"
-                >
-                    <i class="bi bi-pencil me-1"></i>Editar
-                </a>
-            {% endif %}
-        </div>
-    </div>
-    <div class="row">
-        <div class="card mb-4 shadow-sm rounded-3">
                 <div class="card-body">
+                    <div class="row">
+                        {% if messages %}
+                            {% for message in messages%}
+                                <div class="alert alert-success" role="alert">
+                                    {{ message }}
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>
+
+
                     <h5 class="card-title">Calificaciones y Reseñas ({{ cantidad_resenas }})</h5>
                         
                     {% for rating in ratings %}
@@ -62,21 +46,24 @@
                         
                         <hr>
 
-                        {% if not editando %}
-                            <button id="mostrarFormulario" class="btn btn-success mb-3">Crear nueva reseña</button>
-                        {% endif %}
-
-
                         {% if user.is_authenticated %}
-                        <form method="post" id="formularioResena" class="{% if not editando %}d-none{% endif %}" onsubmit="return validarFormulario();">
-                            <h6>{% if editando %}Editar tu reseña{% else %}Crea una nueva reseña{% endif %}</h6>
-                            {% csrf_token %}
-                            <div class="card p-4 mb-4"> 
-                                <div class="mb-3">
+                            {% if not editando %}
+                                <button id="mostrarFormulario" class="btn btn-success mb-3">Crear nueva reseña</button>
+                            {% endif %}
+                            
+                            <form method="post" id="formularioResena" class="{% if editando %}d-none{% endif %}" onsubmit="return validarFormulario();">
+                                <h6>{% if editando %}Editar tu reseña{% endif %}</h6>
+                                    {% csrf_token %}
+                                    <div class="card p-4 mb-4"> 
+                                    <div class="mb-3">
+                                        <h6>Titulo de tu reseña *</h6>
+                                        {{ form.titulo}}
+                                    </div>
+                                
                                     <h6>Titulo de tu reseña *</h6>
-                                    {{ form.titulo|add_class:"form-control"}}
+                                        {{ form.titulo}}
                                 </div>
-                        
+                                
                                 <div class="mb-3">
                                     <h6>Tu calificación *</h6>
                                     <div id="starRating" class="d-flex gap-1 fs-3">
@@ -84,7 +71,7 @@
                                             <i class="bi bi-star" data-value="{{ forloop.counter }}"></i>
                                         {% endfor %}
                                     </div>
-                                    {{ form.calificacion|add_class:"form-control" }}
+                                    {{ form.calificacion }}
                                     <p>Selecciona una calificacion</p>
                                 </div>
                         
@@ -92,24 +79,18 @@
                                     <h6>Tu reseña (opcional)</h6>
                                     {{ form.texto }}
                                 </div>
-
                                 {% if editando %}
                                     <button type="submit" name="guardar" class="btn btn-primary w-100">Actualizar reseña</button>
-                                    <button type="submit" name="cancelar" class="btn btn-outline-secondary w-100 mt-2">Cancelar edición</button>
+                                    <button type="button" id="cancelarEdicion" class="btn btn-outline-secondary w-100 mt-2">Cancelar edición</button>
                                 {% else %}
                                     <button type="submit" name="guardar" class="btn btn-primary w-100">Enviar reseña</button>
                                 {% endif %}
-                                
-                            </div>
-                        </form>
-
-                    {% else %}
-                        <p><a href="{% url 'login' %}">Iniciar sesion</a> para modificar este evento</p>
-                    {% endif %}
+                            </form>
+                        {% else %}
+                            <p><a href="{% url 'login' %}">Iniciar sesión</a> para escribir una reseña</p>
+                        {% endif %}
                 </div>
-            </div>
     </div>
-</div>
 
 <!--Espacio JavaScript para mostrar formulario-->
 <script>
@@ -192,5 +173,3 @@
         }
         </script>
         
-
-{% endblock %}

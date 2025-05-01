@@ -724,16 +724,16 @@ def event_rating(request, id):
                 nueva_resena.evento = evento
                 nueva_resena.save()
                 messages.success(request, "¡Tu reseña fue guardada exitosamente!")
-            return redirect('event_rating', id=evento.id) # type: ignore
+            return redirect('event_detail', id=evento.id) # type: ignore
         
         elif 'eliminar' in request.POST and resena_existente:
             resena_existente.delete()
             messages.success(request, "¡Tu reseña fue eliminada exitosamente!")
-            return redirect('event_rating', id=evento.id) # type: ignore
+            return redirect('event_detail', id=evento.id) # type: ignore
 
         elif 'cancelar' in request.POST:
             form = Rating_Form()
-            return redirect('event_rating', id=evento.id) #type: ignore
+            return redirect('event_detail', id=evento.id) #type: ignore
 
     form = Rating_Form(instance=resena_existente)            
         
