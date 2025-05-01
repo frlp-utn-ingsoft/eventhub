@@ -68,12 +68,47 @@ def events(request):
         "app/events.html",
         {"events": events, "user_is_organizer": request.user.is_organizer},
     )
-
-
 @login_required
 def event_detail(request, id):
-    event = get_object_or_404(Event, pk=id)
-    return render(request, "app/event_detail.html", {"event": event})
+    event = get_object_or_404(Event, id=id)
+    comments = Comment.objects.filter(event=event)
+    form = CommentForm()  # Formulario para nuevo comentario
+
+    editing_comment_id = None
+    editing_form = None
+
+    if request.method == "POST":
+        if 'create_comment' in request.POST:
+            # Crear nuevo comentario
+            form = CommentForm(request.POST)
+            if form.is_valid():
+                comment = form.save(commit=False)
+                comment.user = request.user
+                comment.event = event
+                comment.save()
+                return redirect('event_detail', id=event.pk)
+        elif 'edit_comment' in request.POST:
+            # Editar comentario existente
+            comment_id = request.POST.get('comment_id')
+            comment = get_object_or_404(Comment, id=comment_id, user=request.user)
+            editing_form = CommentForm(request.POST, instance=comment)
+            editing_comment_id = comment.pk
+
+            if editing_form.is_valid():
+                editing_form.save()
+                return redirect('event_detail', id=event.pk)
+
+    return render(
+        request,
+        'app/event_detail.html',
+        {
+            'event': event,
+            'comments': comments,
+            'form': form,
+            'editing_comment_id': editing_comment_id,
+            'editing_form': editing_form,
+        }
+    )
 
 
 @login_required
