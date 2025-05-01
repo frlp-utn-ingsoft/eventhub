@@ -52,13 +52,11 @@
         </div>
 
         <div class="d-flex justify-content-end gap-2 mt-3">
-        {# Botón inicialmente deshabilitado #}
-        
-        <a href="{% url 'my_refund_requests' %}" class="btn btn-secondary">Cancelar</a>
-        <button type="submit" class="btn btn-primary" id="submit-btn" disabled>
-          Enviar solicitud
-        </button>
-      </div>
+          <a href="{% url 'my_refund_requests' %}" class="btn btn-secondary">Cancelar</a>
+          <button type="submit" class="btn btn-primary">
+            Enviar solicitud
+          </button>
+        </div>
       </form>
     </div>
 
@@ -80,16 +78,4 @@
     </div>
   </div>
 </div>
-
-{# JavaScript para habilitar/deshabilitar el botón #}
-<script>
-  document.addEventListener("DOMContentLoaded", function() {
-    const checkbox = document.querySelector('input[name="acepta_politicas"]');
-    const submitBtn = document.getElementById("submit-btn");
-
-    checkbox.addEventListener("change", function() {
-      submitBtn.disabled = !this.checked;
-    });
-  });
-</script>
 {% endblock %}

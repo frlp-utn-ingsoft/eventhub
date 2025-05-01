@@ -120,18 +120,23 @@ class RefundRequest(models.Model):
         return f"RefundRequest {self.id} by {self.user.username}"  # type: ignore
 
     @property
-    def event_title(self):
+    def ticket(self):
         """
-        Asume que ticket_code es el ID numérico del Event.
-        Si usás otra convención, adaptá la conversión.
+        Devuelve el objeto Ticket asociado a este ticket_code
+        o None si no existe.
         """
         try:
-            event_id = int(self.ticket_code)
-            # get_object_or_404 lanzaría 404; en el admin lo mejor es usar get()
-            event = Event.objects.get(pk=event_id)
-            return event.title
-        except (ValueError, Event.DoesNotExist):
-            return "—"
+            return Ticket.objects.get(ticket_code=self.ticket_code)
+        except Ticket.DoesNotExist:
+            return None
+
+    @property
+    def event_title(self):
+        """
+        Saca el título del evento a través del Ticket.
+        """
+        t = self.ticket
+        return t.event.title if t else "—"
 # ------------------- Ticket -------------------
 class Ticket(models.Model):
     TICKETS_TYPES = [

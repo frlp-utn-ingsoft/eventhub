@@ -40,9 +40,11 @@
                         <li class="nav-item">{% navbar_link 'events' 'Eventos' %}</li>
                         <li class="nav-item">{% navbar_link 'ticket_list' 'Mis Tickets' %}</li>
                         <li class="nav-item">{% navbar_link 'categories' 'Categorías' %}</li>
-                        <li class="nav-item">{% navbar_link 'my_refund_requests' 'Reembolsos' %}</li>
+
                         {% if user.is_organizer %}
-                          <li class="nav-item">{% navbar_link 'manage_refund_requests' 'Gestionar Reembolsos' %}</li>
+                            <li class="nav-item">{% navbar_link 'manage_refund_requests' 'Gestionar Reembolsos' %}</li>
+                        {% else %}
+                            <li class="nav-item">{% navbar_link 'my_refund_requests' 'Reembolsos' %}</li>
                         {% endif %}
 
                         <!-- Notificaciones -->

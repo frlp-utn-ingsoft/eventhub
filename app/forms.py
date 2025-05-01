@@ -46,6 +46,7 @@ class RefundRequestForm(forms.ModelForm):
 
         # Precarga motivo y detalles al editar
         if self.instance and self.instance.pk:
+            self.fields.pop('acepta_politicas')
             reason = self.instance.reason or ""
             motivo_text, detalles_text = (reason.split(": ", 1) + [""])[:2]
             # asignar initial
