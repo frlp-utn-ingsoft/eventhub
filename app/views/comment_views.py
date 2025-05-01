@@ -73,3 +73,29 @@ def delete_comment(request, comment_id):
     comment.delete()
     messages.success(request, 'Comentario eliminado correctamente.')
     return redirect('view_comments')
+
+@login_required
+def edit_comment(request, event_id, comment_id):
+    """
+    Edita un comentario. Solo el propietario del comentario puede editarlo.
+    """
+    comment = get_object_or_404(Comment, pk=comment_id)
+    
+    # Verificar que el usuario sea el propietario del comentario
+    if request.user != comment.user:
+        messages.error(request, 'No tienes permiso para editar este comentario.')
+        return redirect('event_detail', id=event_id)
+    
+    if request.method == 'POST':
+        title = request.POST.get('title')
+        text = request.POST.get('text')
+        
+        if title and text:
+            comment.title = title
+            comment.text = text
+            comment.save()
+            messages.success(request, 'El comentario ha sido actualizado correctamente.')
+        else:
+            messages.error(request, 'Por favor completa todos los campos.')
+            
+    return redirect('event_detail', id=event_id)

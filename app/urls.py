@@ -36,6 +36,7 @@ urlpatterns = [
     # Comentarios
     path('event/<int:id>/add_comment/', views.add_comment, name='add_comment'),
     path('comments/', views.view_comments, name='view_comments'),
-    path('event/<int:event_id>/comments', views.view_comments, name='view_event_comments'),
-    path('event/<int:comment_id>/comments/delete/', views.delete_comment, name='delete_comment'),
+    path('event/<int:event_id>/comments/', views.view_comments, name='view_event_comments'),
+    path('event/<int:event_id>/comments/delete/<int:comment_id>/', views.delete_comment, name='delete_comment'),
+    path('event/<int:event_id>/comments/edit/<int:comment_id>/', views.edit_comment, name='edit_comment'),
 ]
