@@ -689,7 +689,7 @@ def create_refound(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
     event_date = ticket.event.scheduled_at
     if event_date < timezone.now():
-        messages.error(request, 'No se puede solicitar el reembolso: Ll evento ya pasó.')
+        messages.error(request, 'No se puede solicitar el reembolso: El evento ya pasó.')
         return redirect('Mis_tickets')
 
     if (event_date - timezone.now()) > datetime.timedelta(days=30):
