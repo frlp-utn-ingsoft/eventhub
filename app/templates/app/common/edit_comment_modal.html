@@ -1,0 +1,28 @@
+<!-- Modal de edición de comentario -->
+<div class="modal fade" id="editModal{{ comment.id }}" tabindex="-1" aria-labelledby="editModalLabel{{ comment.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'edit_comment' event.id comment.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editModalLabel{{ comment.id }}">Editar Comentario</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="title{{ comment.id }}" class="form-label">Título del comentario *</label>
+                        <input type="text" class="form-control" id="title{{ comment.id }}" name="title" value="{{ comment.title }}" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="text{{ comment.id }}" class="form-label">Contenido del comentario *</label>
+                        <textarea class="form-control" id="text{{ comment.id }}" name="text" rows="4" required>{{ comment.text }}</textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div> 
