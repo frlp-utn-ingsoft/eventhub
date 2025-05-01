@@ -1,11 +1,12 @@
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
+from django.conf import settings
 import uuid
 
-
-
+# ------------------- Usuario -------------------
 class User(AbstractUser):
-    is_organizer = models.BooleanField(default=False)
+    is_organizer = models.BooleanField("¿Es organizador?", default=False)
 
     @classmethod
     def validate_new_user(cls, email, username, password, password_confirm):
@@ -28,12 +29,13 @@ class User(AbstractUser):
 
         return errors
 
-
+# ------------------- Evento -------------------
 class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
+    categories = models.ManyToManyField('Category', related_name='events')  # vinculado con Category
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -41,46 +43,52 @@ class Event(models.Model):
         return self.title
 
     @classmethod
-    def validate(cls, title, description, scheduled_at):
+    def validate(cls, title, description, scheduled_at, categories):
         errors = {}
 
-        if title == "":
-            errors["title"] = "Por favor ingrese un titulo"
+        if not title:
+            errors["title"] = "Por favor ingrese un título"
 
-        if description == "":
-            errors["description"] = "Por favor ingrese una descripcion"
+        if not description:
+            errors["description"] = "Por favor ingrese una descripción"
+
+        if not categories or len(categories) == 0:
+            errors["categories"] = "Por favor seleccione al menos una categoría"
 
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer):
-        errors = Event.validate(title, description, scheduled_at)
+    def new(cls, title, description, scheduled_at, organizer, categories):
+        errors = Event.validate(title, description, scheduled_at, categories)
 
         if len(errors.keys()) > 0:
             return False, errors
 
-        Event.objects.create(
+        event = Event.objects.create(
             title=title,
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
         )
-
+        event.categories.set(categories)
         return True, None
 
-    def update(self, title, description, scheduled_at, organizer):
+    def update(self, title, description, scheduled_at, organizer, categories):
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
 
+        if categories:
+            self.categories.set(categories)
+
         self.save()
 
-
+# ------------------- Ticket -------------------
 class Ticket(models.Model):
     TICKETS_TYPES = [
         ('GENERAL', 'General'),
-        ('VIP', 'Vip'),  
+        ('VIP', 'Vip'),
     ]
 
     event = models.ForeignKey(
@@ -122,3 +130,54 @@ class Ticket(models.Model):
         if not self.ticket_code:
             self.ticket_code = str(uuid.uuid4()).replace('-', '')[:10].upper()
         super().save(*args, **kwargs)
+
+# ------------------- Notificación -------------------
+class Notification(models.Model):
+    PRIORITY_CHOICES = [
+        ("HIGH", "Alta"),
+        ("MEDIUM", "Media"),
+        ("LOW", "Baja"),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        verbose_name="Destinatario",
+        on_delete=models.CASCADE,
+        related_name="notifications",
+    )
+    title = models.CharField("Título", max_length=60)
+    message = models.TextField("Mensaje", max_length=280)
+    created_at = models.DateTimeField("Creado", auto_now_add=True)
+    priority = models.CharField(
+        "Prioridad", max_length=6, choices=PRIORITY_CHOICES, default="LOW"
+    )
+    is_read = models.BooleanField("Leída", default=False)
+
+    class Meta:
+        ordering = ["-created_at"]
+        verbose_name = "Notificación"
+        verbose_name_plural = "Notificaciones"
+
+    def __str__(self):
+        return f"{self.title} → {self.user.username}"
+
+# ------------------- Categoría -------------------
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+    @classmethod
+    def validate(cls, name, description):
+        errors = {}
+
+        if name == "":
+            errors["name"] = "Por favor ingrese nombre de categoría."
+
+        if description == "":
+            errors["description"] = "Por favor ingrese una descripción"
+
+        return errors

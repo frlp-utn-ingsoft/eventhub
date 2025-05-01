@@ -3,10 +3,24 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+<<<<<<< HEAD
 
 from .models import Event, User, Ticket
 from .forms import TicketForm
 
+=======
+from django.db.models import Count
+from .forms import CategoryForm 
+from .models import Event, User, Category
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from .forms import NotificationForm
+from .models import Notification
+from django.views import generic
+from django.urls import reverse_lazy
+from django.views import View
+from django.http import JsonResponse
+from django.template.loader import render_to_string
+>>>>>>> origin/main
 
 def register(request):
     if request.method == "POST":
@@ -96,37 +110,82 @@ def event_form(request, id=None):
     if not user.is_organizer:
         return redirect("events")
 
+    categories = Category.objects.filter(is_active=True)                        # ADD ----- crud-category
+
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
+        category_ids = request.POST.getlist("categories")                       # ADD ----- crud-category
 
+        # Convertir fecha y hora
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
-
         scheduled_at = timezone.make_aware(
             datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
         )
 
-        if id is None:
-            Event.new(title, description, scheduled_at, request.user)
+        # Buscar las categorías seleccionadas
+        selected_categories = Category.objects.filter(id__in=category_ids)
+
+        if id is None:                                                                                                  # ADD ----- crud-category
+            # Crear nuevo evento
+            success, errors = Event.new(title, description, scheduled_at, user, selected_categories)
+
+            if not success:
+                # Si hay errores, volver al formulario
+                return render(
+                    request,
+                    "app/event_form.html",
+                    {
+                        "event": {},
+                        "categories": categories,
+                        "selected_categories": category_ids,
+                        "errors": errors,
+                        "user_is_organizer": user.is_organizer,
+                    },
+                )
         else:
+            # Editar evento existente
             event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user)
+            event.update(title, description, scheduled_at, user, selected_categories)                   # ADD ----- crud-category
 
         return redirect("events")
 
     event = {}
+    selected_categories = []
     if id is not None:
         event = get_object_or_404(Event, pk=id)
+        selected_categories = event.categories.values_list('id', flat=True)
+
+    return render(                                                                                      # ADD ----- crud-category
+        request,
+        "app/event_form.html",
+        {
+            "event": event,
+            "categories": categories,
+            "selected_categories": selected_categories,             
+            "user_is_organizer": user.is_organizer,
+        },
+    )
+
+################### crud-category ###################
+@login_required
+def categories(request):
+    # Contamos los eventos por categoría usando annotate
+    categories = Category.objects.annotate(event_count=Count('events')).order_by("name")
 
     return render(
         request,
-        "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer},
+        "category/categories.html",
+        {
+            "categories": categories,  
+            "user_is_organizer": request.user.is_organizer,
+        },
     )
 
+<<<<<<< HEAD
 
 
 @login_required
@@ -187,3 +246,104 @@ def ticket_delete (request, pk):
 
 
 
+=======
+@login_required
+def category_detail(request, id):
+    category = get_object_or_404(Category, pk=id)
+    return render(
+        request,
+        "category/category_detail.html",
+        {"category": category, "user_is_organizer": request.user.is_organizer},
+    )
+
+@login_required
+def category_delete(request, id):
+    user = request.user
+    if not user.is_organizer:
+        return redirect("categories")
+
+    if request.method == "POST":
+        category = get_object_or_404(Category, pk=id)
+        category.delete()
+        return redirect("categories")
+
+    return redirect("categories")
+
+@login_required
+def category_form(request, id=None):
+    user = request.user
+    if not user.is_organizer:
+        return redirect("categories")
+
+    if id:
+        category = get_object_or_404(Category, pk=id)
+    else:
+        category = None
+
+    if request.method == "POST":
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            return redirect("categories")
+    else:
+        form = CategoryForm(instance=category)
+
+    return render(
+        request,
+        "category/category_form.html",
+        {
+            "form": form,
+            "category": category,
+            "user_is_organizer": request.user.is_organizer,
+        },
+    )
+
+
+class OrganizerRequiredMixin(UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.is_authenticated and self.request.user.is_organizer
+
+
+class NotificationList(LoginRequiredMixin, generic.ListView):
+    template_name = "notifications/list.html"
+    paginate_by   = 10
+
+    def get_queryset(self):
+        return self.request.user.notifications.all()
+
+class NotificationCreate(OrganizerRequiredMixin, generic.CreateView):
+    model       = Notification
+    form_class  = NotificationForm
+    template_name = "notifications/form.html" 
+    success_url = reverse_lazy("notifications_list")
+
+class NotificationUpdate(OrganizerRequiredMixin, generic.UpdateView):
+    model       = Notification
+    form_class  = NotificationForm
+    template_name = "notifications/form.html" 
+    success_url = reverse_lazy("notifications_list")
+
+class NotificationDelete(OrganizerRequiredMixin, generic.DeleteView):
+    model       = Notification
+    template_name = "notifications/confirm_delete.html"
+    success_url = reverse_lazy("notifications_list")
+
+
+class NotificationMarkRead(LoginRequiredMixin, View):
+    def post(self, request, pk):
+        notif = get_object_or_404(Notification, pk=pk, user=request.user)
+        notif.is_read = True
+        notif.save(update_fields=["is_read"])
+        return redirect("notifications_list")
+    
+class NotificationDropdown(LoginRequiredMixin, View):
+    def get(self, request):
+        notifs = (request.user.notifications
+                    .order_by("-created_at")[:5])
+        html = render_to_string(
+            "notifications/_dropdown_items.html",
+            {"notifs": notifs},
+            request=request,
+        )
+        return JsonResponse({"html": html})
+>>>>>>> origin/main
