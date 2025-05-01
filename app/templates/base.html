@@ -56,12 +56,17 @@
                             <li class="nav-item">
                                 {% navbar_link 'notification_list' 'Notificaciones' %}
                             </li>
+                            {% if user.is_organizer %}
+                            <li class="nav-item">
+                                {% navbar_link 'categories' 'Categorías' %}
+                            </li>
+                            {% endif %}
                         </ul>
                     </div>
 
                     <form
                         class="d-flex"
-                        action={% url 'logout' %}
+                        action="{% url 'logout' %}"
                         method="POST"
                     >
                         {% csrf_token %}

@@ -24,4 +24,8 @@ urlpatterns = [
     path("notifications/<int:id>/delete/", views.notification_delete, name="notification_delete"),
     path("notifications/<int:pk>/read/", views.notification_mark_read, name="notification_mark_read"),
     path('notifications/mark_all_read/', views.mark_all_notifications_read, name='notification_mark_all_read'),
+    path("categories/", views.categories, name="categories"),
+    path("categories/create/", views.category_form, name="category_form"),
+    path("categories/<int:category_id>/edit/", views.category_edit, name="category_edit"),
+    path("categories/<int:category_id>/delete/", views.category_delete, name="category_delete"),
 ]
