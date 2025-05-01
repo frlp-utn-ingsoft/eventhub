@@ -143,6 +143,51 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     priority = models.CharField(max_length=50, choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High')])
     is_read = models.BooleanField(default=False)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="notifications", null=True, blank=True)
 
     def __str__(self):
         return f"{self.title} - {self.created_at}"
+    
+    @classmethod
+    def validate(cls, title, message, event_id, recipient_type, specific_user_id):
+        errors = {}
+
+        if not title:
+            errors["title"] = "El título es requerido."
+        
+        if not message:
+            errors["message"] = "El mensaje es requerido."
+        
+        if recipient_type == "event" and not event_id:
+            errors["event"] = "El evento es requerido."
+        
+        if recipient_type == "specific" and not specific_user_id:
+            errors["user"] = "El usuario específico es requerido."
+
+        return errors
+    
+    @classmethod
+    def new(cls, title, message, event, priority):
+        notification = Notification.objects.create(
+            title=title,
+            message=message,
+            event=event,
+            priority=priority,
+            is_read=False,
+        )
+        return notification
+    
+class NotificationXUser(models.Model):
+    notification = models.ForeignKey(Notification, on_delete=models.CASCADE, related_name="notification_user")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_notification")
+
+    def __str__(self):
+        return f"{self.notification} - {self.user}"
+    
+    @classmethod
+    def new(cls, notification, user):
+        notification_user = NotificationXUser.objects.create(
+            notification=notification,
+            user=user,
+        )
+        return notification_user

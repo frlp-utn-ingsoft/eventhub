@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Event, User, Location, Notification
+from .models import Event, User, Location, Notification, NotificationXUser
 
 
 def register(request):
@@ -200,9 +200,30 @@ def create_notification(request):
     if request.method == 'POST':
         title = request.POST.get('title')
         message = request.POST.get('message')
-        create_at = timezone.now()
+        event_id = request.POST.get('event')
         priority = request.POST.get('priority')
-        is_read = False
-    
-        # Notification.new(title, message, create_at, priority, is_read)
+        recipient_type = request.POST.get('recipients')
+        specific_user_id = request.POST.get('userSelect') if recipient_type == 'specific' else None
+
+        errors = Notification.validate(title, message, event_id, recipient_type, specific_user_id)
+        if errors:
+            return render(request, 'notifications/create_notification.html', {
+                'events': events,
+                'users': users,
+                'errors': errors,
+                'form_data': request.POST,
+            })
+
+        event_selected = Event.objects.get(id=event_id)
+        notification = Notification.new(title, message, event_selected, priority)
+
+        if recipient_type == 'all':
+            for user in users:
+                NotificationXUser.new(notification=notification, user=user)
+        elif recipient_type == 'specific' and specific_user_id:
+            specific_user = User.objects.get(id=specific_user_id)
+            NotificationXUser.new(notification=notification, user=specific_user)
+
+        # return redirect('notifications_list')
+
     return render(request, 'notifications/create_notification.html', {'events': events, 'users': users})
