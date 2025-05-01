@@ -9,13 +9,22 @@
         {% if user_is_organizer %}
             <a
                 href="{% url 'event_form' %}"
-                class="btn btn-primary"
+                class="btn btn-success"
             >
                 <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
                 Crear Evento
             </a>
         {% endif %}
     </div>
+    
+    <nav class="navbar navbar-light bg-light">
+        <form class="form-inline d-flex gap-2" action="{% url 'event_filter' %}" method="GET" >
+                {% csrf_token %}
+            <input class="form-control mr-sm-2" name="search" type="text" placeholder="Busca un evento..." aria-label="Search">
+            <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Buscar</button>
+        </form>
+    </nav>
+
     <table class="table">
         <thead>
             <tr>
@@ -44,7 +53,13 @@
                                 {% endfor %}
                         </div>
                     </td>
-                    <td>{{ event.venue }}</td>
+                    <td>
+                        {% if event.venue%}
+                            {{ event.venue }}
+                        {% else %}
+                            Sin lugar de evento
+                        {% endif %}
+                    </td>
                     <td>
                         <div class="hstack gap-1">
                             <a href="{% url 'event_detail' event.id %}"
@@ -78,7 +93,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center">No hay eventos disponibles</td>
+                    <td colspan="6" class="text-center">No hay eventos disponibles</td>
                 </tr>
             {% endfor %}
         </tbody>

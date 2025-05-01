@@ -1,25 +1,2248 @@
 [
   {
-    "model": "app.event",
+    "model": "app.user",
     "pk": 1,
     "fields": {
-      "title": "Concierto de Jazz",
-      "description": "Una noche con los mejores músicos de jazz.",
-      "scheduled_at": "2025-06-20T20:00:00Z",
-      "organizer": 1,
-      "created_at": "2025-04-01T00:00:00Z",
-      "updated_at": "2025-04-01T00:00:00Z"
+      "username": "user1",
+      "email": "user1@example.com",
+      "password": "pbkdf2_sha256$1000000$P2bywQAlxG34GtN2uInyNg$WEK/OhYeTns94Mq0MBOeQwSMG7vnP+RTIjpzPT1kun0=",
+      "is_organizer": true
+    }
+  },
+  {
+    "model": "app.user",
+    "pk": 2,
+    "fields": {
+      "username": "user2",
+      "email": "user2@example.com",
+      "password": "pbkdf2_sha256$1000000$P2bywQAlxG34GtN2uInyNg$WEK/OhYeTns94Mq0MBOeQwSMG7vnP+RTIjpzPT1kun0=",
+      "is_organizer": false
+    }
+  },
+  {
+    "model": "app.user",
+    "pk": 3,
+    "fields": {
+      "username": "user3",
+      "email": "user3@example.com",
+      "password": "pbkdf2_sha256$1000000$P2bywQAlxG34GtN2uInyNg$WEK/OhYeTns94Mq0MBOeQwSMG7vnP+RTIjpzPT1kun0=",
+      "is_organizer": true
+    }
+  },
+  {
+    "model": "app.user",
+    "pk": 4,
+    "fields": {
+      "username": "user4",
+      "email": "user4@example.com",
+      "password": "pbkdf2_sha256$1000000$P2bywQAlxG34GtN2uInyNg$WEK/OhYeTns94Mq0MBOeQwSMG7vnP+RTIjpzPT1kun0=",
+      "is_organizer": false
+    }
+  },
+  {
+    "model": "app.user",
+    "pk": 5,
+    "fields": {
+      "username": "user5",
+      "email": "user5@example.com",
+      "password": "pbkdf2_sha256$1000000$P2bywQAlxG34GtN2uInyNg$WEK/OhYeTns94Mq0MBOeQwSMG7vnP+RTIjpzPT1kun0=",
+      "is_organizer": true
+    }
+  },
+  {
+    "model": "app.user",
+    "pk": 6,
+    "fields": {
+      "username": "user6",
+      "email": "user6@example.com",
+      "password": "pbkdf2_sha256$1000000$P2bywQAlxG34GtN2uInyNg$WEK/OhYeTns94Mq0MBOeQwSMG7vnP+RTIjpzPT1kun0=",
+      "is_organizer": false
+    }
+  },
+  {
+    "model": "app.user",
+    "pk": 7,
+    "fields": {
+      "username": "user7",
+      "email": "user7@example.com",
+      "password": "pbkdf2_sha256$1000000$P2bywQAlxG34GtN2uInyNg$WEK/OhYeTns94Mq0MBOeQwSMG7vnP+RTIjpzPT1kun0=",
+      "is_organizer": true
+    }
+  },
+  {
+    "model": "app.user",
+    "pk": 8,
+    "fields": {
+      "username": "user8",
+      "email": "user8@example.com",
+      "password": "pbkdf2_sha256$1000000$P2bywQAlxG34GtN2uInyNg$WEK/OhYeTns94Mq0MBOeQwSMG7vnP+RTIjpzPT1kun0=",
+      "is_organizer": false
+    }
+  },
+  {
+    "model": "app.user",
+    "pk": 9,
+    "fields": {
+      "username": "user9",
+      "email": "user9@example.com",
+      "password": "pbkdf2_sha256$1000000$P2bywQAlxG34GtN2uInyNg$WEK/OhYeTns94Mq0MBOeQwSMG7vnP+RTIjpzPT1kun0=",
+      "is_organizer": true
+    }
+  },
+  {
+    "model": "app.user",
+    "pk": 10,
+    "fields": {
+      "username": "user10",
+      "email": "user10@example.com",
+      "password": "pbkdf2_sha256$1000000$P2bywQAlxG34GtN2uInyNg$WEK/OhYeTns94Mq0MBOeQwSMG7vnP+RTIjpzPT1kun0=",
+      "is_organizer": false
+    }
+  },
+  {
+    "model": "app.category",
+    "pk": 1,
+    "fields": {
+      "name": "Música",
+      "description": "Conciertos, festivales y shows de artistas nacionales e internacionales.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "app.category",
+    "pk": 2,
+    "fields": {
+      "name": "Tecnología",
+      "description": "Eventos relacionados con innovación, programación, IA y tecnología en general.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "app.category",
+    "pk": 3,
+    "fields": {
+      "name": "Conferencias",
+      "description": "Charlas, ponencias y seminarios de diversas áreas del conocimiento.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "app.category",
+    "pk": 4,
+    "fields": {
+      "name": "Teatro",
+      "description": "Obras teatrales clásicas y contemporáneas, tanto locales como internacionales.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "app.category",
+    "pk": 5,
+    "fields": {
+      "name": "Cine",
+      "description": "Proyecciones de películas, festivales de cine y estrenos exclusivos.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "app.category",
+    "pk": 6,
+    "fields": {
+      "name": "Comedia",
+      "description": "Stand-ups, shows humorísticos y eventos para reír sin parar.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "app.category",
+    "pk": 7,
+    "fields": {
+      "name": "Negocios",
+      "description": "Networking, lanzamientos de productos y conferencias empresariales.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "app.category",
+    "pk": 8,
+    "fields": {
+      "name": "Deportes",
+      "description": "Partidos, competencias y exhibiciones deportivas en vivo.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "app.category",
+    "pk": 9,
+    "fields": {
+      "name": "Salud",
+      "description": "Jornadas de bienestar, ferias de salud y actividades para una vida sana.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "app.category",
+    "pk": 10,
+    "fields": {
+      "name": "Educación",
+      "description": "Talleres, capacitaciones y actividades educativas para todas las edades.",
+      "is_active": true
+    }
+  },
+  {
+    "model": "app.venue",
+    "pk": 1,
+    "fields": {
+      "name": "Estadio único",
+      "address": "Calle 239",
+      "city": "La Plata",
+      "capacity": 681,
+      "user": 2,
+      "contact": "venue_1@eventos.com"
+    }
+  },
+  {
+    "model": "app.venue",
+    "pk": 2,
+    "fields": {
+      "name": "Monumental de River Plate",
+      "address": "Av. Figueroa Alcorta 7597, Belgrano",
+      "city": "Buenos Aires",
+      "capacity": 85018,
+      "user": 4,
+      "contact": "venue_2@eventos.com"
+    }
+  },
+  {
+    "model": "app.venue",
+    "pk": 3,
+    "fields": {
+      "name": "Teatro Opera",
+      "address": "Calle 58 770, B1900",
+      "city": "La Plata",
+      "capacity": 2500,
+      "user": 3,
+      "contact": "venue_3@eventos.com"
+    }
+  },
+  {
+    "model": "app.venue",
+    "pk": 4,
+    "fields": {
+      "name": "Venue 4",
+      "address": "Calle 201",
+      "city": "Mendoza",
+      "capacity": 731,
+      "user": 9,
+      "contact": "venue_4@eventos.com"
+    }
+  },
+  {
+    "model": "app.venue",
+    "pk": 5,
+    "fields": {
+      "name": "Venue 5",
+      "address": "Calle 146",
+      "city": "La Plata",
+      "capacity": 547,
+      "user": 5,
+      "contact": "venue_5@eventos.com"
+    }
+  },
+  {
+    "model": "app.venue",
+    "pk": 6,
+    "fields": {
+      "name": "Plaza Moreno",
+      "address": "Entre calle 50 y 54, 12 y 14.",
+      "city": "La Plata",
+      "capacity": 3000,
+      "user": 1,
+      "contact": "venue_5@eventos.com"
     }
   },
   {
     "model": "app.event",
+    "pk": 1,
     "fields": {
-      "title": "Concierto de Nicki Nicole",
-      "description": "Cantante y compositora argentina de trap, rap, R&B, hip-hop, reguetón y pop urbano.",
-      "scheduled_at": "2025-05-15T20:00:00Z",
+      "title": "Taller de Robótica para niños",
+      "description": "Aprendizaje interactivo para jóvenes entusiastas.",
+      "scheduled_at": "2025-10-11T07:06:38Z",
       "organizer": 1,
-      "created_at": "2025-04-01T00:00:00Z",
-      "updated_at": "2025-04-01T00:00:00Z"
+      "venue": 3,
+      "created_at": "2025-01-27T02:55:25Z",
+      "updated_at": "2025-01-27T02:55:25Z",
+      "categories": [10]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 2,
+    "fields": {
+      "title": "Foro de Innovación Social",
+      "description": "Charlas sobre proyectos que buscan un cambio positivo.",
+      "scheduled_at": "2025-10-17T20:26:36Z",
+      "organizer": 10,
+      "venue": 4,
+      "created_at": "2025-03-04T08:26:48Z",
+      "updated_at": "2025-03-04T08:26:48Z",
+      "categories": [3]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 3,
+    "fields": {
+      "title": "Recital de Fito Páez",
+      "description": "Concierto íntimo del legendario artista rosarino.",
+      "scheduled_at": "2025-09-21T13:33:26Z",
+      "organizer": 4,
+      "venue": 3,
+      "created_at": "2025-04-09T00:42:26Z",
+      "updated_at": "2025-04-09T00:42:26Z",
+      "categories": [1]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 4,
+    "fields": {
+      "title": "Conferencia de Desarrolladores",
+      "description": "Charlas técnicas, workshops y networking para programadores.",
+      "scheduled_at": "2025-05-09T12:28:15Z",
+      "organizer": 10,
+      "venue": 5,
+      "created_at": "2025-02-27T17:02:50Z",
+      "updated_at": "2025-02-27T17:02:50Z",
+      "categories": [2]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 5,
+    "fields": {
+      "title": "TechTalks AI",
+      "description": "Debates y exposiciones sobre el impacto de la IA en el futuro.",
+      "scheduled_at": "2025-10-01T13:49:56Z",
+      "organizer": 2,
+      "venue": 3,
+      "created_at": "2025-03-09T18:08:52Z",
+      "updated_at": "2025-03-09T18:08:52Z",
+      "categories": [2, 4, 8]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 6,
+    "fields": {
+      "title": "Experiencia Evento #6",
+      "description": "Un evento único e inolvidable, lleno de sorpresas y grandes momentos. ¡No te lo pierdas! (Evento #6)",
+      "scheduled_at": "2025-07-03T00:59:59Z",
+      "organizer": 6,
+      "venue": 1,
+      "created_at": "2025-04-12T14:55:40Z",
+      "updated_at": "2025-04-12T14:55:40Z",
+      "categories": [
+        10
+      ]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 7,
+    "fields": {
+      "title": "Experiencia Evento #7",
+      "description": "Un evento único e inolvidable, lleno de sorpresas y grandes momentos. ¡No te lo pierdas! (Evento #7)",
+      "scheduled_at": "2025-12-16T12:00:07Z",
+      "organizer": 1,
+      "venue": 4,
+      "created_at": "2025-02-24T22:45:42Z",
+      "updated_at": "2025-02-24T22:45:42Z",
+      "categories": [
+        4,
+        2,
+        3
+      ]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 8,
+    "fields": {
+      "title": "Experiencia Evento #8",
+      "description": "Un evento único e inolvidable, lleno de sorpresas y grandes momentos. ¡No te lo pierdas! (Evento #8)",
+      "scheduled_at": "2025-09-26T10:13:58Z",
+      "organizer": 8,
+      "venue": 2,
+      "created_at": "2025-02-21T07:23:46Z",
+      "updated_at": "2025-02-21T07:23:46Z",
+      "categories": [
+        7,
+        10
+      ]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 9,
+    "fields": {
+      "title": "Experiencia Evento #9",
+      "description": "Un evento único e inolvidable, lleno de sorpresas y grandes momentos. ¡No te lo pierdas! (Evento #9)",
+      "scheduled_at": "2025-11-21T12:00:15Z",
+      "organizer": 1,
+      "venue": 3,
+      "created_at": "2025-02-26T18:18:35Z",
+      "updated_at": "2025-02-26T18:18:35Z",
+      "categories": [
+        3,
+        9,
+        7
+      ]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 10,
+    "fields": {
+      "title": "Experiencia Evento #10",
+      "description": "Un evento único e inolvidable, lleno de sorpresas y grandes momentos. ¡No te lo pierdas! (Evento #10)",
+      "scheduled_at": "2025-05-13T01:31:20Z",
+      "organizer": 10,
+      "venue": 2,
+      "created_at": "2025-03-16T15:36:06Z",
+      "updated_at": "2025-03-16T15:36:06Z",
+      "categories": [
+        5,
+        9
+      ]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 11,
+    "fields": {
+      "title": "Experiencia Evento #11",
+      "description": "Un evento único e inolvidable, lleno de sorpresas y grandes momentos. ¡No te lo pierdas! (Evento #11)",
+      "scheduled_at": "2025-08-05T16:45:03Z",
+      "organizer": 4,
+      "venue": 5,
+      "created_at": "2025-03-14T13:15:57Z",
+      "updated_at": "2025-03-14T13:15:57Z",
+      "categories": [
+        9,
+        1,
+        6
+      ]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 12,
+    "fields": {
+      "title": "Experiencia Evento #12",
+      "description": "Un evento único e inolvidable, lleno de sorpresas y grandes momentos. ¡No te lo pierdas! (Evento #12)",
+      "scheduled_at": "2025-12-16T00:47:36Z",
+      "organizer": 1,
+      "venue": 1,
+      "created_at": "2025-02-27T06:40:08Z",
+      "updated_at": "2025-02-27T06:40:08Z",
+      "categories": [
+        4
+      ]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 13,
+    "fields": {
+      "title": "Experiencia Evento #13",
+      "description": "Un evento único e inolvidable, lleno de sorpresas y grandes momentos. ¡No te lo pierdas! (Evento #13)",
+      "scheduled_at": "2025-09-30T08:48:21Z",
+      "organizer": 10,
+      "venue": 2,
+      "created_at": "2025-04-27T15:52:16Z",
+      "updated_at": "2025-04-27T15:52:16Z",
+      "categories": [
+        8
+      ]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 14,
+    "fields": {
+      "title": "Experiencia Evento #14",
+      "description": "Un evento único e inolvidable, lleno de sorpresas y grandes momentos. ¡No te lo pierdas! (Evento #14)",
+      "scheduled_at": "2025-09-07T22:57:40Z",
+      "organizer": 6,
+      "venue": 1,
+      "created_at": "2025-03-12T03:42:42Z",
+      "updated_at": "2025-03-12T03:42:42Z",
+      "categories": [
+        7,
+        6
+      ]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 15,
+    "fields": {
+      "title": "Experiencia Evento #15",
+      "description": "Un evento único e inolvidable, lleno de sorpresas y grandes momentos. ¡No te lo pierdas! (Evento #15)",
+      "scheduled_at": "2025-06-28T21:27:45Z",
+      "organizer": 9,
+      "venue": 1,
+      "created_at": "2025-03-13T23:24:07Z",
+      "updated_at": "2025-03-13T23:24:07Z",
+      "categories": [
+        9,
+        3
+      ]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 16,
+    "fields": {
+      "title": "Experiencia Evento #16",
+      "description": "Un evento único e inolvidable, lleno de sorpresas y grandes momentos. ¡No te lo pierdas! (Evento #16)",
+      "scheduled_at": "2025-12-11T10:02:14Z",
+      "organizer": 2,
+      "venue": 5,
+      "created_at": "2025-02-27T09:02:27Z",
+      "updated_at": "2025-02-27T09:02:27Z",
+      "categories": [
+        5
+      ]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 17,
+    "fields": {
+      "title": "Experiencia Evento #17",
+      "description": "Un evento único e inolvidable, lleno de sorpresas y grandes momentos. ¡No te lo pierdas! (Evento #17)",
+      "scheduled_at": "2025-06-03T11:24:55Z",
+      "organizer": 1,
+      "venue": 2,
+      "created_at": "2025-03-04T16:12:10Z",
+      "updated_at": "2025-03-04T16:12:10Z",
+      "categories": [
+        5
+      ]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 18,
+    "fields": {
+      "title": "Experiencia Evento #18",
+      "description": "Un evento único e inolvidable, lleno de sorpresas y grandes momentos. ¡No te lo pierdas! (Evento #18)",
+      "scheduled_at": "2025-11-01T16:37:35Z",
+      "organizer": 2,
+      "venue": 4,
+      "created_at": "2025-02-19T20:24:42Z",
+      "updated_at": "2025-02-19T20:24:42Z",
+      "categories": [
+        7,
+        2,
+        8
+      ]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 19,
+    "fields": {
+      "title": "Experiencia Evento #19",
+      "description": "Un evento único e inolvidable, lleno de sorpresas y grandes momentos. ¡No te lo pierdas! (Evento #19)",
+      "scheduled_at": "2025-05-29T01:29:10Z",
+      "organizer": 5,
+      "venue": 4,
+      "created_at": "2025-02-05T06:31:48Z",
+      "updated_at": "2025-02-05T06:31:48Z",
+      "categories": [
+        4,
+        6
+      ]
+    }
+  },
+  {
+    "model": "app.event",
+    "pk": 20,
+    "fields": {
+      "title": "Experiencia Evento #20",
+      "description": "Un evento único e inolvidable, lleno de sorpresas y grandes momentos. ¡No te lo pierdas! (Evento #20)",
+      "scheduled_at": "2025-09-11T18:18:17Z",
+      "organizer": 2,
+      "venue": 1,
+      "created_at": "2025-01-06T12:23:40Z",
+      "updated_at": "2025-01-06T12:23:40Z",
+      "categories": [
+        6,
+        2
+      ]
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 1,
+    "fields": {
+      "user": 9,
+      "event": 1,
+      "title": "Comentario 1",
+      "text": "Texto del comentario 1",
+      "created_at": "2025-10-25T19:16:27Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 1,
+    "fields": {
+      "user": 9,
+      "event": 1,
+      "title": "Rating 1",
+      "text": "Buen evento",
+      "rating": 1,
+      "created_at": "2025-11-09T22:28:37Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 1,
+    "fields": {
+      "user": 9,
+      "event": 1,
+      "quantity": 1,
+      "type": "GENERAL",
+      "ticket_code": "FLGLW3LY89VF",
+      "buy_date": "2025-08-02"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 1,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-07-28T16:47:37Z",
+      "ticket_code": "FLGLW3LY89VF",
+      "reason": "No pude asistir",
+      "created_at": "2025-12-21T20:05:26Z",
+      "user": 9,
+      "event": 1
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 2,
+    "fields": {
+      "user": 7,
+      "event": 1,
+      "title": "Comentario 2",
+      "text": "Texto del comentario 2",
+      "created_at": "2025-08-01T16:44:12Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 2,
+    "fields": {
+      "user": 7,
+      "event": 1,
+      "title": "Rating 2",
+      "text": "Buen evento",
+      "rating": 4,
+      "created_at": "2025-10-08T02:08:15Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 2,
+    "fields": {
+      "user": 7,
+      "event": 1,
+      "quantity": 3,
+      "type": "GENERAL",
+      "ticket_code": "BIZ958KUSE5A",
+      "buy_date": "2025-06-10"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 3,
+    "fields": {
+      "user": 1,
+      "event": 2,
+      "title": "Comentario 3",
+      "text": "Texto del comentario 3",
+      "created_at": "2025-09-15T15:31:47Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 3,
+    "fields": {
+      "user": 1,
+      "event": 2,
+      "title": "Rating 3",
+      "text": "Buen evento",
+      "rating": 2,
+      "created_at": "2025-08-14T08:14:52Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 3,
+    "fields": {
+      "user": 1,
+      "event": 2,
+      "quantity": 3,
+      "type": "VIP",
+      "ticket_code": "T6VWIIUOJEN4",
+      "buy_date": "2025-07-09"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 2,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-10-02T04:04:44Z",
+      "ticket_code": "T6VWIIUOJEN4",
+      "reason": "No pude asistir",
+      "created_at": "2025-10-02T14:44:55Z",
+      "user": 1,
+      "event": 2
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 4,
+    "fields": {
+      "user": 4,
+      "event": 2,
+      "title": "Comentario 4",
+      "text": "Texto del comentario 4",
+      "created_at": "2025-09-28T23:26:29Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 4,
+    "fields": {
+      "user": 4,
+      "event": 2,
+      "title": "Rating 4",
+      "text": "Buen evento",
+      "rating": 2,
+      "created_at": "2025-06-20T22:45:00Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 4,
+    "fields": {
+      "user": 4,
+      "event": 2,
+      "quantity": 3,
+      "type": "VIP",
+      "ticket_code": "54HKXLNT1HBV",
+      "buy_date": "2025-11-19"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 5,
+    "fields": {
+      "user": 6,
+      "event": 3,
+      "title": "Comentario 5",
+      "text": "Texto del comentario 5",
+      "created_at": "2025-09-26T16:34:27Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 5,
+    "fields": {
+      "user": 6,
+      "event": 3,
+      "title": "Rating 5",
+      "text": "Buen evento",
+      "rating": 1,
+      "created_at": "2025-07-08T04:38:34Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 5,
+    "fields": {
+      "user": 6,
+      "event": 3,
+      "quantity": 2,
+      "type": "GENERAL",
+      "ticket_code": "HIA53M4PL34K",
+      "buy_date": "2025-05-29"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 3,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-11-26T03:32:11Z",
+      "ticket_code": "HIA53M4PL34K",
+      "reason": "No pude asistir",
+      "created_at": "2025-09-09T02:55:41Z",
+      "user": 6,
+      "event": 3
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 6,
+    "fields": {
+      "user": 7,
+      "event": 3,
+      "title": "Comentario 6",
+      "text": "Texto del comentario 6",
+      "created_at": "2025-11-25T22:19:26Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 6,
+    "fields": {
+      "user": 7,
+      "event": 3,
+      "title": "Rating 6",
+      "text": "Buen evento",
+      "rating": 2,
+      "created_at": "2025-06-16T02:16:02Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 6,
+    "fields": {
+      "user": 7,
+      "event": 3,
+      "quantity": 1,
+      "type": "VIP",
+      "ticket_code": "9HH7TESI4TYS",
+      "buy_date": "2025-12-13"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 4,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-05-20T17:02:45Z",
+      "ticket_code": "9HH7TESI4TYS",
+      "reason": "No pude asistir",
+      "created_at": "2025-12-30T17:38:12Z",
+      "user": 7,
+      "event": 3
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 7,
+    "fields": {
+      "user": 1,
+      "event": 4,
+      "title": "Comentario 7",
+      "text": "Texto del comentario 7",
+      "created_at": "2025-07-10T21:49:34Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 7,
+    "fields": {
+      "user": 1,
+      "event": 4,
+      "title": "Rating 7",
+      "text": "Buen evento",
+      "rating": 1,
+      "created_at": "2025-07-09T00:37:54Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 7,
+    "fields": {
+      "user": 1,
+      "event": 4,
+      "quantity": 3,
+      "type": "VIP",
+      "ticket_code": "E3TEEYNC3TAM",
+      "buy_date": "2025-08-30"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 8,
+    "fields": {
+      "user": 8,
+      "event": 4,
+      "title": "Comentario 8",
+      "text": "Texto del comentario 8",
+      "created_at": "2025-06-20T21:14:15Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 8,
+    "fields": {
+      "user": 8,
+      "event": 4,
+      "title": "Rating 8",
+      "text": "Buen evento",
+      "rating": 3,
+      "created_at": "2025-05-11T15:44:25Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 8,
+    "fields": {
+      "user": 8,
+      "event": 4,
+      "quantity": 4,
+      "type": "VIP",
+      "ticket_code": "CDIKSB70FJ6X",
+      "buy_date": "2025-05-25"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 5,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-10-03T23:38:50Z",
+      "ticket_code": "CDIKSB70FJ6X",
+      "reason": "No pude asistir",
+      "created_at": "2025-07-26T16:53:53Z",
+      "user": 8,
+      "event": 4
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 9,
+    "fields": {
+      "user": 5,
+      "event": 5,
+      "title": "Comentario 9",
+      "text": "Texto del comentario 9",
+      "created_at": "2025-05-10T18:50:37Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 9,
+    "fields": {
+      "user": 5,
+      "event": 5,
+      "title": "Rating 9",
+      "text": "Buen evento",
+      "rating": 4,
+      "created_at": "2025-12-22T06:45:35Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 9,
+    "fields": {
+      "user": 5,
+      "event": 5,
+      "quantity": 4,
+      "type": "GENERAL",
+      "ticket_code": "AJDS70D44T26",
+      "buy_date": "2025-08-09"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 10,
+    "fields": {
+      "user": 9,
+      "event": 5,
+      "title": "Comentario 10",
+      "text": "Texto del comentario 10",
+      "created_at": "2025-08-20T07:24:39Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 10,
+    "fields": {
+      "user": 9,
+      "event": 5,
+      "title": "Rating 10",
+      "text": "Buen evento",
+      "rating": 2,
+      "created_at": "2025-12-26T20:34:42Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 10,
+    "fields": {
+      "user": 9,
+      "event": 5,
+      "quantity": 2,
+      "type": "GENERAL",
+      "ticket_code": "UVNZO0K35YRE",
+      "buy_date": "2025-05-07"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 11,
+    "fields": {
+      "user": 5,
+      "event": 6,
+      "title": "Comentario 11",
+      "text": "Texto del comentario 11",
+      "created_at": "2025-05-31T13:26:33Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 11,
+    "fields": {
+      "user": 5,
+      "event": 6,
+      "title": "Rating 11",
+      "text": "Buen evento",
+      "rating": 2,
+      "created_at": "2025-05-16T04:22:29Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 11,
+    "fields": {
+      "user": 5,
+      "event": 6,
+      "quantity": 1,
+      "type": "GENERAL",
+      "ticket_code": "I0SA5309QPLW",
+      "buy_date": "2025-12-28"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 12,
+    "fields": {
+      "user": 3,
+      "event": 6,
+      "title": "Comentario 12",
+      "text": "Texto del comentario 12",
+      "created_at": "2025-11-03T20:17:07Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 12,
+    "fields": {
+      "user": 3,
+      "event": 6,
+      "title": "Rating 12",
+      "text": "Buen evento",
+      "rating": 1,
+      "created_at": "2025-12-16T16:47:02Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 12,
+    "fields": {
+      "user": 3,
+      "event": 6,
+      "quantity": 2,
+      "type": "VIP",
+      "ticket_code": "IBT3XJVGIWI3",
+      "buy_date": "2025-07-06"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 6,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-07-15T12:02:07Z",
+      "ticket_code": "IBT3XJVGIWI3",
+      "reason": "No pude asistir",
+      "created_at": "2025-07-19T07:50:48Z",
+      "user": 3,
+      "event": 6
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 13,
+    "fields": {
+      "user": 6,
+      "event": 7,
+      "title": "Comentario 13",
+      "text": "Texto del comentario 13",
+      "created_at": "2025-07-01T16:35:31Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 13,
+    "fields": {
+      "user": 6,
+      "event": 7,
+      "title": "Rating 13",
+      "text": "Buen evento",
+      "rating": 2,
+      "created_at": "2025-09-06T23:21:35Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 13,
+    "fields": {
+      "user": 6,
+      "event": 7,
+      "quantity": 3,
+      "type": "VIP",
+      "ticket_code": "ROKXG0Y2QIK1",
+      "buy_date": "2025-12-06"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 7,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-10-31T08:07:07Z",
+      "ticket_code": "ROKXG0Y2QIK1",
+      "reason": "No pude asistir",
+      "created_at": "2025-07-02T02:48:49Z",
+      "user": 6,
+      "event": 7
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 14,
+    "fields": {
+      "user": 5,
+      "event": 7,
+      "title": "Comentario 14",
+      "text": "Texto del comentario 14",
+      "created_at": "2025-10-06T16:22:25Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 14,
+    "fields": {
+      "user": 5,
+      "event": 7,
+      "title": "Rating 14",
+      "text": "Buen evento",
+      "rating": 3,
+      "created_at": "2025-07-26T16:36:59Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 14,
+    "fields": {
+      "user": 5,
+      "event": 7,
+      "quantity": 1,
+      "type": "VIP",
+      "ticket_code": "CEMI7YV6AWKN",
+      "buy_date": "2025-05-25"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 8,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-09-23T10:28:19Z",
+      "ticket_code": "CEMI7YV6AWKN",
+      "reason": "No pude asistir",
+      "created_at": "2025-07-05T20:43:53Z",
+      "user": 5,
+      "event": 7
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 15,
+    "fields": {
+      "user": 4,
+      "event": 8,
+      "title": "Comentario 15",
+      "text": "Texto del comentario 15",
+      "created_at": "2025-08-27T05:15:57Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 15,
+    "fields": {
+      "user": 4,
+      "event": 8,
+      "title": "Rating 15",
+      "text": "Buen evento",
+      "rating": 5,
+      "created_at": "2025-09-08T01:03:32Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 15,
+    "fields": {
+      "user": 4,
+      "event": 8,
+      "quantity": 3,
+      "type": "GENERAL",
+      "ticket_code": "KUGT302BLAO5",
+      "buy_date": "2025-08-12"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 16,
+    "fields": {
+      "user": 10,
+      "event": 8,
+      "title": "Comentario 16",
+      "text": "Texto del comentario 16",
+      "created_at": "2025-11-06T02:18:25Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 16,
+    "fields": {
+      "user": 10,
+      "event": 8,
+      "title": "Rating 16",
+      "text": "Buen evento",
+      "rating": 1,
+      "created_at": "2025-10-12T00:41:25Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 16,
+    "fields": {
+      "user": 10,
+      "event": 8,
+      "quantity": 3,
+      "type": "VIP",
+      "ticket_code": "U301RDM4F698",
+      "buy_date": "2025-12-16"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 9,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-06-25T11:29:28Z",
+      "ticket_code": "U301RDM4F698",
+      "reason": "No pude asistir",
+      "created_at": "2025-08-09T18:37:32Z",
+      "user": 10,
+      "event": 8
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 17,
+    "fields": {
+      "user": 8,
+      "event": 9,
+      "title": "Comentario 17",
+      "text": "Texto del comentario 17",
+      "created_at": "2025-11-05T04:16:24Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 17,
+    "fields": {
+      "user": 8,
+      "event": 9,
+      "title": "Rating 17",
+      "text": "Buen evento",
+      "rating": 3,
+      "created_at": "2025-07-10T17:33:27Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 17,
+    "fields": {
+      "user": 8,
+      "event": 9,
+      "quantity": 3,
+      "type": "GENERAL",
+      "ticket_code": "NJH86A1QLY3T",
+      "buy_date": "2025-07-12"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 18,
+    "fields": {
+      "user": 9,
+      "event": 9,
+      "title": "Comentario 18",
+      "text": "Texto del comentario 18",
+      "created_at": "2025-11-15T03:36:10Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 18,
+    "fields": {
+      "user": 9,
+      "event": 9,
+      "title": "Rating 18",
+      "text": "Buen evento",
+      "rating": 3,
+      "created_at": "2025-09-14T13:30:29Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 18,
+    "fields": {
+      "user": 9,
+      "event": 9,
+      "quantity": 2,
+      "type": "VIP",
+      "ticket_code": "9K8U9IC4AMON",
+      "buy_date": "2025-05-05"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 19,
+    "fields": {
+      "user": 8,
+      "event": 10,
+      "title": "Comentario 19",
+      "text": "Texto del comentario 19",
+      "created_at": "2025-10-16T17:47:34Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 19,
+    "fields": {
+      "user": 8,
+      "event": 10,
+      "title": "Rating 19",
+      "text": "Buen evento",
+      "rating": 4,
+      "created_at": "2025-11-14T20:31:51Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 19,
+    "fields": {
+      "user": 8,
+      "event": 10,
+      "quantity": 3,
+      "type": "VIP",
+      "ticket_code": "X20XYVCYW6K7",
+      "buy_date": "2025-12-23"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 10,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-05-16T02:44:28Z",
+      "ticket_code": "X20XYVCYW6K7",
+      "reason": "No pude asistir",
+      "created_at": "2025-06-29T07:03:55Z",
+      "user": 8,
+      "event": 10
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 20,
+    "fields": {
+      "user": 10,
+      "event": 10,
+      "title": "Comentario 20",
+      "text": "Texto del comentario 20",
+      "created_at": "2025-11-09T05:01:12Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 20,
+    "fields": {
+      "user": 10,
+      "event": 10,
+      "title": "Rating 20",
+      "text": "Buen evento",
+      "rating": 2,
+      "created_at": "2025-12-03T18:05:27Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 20,
+    "fields": {
+      "user": 10,
+      "event": 10,
+      "quantity": 1,
+      "type": "GENERAL",
+      "ticket_code": "7I29YT6CX9EN",
+      "buy_date": "2025-10-05"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 11,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-08-07T03:45:14Z",
+      "ticket_code": "7I29YT6CX9EN",
+      "reason": "No pude asistir",
+      "created_at": "2025-12-21T15:42:31Z",
+      "user": 10,
+      "event": 10
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 21,
+    "fields": {
+      "user": 4,
+      "event": 11,
+      "title": "Comentario 21",
+      "text": "Texto del comentario 21",
+      "created_at": "2025-09-13T02:53:11Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 21,
+    "fields": {
+      "user": 4,
+      "event": 11,
+      "title": "Rating 21",
+      "text": "Buen evento",
+      "rating": 3,
+      "created_at": "2025-08-25T02:11:34Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 21,
+    "fields": {
+      "user": 4,
+      "event": 11,
+      "quantity": 4,
+      "type": "VIP",
+      "ticket_code": "IO02DA89DCHT",
+      "buy_date": "2025-06-03"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 22,
+    "fields": {
+      "user": 3,
+      "event": 11,
+      "title": "Comentario 22",
+      "text": "Texto del comentario 22",
+      "created_at": "2025-05-05T10:50:34Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 22,
+    "fields": {
+      "user": 3,
+      "event": 11,
+      "title": "Rating 22",
+      "text": "Buen evento",
+      "rating": 3,
+      "created_at": "2025-12-04T22:52:17Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 22,
+    "fields": {
+      "user": 3,
+      "event": 11,
+      "quantity": 3,
+      "type": "GENERAL",
+      "ticket_code": "21FXNFFBSZCG",
+      "buy_date": "2025-06-06"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 23,
+    "fields": {
+      "user": 7,
+      "event": 12,
+      "title": "Comentario 23",
+      "text": "Texto del comentario 23",
+      "created_at": "2025-12-28T15:54:06Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 23,
+    "fields": {
+      "user": 7,
+      "event": 12,
+      "title": "Rating 23",
+      "text": "Buen evento",
+      "rating": 2,
+      "created_at": "2025-07-15T16:55:11Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 23,
+    "fields": {
+      "user": 7,
+      "event": 12,
+      "quantity": 4,
+      "type": "GENERAL",
+      "ticket_code": "E9EZ0D1OU2YA",
+      "buy_date": "2025-08-29"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 24,
+    "fields": {
+      "user": 7,
+      "event": 12,
+      "title": "Comentario 24",
+      "text": "Texto del comentario 24",
+      "created_at": "2025-08-02T07:25:17Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 24,
+    "fields": {
+      "user": 7,
+      "event": 12,
+      "title": "Rating 24",
+      "text": "Buen evento",
+      "rating": 5,
+      "created_at": "2025-07-15T03:20:13Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 24,
+    "fields": {
+      "user": 7,
+      "event": 12,
+      "quantity": 3,
+      "type": "VIP",
+      "ticket_code": "EYE23MR3H38O",
+      "buy_date": "2025-12-03"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 25,
+    "fields": {
+      "user": 1,
+      "event": 13,
+      "title": "Comentario 25",
+      "text": "Texto del comentario 25",
+      "created_at": "2025-12-14T19:46:32Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 25,
+    "fields": {
+      "user": 1,
+      "event": 13,
+      "title": "Rating 25",
+      "text": "Buen evento",
+      "rating": 2,
+      "created_at": "2025-07-18T01:03:13Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 25,
+    "fields": {
+      "user": 1,
+      "event": 13,
+      "quantity": 2,
+      "type": "VIP",
+      "ticket_code": "BE17O7U3B9YT",
+      "buy_date": "2025-07-08"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 12,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-10-18T07:07:07Z",
+      "ticket_code": "BE17O7U3B9YT",
+      "reason": "No pude asistir",
+      "created_at": "2025-07-25T21:56:11Z",
+      "user": 1,
+      "event": 13
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 26,
+    "fields": {
+      "user": 1,
+      "event": 13,
+      "title": "Comentario 26",
+      "text": "Texto del comentario 26",
+      "created_at": "2025-11-02T04:12:32Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 26,
+    "fields": {
+      "user": 1,
+      "event": 13,
+      "title": "Rating 26",
+      "text": "Buen evento",
+      "rating": 4,
+      "created_at": "2025-10-12T08:56:36Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 26,
+    "fields": {
+      "user": 1,
+      "event": 13,
+      "quantity": 4,
+      "type": "GENERAL",
+      "ticket_code": "JSZF8YZA4KSC",
+      "buy_date": "2025-12-05"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 27,
+    "fields": {
+      "user": 7,
+      "event": 14,
+      "title": "Comentario 27",
+      "text": "Texto del comentario 27",
+      "created_at": "2025-11-15T03:43:40Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 27,
+    "fields": {
+      "user": 7,
+      "event": 14,
+      "title": "Rating 27",
+      "text": "Buen evento",
+      "rating": 2,
+      "created_at": "2025-11-10T18:43:34Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 27,
+    "fields": {
+      "user": 7,
+      "event": 14,
+      "quantity": 2,
+      "type": "GENERAL",
+      "ticket_code": "BVFFSE9DTKI2",
+      "buy_date": "2025-11-25"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 13,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-06-15T00:50:19Z",
+      "ticket_code": "BVFFSE9DTKI2",
+      "reason": "No pude asistir",
+      "created_at": "2025-10-26T17:08:08Z",
+      "user": 7,
+      "event": 14
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 28,
+    "fields": {
+      "user": 2,
+      "event": 14,
+      "title": "Comentario 28",
+      "text": "Texto del comentario 28",
+      "created_at": "2025-07-12T10:29:03Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 28,
+    "fields": {
+      "user": 2,
+      "event": 14,
+      "title": "Rating 28",
+      "text": "Buen evento",
+      "rating": 1,
+      "created_at": "2025-05-09T06:54:56Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 28,
+    "fields": {
+      "user": 2,
+      "event": 14,
+      "quantity": 2,
+      "type": "GENERAL",
+      "ticket_code": "QPNF8FE6YH13",
+      "buy_date": "2025-11-02"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 14,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-07-16T23:13:29Z",
+      "ticket_code": "QPNF8FE6YH13",
+      "reason": "No pude asistir",
+      "created_at": "2025-12-04T23:13:36Z",
+      "user": 2,
+      "event": 14
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 29,
+    "fields": {
+      "user": 10,
+      "event": 15,
+      "title": "Comentario 29",
+      "text": "Texto del comentario 29",
+      "created_at": "2025-12-01T22:46:23Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 29,
+    "fields": {
+      "user": 10,
+      "event": 15,
+      "title": "Rating 29",
+      "text": "Buen evento",
+      "rating": 4,
+      "created_at": "2025-12-01T14:18:46Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 29,
+    "fields": {
+      "user": 10,
+      "event": 15,
+      "quantity": 3,
+      "type": "VIP",
+      "ticket_code": "HJT9TQUY45GI",
+      "buy_date": "2025-11-05"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 15,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-07-21T04:21:02Z",
+      "ticket_code": "HJT9TQUY45GI",
+      "reason": "No pude asistir",
+      "created_at": "2025-06-09T19:33:18Z",
+      "user": 10,
+      "event": 15
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 30,
+    "fields": {
+      "user": 7,
+      "event": 15,
+      "title": "Comentario 30",
+      "text": "Texto del comentario 30",
+      "created_at": "2025-05-04T18:41:03Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 30,
+    "fields": {
+      "user": 7,
+      "event": 15,
+      "title": "Rating 30",
+      "text": "Buen evento",
+      "rating": 2,
+      "created_at": "2025-11-09T07:30:29Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 30,
+    "fields": {
+      "user": 7,
+      "event": 15,
+      "quantity": 4,
+      "type": "GENERAL",
+      "ticket_code": "VUQOOW9CYFN6",
+      "buy_date": "2025-09-18"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 16,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-05-28T01:27:02Z",
+      "ticket_code": "VUQOOW9CYFN6",
+      "reason": "No pude asistir",
+      "created_at": "2025-12-24T08:52:56Z",
+      "user": 7,
+      "event": 15
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 31,
+    "fields": {
+      "user": 2,
+      "event": 16,
+      "title": "Comentario 31",
+      "text": "Texto del comentario 31",
+      "created_at": "2025-05-08T14:54:20Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 31,
+    "fields": {
+      "user": 2,
+      "event": 16,
+      "title": "Rating 31",
+      "text": "Buen evento",
+      "rating": 4,
+      "created_at": "2025-08-12T18:15:54Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 31,
+    "fields": {
+      "user": 2,
+      "event": 16,
+      "quantity": 2,
+      "type": "GENERAL",
+      "ticket_code": "6QBYWLUE1EJ9",
+      "buy_date": "2025-12-02"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 32,
+    "fields": {
+      "user": 5,
+      "event": 16,
+      "title": "Comentario 32",
+      "text": "Texto del comentario 32",
+      "created_at": "2025-11-16T02:46:02Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 32,
+    "fields": {
+      "user": 5,
+      "event": 16,
+      "title": "Rating 32",
+      "text": "Buen evento",
+      "rating": 1,
+      "created_at": "2025-09-26T11:23:43Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 32,
+    "fields": {
+      "user": 5,
+      "event": 16,
+      "quantity": 1,
+      "type": "VIP",
+      "ticket_code": "TUJYKH7BHGFO",
+      "buy_date": "2025-11-08"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 33,
+    "fields": {
+      "user": 3,
+      "event": 17,
+      "title": "Comentario 33",
+      "text": "Texto del comentario 33",
+      "created_at": "2025-12-28T02:56:38Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 33,
+    "fields": {
+      "user": 3,
+      "event": 17,
+      "title": "Rating 33",
+      "text": "Buen evento",
+      "rating": 2,
+      "created_at": "2025-09-07T16:33:40Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 33,
+    "fields": {
+      "user": 3,
+      "event": 17,
+      "quantity": 4,
+      "type": "GENERAL",
+      "ticket_code": "978767RZ9GI3",
+      "buy_date": "2025-08-28"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 17,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-08-05T00:21:01Z",
+      "ticket_code": "978767RZ9GI3",
+      "reason": "No pude asistir",
+      "created_at": "2025-07-06T00:57:27Z",
+      "user": 3,
+      "event": 17
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 34,
+    "fields": {
+      "user": 6,
+      "event": 17,
+      "title": "Comentario 34",
+      "text": "Texto del comentario 34",
+      "created_at": "2025-07-05T07:27:39Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 34,
+    "fields": {
+      "user": 6,
+      "event": 17,
+      "title": "Rating 34",
+      "text": "Buen evento",
+      "rating": 5,
+      "created_at": "2025-05-30T19:34:23Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 34,
+    "fields": {
+      "user": 6,
+      "event": 17,
+      "quantity": 4,
+      "type": "GENERAL",
+      "ticket_code": "JAEMZYBCJOKQ",
+      "buy_date": "2025-08-21"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 35,
+    "fields": {
+      "user": 7,
+      "event": 18,
+      "title": "Comentario 35",
+      "text": "Texto del comentario 35",
+      "created_at": "2025-06-14T22:12:49Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 35,
+    "fields": {
+      "user": 7,
+      "event": 18,
+      "title": "Rating 35",
+      "text": "Buen evento",
+      "rating": 2,
+      "created_at": "2025-07-13T04:54:39Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 35,
+    "fields": {
+      "user": 7,
+      "event": 18,
+      "quantity": 3,
+      "type": "GENERAL",
+      "ticket_code": "TM7ARXA5Z3O4",
+      "buy_date": "2025-09-28"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 36,
+    "fields": {
+      "user": 9,
+      "event": 18,
+      "title": "Comentario 36",
+      "text": "Texto del comentario 36",
+      "created_at": "2025-10-20T12:12:35Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 36,
+    "fields": {
+      "user": 9,
+      "event": 18,
+      "title": "Rating 36",
+      "text": "Buen evento",
+      "rating": 2,
+      "created_at": "2025-08-07T23:12:52Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 36,
+    "fields": {
+      "user": 9,
+      "event": 18,
+      "quantity": 1,
+      "type": "GENERAL",
+      "ticket_code": "JJDTP34XZ07R",
+      "buy_date": "2025-11-14"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 18,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-05-09T12:14:19Z",
+      "ticket_code": "JJDTP34XZ07R",
+      "reason": "No pude asistir",
+      "created_at": "2025-11-30T11:34:44Z",
+      "user": 9,
+      "event": 18
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 37,
+    "fields": {
+      "user": 6,
+      "event": 19,
+      "title": "Comentario 37",
+      "text": "Texto del comentario 37",
+      "created_at": "2025-05-21T11:19:18Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 37,
+    "fields": {
+      "user": 6,
+      "event": 19,
+      "title": "Rating 37",
+      "text": "Buen evento",
+      "rating": 1,
+      "created_at": "2025-08-13T00:22:58Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 37,
+    "fields": {
+      "user": 6,
+      "event": 19,
+      "quantity": 1,
+      "type": "GENERAL",
+      "ticket_code": "DSHIVR09D61O",
+      "buy_date": "2025-06-01"
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 38,
+    "fields": {
+      "user": 7,
+      "event": 19,
+      "title": "Comentario 38",
+      "text": "Texto del comentario 38",
+      "created_at": "2025-10-22T19:32:54Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 38,
+    "fields": {
+      "user": 7,
+      "event": 19,
+      "title": "Rating 38",
+      "text": "Buen evento",
+      "rating": 4,
+      "created_at": "2025-07-08T13:20:09Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 38,
+    "fields": {
+      "user": 7,
+      "event": 19,
+      "quantity": 2,
+      "type": "GENERAL",
+      "ticket_code": "3R1I3UPSQUXC",
+      "buy_date": "2025-06-24"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 19,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-11-26T07:10:33Z",
+      "ticket_code": "3R1I3UPSQUXC",
+      "reason": "No pude asistir",
+      "created_at": "2025-10-19T00:17:03Z",
+      "user": 7,
+      "event": 19
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 39,
+    "fields": {
+      "user": 5,
+      "event": 20,
+      "title": "Comentario 39",
+      "text": "Texto del comentario 39",
+      "created_at": "2025-06-12T11:21:35Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 39,
+    "fields": {
+      "user": 5,
+      "event": 20,
+      "title": "Rating 39",
+      "text": "Buen evento",
+      "rating": 4,
+      "created_at": "2025-07-30T04:48:46Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 39,
+    "fields": {
+      "user": 5,
+      "event": 20,
+      "quantity": 3,
+      "type": "VIP",
+      "ticket_code": "F31GB1K1E9EP",
+      "buy_date": "2025-11-14"
+    }
+  },
+  {
+    "model": "app.refund",
+    "pk": 20,
+    "fields": {
+      "aproved": true,
+      "aproval_date": "2025-08-14T08:09:16Z",
+      "ticket_code": "F31GB1K1E9EP",
+      "reason": "No pude asistir",
+      "created_at": "2025-08-22T03:14:04Z",
+      "user": 5,
+      "event": 20
+    }
+  },
+  {
+    "model": "app.comment",
+    "pk": 40,
+    "fields": {
+      "user": 3,
+      "event": 20,
+      "title": "Comentario 40",
+      "text": "Texto del comentario 40",
+      "created_at": "2025-09-29T14:07:02Z"
+    }
+  },
+  {
+    "model": "app.rating",
+    "pk": 40,
+    "fields": {
+      "user": 3,
+      "event": 20,
+      "title": "Rating 40",
+      "text": "Buen evento",
+      "rating": 1,
+      "created_at": "2025-09-17T23:17:54Z"
+    }
+  },
+  {
+    "model": "app.ticket",
+    "pk": 40,
+    "fields": {
+      "user": 3,
+      "event": 20,
+      "quantity": 2,
+      "type": "GENERAL",
+      "ticket_code": "QHF0LGQAC5X7",
+      "buy_date": "2025-07-09"
     }
   }
 ]

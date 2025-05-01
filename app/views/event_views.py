@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from app.models import Rating, Venue, Category, Event
 from app.views.rating_views import create_rating
+from django.db.models import Q
 
 @login_required
 def event_form(request, id=None):
@@ -94,7 +95,6 @@ def event_detail(request, id):
         })
 
 
-
 @login_required
 def event_delete(request, id):
     user = request.user
@@ -108,3 +108,22 @@ def event_delete(request, id):
 
     return redirect("events")
 
+@login_required
+def event_filter(request):
+    query = request.GET.get('search', '')
+    events = []
+    print("query")
+    print(query)
+    if query:
+        events = Event.objects.filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query) |
+            Q(venue__name__icontains=query)  # Ajustá si 'venue' tiene otro campo
+        ).order_by("scheduled_at")
+    else:
+        events = Event.objects.all().order_by("scheduled_at")
+    return render(
+        request,
+        "app/event/events.html",
+        {"events": events, "user_is_organizer": request.user.is_organizer},
+    )
