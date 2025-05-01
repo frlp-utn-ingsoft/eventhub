@@ -26,8 +26,9 @@
     <nav class="navbar navbar-expand-md bg-body-tertiary shadow-sm py-3 px-4">
         <div class="container-fluid align-items-center justify-content-between">
       
-          <!-- LOGO -->
-          <a class="navbar-brand fw-semibold fs-4" href="/">EventHub</a>
+          <a class="navbar-brand d-flex align-items-center gap-2" href="/">
+            <img src="{% static 'img/logo.png' %}" alt="EventHub logo" width="80" height="70">
+          </a>
       
           {% if user.is_authenticated %}
             <!-- Botón toggle para móviles -->
