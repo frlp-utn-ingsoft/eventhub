@@ -1,11 +1,53 @@
 import datetime
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from .models import Event, User, Ticket, Comment, Notification
 from django.contrib import messages
 
-from .models import Event, User, Ticket
+def add_comment(request,id):
+    event = get_object_or_404(Event, pk=id)
+    if request.method == "POST":
+        user = request.user
+        title = request.POST.get("title")
+        text = request.POST.get("text")
+        Comment.objects.create(
+            title=title,
+            text=text,
+            event=event,
+            user = user
+        )
+        return redirect("event_detail", id=id)
+    return redirect("event_detail", id=id)
+
+
+def delete_comment(request,id,comment_id):
+    comment = get_object_or_404(Comment, id=comment_id, event_id = id)
+    if comment.user == request.user or request.user.is_organizer == True:
+        if request.method == "POST":
+            comment.delete()
+            return redirect("event_detail",id=id)
+        return redirect("event_detail",id=id)
+    else:
+        return redirect("event_detail",id=id)
+     
+        
+def update_comment(request,id,comment_id):
+    comment = get_object_or_404(Comment, id=comment_id, event_id = id)
+    if comment.user == request.user or request.user.is_organizer == True:
+        if request.method == "POST":
+            title = request.POST.get("title")
+            text = request.POST.get("text")
+            comment.update(title, text)
+            return redirect("event_detail",id=id)
+    else:
+        return redirect("event_detail",id=id)
+    return render(request, "app/update_comment.html", {"comment": comment, "event_id": id})
+    
+from .forms import CategoryForm
+
+from .models import Category, Event, User
 
 
 def register(request):
@@ -72,7 +114,7 @@ def events(request):
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
-    return render(request, "app/event_detail.html", {"event": event})
+    return render(request, "app/event_detail.html", {"event": event, "user_is_organizer": request.user.is_organizer})
 
 
 @login_required
@@ -95,12 +137,21 @@ def event_form(request, id=None):
 
     if not user.is_organizer:
         return redirect("events")
+    
+    categories = Category.objects.filter(is_active=True)
+    event_categories = []
+    event = {}
+
+    if id is not None:
+        event = get_object_or_404(Event, pk=id)
+        event_categories = [category.id for category in event.categories.all()]
 
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
+        categories = request.POST.getlist("categories")
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
@@ -110,10 +161,10 @@ def event_form(request, id=None):
         )
 
         if id is None:
-            Event.new(title, description, scheduled_at, request.user)
+            Event.new(title, description, scheduled_at, request.user, categories)
         else:
             event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user)
+            event.update(title, description, scheduled_at, request.user, categories)
 
         return redirect("events")
 
@@ -124,7 +175,12 @@ def event_form(request, id=None):
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer},
+        {
+            "event": event,
+            "categories": categories,
+            "event_categories": event_categories,
+            "user_is_organizer": request.user.is_organizer
+        },
     )
 
 @login_required
@@ -220,3 +276,197 @@ def ticket_edit(request, id):
     return render(request, "app/ticket_edit.html", {"ticket": ticket})
 
 
+
+def is_organizer(user):
+    return user.is_organizer
+
+@login_required
+def categories(request):
+    categories = Category.objects.all().order_by('name')
+    return render(request, 'app/categories.html', {'categories': categories})
+
+@login_required
+def category_form(request):
+    if request.method == "POST":
+        name = request.POST.get("name")
+        description = request.POST.get("description")
+        is_active = request.POST.get("is_active") == "on"
+        
+        success, result = Category.new(name, description, is_active)
+        
+        if success:
+            return redirect('categories')
+        
+        return render(request, 'app/category_form.html', {
+            'errors': result,
+            'data': {
+                'name': name,
+                'description': description,
+                'is_active': is_active
+            }
+        })
+        
+    return render(request, 'app/category_form.html', {
+        'data': {
+            'is_active': True  # Por defecto activa
+        }
+    })
+
+@login_required
+def category_edit(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    
+    if request.method == "POST":
+        name = request.POST.get("name")
+        description = request.POST.get("description")
+        is_active = request.POST.get("is_active") == "on"
+        
+        success, errors = category.update(
+            name=name,
+            description=description,
+            is_active=is_active
+        )
+        
+        if success:
+            return redirect('categories')
+            
+        return render(request, 'app/category_form.html', {
+            'category': category,
+            'errors': errors,
+            'data': {
+                'name': name,
+                'description': description,
+                'is_active': is_active
+            }
+        })
+    
+    return render(request, 'app/category_form.html', {
+        'category': category,
+        'data': {
+            'name': category.name,
+            'description': category.description,
+            'is_active': category.is_active
+        }
+    })
+
+@login_required
+def category_delete(request, category_id):
+    if request.method == "POST":
+        category = get_object_or_404(Category, id=category_id)
+        category.delete()
+    return redirect('categories')
+
+
+@login_required
+def notification_list(request):
+    if request.user.is_organizer:
+        notifications = Notification.objects.all().order_by('-created_at')
+        return render(request, "notifications/list.html", {"notifications": notifications, "user_is_organizer": request.user.is_organizer})
+    else:
+        notifications = Notification.objects.filter(users=request.user).order_by('-created_at')
+        notifications_not_read = Notification.objects.filter(users=request.user, is_read=False).order_by('-created_at')
+        return render(request, "notifications/list.html", {"notifications": notifications, "notifications_not_read": notifications_not_read, "user_is_organizer": request.user.is_organizer})
+
+
+@login_required
+def notification_create(request):
+    if not request.user.is_organizer:
+        return redirect("notification_list")
+
+    if request.method == "POST":
+        title = request.POST.get("title")
+        message = request.POST.get("message")
+        priority = request.POST.get("priority")
+        destinatario = request.POST.get("destinatario")
+        event_id = request.POST.get("event_id")
+        usuario_id = request.POST.get("usuario_id")
+
+        if not event_id:
+            messages.error(request, "Debe seleccionar un evento.")
+            return redirect("notification_create")
+
+        event = get_object_or_404(Event, id=event_id)
+
+        if destinatario == "usuario":
+            if not usuario_id:
+                messages.error(request, "Debe seleccionar un usuario.")
+                return redirect("notification_create")
+
+        notification = Notification.objects.create(
+            title=title,
+            message=message,
+            event=event,
+            priority=priority,
+            created_at=timezone.now(),
+        )
+
+        if destinatario == "todos":
+            # Obtener todos los asistentes al evento (suponiendo que existe una relación many-to-many Event <-> User)
+            asistentes = event.attendees.all()
+            notification.users.set(asistentes)
+
+        elif destinatario == "usuario" and usuario_id:
+            usuario = get_object_or_404(User, pk=usuario_id)
+            notification.users.set([usuario])
+
+        notification.save()
+        return redirect("notification_list")
+
+    eventos = Event.objects.all()
+    usuarios = User.objects.filter(is_organizer=False)
+    return render(request, "notifications/form.html", {
+        "eventos": eventos,
+        "usuarios": usuarios,
+    })
+
+
+@login_required
+def notification_edit(request, id):
+    if not request.user.is_organizer:
+        return redirect("notification_list")
+
+    notification = get_object_or_404(Notification, pk=id)
+
+    if request.method == "POST":
+        notification.title = request.POST.get("title")
+        notification.message = request.POST.get("message")
+        notification.priority = request.POST.get("priority")
+        recipient_ids = request.POST.getlist("recipients")
+        notification.users.set(recipient_ids)
+        notification.save()
+        return redirect("notification_list")
+
+    users = User.objects.filter(is_organizer=False)
+    return render(request, "notifications/form.html", {"notification": notification, "users": users})
+
+
+@login_required
+def notification_delete(request, id):
+    if not request.user.is_organizer:
+        return redirect("notification_list")
+
+    notification = get_object_or_404(Notification, pk=id)
+    notification.delete()
+    return redirect("notification_list")
+
+
+@login_required
+def notification_detail(request, id):
+    notification = get_object_or_404(Notification, pk=id)
+
+    if not request.user.is_organizer and request.user not in notification.users.all():
+        return redirect("notification_list")
+
+    return render(request, "notifications/detail.html", {"notification": notification})
+
+@login_required
+def notification_mark_read(request, pk):
+    notification = get_object_or_404(Notification, pk=pk, users=request.user)
+    notification.is_read = True
+    notification.save()
+    return redirect('notification_list')
+
+@login_required
+def mark_all_notifications_read(request):
+    request.user.notifications.update(is_read=True)
+    return redirect('notification_list')

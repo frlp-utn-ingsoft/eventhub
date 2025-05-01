@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %} Notificaciones {% endblock %}
+{% block content %}
+<div class="container">
+    {% if user_is_organizer %}
+    <h1>Gestión de Notificaciones</h1>
+    <div class="mb-3 text-end">
+        <a href="{% url 'notification_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2"></i>Nueva notificación
+        </a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-bordered align-middle text-center">
+            <thead class="table-light">
+                <tr>
+                    <th>Título</th>
+                    <th>Evento</th>
+                    <th>Destinatarios</th>
+                    <th>Prioridad</th>
+                    <th>Fecha de envío</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if notifications %}
+                    {% for n in notifications %}
+                    <tr>
+                        <td>{{ n.title }}</td>
+                        <td class="color-primary">{{ n.event.title }}</td>
+                        <td>
+                            {% if n.users.count == 1 %}
+                                <span class="badge bg-secondary text-white">Usuario específico</span>
+                            {% else %}
+                                Todos ({{ n.users.count }})
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if n.priority == "LOW" %}
+                                <span class="badge bg-secondary text-white">Baja</span>
+                            {% elif n.priority == "MEDIUM" %}
+                                <span class="badge bg-primary text-white">Normal</span>
+                            {% else %}
+                                <span class="badge bg-danger text-white">Alta</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ n.created_at|date:"d/m/Y H:i" }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <div class="hstack gap-1">
+                                    <a
+                                href="{% url 'notification_detail' n.id %}"
+                                class="btn btn-sm btn-outline-primary"
+                                aria-label="Ver detalle"
+                                title="Ver detalle"
+                            >
+                                <i class="bi bi-eye" aria-hidden="true"></i>
+                            </a>
+                            <a
+                                href="{% url 'notification_edit' n.id %}"
+                                class="btn btn-sm btn-outline-secondary"
+                                aria-label="Editar"
+                                title="Editar"
+                            >
+                                <i class="bi bi-pencil" aria-hidden="true"></i>
+                            </a>
+                            <form
+                                action="{% url 'notification_delete' n.id %}"
+                                method="POST"
+                            >
+                                {% csrf_token %}
+                                <button
+                                    class="btn btn-sm btn-outline-danger"
+                                    title="Eliminar"
+                                    type="submit"
+                                    aria-label="Eliminar"
+                                >
+                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                </button>
+                            </form>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                <tr>
+                    <td colspan="6">No hay notificaciones.</td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex align-items-center">
+            <h1>Notificaciones</h1>
+            {% if notifications_not_read %}
+                <span class="badge bg-primary ms-4 p-2">Nuevas ({{ notifications_not_read.count }})</span>
+            {% endif %}
+        </div>
+        {% if notifications %}
+        <form method="POST" action="{% url 'notification_mark_all_read' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-primary">
+                Marcar todas como leídas
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    {% if notifications %}
+    <div class="list-group">
+        {% for n in notifications %}
+        <div class="list-group-item {% if not n.is_read %}bg-primary bg-opacity-10 border-start border-top-0 border-end-0 border-bottom-0 border-3 border-primary{% endif %} mb-2">
+            <div class="d-flex justify-content-between">
+                <div>
+                    <h5 class="mb-1 text-primary">
+                        <i class="bi bi-megaphone-fill text-primary me-3"></i>{{ n.title }}
+                        {% if not n.is_read %}
+                        <span class="badge bg-primary ms-2">Nueva</span>
+                        {% endif %}
+                    </h5>
+                    <p class="mb-1">{{ n.message }}</p>
+                    <small class="text-muted">{{ n.created_at|date:"d M Y, H:i" }}</small>
+                </div>
+                <div class="text-end">
+                    {% if not n.is_read %}
+                    <form method="POST" action="{% url 'notification_mark_read' n.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-primary">Marcar como leída</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p>No tenés notificaciones.</p>
+    {% endif %}
+    {% endif %}
+</div>
+{% endblock %}
