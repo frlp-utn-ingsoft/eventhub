@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect
-from app.models import Rating
+from ..models import Rating
   
 @login_required
 def create_rating(request, event):
@@ -20,8 +20,8 @@ def create_rating(request, event):
             rating=stars,
             text=comment
         )
-        return True
-    return False
+        return redirect(request.META.get('HTTP_REFERER', '/'))
+    return redirect(request.META.get('HTTP_REFERER', '/'))
 
 @login_required
 def editar_rating(request, rating_id):
@@ -35,6 +35,7 @@ def editar_rating(request, rating_id):
             rating.text = request.POST.get('comment')
             rating.save()
         return redirect(request.META.get('HTTP_REFERER', '/'))
+    return redirect(request.META.get('HTTP_REFERER', '/'))
 
 
 @login_required

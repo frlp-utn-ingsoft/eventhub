@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.crypto import get_random_string
 
 
 class User(AbstractUser):
@@ -234,3 +235,63 @@ class Rating(models.Model):
     
     def __str__(self):
         return f'{self.title} {self.text}({self.rating})'
+
+    
+class Ticket(models.Model):
+    TICKET_TYPES = [
+        ("GENERAL", "General"),
+        ("VIP",     "VIP"),
+    ]
+    
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tickets")
+    event = models.ForeignKey("app.Event", on_delete=models.CASCADE, related_name="tickets")
+    
+    buy_date    = models.DateField(auto_now_add=True)
+    ticket_code = models.CharField(max_length=12, unique=True, editable=False)
+    quantity    = models.PositiveIntegerField()
+    type        = models.CharField(max_length=10, choices=TICKET_TYPES)
+
+    def save(self, *args, **kwargs):
+        if not self.ticket_code:
+            self.ticket_code = get_random_string(length=12)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.ticket_code} - {self.user.username} - {self.event.title}"
+
+    @classmethod
+    def validate(cls, user, event, quantity, ticket_type):
+        errors = {}
+        if not isinstance(quantity, int) or quantity < 1:
+            errors["quantity"] = "La cantidad debe ser un entero mayor o igual a 1."
+        if ticket_type not in dict(cls.TICKET_TYPES):
+            errors["type"] = "El tipo de ticket no es válido."
+        # por ejemplo, podrías validar stock con event.available_tickets aquí
+        return errors
+
+    @classmethod
+    def new(cls, user, event, quantity, ticket_type):
+        errors = cls.validate(user, event, quantity, ticket_type)
+        if errors:
+            return False, errors
+        ticket = cls.objects.create(
+            user=user,
+            event=event,
+            quantity=quantity,
+            type=ticket_type
+        )
+        return True, ticket
+
+    def update(self, quantity=None, ticket_type=None):
+        # Si no se pasa un parámetro, se mantiene el valor actual
+        new_qty  = quantity    if quantity is not None    else self.quantity
+        new_type = ticket_type if ticket_type is not None else self.type
+
+        errors = self.validate(self.user, self.event, new_qty, new_type)
+        if errors:
+            return False, errors
+
+        self.quantity = new_qty
+        self.type     = new_type
+        self.save()
+        return True, None
