@@ -1,33 +1,61 @@
 # category/views.py
-from django.urls import reverse_lazy
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView
-
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, get_object_or_404, redirect
 from .models import Category
-from .forms  import CategoryForm
+from .forms import CategoryForm
+
+@login_required
+def category_list(request):
+    if not request.user.is_organizer:
+        return redirect("events")
+
+    categories = Category.objects.all().order_by("name")
+    return render(request, "category/category_list.html", {"object_list": categories})
 
 
-class CategoryCreateView(CreateView):
-    model         = Category
-    form_class    = CategoryForm
-    template_name = "category/category_form.html"
-    success_url   = reverse_lazy("category:list")
+@login_required
+def category_create(request):
+    if not request.user.is_organizer:
+        return redirect("events")
+
+    if request.method == "POST":
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect("category:list")
+    else:
+        form = CategoryForm()
+
+    return render(request, "category/category_form.html", {"form": form})
 
 
-class CategoryListView(ListView):
-    model         = Category
-    template_name = "category/category_list.html"
-    paginate_by   = 10
-    ordering      = ["name"]
+@login_required
+def category_update(request, pk):
+    if not request.user.is_organizer:
+        return redirect("events")
+
+    category = get_object_or_404(Category, pk=pk)
+
+    if request.method == "POST":
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            return redirect("category:list")
+    else:
+        form = CategoryForm(instance=category)
+
+    return render(request, "category/category_form.html", {"form": form})
 
 
-class CategoryUpdateView(UpdateView):
-    model         = Category
-    form_class    = CategoryForm
-    template_name = "category/category_form.html"
-    success_url   = reverse_lazy("category:list")
+@login_required
+def category_delete(request, pk):
+    if not request.user.is_organizer:
+        return redirect("events")
 
+    category = get_object_or_404(Category, pk=pk)
 
-class CategoryDeleteView(DeleteView):
-    model         = Category
-    template_name = "category/category_confirm_delete.html"
-    success_url   = reverse_lazy("category:list")
+    if request.method == "POST":
+        category.delete()
+        return redirect("category:list")
+
+    return render(request, "category/category_confirm_delete.html", {"object": category})
