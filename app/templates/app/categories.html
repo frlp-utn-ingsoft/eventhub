@@ -33,7 +33,7 @@
                             <span class="badge bg-danger">Inactiva</span>
                         {% endif %}
                     </td>
-                    <td>0</td>
+                    <td>{{ category.events.count }}</td>
                     <td>
                         <div class="hstack gap-1">
                             <a href="{% url 'category_edit' category.id %}"
