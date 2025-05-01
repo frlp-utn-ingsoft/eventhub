@@ -97,6 +97,7 @@ def event_form(request, id=None):
         return redirect("events")
     
     categories = Category.objects.filter(is_active=True)
+    venues= Venue.objects.all()
     errors = {}
 
     event = {}
@@ -106,11 +107,13 @@ def event_form(request, id=None):
 
     if request.method == "POST":
         title = request.POST.get("title", "").strip()
+        venue_id= request.POST.get("venue")
         description = request.POST.get("description", "").strip()
         date = request.POST.get("date")
         time = request.POST.get("time")
         selected_categories = request.POST.getlist("categories")
 
+        venue = get_object_or_404(Venue, pk=venue_id)
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
 
@@ -119,7 +122,7 @@ def event_form(request, id=None):
         )
 
         if id is None:
-            success, errors = Event.new(title, description, scheduled_at, request.user)
+            success, errors = Event.new(title, venue, description, scheduled_at, request.user)
             if success:
                 event = Event.objects.get(title=title, organizer=request.user)
                 event.categories.set(selected_categories)
@@ -133,7 +136,7 @@ def event_form(request, id=None):
                 }
         else:
             event = get_object_or_404(Event, pk=id)
-            success, errors = event.update(title, description, scheduled_at, request.user)
+            success, errors = event.update(title,venue, description, scheduled_at, request.user)
             if success:
                 event.categories.set(selected_categories)
                 return redirect("events")
@@ -144,6 +147,7 @@ def event_form(request, id=None):
         {
             "event": event,
             "categories": categories,
+            "venues": venues,
             "user_is_organizer": request.user.is_organizer,
             "errors": errors
         },
@@ -221,7 +225,7 @@ def category_detail(request, id):
     return render(request, "app/category_detail.html", {"category": category})
 
 
-
+@login_required
 def venues(request):
     venues = Venue.objects.all().order_by("name")
     return render(
@@ -252,7 +256,10 @@ def venue_delete(request, id):
 
     return redirect("venues")
 
+@login_required
 def venue_form(request, id):
+
+    errors={}
     if request.method == "POST":
         name = request.POST.get("name")
         address = request.POST.get("address")
@@ -261,13 +268,36 @@ def venue_form(request, id):
         contact = request.POST.get("contact")
 
         if id is None:
-            Venue.new(name, address, city, capacity, contact)
+
+            sucess, errors= Venue.new(name, address, city, capacity, contact)
+
+            if not sucess:
+                venue = {
+                    "name": name,
+                    "address": address,
+                    "city": city,
+                    "capacity": capacity,
+                    "contact": contact,
+                }
+                return render(request, "app/venue_form.html", {
+                "errors": errors,
+                "venue": venue,
+                "user_is_organizer": request.user.is_organizer,
+            })
+
             return redirect("venues")
+        
         else:
             venue = get_object_or_404(Venue, pk=id)
-            venue.update(name, address, city, capacity, contact)
+            sucess, errors=venue.update(name, address, city, capacity, contact)
+            if not sucess:
+                return render(request, "app/venue_form.html", {
+                "errors": errors,
+                "venue": venue,
+                "user_is_organizer": request.user.is_organizer,
+            })
             return redirect("venue_detail",id)
-
+        
     venue = {}
     if id is not None:
         venue = get_object_or_404(Venue, pk=id)

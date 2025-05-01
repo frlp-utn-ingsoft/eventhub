@@ -109,7 +109,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer):
+    def new(cls, title, venue, description, scheduled_at, organizer):
         errors = cls.validate(title, description, scheduled_at)
 
         if errors:
@@ -117,6 +117,7 @@ class Event(models.Model):
 
         cls.objects.create(
             title=title.strip(),
+            venue=venue,
             description=description.strip(),
             scheduled_at=scheduled_at,
             organizer=organizer,
@@ -124,17 +125,19 @@ class Event(models.Model):
 
         return True, None
 
-    def update(self, title, description, scheduled_at, organizer):
+    def update(self, title,venue, description, scheduled_at, organizer):
         errors = self.validate(title, description, scheduled_at, current_event_id=self.pk)
 
         if errors:
             return False, errors
 
         self.title = title.strip()
+        self.venue=venue
         self.description = description.strip()
         self.scheduled_at = scheduled_at
         self.organizer = organizer
         self.save()
+        return True ,None
 
 class Venue(models.Model):
     name = models.CharField(max_length=200)
@@ -143,11 +146,29 @@ class Venue(models.Model):
     capacity=models.IntegerField()
     contact=models.CharField(max_length=100)
     
+    def __str__(self):
+        return self.name
+    
+    @classmethod
+    def validate(cls, name, venue_id, address, city):
+        errors = {}
+        if not name.strip():
+            errors["name"] = "El nombre no puede estar vacío"
+        elif cls.objects.filter(name__iexact=name).exclude(pk=venue_id).exists():
+            errors["name"] = "Ya existe una Ubicación con ese nombre"
+
+        if not address.strip():
+            errors["address"] = "La dirección no puede estar vacía"
+        elif cls.objects.filter(address__iexact=address, city__iexact=city).exclude(pk=venue_id).exists():
+             errors["address"] = "Ya existe una ubicación con esa dirección en esta ciudad"
+    
+        return errors
+    
     @classmethod
     def new(cls, name, address, city, capacity,contact):
-        errors = {}
+        errors = cls.validate(name,None, address, city)
 
-        if len(errors.keys()) > 0:
+        if errors:
             return False, errors
 
         Venue.objects.create(
@@ -161,6 +182,11 @@ class Venue(models.Model):
         return True, None
     
     def update(self, name, address, city, capacity,contact):
+
+        errors = self.validate(name, self.pk, self.address, self.city)
+        if errors:
+            return False, errors
+        
         self.name = name or self.name
         self.address = address or self.address
         self.city = city or self.city
