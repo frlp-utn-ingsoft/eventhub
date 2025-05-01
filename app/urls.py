@@ -1,7 +1,6 @@
 from django.contrib.auth.views import LogoutView
 from django.contrib import admin
 from django.urls import path
-
 from . import views
 
 urlpatterns = [
@@ -18,7 +17,11 @@ urlpatterns = [
     path("events/<int:id>/comment/", views.add_comment, name="add_comment"),
     path("events/<int:id>/comment/<int:comment_id>/delete/", views.delete_comment, name="delete_comment"),
     path("events/<int:id>/comment/<int:comment_id>/update/", views.update_comment, name="update_comment"),
-
-
-    
+    path("notifications/", views.notification_list, name="notification_list"),
+    path("notifications/create/", views.notification_create, name="notification_create"),
+    path("notifications/<int:id>/edit/", views.notification_edit, name="notification_edit"),
+    path("notifications/<int:id>/", views.notification_detail, name="notification_detail"),
+    path("notifications/<int:id>/delete/", views.notification_delete, name="notification_delete"),
+    path("notifications/<int:pk>/read/", views.notification_mark_read, name="notification_mark_read"),
+    path('notifications/mark_all_read/', views.mark_all_notifications_read, name='notification_mark_all_read'),
 ]
