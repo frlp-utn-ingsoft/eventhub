@@ -162,7 +162,7 @@ class Event(models.Model):
         if len(errors.keys()) > 0:
             return False, errors
 
-        Event.objects.create(
+        event = Event.objects.create(
             title=title,
             description=description,
             scheduled_at=scheduled_at,
@@ -170,7 +170,7 @@ class Event(models.Model):
             location=location,
         )
 
-        return True, None
+        return event, None
 
     def update(self, title, description, scheduled_at, organizer, location=None):
         self.title = title or self.title
