@@ -16,7 +16,41 @@
             </a>
         {% endif %}
     </div>
-    <table class="table">
+
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-3">
+          <label for="fecha" class="form-label">Fecha</label>
+          <input type="date" class="form-control" id="fecha" name="fecha" value="{{ request.GET.fecha }}">
+        </div>
+      
+        <div class="col-md-3">
+          <label for="ubicacion" class="form-label">Ubicación</label>
+          <input type="text" class="form-control" id="ubicacion" name="ubicacion" value="{{ request.GET.ubicacion }}">
+        </div>
+      
+        <div class="col-md-3">
+          <label for="categoria" class="form-label">Categoría</label>
+          <select name="categoria" id="categoria" class="form-select">
+            <option value="">Todas</option>
+            {% for categoria in categorias %}
+              <option value="{{ categoria.id }}" {% if request.GET.categoria == categoria.id|stringformat:"s" %}selected{% endif %}>
+                {{ categoria.name }}
+              </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-3 d-flex align-items-end gap-2">
+            <button type="submit" class="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" title="Buscar">
+              🔍
+            </button>
+            <a href="{% url 'events' %}" class="btn btn-outline-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;" title="Limpiar filtros">
+              ❌
+            </a>
+        </div>
+    </form>
+    
+    <h5 class="mt-5 mb-4 mb-3">Lista de Eventos</h5>
+    <table class="table mt-2">
         <thead>
             <tr>
                 <th>Título</th>
