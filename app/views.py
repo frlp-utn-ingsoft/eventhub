@@ -408,7 +408,7 @@ def delete_comment(request, comment_id):
     evento = comentario.event  # Suponiendo que el comentario tiene un campo 'evento' como clave foránea.
 
     # Comprobar si el usuario actual es el organizador del evento
-    if evento.organizer == request.user:
+    if evento.organizer == request.user: # type: ignore
         comentario.delete()
         messages.success(request, "Comentario eliminado con éxito.")
     else:
@@ -558,7 +558,7 @@ def venue_create(request):
     if request.method == "POST":
         form = VenueForm(request.POST)
         if form.is_valid():
-            messages.success(request, "Ubicación creado exitosamente.")
+            messages.success(request, "Ubicación creada exitosamente.")
             form.save()
             return redirect("venue_list")
     else:
@@ -578,7 +578,7 @@ def venue_update(request, venue_id):
         form = VenueForm(request.POST, instance=venue)
         if form.is_valid():
             form.save()
-            messages.success(request, "Ubucación actualizada exitosamente.")
+            messages.success(request, "Ubicación actualizada exitosamente.")
             return redirect("venue_list")
     else:
         form = VenueForm(instance=venue)
@@ -586,20 +586,17 @@ def venue_update(request, venue_id):
     return render(request, "app/venue_form.html", {"form": form, "action": "Editar"})
 
 
-# Eliminar Venue (solo para organizadores)
 @login_required
 def venue_delete(request, venue_id):
+    """Elimina un venue existente."""
     if not request.user.is_organizer:
         messages.error(request, "Los usuarios no pueden eliminar ubicaciones.")
         return redirect("events")
-    venue = get_object_or_404(Venue, id=venue_id)
-
+    venue = get_object_or_404(Venue, pk=venue_id)
     if request.method == "POST":
         venue.delete()
         messages.success(request, "Ubicación eliminada exitosamente.")
-        return redirect("venue_list")
-    
-    return render(request, "app/venue_confirm_delete.html", {"venue": venue})
+    return redirect("venue_list") # Siempre redirige a la lista de venues
 
    
 
