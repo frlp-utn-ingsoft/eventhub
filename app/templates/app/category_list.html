@@ -12,7 +12,7 @@
             Crear Categoría
         </a>
         {% endif %}
-</div>
+    </div>
     <table class="table">
         <thead>
             <tr>
@@ -27,14 +27,17 @@
                 <tr>
                     <td>{{ category.name }}</td>
                     <td>{{ category.description }}</td>
-                    <td>{{ category.event_count }}</td>
+                    <td>
+                        <span class="badge bg-light text-dark px-2 py-1">
+                            {{ category.event_count }} evento{{ category.event_count|pluralize }}
+                        </span>
+                    </td>
                     <td>
                         <div class="hstack gap-1">
                             <a href="{% url 'category_detail' category.id %}" 
                                class="btn btn-sm btn-outline-primary">
                                 <i class="bi bi-eye"></i> 
                             </a>
-
                             {% if user_is_organizer %}
                             <a href="{% url 'category_edit' category.id %}" 
                                class="btn btn-sm btn-outline-secondary">
