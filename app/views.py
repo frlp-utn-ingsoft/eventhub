@@ -395,15 +395,21 @@ def comentarios_organizador(request):
 
     return render(request, 'app/organizator_comment.html', {'comentarios': comentarios})
 #Eliminar Comentarios
-
+@login_required
 def delete_comment(request, comment_id):
     comentario = get_object_or_404(Comment, id=comment_id)
 
-    # Verificar que el usuario que intenta eliminar el comentario es el mismo que lo creó
-    if comentario.user == request.user:
-        comentario.delete()
+    # Obtener el evento asociado al comentario
+    evento = comentario.event  # Suponiendo que el comentario tiene un campo 'evento' como clave foránea.
 
-    return redirect('organizator_comment')  # Redirige a la vista de los comentarios o al listado de eventos
+    # Comprobar si el usuario actual es el organizador del evento
+    if evento.organizer == request.user:
+        comentario.delete()
+        messages.success(request, "Comentario eliminado con éxito.")
+    else:
+        messages.error(request, "No tienes permiso para eliminar este comentario, solo el organizador del evento puede hacerlo.")
+    
+    return redirect('organizator_comment')
 
 @login_required #Solicitud de reembolso
 def refund_request(request, ticket_code):
