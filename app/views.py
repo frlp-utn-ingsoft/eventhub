@@ -188,6 +188,7 @@ def event_form(request, id=None):
                 "app/event_form.html",
                 {
                     "event": event,
+                    "categories": categories,
                     "user_is_organizer": request.user.is_organizer,
                     "error": "La fecha debe ser a partir de mañana.",
                     "min_date": (today + datetime.timedelta(days=1)),
@@ -211,7 +212,13 @@ def event_form(request, id=None):
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer, "min_date": min_date},
+        {
+            "event": event,
+            "categories": categories,  
+            "selected_categories": selected_categories,  
+            "user_is_organizer": request.user.is_organizer,
+            "min_date": min_date
+        },
     )
 
 @login_required
@@ -251,9 +258,13 @@ def category_form(request, id=None):
 
     return render(request, 'app/category_form.html', {'form': form})
 
+@login_required
 def category_detail(request, id):
     category = get_object_or_404(Category, pk=id)
-    return render(request, 'app/category_detail.html', {'category': category})
+    return render(request, 'app/category_detail.html', {
+        'category': category,
+        'user_is_organizer': request.user.is_organizer
+    })
 
 @login_required
 def category_delete(request, id):
