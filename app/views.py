@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .models import Event, User, RefundRequest, Ticket
 from .forms import RefundRequestForm, RefundApprovalForm
+from django.contrib import messages
 
 
 def register(request):
@@ -55,7 +56,12 @@ def login_view(request):
 
 
 def home(request):
-    return render(request, "home.html")
+    images = [
+        'img/slides1.jpeg',
+        'img/slide2.jpg',
+        'img/slide3.jpg',
+    ]
+    return render(request, 'home.html', {'images': images})
 
 
 @login_required
@@ -137,6 +143,7 @@ def refund_request(request):
             reembolso = form.save(commit=False)
             reembolso.user = request.user
             reembolso.save()
+            messages.success(request, "¡Reembolso creado con éxito!")
             return redirect('my_refunds') 
     else:
         form = RefundRequestForm()
@@ -192,6 +199,7 @@ def edit_refund(request, id):
         form = RefundRequestForm(request.POST, instance=refund_request)
         if form.is_valid():
             form.save()
+            messages.success(request, "¡Reembolso editado con éxito!")
             return redirect('my_refunds') 
     else:
         form = RefundRequestForm(instance=refund_request)
@@ -207,6 +215,7 @@ def delete_refund(request, id):
 
     if request.method == "POST":
         refund.delete()
+        messages.success(request, "¡Reembolso eliminado con éxito!") 
         return redirect("my_refunds")
 
     return redirect("my_refunds")
