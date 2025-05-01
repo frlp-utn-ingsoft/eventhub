@@ -4,7 +4,7 @@
 <div class="container mt-4">
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Lugares de evento</h2>
-    {% if user.is_superuser or user.is_organizer %}
+    {% if user.is_organizer %}
       <a href="{% url 'create_venue' %}" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Crear Ubicación
       </a>
@@ -36,8 +36,8 @@
                 <a href="{% url 'venue_detail' venue.id %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
                   <i class="bi bi-eye"></i>
                 </a>
-              
-                {% if user.is_superuser or user.is_organizer %}
+
+                {% if user.is_organizer and venue.organizer == user %}
                   <a href="{% url 'edit_venue' venue.id %}" class="btn btn-sm btn-outline-secondary" title="Editar">
                     <i class="bi bi-pencil"></i>
                   </a>
@@ -50,18 +50,13 @@
                   </form>
                 {% endif %}
               </div>
-              </div>
             </td>
           </tr>
         {% endfor %}
       </tbody>
     </table>
-    {% else %}
-    {% if user.is_superuser or user.is_organizer %}
-      <div class="alert alert-info">Todavía no creaste ningun lugar de evento.</div>
-    {% else %}
-      <div class="alert alert-info">No hay lugares de evento disponibles.</div>
-    {% endif %}
+  {% else %}
+    <div class="alert alert-info">Todavía no creaste ninguna ubicación.</div>
   {% endif %}
 </div>
 {% endblock %}

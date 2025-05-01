@@ -20,12 +20,18 @@ urlpatterns = [
     path("events/<int:id>/ratings/create/", views.rating_create, name="rating_create"),
     path("events/<int:id>/ratings/<int:rating_id>/delete/", views.rating_delete, name="rating_delete"),
 
-  
-    path("venues/", views.venue_list, name="venue_list"),
-    path("venues/nuevo/", views.create_venue, name="create_venue"),
-    path("venues/<int:venue_id>/editar/", views.edit_venue, name="edit_venue"),
-    path("venues/<int:venue_id>/eliminar/", views.delete_venue, name="delete_venue"),
-    path('venues/<int:id>/', views.venue_detail, name='venue_detail'),
+    path('venues/', views.venue_list, name='venue_list'),
+    path('venues/nuevo/', views.create_venue, name='create_venue'),
+    path('venues/<int:venue_id>/editar/', views.edit_venue, name='edit_venue'),
+    path('venues/<int:venue_id>/eliminar/', views.delete_venue, name='delete_venue'),
+    path('venues/<int:venue_id>/', views.venue_detail, name='venue_detail'),
 
+   
+   
 ]
+
+
+
+
+
 

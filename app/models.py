@@ -89,6 +89,7 @@ class Rating(models.Model):
         return f"{self.user.username} - {self.score} estrellas"
     
    ###############
+
 class Venue(models.Model):
     name = models.CharField("Nombre", max_length=100)
     address = models.CharField("Dirección", max_length=200)

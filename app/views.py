@@ -7,6 +7,7 @@ from django.contrib import messages
 from .models import Venue
 from .forms import VenueForm
 
+
 from .models import Event, User, Rating
 from .forms import RatingForm
 
@@ -217,16 +218,33 @@ def event_form(request, id=None):
 
 
 
-# LISTA DE VENUES 
+
+
+########
+
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import render, redirect, get_object_or_404
+from django.http import HttpResponseForbidden
+from .models import Venue
+from .forms import VenueForm
+
+# LISTA DE VENUES DEL ORGANIZADOR (u opcionalmente visibles para todos)
 @login_required
 def venue_list(request):
-    venues = Venue.objects.all()  # 👉 NO filtramos por usuario
+    if request.user.is_organizer:
+        venues = Venue.objects.filter(organizer=request.user)
+    else:
+        venues = Venue.objects.all()  # si querés que los usuarios normales puedan ver todas
     return render(request, 'venues/venue_list.html', {'venues': venues})
 
 
 # CREAR
 @login_required
 def create_venue(request):
+    if not request.user.is_organizer:
+        return HttpResponseForbidden("Solo los organizadores pueden crear ubicaciones.")
+    
     form = VenueForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         venue = form.save(commit=False)
@@ -235,25 +253,39 @@ def create_venue(request):
         return redirect('venue_list')
     return render(request, 'venues/create_venue.html', {'form': form})
 
+
 # EDITAR
 @login_required
 def edit_venue(request, venue_id):
-    venue = get_object_or_404(Venue, id=venue_id, organizer=request.user)
+    venue = get_object_or_404(Venue, id=venue_id)
+
+    if not request.user.is_organizer or venue.organizer != request.user:
+        return HttpResponseForbidden("No tenés permiso para editar esta ubicación.")
+    
     form = VenueForm(request.POST or None, instance=venue)
     if request.method == 'POST' and form.is_valid():
         form.save()
         return redirect('venue_list')
     return render(request, 'venues/edit_venue.html', {'form': form})
 
+
 # ELIMINAR
 @login_required
 def delete_venue(request, venue_id):
-    venue = get_object_or_404(Venue, id=venue_id, organizer=request.user)
+    venue = get_object_or_404(Venue, id=venue_id)
+
+    if not request.user.is_organizer or venue.organizer != request.user:
+        return HttpResponseForbidden("No tenés permiso para eliminar esta ubicación.")
+    
     if request.method == 'POST':
         venue.delete()
         return redirect('venue_list')
     return render(request, 'venues/delete_venue.html', {'venue': venue})
 
-def venue_detail(request, id):
-    venue = get_object_or_404(Venue, id=id)
+
+# DETALLE (acceso abierto para todos)
+@login_required
+def venue_detail(request, venue_id):
+    venue = get_object_or_404(Venue, id=venue_id)
     return render(request, 'venues/venue_detail.html', {'venue': venue})
+

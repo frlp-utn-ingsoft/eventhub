@@ -2,63 +2,19 @@
 
 {% block content %}
 <div class="container mt-4">
-  <div class="row">
-    <div class="col-lg-8 mx-auto">
-      <div class="card">
-        <div class="card-body">
-          <h5 class="card-title fw-bold">Detalles de la Ubicación</h5>
-          <p class="card-text mb-4">{{ venue.name }}</p>
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title mb-4">{{ venue.name }}</h3>
 
-          <div class="d-flex align-items-start mb-3">
-            <div class="bg-light rounded-circle p-2 me-3">
-              <i class="bi bi-geo-alt text-primary fs-5"></i>
-            </div>
-            <div>
-              <h6 class="mb-0">Dirección</h6>
-              <p class="mb-0">{{ venue.address }}</p>
-            </div>
-          </div>
+      <p><strong>Ciudad:</strong> {{ venue.city }}</p>
+      <p><strong>Dirección:</strong> {{ venue.address }}</p>
+      <p><strong>Capacidad:</strong> {{ venue.capacity }} personas</p>
+      <p><strong>Contacto:</strong> {{ venue.contact }}</p>
 
-          <div class="d-flex align-items-start mb-3">
-            <div class="bg-light rounded-circle p-2 me-3">
-              <i class="bi bi-building text-primary fs-5"></i>
-            </div>
-            <div>
-              <h6 class="mb-0">Ciudad</h6>
-              <p class="mb-0">{{ venue.city }}</p>
-            </div>
-          </div>
-
-          <div class="d-flex align-items-start mb-3">
-            <div class="bg-light rounded-circle p-2 me-3">
-              <i class="bi bi-people text-primary fs-5"></i>
-            </div>
-            <div>
-              <h6 class="mb-0">Capacidad</h6>
-              <p class="mb-0">{{ venue.capacity }} personas</p>
-            </div>
-          </div>
-
-          <div class="d-flex align-items-start mb-4">
-            <div class="bg-light rounded-circle p-2 me-3">
-              <i class="bi bi-envelope text-primary fs-5"></i>
-            </div>
-            <div>
-              <h6 class="mb-0">Contacto</h6>
-              <p class="mb-0">{{ venue.contact }}</p>
-            </div>
-          </div>
-
-          <!-- Botón Volver -->
-          <div class="text-end">
-            <a href="{% url 'venue_list' %}" class="btn btn-outline-secondary">
-              <i class="bi bi-arrow-left"></i> Volver
-            </a>
-          </div>
-        </div>
-      </div>
+      <a href="{% url 'venue_list' %}" class="btn btn-outline-secondary mt-3">
+        <i class="bi bi-arrow-left"></i> Volver
+      </a>
     </div>
   </div>
 </div>
 {% endblock %}
-

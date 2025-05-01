@@ -28,8 +28,6 @@ class RatingForm(forms.ModelForm):
         return score
 
 #############
-from django import forms
-from .models import Venue
 
 class VenueForm(forms.ModelForm):
     class Meta:
