@@ -51,8 +51,8 @@ class CategoryForm(forms.ModelForm):
         if not description:
             raise forms.ValidationError("La descripción es obligatoria")
 
-        if len(description) < 15:
-            raise forms.ValidationError("La descripción debe tener al menos 15 caracteres")
+        if len(description) < 10:
+            raise forms.ValidationError("La descripción debe tener al menos 10 caracteres")
 
         if len(description) > 500:
             raise forms.ValidationError("La descripción no puede tener más de 500 caracteres")

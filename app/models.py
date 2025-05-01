@@ -38,7 +38,7 @@ class Event(models.Model):
     description = models.TextField()
     scheduled_at = models.DateTimeField()
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True) 
+    categories = models.ManyToManyField('Category', related_name='events', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -58,27 +58,32 @@ class Event(models.Model):
         return errors
     
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, category=None):
+    def new(cls, title, description, scheduled_at, organizer, categories=None):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
             return False, errors
 
-        Event.objects.create(
-            title=title,
-            description=description,
-            scheduled_at=scheduled_at,
-            organizer=organizer,
-            category=category,
+        event = Event.objects.create(
+        title=title,
+        description=description,
+        scheduled_at=scheduled_at,
+        organizer=organizer,
         )
 
-        return True, None
+        if categories:
+            event.categories.set(categories) 
 
-    def update(self, title, description, scheduled_at, organizer, category=None):
+        return event
+
+    def update(self, title, description, scheduled_at, organizer, categories=None):
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
-        if category is not None:
-            self.category = category
         self.save()
+
+        if categories is not None:
+            self.categories.set(categories)
+
+        return self  

@@ -87,7 +87,6 @@ def event_delete(request, id):
 
     return redirect("events")
 
-
 @login_required
 def event_form(request, id=None):
     user = request.user
@@ -95,44 +94,70 @@ def event_form(request, id=None):
     if not user.is_organizer:
         return redirect("events")
 
+    categories = Category.objects.all()
+    selected_categories = []
+
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
+        selected_categories = [
+            int(cat_id) for cat_id in request.POST.getlist("categories") if cat_id.isdigit()
+        ]
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
-
         scheduled_at = timezone.make_aware(
             datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
         )
 
-        if id is None:
-            Event.new(title, description, scheduled_at, request.user)
-        else:
-            event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user)
+        try:
+            if id is None:
+                event = Event.new(title, description, scheduled_at, request.user, selected_categories)
+            else:
+                event = get_object_or_404(Event, pk=id)
+                event = event.update(title, description, scheduled_at, request.user, selected_categories)
 
-        return redirect("events")
+            return redirect("events")
 
-    event = {}
+        except ValueError as e:
+            errors = e.args[0]
+            return render(
+                request,
+                "app/event_form.html",
+                {
+                    "event": event,
+                    "categories": categories,
+                    "selected_categories": selected_categories,
+                    "user_is_organizer": request.user.is_organizer,
+                    "errors": errors
+                }
+            )
+
     if id is not None:
         event = get_object_or_404(Event, pk=id)
+        selected_categories = event.categories.values_list("id", flat=True)
+    else:
+        event = Event()  
 
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer},
+        {
+            "event": event,
+            "categories": categories,
+            "selected_categories": selected_categories,
+            "user_is_organizer": request.user.is_organizer,
+        },
     )
-
 
 @login_required
 def category_list(request):
     if request.user.is_organizer:
-        categories = Category.objects.all().annotate(event_count=Count('event'))
+        categories = Category.objects.all().annotate(event_count=Count('events'))
     else:
-        categories = Category.objects.filter(is_active=True).annotate(event_count=Count('event'))
+        categories = Category.objects.filter(is_active=True).annotate(event_count=Count('events'))
 
     return render(
         request,
