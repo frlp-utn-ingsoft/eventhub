@@ -1,9 +1,15 @@
 from django.contrib import admin
-from .models import RefundRequest, Ticket
+from .models import RefundRequest, Ticket, Venue
+from .models import Event, Category, Rating, Comment, Notification, User
 
 admin.site.register(RefundRequest)
 admin.site.register(Ticket)
-from .models import Event, Category, Rating, Comment, Notification, User
+
+@admin.register(Venue)
+class VenueAdmin(admin.ModelAdmin):
+    list_display = ('name', 'city', 'capacity', 'contact')
+    list_filter = ('city',)
+    search_fields = ('name', 'address', 'city')
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
@@ -21,9 +27,9 @@ class CategoryAdmin(admin.ModelAdmin):
 
 @admin.register(Rating)
 class RatingAdmin(admin.ModelAdmin):
-    list_display = ('event', 'user', 'score', 'created_at')
-    list_filter = ('score', 'created_at')
-    search_fields = ('event__title', 'user__username', 'comment')
+    list_display = ('title', 'event', 'user', 'rating', 'created_at')
+    list_filter = ('rating', 'created_at')
+    search_fields = ('title', 'text', 'event__title', 'user__username')
 
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):

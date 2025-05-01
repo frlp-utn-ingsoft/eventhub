@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Event, User, Ticket, Comment, Notification
+from .models import Event, User, Ticket, Comment, Notification, Venue
 from django.contrib import messages
 
 from .models import Event, User, Ticket, RefundRequest
@@ -117,6 +117,7 @@ def event_form(request, event_id=None):
         return redirect("events")
     
     categories = Category.objects.filter(is_active=True)
+    venues = Venue.objects.all()
     event_categories = []
     event = {}
 
@@ -127,10 +128,12 @@ def event_form(request, event_id=None):
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
+        venue_id = request.POST.get("venue")
         date = request.POST.get("date")
         time = request.POST.get("time")
         categories = request.POST.getlist("categories")
 
+        venue = get_object_or_404(Venue, pk=venue_id)
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
 
@@ -139,10 +142,24 @@ def event_form(request, event_id=None):
         )
 
         if event_id is None:
-            Event.new(title, description, scheduled_at, request.user, categories)
+            event = Event.objects.create(
+                title=title,
+                description=description,
+                scheduled_at=scheduled_at,
+                organizer=request.user,
+                venue=venue
+            )
+            if categories:
+                event.categories.set(categories)
         else:
             event = get_object_or_404(Event, pk=event_id)
-            event.update(title, description, scheduled_at, request.user, categories)
+            event.title = title
+            event.description = description
+            event.scheduled_at = scheduled_at
+            event.venue = venue
+            event.save()
+            if categories:
+                event.categories.set(categories)
 
         return redirect("events")
 
@@ -152,6 +169,7 @@ def event_form(request, event_id=None):
         {
             "event": event,
             "categories": categories,
+            "venues": venues,
             "event_categories": event_categories,
             "user_is_organizer": request.user.is_organizer
         },

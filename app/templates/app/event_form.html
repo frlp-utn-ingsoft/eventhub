@@ -35,6 +35,19 @@
                                     rows="4"
                                     required="">{{ event.description }}</textarea>
                             </div>
+                            
+                            <div>
+                                <label for="venue" class="form-label">Lugar</label>
+                                <select class="form-select" id="venue" name="venue" required>
+                                    <option value="">Seleccione un lugar</option>
+                                    {% for venue in venues %}
+                                        <option value="{{ venue.id }}" {% if event.venue_id == venue.id %}selected{% endif %}>
+                                            {{ venue.name }} ({{ venue.city }}) - Capacidad: {{ venue.capacity }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <label for="date" class="form-label">Fecha</label>

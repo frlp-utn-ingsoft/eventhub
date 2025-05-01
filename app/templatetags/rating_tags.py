@@ -6,5 +6,5 @@ register = template.Library()
 def avg_score(ratings):
     if not ratings:
         return 0
-    total = sum(rating.score for rating in ratings)
+    total = sum(rating.rating for rating in ratings)
     return round(total / len(ratings), 1) 

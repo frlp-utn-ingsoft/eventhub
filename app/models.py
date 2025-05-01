@@ -342,18 +342,15 @@ class Ticket(models.Model):
 
 
 class Rating(models.Model):
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="ratings")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ratings")
-    score = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
-    comment = models.TextField(blank=True)
+    title = models.CharField(max_length=200, default="Calificación")
+    text = models.TextField(default="Sin comentarios")
+    rating = models.IntegerField(default=5)  # Valor por defecto de 5 estrellas
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = ['event', 'user']
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings')
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='ratings')
 
     def __str__(self):
-        return f"Calificación de {self.user.username} para {self.event.title}"
+        return f"{self.title} - {self.event.title}"
 
     @classmethod
     def validate(cls, score, comment):
@@ -394,6 +391,7 @@ class Rating(models.Model):
         self.save()
         
         return True, None
+
 class Comment(models.Model):
     title = models.CharField(max_length=200)
     text = models.TextField()

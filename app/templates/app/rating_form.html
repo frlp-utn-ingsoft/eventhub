@@ -35,11 +35,16 @@
                         {% endif %}
                         
                         <div class="mb-3">
-                            <label for="score" class="form-label">Calificación</label>
-                            <select class="form-select" id="score" name="score" required>
+                            <label for="title" class="form-label">Título</label>
+                            <input type="text" class="form-control" id="title" name="title" required value="{{ title }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="rating" class="form-label">Calificación</label>
+                            <select class="form-select" id="rating" name="rating" required>
                                 <option value="">Seleccione una calificación</option>
                                 {% for i in "12345"|make_list %}
-                                    <option value="{{ i }}" {% if score == i|add:"0" %}selected{% endif %}>
+                                    <option value="{{ i }}" {% if rating == i|add:"0" %}selected{% endif %}>
                                         {{ i }} estrella{{ i|pluralize }}
                                     </option>
                                 {% endfor %}
@@ -47,8 +52,8 @@
                         </div>
                         
                         <div class="mb-3">
-                            <label for="comment" class="form-label">Comentario (opcional)</label>
-                            <textarea class="form-control" id="comment" name="comment" rows="3" maxlength="500">{{ comment }}</textarea>
+                            <label for="text" class="form-label">Texto</label>
+                            <textarea class="form-control" id="text" name="text" rows="3" maxlength="500" required>{{ text }}</textarea>
                         </div>
                         
                         <div class="d-flex justify-content-between">
