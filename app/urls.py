@@ -14,5 +14,8 @@ urlpatterns = [
     path("events/<int:id>/", views.event_detail, name="event_detail"),
     path("events/<int:id>/delete/", views.event_delete, name="event_delete"),
     path("refund/", views.refund_form, name="refund_form"),
-    path("refund/request/", views.refund_request, name="refund_request"),
+    path("refund/organizer/", views.organizer_refund_requests, name="organizer_refund"),
+    path("refund/approve/<int:id>/", views.approve_refund_request, name="refund_approve"),
+    path("refund/reject/<int:id>/", views.reject_refund_request, name="refund_reject"),
+    path("refund/view/<int:id>/", views.view_refund_request, name="refund_view"),
 ]

@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Event, User
+from .models import Event, User, Ticket, RefundRequest
 
 
 def register(request):
@@ -129,9 +129,82 @@ def event_form(request, id=None):
 
 @login_required
 def refund_form(request):
+    if request.method == "POST":
+        ticket_code = request.POST.get("ticket_code")
+        reason = request.POST.get("reason")
+        additional_details = request.POST.get("additional_details")
+        accepted_policy = request.POST.get("accepted_policy") == "on"
+
+        if not accepted_policy:
+            return render(
+                request,
+                "app/refund_form.html",
+                {
+                    "error": "Debes aceptar la política de reembolso para continuar.",
+                    "data": request.POST,
+                },
+            )
+        RefundRequest.objects.create(
+            ticket_code=ticket_code,
+            reason=reason,
+            additional_details=additional_details,
+            user=request.user,
+            accepted_policy=accepted_policy,
+        )
+        return redirect("events")
     return render(request, "app/refund_form.html")
 
+@login_required
+#funcion para ver las solicitudes de reembolso de los eventos que organiza el usuario
+def organizer_refund_requests(request):
+    # si no es organizador, redirigir a eventos
+    if not request.user.is_organizer:
+        return redirect("events")
+    
+    #obtener todos los eventos del organizador loggeado
+    organizer_events = Event.objects.filter(organizer=request.user)
+
+    #obetener todos los tickets de esos eventos
+    tickets = Ticket.objects.filter(event__in=organizer_events)
+
+    #obtener los codigos de los tickets
+    ticket_codes = [str(ticket.id) for ticket in tickets]  # Convertir IDs a string
+
+    #obtener todas las solicitudes de reembolso de esos tickets
+    refund_requests = RefundRequest.objects.filter(ticket_code__in=ticket_codes).select_related("user")
+
+    #se crea un diccionario con los eventos y sus solicitudes de reembolso
+    tickets_dict = {str(ticket.id): ticket for ticket in tickets}
+
+    return render(request, "app/organizer_refund_requests.html", {"refund_requests": refund_requests, "tickets_dict": tickets_dict})
 
 @login_required
-def refund_request(request):
-    return render(request, "app/refund_request.html")
+def approve_refund_request(request, id):
+    # si no es organizador, redirigir a eventos
+    if not request.user.is_organizer:
+        return redirect("events")
+    refund = get_object_or_404(RefundRequest, pk=id)
+    #verificar si la solicitud de reembolso ya fue aprobada o rechazada
+    refund.approval = True
+    refund.save()
+    return redirect("organizer_refund")
+
+@login_required
+def reject_refund_request(request, id):
+    # si no es organizador, redirigir a eventos
+    if not request.user.is_organizer:
+        return redirect("events")
+    refund = get_object_or_404(RefundRequest, pk=id)
+    #verificar si la solicitud de reembolso ya fue aprobada o rechazada
+    refund.approval = False
+    refund.save()
+    return redirect("organizer_refund")
+
+@login_required
+def view_refund_request(request, id):
+    # si no es organizador, redirigir a eventos
+    if not request.user.is_organizer:
+        return redirect("events")
+    refund = get_object_or_404(RefundRequest, pk=id)
+    #verificar si la solicitud de reembolso ya fue aprobada o rechazada
+    return render(request, "app/view_refund_request.html", {"refund": refund})
