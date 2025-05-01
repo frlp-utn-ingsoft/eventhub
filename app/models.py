@@ -1,8 +1,9 @@
+import uuid
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-import uuid
-from django.contrib.auth import get_user_model
-from django.conf import settings
 from django.utils import timezone
 
 
@@ -29,7 +30,49 @@ class User(AbstractUser):
             errors["password"] = "Las contraseñas no coinciden"
 
         return errors
+    
+class Category(models.Model):
+    name = models.CharField(max_length=200)
+    description = models.TextField(null=True, blank=True, default="Sin descripción")
+    active = models.BooleanField(default=True)
+    event = models.ForeignKey(
+        'app.Event',                # Ajusta 'app' al nombre real de tu app si es distinto
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='categoriesEvent'
+    )
+    
+    def __str__(self):
+        return self.name
+    
+    @classmethod
+    def validate(cls, name, description):
+        errors = {}
 
+        if name == "":
+            errors["name"] = "Por favor ingrese un titulo"
+
+        if description == "":
+            errors["description"] = "Por favor ingrese una descripcion"
+
+        return errors
+    
+    @classmethod
+    def new(cls, name, description, event=None, active=True):  # El evento puede ser None
+        if not description:
+            description = "Sin descripción"
+        category = cls(name=name, description=description, event=event, active=active)
+        category.save()
+        return category
+    
+    @classmethod
+    def update(self , name=None, description=None, active=None, event=None): # type: ignore
+        
+        self.name = name or self.name
+        self.description = description or self.description
+        self.active = active or self.active
+        self.save() # type: ignore
 
 class Event(models.Model):
     title = models.CharField(max_length=200)
@@ -38,6 +81,7 @@ class Event(models.Model):
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    categories = models.ManyToManyField('Category', related_name="event_categories", blank=True)  # Allowing nulls 
 
     def __str__(self):
         return self.title
@@ -284,3 +328,5 @@ class RefundRequest(models.Model):
 
         except cls.DoesNotExist:
             return False, "Solicitud de reembolso no encontrada."
+        
+

@@ -11,6 +11,7 @@ urlpatterns = [
     path("accounts/login/", views.login_view, name="login"),
     #Events
     path("events/", views.events, name="events"),
+    path("app/events/", views.events, name="events"),
     path("events/create/", views.event_form, name="event_form"),
     path("events/<int:id>/edit/", views.event_form, name="event_edit"),
     path("events/<int:id>/", views.event_detail, name="event_detail"),
@@ -37,5 +38,12 @@ urlpatterns = [
     path('refunds/<int:refund_id>/delete/', views.delete_refund, name='delete_refund'),
     path('refunds/create/', views.create_refund, name='create_refund'),
     path('refunds/<int:refund_id>/update/', views.refund_update, name='refund_update'),
+    path('categories/', views.list_categories, name='list_categories'),
+    path('categories/create/', views.category_form, name='category_form'),
+    path('categories/<int:id>/update/', views.category_form, name='update_category'),
+    path('categories/<int:id>/delete/', views.delete_category, name='delete_category'),
+   # path("categories/<int:id>/", views.category_detail, name="category_detail"),
+
+
 ]
 
