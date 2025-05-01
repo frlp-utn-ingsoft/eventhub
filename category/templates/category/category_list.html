@@ -14,7 +14,7 @@
     <table class="table">
         <thead>
             <tr>
-                <th class="text-primary">Nombre</th>
+                <th>Nombre</th>
                 <th>Descripcion</th>
                 <th>Eventos</th>
                 <th class="text-end">Acciones</th>
@@ -23,7 +23,7 @@
         <tbody>
             {% for c in object_list %}
             <tr>
-                <td>{{ c.name }}</td>
+                <td class="text-primary">{{ c.name }}</td>
                 <td>{{ c.description }}</td>
                 <td><strong>{{ c.events.count }}</strong> eventos</td>
                 <td>
