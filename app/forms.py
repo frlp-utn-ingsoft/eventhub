@@ -5,8 +5,22 @@ from .models import Notification
 class NotificationForm(forms.ModelForm):
     class Meta:
         model  = Notification
-        fields = ["user", "title", "message", "priority"]
-        widgets = {"message": forms.Textarea(attrs={"rows":4})}
+        fields = ["user", "priority", "title", "message"]
+        widgets = {
+            "user":     forms.Select(attrs={"class": "form-select"}),
+            "priority": forms.Select(attrs={"class": "form-select"}),
+            "title":    forms.TextInput(attrs={"class": "form-control"}),
+            "message":  forms.Textarea(attrs={
+                            "class": "form-control",
+                            "rows": 4
+                        }),
+        }
+        labels = {
+            "user":     "Destinatario",
+            "priority": "Prioridad",
+            "title":    "Título",
+            "message":  "Mensaje",
+        }
 
 class CategoryForm(forms.ModelForm):
     class Meta:

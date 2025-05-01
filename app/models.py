@@ -4,7 +4,7 @@ from django.db import models
 from django.conf import settings
 
 class User(AbstractUser):
-    is_organizer = models.BooleanField(default=False)
+    is_organizer = models.BooleanField("¿Es organizador?", default=False)
 
     @classmethod
     def validate_new_user(cls, email, username, password, password_confirm):
@@ -91,21 +91,24 @@ class Notification(models.Model):
         ("LOW", "Baja"),
     ]
 
-    user      = models.ForeignKey(
+    user       = models.ForeignKey(
         settings.AUTH_USER_MODEL,
+        verbose_name="Destinatario",
         on_delete=models.CASCADE,
         related_name="notifications",
     )
-    title     = models.CharField(max_length=60)
-    message   = models.TextField(max_length=280)
-    created_at = models.DateTimeField(auto_now_add=True)
-    priority  = models.CharField(
-        max_length=6, choices=PRIORITY_CHOICES, default="LOW"
+    title      = models.CharField("Título", max_length=60)
+    message    = models.TextField("Mensaje", max_length=280)
+    created_at = models.DateTimeField("Creado", auto_now_add=True)
+    priority   = models.CharField(
+        "Prioridad", max_length=6, choices=PRIORITY_CHOICES, default="LOW"
     )
-    is_read   = models.BooleanField(default=False)
+    is_read    = models.BooleanField("Leída", default=False)
 
     class Meta:
         ordering = ["-created_at"]
+        verbose_name = "Notificación"
+        verbose_name_plural = "Notificaciones"
 
     def __str__(self):
         return f"{self.title} → {self.user.username}"
