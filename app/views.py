@@ -224,6 +224,35 @@ def create_notification(request):
             specific_user = User.objects.get(id=specific_user_id)
             NotificationXUser.new(notification=notification, user=specific_user)
 
-        # return redirect('notifications_list')
+        return redirect('list_notifications')
 
     return render(request, 'notifications/create_notification.html', {'events': events, 'users': users})
+
+@login_required
+def list_notifications(request):
+    search = request.GET.get('search', '')
+    event_filter = request.GET.get('event_filter', '')
+    priority_filter = request.GET.get('priority_filter', '')
+
+    notifications = Notification.objects.all()
+    if search:
+        notifications = notifications.filter(title__icontains=search)
+    if event_filter:
+        notifications = notifications.filter(event_id=event_filter)
+    if priority_filter:
+        notifications = notifications.filter(priority=priority_filter)
+
+    events = Event.objects.all()
+    users = User.objects.all()
+
+    return render(request, 'notifications/notifications.html', {
+        'notifications': notifications,
+        'events': events,
+        'users': users,
+    })
+
+@login_required
+def delete_notification(request, notification_id):
+    notification = get_object_or_404(Notification, id=notification_id)
+    notification.delete()
+    return redirect('list_notifications')

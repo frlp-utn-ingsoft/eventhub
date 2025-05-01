@@ -18,4 +18,6 @@ urlpatterns = [
     path('locations/<int:location_id>/edit/', views.update_location, name='update_location'),
     path('locations/<int:location_id>/delete/', views.delete_location, name='delete_location'),
     path('notifications/create/', views.create_notification, name='create_notification'),
+    path('notifications/', views.list_notifications, name='list_notifications'),
+    path('notifications/<int:notification_id>/delete/', views.delete_notification, name='delete_notification'),
 ]
