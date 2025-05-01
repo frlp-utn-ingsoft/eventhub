@@ -6,6 +6,9 @@ from django.utils import timezone
 from django.contrib import messages
 from .models import Venue, Event, User, Rating
 from .forms import VenueForm, RatingForm
+from django.http import HttpResponseForbidden
+
+
 
 
 def register(request):
@@ -168,7 +171,7 @@ def event_form(request, id=None):
     if id is not None:
         event = get_object_or_404(Event, pk=id)
 
-    # Obtener solo los venues del organizador
+    
     venues = Venue.objects.filter(organizer=request.user)
     today = timezone.localtime().date()
     min_date = today + datetime.timedelta(days=1)
@@ -180,7 +183,7 @@ def event_form(request, id=None):
         time = request.POST.get("time")
         venue_id = request.POST.get("venue")
 
-        # Validar campos obligatorios
+        
         if not venue_id:
             return render(
                 request,
@@ -228,35 +231,20 @@ def event_form(request, id=None):
             "user_is_organizer": user.is_organizer,
             "min_date": min_date,
             "venues": venues,
-            "no_venues": not venues.exists(),  # <- Para mostrar un mensaje en el template
+            "no_venues": not venues.exists(),  
         },
     )
 
-
-
-
-
-
-########
-
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponseForbidden
-from .models import Venue
-from .forms import VenueForm
-
-# LISTA DE VENUES DEL ORGANIZADOR (u opcionalmente visibles para todos)
 @login_required
 def venue_list(request):
     if request.user.is_organizer:
         venues = Venue.objects.filter(organizer=request.user)
     else:
-        venues = Venue.objects.all()  # si querés que los usuarios normales puedan ver todas
+        venues = Venue.objects.all()  
     return render(request, 'venues/venue_list.html', {'venues': venues})
 
 
-# CREAR
+
 @login_required
 def create_venue(request):
     if not request.user.is_organizer:
@@ -267,11 +255,11 @@ def create_venue(request):
         venue = form.save(commit=False)
         venue.organizer = request.user
         venue.save()
+        messages.success(request, "¡Ubicacion creada con éxito!")
         return redirect('venue_list')
     return render(request, 'venues/create_venue.html', {'form': form})
 
 
-# EDITAR
 @login_required
 def edit_venue(request, venue_id):
     venue = get_object_or_404(Venue, id=venue_id)
@@ -282,11 +270,12 @@ def edit_venue(request, venue_id):
     form = VenueForm(request.POST or None, instance=venue)
     if request.method == 'POST' and form.is_valid():
         form.save()
+        messages.success(request, "¡Ubicacion editada con éxito!")
         return redirect('venue_list')
     return render(request, 'venues/edit_venue.html', {'form': form})
 
 
-# ELIMINAR
+
 @login_required
 def delete_venue(request, venue_id):
     venue = get_object_or_404(Venue, id=venue_id)
@@ -296,11 +285,12 @@ def delete_venue(request, venue_id):
     
     if request.method == 'POST':
         venue.delete()
+        messages.success(request, "¡Ubicacion eliminada con éxito!")
         return redirect('venue_list')
     return render(request, 'venues/delete_venue.html', {'venue': venue})
 
 
-# DETALLE (acceso abierto para todos)
+
 @login_required
 def venue_detail(request, venue_id):
     venue = get_object_or_404(Venue, id=venue_id)
