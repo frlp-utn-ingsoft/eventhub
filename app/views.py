@@ -6,16 +6,13 @@ from django.utils import timezone
 from .models import Event, User, Ticket, Comment, Notification
 from django.contrib import messages
 
-<<<<<<< HEAD
 from .models import Event, User, Ticket, RefundRequest
-=======
 from .models import Event, User, Rating, Category
 from .forms import CategoryForm
 
 
 def is_organizer(user):
     return user.is_organizer
->>>>>>> 97b6eff561a5d7f0515e9e344bde4e9d334c3baa
 
 
 def register(request):
