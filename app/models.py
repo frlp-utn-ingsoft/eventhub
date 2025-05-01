@@ -75,16 +75,12 @@ class Event(models.Model):
         self.save()
 
 class Comment(models.Model):
-    # Relación: un comentario pertenece a un usuario
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    # Relación: un comentario pertenece a un evento
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
-    # Texto del comentario
+    title = models.CharField(max_length=100)
     content = models.TextField()
-    # Fecha automática de creación
     created_at = models.DateTimeField(auto_now_add=True)
+    is_deleted = models.BooleanField(default=False)  # ← CAMPO NUEVO
 
     def __str__(self):
-        # Representación en texto útil para el admin
-        return f"Comentario de {self.user.username} en {self.event.title}"
-
+        return f"{self.title} - {self.user.username}"

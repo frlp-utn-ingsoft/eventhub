@@ -5,8 +5,9 @@ from .models import Comment
 
 class CommentForm(forms.ModelForm):
     class Meta:
-        model = Comment  # Este formulario se basa en el modelo Comment
-        fields = ['content']  # Solo pedimos el contenido, el user y el event se setean en la vista
+        model = Comment
+        fields = ['title', 'content']  # Incluye 'title'
         widgets = {
-            'content': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Escribe tu comentario...'})
+            'title': forms.TextInput(attrs={'placeholder': 'Escribe un título para tu comentario...'}),
+            'content': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Escribe tu comentario aquí...'}),
         }
