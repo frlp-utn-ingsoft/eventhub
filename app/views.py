@@ -184,3 +184,17 @@ def refund_detail(request, id):
         'event': event,
         'ticket': ticket,
     })
+
+@login_required
+def edit_refund(request, id):
+    refund_request = get_object_or_404(RefundRequest, id=id)
+    
+    if request.method == 'POST':
+        form = RefundRequestForm(request.POST, instance=refund_request)
+        if form.is_valid():
+            form.save()
+            return redirect('my_refunds') 
+    else:
+        form = RefundRequestForm(instance=refund_request)
+    
+    return render(request, 'app/refund_request.html', {'form': form})

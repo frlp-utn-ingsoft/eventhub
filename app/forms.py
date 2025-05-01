@@ -36,13 +36,16 @@ class RefundRequestForm(forms.ModelForm):
             raise forms.ValidationError(
                 "El código de ticket no es válido o no está registrado."
             )
+        
+        existing_request = RefundRequest.objects.filter(ticket_code=ticket_code).exclude(pk=self.instance.pk)
+        if existing_request.exists():
+            raise forms.ValidationError("Ya existe una solicitud de reembolso para este ticket.")
+        
         event = ticket.event
         if event.scheduled_at and (event.scheduled_at - timezone.now()).total_seconds() < 48 * 3600:
             raise forms.ValidationError(
                 "No puedes solicitar un reembolso con menos de 48 horas de anticipación al evento."
             )
-        if RefundRequest.objects.filter(ticket_code=ticket_code).exists():
-            raise forms.ValidationError("Ya existe una solicitud de reembolso para este ticket.")
         return ticket_code
 
 class RefundApprovalForm(forms.ModelForm):

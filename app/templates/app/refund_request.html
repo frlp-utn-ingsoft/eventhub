@@ -9,7 +9,13 @@
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header text-left">
-                    <h5 class="card-title">Formulario de Solicitud</h5>
+                    <h5 class="card-title">
+                        {% if form.instance.id %}
+                            Editar solicitud de reembolso
+                        {% else %}
+                            Nueva solicitud de reembolso
+                        {% endif %}
+                    </h5>
                 </div>
                 <div class="card-body">
                     <div class="alert alert-info" role="alert">
@@ -61,8 +67,13 @@
                                 </div>
                             {% endif %}
                         </div>
-
-                        <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
+                        <button type="submit" class="btn btn-primary">
+                            {% if form.instance.id %}
+                                Actualizar Solicitud
+                            {% else %}
+                                Enviar Solicitud
+                            {% endif %}
+                        </button>
                     </form>
 
                 </div>
