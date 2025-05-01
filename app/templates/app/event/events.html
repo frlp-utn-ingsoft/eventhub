@@ -22,6 +22,8 @@
                 <th>Título</th>
                 <th>Descripción</th>
                 <th>Fecha</th>
+                <th>Categorias</th>
+                <th>Lugar</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -31,6 +33,21 @@
                     <td>{{ event.title }}</td>
                     <td>{{ event.description }}</td>
                     <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
+
+                    <td>
+                        {% for category in event.categories.all %}
+                            {% if not forloop.last %}
+                            <div class="row align-items-center ml-2">
+                                <div class="mx-1 align-self-center">
+                                    <span class="badge badge-secondary bg-primary">{{ category.name }}</span>
+                                </div>
+                            </div>
+                            {% endif %}
+                        {% empty %}
+                            Sin categoría
+                        {% endfor %}
+                    </td>
+                    <td>{{ event.venue }}</td>
                     <td>
                         <div class="hstack gap-1">
                             <a href="{% url 'event_detail' event.id %}"
@@ -46,16 +63,18 @@
                                     title="Editar">
                                     <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
-                                <form action="{% url 'event_delete' event.id %}" method="POST">
-                                    {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-danger"
                                         title="Eliminar"
                                         type="submit"
                                         aria-label="Eliminar"
-                                        titile="Eliminar">
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal{{ event.id }}"
+                                    >
                                         <i class="bi bi-trash" aria-hidden="true"></i>
                                     </button>
-                                </form>
+                                    {% with title_text="Eliminar evento: "|add:event.title %}
+                                        {% include "app/common/delete_modal.html" with object=event delete_url_name='event_delete' title=title_text message="¿Estás seguro de que deseas eliminar este evento?" %}
+                                    {% endwith %}
                             {% endif %}
                         </div>
                     </td>

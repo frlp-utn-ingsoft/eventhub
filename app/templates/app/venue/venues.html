@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}Lugares{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Lugares</h1>
+            <a
+                href="{% url 'venue_form' %}"
+                class="btn btn-primary"
+            >
+                <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
+                Crear Lugar
+            </a>
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Dirección</th>
+                <th>Ciudad</th>
+                <th>Capacidad</th>
+                <th>Contacto</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for venue in venues%}
+                <tr>
+                    <td>{{ venue.name }}</td>
+                    <td>{{ venue.address }}</td>
+                    <td>{{ venue.city }}</td>
+                    <td>{{ venue.capacity }}</td>
+                    <td>{{ venue.contact }}</td>
+                    <td>
+                        <div class="hstack gap-1">
+                            <a href="{% url 'venue_detail' venue.id %}"
+                               class="btn btn-sm btn-outline-primary"
+                               aria-label="Ver detalle"
+                               title="Ver detalle">
+                                <i class="bi bi-eye" aria-hidden="true"></i>
+                            </a>
+                                <a href="{% url 'venue_edit' venue.id %}"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    aria-label="Editar"
+                                    title="Editar">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </a>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                        title="Eliminar"
+                                        type="submit"
+                                        aria-label="Eliminar"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal{{ venue.id }}">
+                                        <i class="bi bi-trash" aria-hidden="true"></i>
+                                    </button>
+                                    {% with title_text="Eliminar lugar: "|add:venue.name %}
+                                        {% include "app/common/delete_modal.html" with object=venue delete_url_name='venue_delete' title=title_text message="¿Estás seguro de que deseas eliminar este lugar?" %}
+                                    {% endwith %}
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">No hay lugares creados</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

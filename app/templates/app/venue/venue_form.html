@@ -17,6 +17,13 @@
                 <div class="card-body">
                     <form action="{% url 'venue_form' %}" method="POST">
                         {% csrf_token %}
+                        {% if venue.id %}
+                            <input class="form-control"
+                                id="id"
+                                type="text"
+                                value="{{ venue.id }}"
+                                name="id" />
+                        {% endif %}
                         <div class="vstack gap-3">
                             <div>
                                 <label for="name" class="form-label">Nombre</label>
@@ -68,7 +75,13 @@
                                     name="contact" />
                             </div>
                             <div>
-                                <button type="submit" class="btn btn-success">Crear Lugar</button>
+                                <button type="submit" class="btn btn-success">
+                                    {% if venue.id %}
+                                        Guardar
+                                    {% else %}
+                                        Crear Lugar
+                                    {% endif %}
+                                 </button>
                             </div>
                         </div>
                     </form>
