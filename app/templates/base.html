@@ -90,14 +90,13 @@
         {% endif %}
     </div>
     <script>
-        // Espera 3 segundos (3000 ms) y cierra la alerta con animación
         setTimeout(() => {
             document.querySelectorAll('.alert').forEach((alertEl) => {
-                alertEl.classList.remove('show'); // empieza la transición
+                alertEl.classList.remove('show'); 
     
                 alertEl.addEventListener('transitionend', () => {
                     const bsAlert = bootstrap.Alert.getOrCreateInstance(alertEl);
-                    bsAlert.close(); // cierra definitivamente
+                    bsAlert.close(); 
                 });
             });
         }, 3000);
