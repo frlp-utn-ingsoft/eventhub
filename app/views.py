@@ -10,6 +10,8 @@ from django.contrib import messages
 import re
 import random
 from django.db import IntegrityError
+from django.utils.timezone import now
+
 
 
 def register(request):
@@ -597,7 +599,13 @@ def mis_tickets(request):
 
 @login_required
 def update_ticket(request, ticket_id):
-    ticket = get_object_or_404(Ticket , pk = ticket_id)
+    ticket = get_object_or_404(Ticket, pk=ticket_id)
+
+    # Verificamos si existe una solicitud de reembolso con el mismo ticket_code
+    if RefoundRequest.objects.filter(ticket_code=ticket.ticket_code).exists():
+        messages.error(request, "No se puede editar un ticket que tiene una solicitud de reembolso.")
+        return redirect('Mis_tickets')
+
     if request.method == 'POST':
         quantity = request.POST.get('quantity')
         type = request.POST.get('type')
@@ -606,7 +614,8 @@ def update_ticket(request, ticket_id):
             ticket.type = type
             ticket.save()
             return redirect('Mis_tickets')
-    return render(request, 'app/Mis_tickets', {'ticket': ticket})
+
+    return render(request, 'app/Mis_tickets.html', {'ticket': ticket})
 
 
 
@@ -816,12 +825,18 @@ def notification_form(request, id=None):
         message = request.POST.get("message")
         priority = request.POST.get("priority")
         event_id = request.POST.get("event")
+        recipient_type = request.POST.get("recipient_type")
         user_ids = request.POST.getlist("users")
 
         event = get_object_or_404(Event, pk=event_id)
-        print("user_ids:",title )
 
-        users = User.objects.filter(id__in=user_ids)
+        #usuarios segun tipo de destinatario
+        # Usuarios con tickets del evento seleccionado
+        if recipient_type == "all":
+             users = User.objects.filter(tickets__event=event).distinct()
+        else:
+            user_ids = request.POST.getlist("users")
+            users = User.objects.filter(id__in=user_ids, tickets__event=event).distinct()
 
         if id is None:  # Crear nueva notificación
             success, errors = Notification.new(
@@ -834,7 +849,7 @@ def notification_form(request, id=None):
 
             if not success:
                 return render(request, "app/notification_form.html", {
-                    "events": Event.objects.all(),
+                    "events": Event.objects.filter(scheduled_at__gte=now()),
                     "users": User.objects.all(),
                     "errors": errors,
                     "notification": notification,
@@ -851,11 +866,16 @@ def notification_form(request, id=None):
 
         return redirect("notification")
 
-    # GET request
+    events = Event.objects.filter(scheduled_at__gte=now())
+    users = User.objects.filter(
+        tickets__event__in=events,
+        tickets__event__scheduled_at__gte=now()
+    ).distinct()
+
     return render(request, "app/notification_form.html", {
         "notification": notification,
-        "events": Event.objects.all(),
-        "users": User.objects.all(),
+        "events": events,
+        "users": users,
         "user_is_organizer": request.user.is_organizer,
     })
 
