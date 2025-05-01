@@ -1,49 +1,91 @@
 {% block content %}
-<div class="container">
-    <h3 class="mb-4">Formulario de Solicitud</h3>
+<div class="container mt-4">
 
-    <div class="alert alert-info" role="alert">
-        <i class="bi bi-info-circle-fill me-2"></i>Puedes solicitar un reembolso
-        hasta 48 horas antes del evento. Una vez procesada la solicitud, el
-        reembolso se realizará en un plazo de 7 a 14 días hábiles.
-    </div>
+    {% if user.is_organizer and refund %}
+        <h3 class="mb-4">Detalles de la Solicitud de Reembolso</h3> 
 
-    <form method="post">
-        {% csrf_token %}
-        <div class="mb-3">
-            <label for="{{ form.ticket_code.id_for_label }}" class="form-label"
-                >Código de ticket</label
-            >
-            {{ form.ticket_code }} {{form.ticket_code.errors}}
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Código de Entrada: {{ refund.ticket_code }}</h5>
+                <p class="card-text"><strong>Motivo:</strong> {{ refund.reason }}</p>
+                <p class="card-text"><strong>Detalle:</strong> {{ refund.detail }}</p>
+
+                <p class="card-text"><small class="text-muted">Solicitante: {{ refund.user.username }}</small></p>
+                <p class="card-text"><small class="text-muted">Fecha de Solicitud: {{ refund.created_at|date:"d M Y, H:i" }}</small></p>
+                <p class="card-text"><small class="text-muted">Estado:
+                    {% if refund.status == 'pending' %}
+                        <span class="badge text-dark bg-warning">Pendiente</span>
+                    {% elif refund.status == 'approved' %}
+                        <span class="badge bg-success">Aprobado</span>
+                    {% elif refund.status == 'rejected' %}
+                        <span class="badge bg-danger">Rechazado</span>
+                    {% endif %}
+                </small></p>
+            </div>
         </div>
 
-        <div class="mb-3">
-            <label for="{{ form.reason.id_for_label }}" class="form-label"
-                >Motivo del reembolso *</label
-            >
-            {{ form.reason }} {{ form.reason.errors }}
+    {% else %}
+
+        <h3 class="mb-4">{% if refund %}Editar Solicitud de Reembolso #{{ refund.id }}{% else %}Formulario de Solicitud{% endif %}</h3>
+
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i>Puedes solicitar un reembolso
+            hasta 48 horas antes del evento. Una vez procesada la solicitud, el
+            reembolso se realizará en un plazo de 7 a 14 días hábiles.
         </div>
 
-        <div class="mb-3">
-            <label for="{{ form.details.id_for_label }}" class="form-label">
-                Detalles adicionales
-            </label>
-             {{ form.detail }}
-        </div>
+        {% if form %}
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="{{ form.ticket_code.id_for_label }}" class="form-label">Código de ticket</label>
+                    {{ form.ticket_code }}
+                    {% if form.ticket_code.errors %}
+                        <div class="text-danger">{{ form.ticket_code.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.reason.id_for_label }}" class="form-label">Motivo del reembolso *</label>
+                    {{ form.reason }}
+                     {% if form.reason.errors %}
+                        <div class="text-danger">{{ form.reason.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.detail.id_for_label }}" class="form-label">Detalles adicionales</label>
+                    {{ form.detail }}
+                     {% if form.detail.errors %}
+                        <div class="text-danger">{{ form.detail.errors }}</div>
+                    {% endif %}
+                </div>
+
+                {% if form.accept_policy %}
+                    <div class="mb-3 form-check">
+                        {{ form.accept_policy }}
+                        <label class="form-check-label" for="{{ form.accept_policy.id_for_label }}">
+                            Entiendo y acepto la
+                            <a href="#" target="_blank">política de reembolsos</a>.
+                        </label>
+                         {% if form.accept_policy.errors %}
+                            <div class="text-danger">{{ form.accept_policy.errors }}</div>
+                        {% endif %}
+                    </div>
+                {% endif %}
 
 
-        <div class="mb-3 form-check">
-            {{ form.accept_policy }}
-            <label
-                class="form-check-label"
-                for="{{ form.accept_policy.id_for_label }}"
-            >
-                Entiendo y acepto la
-                <a href="#" target="_blank">política de reembolsos</a>.
-            </label>
-        </div>
+                <button type="submit" class="btn btn-primary">
+                    {% if refund %}Guardar Solicitud{% else %}Enviar Solicitud{% endif %}
+                </button>
+            </form>
+        {% else %}
+             <p>No se pudo cargar el formulario de reembolso.</p>
+        {% endif %}
 
-        <button type="submit" class="btn btn-primary">Enviar Solicitud</button>
-    </form>
+    {% endif %} 
+
 </div>
+
 {% endblock %}

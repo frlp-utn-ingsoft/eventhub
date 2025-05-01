@@ -13,25 +13,25 @@
                     <th scope="col">Solicitante</th>
                     <th scope="col">Fecha de Solicitud</th>
                     <th scope="col">Estado</th>
-                    <th scope="col">Acciones</th> 
+                    <th scope="col">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for refund in refunds %}
                 <tr>
                     <td>
-                        {# <a href="{% url 'link a detalle de la entrada (o detalle del evento)' refund.id %}"> #}
+                        {# <a href="{% url 'link a detalle de la entrada (o detalle del evento)' %}"> #}
                         <a href="#">
                             {{ refund.ticket_code }}
                         </a>
                     </td>
                     <td>
                         <a href="#">
-                            Evento de la Entrada 
+                            Evento de la Entrada
                         </a>
                     </td>
                     <td>
-                        {{ refund.user.username }}
+                        {{refund.user.username}}
                     </td>
                     <td>
                         {{ refund.created_at|date:"d M Y, H:i" }}
@@ -47,11 +47,11 @@
                     </td>
                     <td>
                          <div class="btn-group btn-group-sm" role="group">
-                            <a href="#" class="btn btn-outline-secondary disabled" title="Ver Detalles"><i class="bi bi-info-circle"></i></a>
+                            <a href="{% url 'refunds:refund_edit' refund.id %}" class="btn btn-outline-secondary" title="Ver Detalles"><i class="bi bi-eye"></i></a>
 
                             {% if refund.status == 'pending' %}
-                                <a href="#" class="btn btn-outline-success disabled" title="Aprobar"><i class="bi bi-check"></i></a>
-                                <a href="#" class="btn btn-outline-danger disabled" title="Rechazar"><i class="bi bi-x"></i></a>
+                                <a href="{% url 'refunds:refunds_confirm_action' refund.id %}?action=approve" class="btn btn-outline-success" title="Aprobar"><i class="bi bi-check"></i></a>
+                                <a href="{% url 'refunds:refunds_confirm_action' refund.id %}?action=reject" class="btn btn-outline-danger" title="Rechazar"><i class="bi bi-x"></i></a>
                             {% endif %}
                          </div>
                     </td>
@@ -66,6 +66,10 @@
 
     {% else %}
 
+        <div class="mb-3">
+            <a href="{% url 'refunds:refund_add' %}" class="btn btn-primary">Solicitar reembolso</a>
+        </div>
+
         <table class="table">
             <thead>
                 <tr>
@@ -77,37 +81,38 @@
                 </tr>
             </thead>
             <tbody>
-                {% for refund in refunds %} 
+                {% for refund in refunds %}
                 <tr>
                     <td>
-                        {# Enlace vacío #}
                         <a href="#">
                             {{ refund.ticket_code }}
                         </a>
                     </td>
                     <td>
                         <a href="#">
-                            Evento de la Entrada 
+                            Evento de la Entrada
                         </a>
                     </td>
                     <td>
                         {{ refund.created_at|date:"d M Y, H:i" }}
                     </td>
                     <td>
-                        {# Lógica del badge de estado #}
                         {% if refund.status == 'pending' %}
                             <span class="badge bg-warning">Pendiente</span>
                         {% elif refund.status == 'approved' %}
                             <span class="badge bg-success">Aprobado</span>
                         {% elif refund.status == 'rejected' %}
                             <span class="badge bg-danger">Rechazado</span>
-                        {% else %}
-                            <span class="badge bg-secondary">{{ refund.get_status_display }}</span>
                         {% endif %}
                     </td>
                     <td>
                          <div class="btn-group btn-group-sm" role="group">
-                            <a href="#" class="btn btn-outline-secondary disabled" title="Ver Detalles"><i class="bi bi-info-circle"></i></a>
+                            <a href="{% url 'refunds:refund_edit' refund.id %}" class="btn btn-outline-secondary" title="Ver Detalles"><i class="bi bi-eye"></i></a>
+                            
+
+                            {% if refund.status == 'pending' %}
+                                <a href="{% url 'refunds:refunds_delete' refund.id %}" class="btn btn-outline-danger" title="Cancelar Solicitud"><i class="bi bi-x"></i></a>
+                            {% endif %}
                          </div>
                     </td>
                 </tr>
@@ -120,7 +125,7 @@
         </table>
 
 
-    {% endif %} {# Fin del if user.is_organizer #}
+    {% endif %}
 
 
 </div>

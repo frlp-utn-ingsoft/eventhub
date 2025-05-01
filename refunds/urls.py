@@ -1,10 +1,12 @@
 from django.urls import path
-
 from . import views
 
 app_name = "refunds"
 
 urlpatterns = [
     path("add/", views.refundCreateView, name="refund_add"),
-    path("list/",views.refundListView,name="refund_list"),
+    path("edit/<int:refund_id>/", views.refundCreateView, name="refund_edit"),
+    path("", views.refundListView, name="refund_list"),
+    path("<int:pk>/delete/", views.refundDeleteView, name="refunds_delete"),
+    path("<int:pk>/confirm_action/", views.refundConfirmActionView, name="refunds_confirm_action"),
 ]
