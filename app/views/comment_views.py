@@ -1,9 +1,33 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 
 from app.models import Comment, Event
 
+
+@login_required
+def view_comments(request, event_id=None):
+    """
+    Vista para mostrar los comentarios. Si el usuario es organizador,
+    muestra todos los comentarios en formato tabla. Si no, muestra solo
+    los comentarios del evento específico.
+    """
+    if request.user.is_organizer:
+        # Para organizadores, mostrar todos los comentarios
+        comments = Comment.objects.all().order_by('-created_at')
+        template = 'app/comments/comments_section_organizer.html'
+    else:
+        # Para usuarios normales, mostrar comentarios del evento específico
+        if not event_id:
+            return redirect('events')
+        event = get_object_or_404(Event, pk=event_id)
+        comments = Comment.objects.filter(event=event)
+        template = 'app/comments/comments_section.html'
+    
+    return render(request, template, {
+        'comments': comments,
+        'event': event if not request.user.is_organizer else None
+    })
 
 @login_required
 def add_comment(request, id):
@@ -35,3 +59,17 @@ def add_comment(request, id):
             messages.error(request, 'Por favor completa todos los campos.')
             
     return redirect('event_detail', id=event.pk)
+
+@login_required
+def delete_comment(request, comment_id):
+    """
+    Elimina un comentario. Solo el organizador puede eliminar comentarios.
+    """
+    if not request.user.is_organizer:
+        messages.error(request, 'No tienes permiso para eliminar comentarios.')
+        return redirect('events')
+        
+    comment = get_object_or_404(Comment, pk=comment_id)
+    comment.delete()
+    messages.success(request, 'Comentario eliminado correctamente.')
+    return redirect('view_comments')
