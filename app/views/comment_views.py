@@ -61,17 +61,25 @@ def add_comment(request, id):
     return redirect('event_detail', id=event.pk)
 
 @login_required
-def delete_comment(request, comment_id):
+def delete_comment(request, comment_id, event_id=None):
     """
-    Elimina un comentario. Solo el organizador puede eliminar comentarios.
+    Elimina un comentario. Solo el organizador o el dueño del comentario pueden eliminarlo.
     """
-    if not request.user.is_organizer:
-        messages.error(request, 'No tienes permiso para eliminar comentarios.')
-        return redirect('events')
-        
     comment = get_object_or_404(Comment, pk=comment_id)
+    
+    # Verificar permisos
+    if not (request.user.is_organizer or request.user == comment.user):
+        messages.error(request, 'No tienes permiso para eliminar este comentario.')
+        if event_id:
+            return redirect('event_detail', id=event_id)
+        return redirect('view_comments')
+        
     comment.delete()
     messages.success(request, 'Comentario eliminado correctamente.')
+    
+    # Redirigir según el contexto
+    if event_id:
+        return redirect('event_detail', id=event_id)
     return redirect('view_comments')
 
 @login_required

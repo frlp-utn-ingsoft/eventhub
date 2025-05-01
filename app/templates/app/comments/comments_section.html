@@ -20,6 +20,7 @@ app/templates/app/event/comments_section.html
                                         <small class="text-muted">{{ comment.created_at|date:"d M Y, H:i" }}</small>
                                     </div>
                                 </div>
+                                {% if user == comment.user or user == event.organizer %}
                                 <div class="dropdown">
                                     <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                                         <i class="bi bi-three-dots-vertical"></i>
@@ -47,6 +48,7 @@ app/templates/app/event/comments_section.html
                                         {% endif %}
                                     </ul>
                                 </div>
+                                {% endif %}
                                 
                                 <!-- Modales para este comentario -->
                                 {% if user == comment.user %}
