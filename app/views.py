@@ -80,6 +80,7 @@ def events(request):
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
+    edit_mode = request.GET.get("edit_rating") == "1"
 
     try:
         rating = Rating.objects.get(event=event, user=request.user)
@@ -104,10 +105,12 @@ def event_detail(request, id):
             form = RatingForm()
 
     return render(request, "app/event_detail.html", {
-        "event": event,
-        "form": form,
-        "rating": rating,
+    "event": event,
+    "form": form,
+    "rating": rating,
+    "edit_mode": edit_mode,
     })
+
 
 
 
