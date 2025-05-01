@@ -84,7 +84,7 @@
                                             <button type="submit" name="guardar" class="btn btn-primary w-100">Actualizar reseña</button>
                                             <button type="button" id="cancelarEdicion" class="btn btn-outline-secondary w-100 mt-2">Cancelar edición</button>
                                         {% else %}
-                                            <button type="submit" id="btnEnviar" name="guardar" class="btn btn-primary w-100">Enviar reseña</button>
+                                            <button type="submit" name="guardar" class="btn btn-primary w-100">Enviar reseña</button>
                                         {% endif %}
                                     </div>
                                 </form>
@@ -116,42 +116,6 @@
     document.addEventListener("DOMContentLoaded", function () {
         const formulario = document.getElementById("formularioResena");
         if (!formulario) return;
-
-        formulario.addEventListener("submit", async function (e) {
-            e.preventDefault();
-            if (!validarFormulario()) return;
-
-            const formData = new FormData(formulario);
-            const csrfToken = formData.get("csrfmiddlewaretoken");
-            const modo = formData.get("Modo");
-
-            try {
-                const response = await fetch(window.location.href, {
-                    method: "POST",
-                    headers: {
-                        "X-CSRFToken": csrfToken,
-                    },
-                    body: formData,
-                });
-
-                if (response.ok) {
-                    const mensaje = modo === "editar"
-                        ? "¡Tu reseña fue actualizada exitosamente!"
-                        : "¡Tu reseña fue enviada exitosamente!";
-                    mostrarMensaje(mensaje, "success");
-
-                    formulario.classList.add("d-none");
-
-                    const url = new URL(window.location);
-                    url.searchParams.delete("edit");
-                    window.history.replaceState({}, "", url);
-                } else {
-                    mostrarMensaje("Error al procesar la reseña.", "danger");
-                }
-            } catch (error) {
-                mostrarMensaje("Error al conectar con el servidor.", "danger");
-            }
-        });
 
         function mostrarMensaje(texto, tipo) {
             const contenedor = document.querySelector(".card-body .row");
