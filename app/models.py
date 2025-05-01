@@ -4,7 +4,7 @@ import uuid
 from django.contrib.auth import get_user_model
 from django.conf import settings
 from django.utils import timezone
-
+from django.core.validators import MaxValueValidator
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -211,8 +211,8 @@ class Venue(models.Model):
     name = models.CharField(max_length=25)
     address = models.CharField(max_length=30)
     city = models.CharField(max_length=25)
-    capacity = models.PositiveIntegerField()
-    contact = models.TextField()
+    capacity = models.PositiveIntegerField(validators=[MaxValueValidator(300000)])
+    contact = models.TextField(max_length=200)
 
     def __str__(self):
         return f"{self.name} | {self.address}, {self.city} | Capacidad: {self.capacity} | Contacto: {self.contact}"
