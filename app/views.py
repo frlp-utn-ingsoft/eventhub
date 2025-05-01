@@ -114,13 +114,14 @@ def event_form(request, id=None):
         )
 
         if id is None:
-            Event.new(title, description, scheduled_at, request.user, location)
+            event, errors = Event.new(title, description, scheduled_at, request.user, location)
         else:
             event = get_object_or_404(Event, pk=id)
             event.update(title, description, scheduled_at, request.user, location)
 
         event.categories.set(categories)
         return redirect("events")
+
     
     
     event = {}
