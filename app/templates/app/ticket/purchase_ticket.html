@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}{{ ticket|yesno:"Editar Entrada,Comprar Entrada" }} - {{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card shadow-sm mb-4">
+      <div class="card-header bg-white">
+        <h5 class="mb-0">
+          {% if ticket %}Editar Entrada{% else %}Comprar Entrada{% endif %}
+        </h5>
+      </div>
+      <div class="card-body">
+        <form method="post"
+              action="{% if ticket %}{% url 'ticket_edit' ticket.id %}{% else %}{% url 'ticket_create' event.id %}{% endif %}">
+          {% csrf_token %}
+
+          <h4 class="mb-3">{{ event.title }}</h4>
+
+          <!-- Cantidad -->
+          <div class="mb-4">
+            <label for="quantity" class="form-label">Cantidad de entradas</label>
+            <div class="input-group">
+              <button type="button" class="btn btn-outline-secondary" id="decrease-qty">−</button>
+              <input type="number"
+                     class="form-control text-center"
+                     id="quantity"
+                     name="quantity"
+                     value="{{ ticket.quantity|default:1 }}"
+                     min="1"
+                     required>
+              <button type="button" class="btn btn-outline-secondary" id="increase-qty">+</button>
+            </div>
+          </div>
+
+          <!-- Tipo -->
+          <div class="mb-4">
+            <label for="ticket_type" class="form-label">Tipo de entrada</label>
+            <select class="form-select" id="ticket_type" name="type" required>
+              <option value="GENERAL" {% if ticket.type == "GENERAL" %}selected{% endif %}>General</option>
+              <option value="VIP"     {% if ticket.type == "VIP"     %}selected{% endif %}>VIP</option>
+            </select>
+          </div>
+
+          <!-- Datos de Tarjeta -->
+          <h5 class="mb-3">Datos de la tarjeta</h5>
+          <div class="mb-3">
+            <label for="card_number" class="form-label">Número de tarjeta</label>
+            <input type="text" class="form-control" id="card_number" name="card_number" placeholder="1234 5678 9012 3456" required>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="expiry_date" class="form-label">Fecha de expiración</label>
+              <input type="text" class="form-control" id="expiry_date" name="expiry_date" placeholder="MM/AA" required>
+            </div>
+            <div class="col-md-6">
+              <label for="cvv" class="form-label">CVV</label>
+              <input type="text" class="form-control" id="cvv" name="cvv" placeholder="123" required>
+            </div>
+          </div>
+          <div class="mb-4">
+            <label for="card_name" class="form-label">Nombre en la tarjeta</label>
+            <input type="text" class="form-control" id="card_name" name="card_name" placeholder="Juan Pérez" required>
+          </div>
+
+          <button type="submit" class="btn btn-primary btn-lg w-100">
+            {% if ticket %}Actualizar{% else %}Pagar y Comprar{% endif %}
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const dec = document.getElementById('decrease-qty');
+  const inc = document.getElementById('increase-qty');
+  const qty = document.getElementById('quantity');
+
+  dec.addEventListener('click', () => {
+    let v = parseInt(qty.value, 10);
+    if (v > parseInt(qty.min,10)) qty.value = v - 1;
+  });
+  inc.addEventListener('click', () => {
+    qty.value = parseInt(qty.value,10) + 1;
+  });
+</script>
+{% endblock %}
