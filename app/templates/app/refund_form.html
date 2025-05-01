@@ -12,6 +12,11 @@
                     <h5 class="mb-0">Formulario de solicitud</h5>
                 </div>
                 <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-danger mt-3" role="alert">
+                        {{ error }}
+                    </div>
+                    {% endif %}
                     <div class="mb-3">
                         <div class="alert alert-info" role="alert">
                             <i
@@ -34,6 +39,7 @@
                                 class="form-control"
                                 id="ticket_code"
                                 name="ticket_code"
+                                value="{{ data.ticket_code|default:'' }}"
                                 required
                             />
                         </div>
@@ -50,7 +56,7 @@
                                 <option value="" selected>
                                     Selecciona un motivo
                                 </option>
-                                <option value="event_cancelled">
+                                <option value="event_cancelled" {% if data.reason == "event_cancelled" %}selected{% endif %}>
                                     Evento cancelado
                                 </option>
                                 <option value="unable_to_attend">
@@ -80,6 +86,7 @@
                                 class="form-check-input"
                                 id="accepted_policy"
                                 name="accepted_policy"
+                                {% if data.accepted_policy %}checked{% endif %}
                                 required
                             />
                             <label

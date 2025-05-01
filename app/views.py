@@ -135,15 +135,10 @@ def refund_form(request):
         additional_details = request.POST.get("additional_details")
         accepted_policy = request.POST.get("accepted_policy") == "on"
 
-        if not accepted_policy:
-            return render(
-                request,
-                "app/refund_form.html",
-                {
-                    "error": "Debes aceptar la política de reembolso para continuar.",
-                    "data": request.POST,
-                },
-            )
+        #validaciones basicas
+        if not ticket_code or not reason or not accepted_policy:
+            return render(request, "app/refund_form.html", {"error": "Todos los campos son obligatorios.", "data": request.POST})
+
         RefundRequest.objects.create(
             ticket_code=ticket_code,
             reason=reason,
