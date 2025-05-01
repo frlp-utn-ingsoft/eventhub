@@ -73,3 +73,11 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return self.name
