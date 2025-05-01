@@ -352,12 +352,30 @@ def ticket_edit(request, id):
 def create_rating(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
     
+    # Verificar que el usuario no sea el organizador
+    if request.user == event.organizer:
+        messages.error(request, "Los organizadores no pueden calificar sus propios eventos.")
+        return redirect("event_detail", event_id=event.id)
+    
+    # Verificar si el usuario ya ha calificado este evento
+    if Rating.objects.filter(event=event, user=request.user).exists():
+        messages.error(request, "Ya has calificado este evento.")
+        return redirect("event_detail", event_id=event.id)
+    
     if request.method == "POST":
         title = request.POST.get("title")
-        text = request.POST.get("text")
+        text = request.POST.get("text", "")  # Texto es opcional
         rating = int(request.POST.get("rating"))
         
-        # Crear la calificación directamente ya que eliminamos el método new
+        if rating < 1 or rating > 5:
+            messages.error(request, "La calificación debe estar entre 1 y 5 estrellas.")
+            return render(request, "app/rating_form.html", {
+                "event": event,
+                "title": title,
+                "text": text,
+                "rating_value": rating
+            })
+        
         Rating.objects.create(
             title=title,
             text=text,
@@ -365,6 +383,7 @@ def create_rating(request, event_id):
             event=event,
             user=request.user
         )
+        messages.success(request, "Tu reseña ha sido publicada.")
         return redirect("event_detail", event_id=event.id)
             
     return render(request, "app/rating_form.html", {
@@ -378,18 +397,30 @@ def edit_rating(request, rating_id):
     
     # Verificar que el usuario es el dueño de la calificación
     if rating.user != request.user:
+        messages.error(request, "No tienes permiso para editar esta reseña.")
         return redirect("event_detail", event_id=rating.event.id)
     
     if request.method == "POST":
         title = request.POST.get("title")
-        text = request.POST.get("text")
+        text = request.POST.get("text", "")  # Texto es opcional
         rating_value = int(request.POST.get("rating"))
+        
+        if rating_value < 1 or rating_value > 5:
+            messages.error(request, "La calificación debe estar entre 1 y 5 estrellas.")
+            return render(request, "app/rating_form.html", {
+                "event": rating.event,
+                "rating": rating,
+                "title": title,
+                "text": text,
+                "rating_value": rating_value
+            })
         
         rating.title = title
         rating.text = text
         rating.rating = rating_value
         rating.save()
         
+        messages.success(request, "Tu reseña ha sido actualizada.")
         return redirect("event_detail", event_id=rating.event.id)
             
     return render(request, "app/rating_form.html", {
