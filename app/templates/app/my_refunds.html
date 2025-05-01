@@ -3,6 +3,11 @@
 
 {% block content %}
 <div class="container mt-4">
+  <div class="text-start mt-3 ms-0">
+      <a href="{% url 'home' %}" class="text-decoration-none text-secondary">
+        <i class="bi bi-arrow-left"></i> Volver a Home
+      </a>
+  </div>
    <div class="d-flex justify-content-between align-items-center">
     <h2>Mis Solicitudes de Reembolso</h2>
     <a href="{% url 'refund_request' %}" class="btn btn-primary">

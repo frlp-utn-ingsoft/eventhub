@@ -4,8 +4,11 @@
 
 {% block content %}
 <div class="container mt-5">
+    <div class="text-start mt-3 ms-0">
+        <a href="{% url 'my_refunds' %}" class="text-decoration-none text-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a Mis Solicitudes de Reembolso
+        </a>
     <div class="row">
-
         <div class="col-md-8">
             <div class="card">
                 <div class="card-header text-left">
@@ -74,6 +77,9 @@
                                 Enviar Solicitud
                             {% endif %}
                         </button>
+                        <a href="{% url 'my_refunds' %}" class="btn btn-outline-secondary ms-2">
+                            Cancelar
+                        </a>
                     </form>
 
                 </div>

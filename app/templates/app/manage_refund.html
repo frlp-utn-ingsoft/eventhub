@@ -3,6 +3,11 @@
 
 {% block content %}
 <div class="container mt-4">
+  <div class="text-start mt-3 ms-0">
+    <a href="{% url 'home' %}" class="text-decoration-none text-secondary">
+      <i class="bi bi-arrow-left"></i> Volver a Home
+    </a>
+  </div>
   <h2>Solicitudes de Reembolso</h2>
 
   {% if refunds %}

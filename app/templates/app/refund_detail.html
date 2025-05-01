@@ -3,6 +3,14 @@
 <div class="container mt-4">
   <div class="row">
     <div class="col-md-8 offset-md-2">
+      {% if request.user.is_organizer %}
+                <a href="{% url 'manage_refunds' %}" class="text-decoration-none text-secondary">
+                  <i class="bi bi-arrow-left"></i> Volver a Solicitudes de Reembolso
+                </a>
+            {% else %}
+                <a href="{% url 'my_refunds' %}" class="text-decoration-none text-secondary">
+                <i class="bi bi-arrow-left"></i>Volver a Mis Solicitudes de Reembolso</a>
+      {% endif %}
       <div class="card">
         <div class="card-header">
           <h5>Detalle de Solicitud de Reembolso</h5>
@@ -45,14 +53,7 @@
                 <span class="badge bg-danger">Rechazado</span>
               {% endif %}
             </li>
-          </ul>
-          <div class="mt-3">
-            {% if request.user.is_organizer %}
-                <a href="{% url 'manage_refunds' %}" class="btn btn-secondary">Volver</a>
-            {% else %}
-                <a href="{% url 'my_refunds' %}" class="btn btn-secondary">Volver</a>
-            {% endif %}
-        </div>          
+          </ul>         
         </div>
       </div>
     </div>
