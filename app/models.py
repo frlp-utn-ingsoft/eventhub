@@ -73,3 +73,58 @@ class Event(models.Model):
         self.organizer = organizer or self.organizer
 
         self.save()
+
+
+class Rating(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="ratings")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ratings")
+    score = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
+    comment = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ['event', 'user']
+
+    def __str__(self):
+        return f"Calificación de {self.user.username} para {self.event.title}"
+
+    @classmethod
+    def validate(cls, score, comment):
+        errors = {}
+        
+        if not 1 <= score <= 5:
+            errors["score"] = "La calificación debe estar entre 1 y 5"
+            
+        if len(comment) > 500:
+            errors["comment"] = "El comentario no puede tener más de 500 caracteres"
+            
+        return errors
+
+    @classmethod
+    def new(cls, event, user, score, comment=""):
+        errors = cls.validate(score, comment)
+        
+        if len(errors.keys()) > 0:
+            return False, errors
+            
+        rating = cls.objects.create(
+            event=event,
+            user=user,
+            score=score,
+            comment=comment
+        )
+        
+        return True, rating
+
+    def update(self, score, comment):
+        errors = self.validate(score, comment)
+        
+        if len(errors.keys()) > 0:
+            return False, errors
+            
+        self.score = score
+        self.comment = comment
+        self.save()
+        
+        return True, None
