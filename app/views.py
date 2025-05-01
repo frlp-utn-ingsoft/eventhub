@@ -353,22 +353,23 @@ def create_rating(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
     
     if request.method == "POST":
-        score = int(request.POST.get("score"))
-        comment = request.POST.get("comment", "")
+        title = request.POST.get("title")
+        text = request.POST.get("text")
+        rating = int(request.POST.get("rating"))
         
-        success, result = Rating.new(event, request.user, score, comment)
-        
-        if success:
-            return redirect("event_detail", event_id=event.id)
-        else:
-            return render(request, "app/rating_form.html", {
-                "event": event,
-                "errors": result,
-                "score": score,
-                "comment": comment
-            })
+        # Crear la calificación directamente ya que eliminamos el método new
+        Rating.objects.create(
+            title=title,
+            text=text,
+            rating=rating,
+            event=event,
+            user=request.user
+        )
+        return redirect("event_detail", event_id=event.id)
             
-    return render(request, "app/rating_form.html", {"event": event})
+    return render(request, "app/rating_form.html", {
+        "event": event
+    })
 
 
 @login_required
@@ -380,27 +381,23 @@ def edit_rating(request, rating_id):
         return redirect("event_detail", event_id=rating.event.id)
     
     if request.method == "POST":
-        score = int(request.POST.get("score"))
-        comment = request.POST.get("comment", "")
+        title = request.POST.get("title")
+        text = request.POST.get("text")
+        rating_value = int(request.POST.get("rating"))
         
-        success, result = rating.update(score, comment)
+        rating.title = title
+        rating.text = text
+        rating.rating = rating_value
+        rating.save()
         
-        if success:
-            return redirect("event_detail", event_id=rating.event.id)
-        else:
-            return render(request, "app/rating_form.html", {
-                "event": rating.event,
-                "errors": result,
-                "score": score,
-                "comment": comment,
-                "rating": rating
-            })
+        return redirect("event_detail", event_id=rating.event.id)
             
     return render(request, "app/rating_form.html", {
         "event": rating.event,
         "rating": rating,
-        "score": rating.score,
-        "comment": rating.comment
+        "title": rating.title,
+        "text": rating.text,
+        "rating_value": rating.rating
     })
 
 
