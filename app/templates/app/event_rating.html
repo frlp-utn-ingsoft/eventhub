@@ -1,5 +1,5 @@
 
-                <div class="card-body">
+                <div class="card-body p-0">
                     <div class="row">
                         {% if messages %}
                             {% for message in messages%}
@@ -10,10 +10,12 @@
                         {% endif %}
                     </div>
 
-
-                    <h5 class="card-title">Calificaciones y Reseñas ({{ cantidad_resenas }})</h5>
+                    <div class="bg-body-tertiary w-100 p-2 mb-3">
+                        <h5 class="card-title m-0 ps-2">Calificaciones y Reseñas ({{ cantidad_resenas }})</h5>
+                    </div>
                         
-                    {% for rating in ratings %}
+                    <div class="px-3">
+                        {% for rating in ratings %}
                             <div class="card mb-4 shadow-sm">
                                 <div class="card-body">
                                     <h6 class="card-title">{{ rating.usuario.username }}</h6>
@@ -35,61 +37,62 @@
                                             {% csrf_token %}
                                             <button type="submit" name="eliminar" class="btn btn-sm btn-danger">Eliminar</button>
                                         </form>
-                                        <a href="{% url 'event_rating' id=evento.id %}" class="btn btn-sm btn-warning">Editar</a>
+                                        <a href="{% url 'event_detail' event.id %}?edit" class="btn btn-sm btn-warning">Editar</a>
                                     {% endif %}
-                                    <hr>
                                 </div>
                             </div>
                         {% empty %}
                             <p>Aún no hay reseñas para este evento. ¡Sé el primero en opinar!</p>
                         {% endfor %}
-                        
-                        <hr>
+
 
                         {% if user.is_authenticated %}
-                            {% if not editando %}
+    
+                            {% if not tiene_resena and not editando %}
                                 <button id="mostrarFormulario" class="btn btn-success mb-3">Crear nueva reseña</button>
                             {% endif %}
-                            
-                            <form method="post" id="formularioResena" class="{% if editando %}d-none{% endif %}" onsubmit="return validarFormulario();">
-                                <h6>{% if editando %}Editar tu reseña{% endif %}</h6>
+                        
+                            {% if editando or not tiene_resena %}
+                                <form method="post" id="formularioResena" 
+                                    class="{% if not editando%}d-none{% endif %}" onsubmit="return validarFormulario();">
+                                    <input type="hidden" name="Modo" value="{% if editando %}editar{% else %}crear{% endif %}">
+                                    <h6>{% if editando %}Editar tu reseña{% else %}Crear reseña{% endif %}</h6>
                                     {% csrf_token %}
                                     <div class="card p-4 mb-4"> 
-                                    <div class="mb-3">
-                                        <h6>Titulo de tu reseña *</h6>
-                                        {{ form.titulo}}
-                                    </div>
-                                
-                                    <h6>Titulo de tu reseña *</h6>
-                                        {{ form.titulo}}
-                                </div>
-                                
-                                <div class="mb-3">
-                                    <h6>Tu calificación *</h6>
-                                    <div id="starRating" class="d-flex gap-1 fs-3">
-                                        {% for i in "12345" %}
-                                            <i class="bi bi-star" data-value="{{ forloop.counter }}"></i>
-                                        {% endfor %}
-                                    </div>
-                                    {{ form.calificacion }}
-                                    <p>Selecciona una calificacion</p>
-                                </div>
+                                        <div class="mb-3">
+                                            <h6>Título de tu reseña *</h6>
+                                            {{ form.titulo }}
+                                        </div>
                         
-                                <div class="mb-3">
-                                    <h6>Tu reseña (opcional)</h6>
-                                    {{ form.texto }}
-                                </div>
-                                {% if editando %}
-                                    <button type="submit" name="guardar" class="btn btn-primary w-100">Actualizar reseña</button>
-                                    <button type="button" id="cancelarEdicion" class="btn btn-outline-secondary w-100 mt-2">Cancelar edición</button>
-                                {% else %}
-                                    <button type="submit" name="guardar" class="btn btn-primary w-100">Enviar reseña</button>
-                                {% endif %}
-                            </form>
-                        {% else %}
-                            <p><a href="{% url 'login' %}">Iniciar sesión</a> para escribir una reseña</p>
-                        {% endif %}
-                </div>
+                                        <div class="mb-3">
+                                            <h6>Tu calificación *</h6>
+                                            <div id="starRating" class="d-flex gap-1 fs-3">
+                                                {% for i in "12345" %}
+                                                    <i class="bi bi-star" data-value="{{ forloop.counter }}"></i>
+                                                {% endfor %}
+                                            </div>
+                                            {{ form.calificacion }}
+                                            <p>Selecciona una calificación</p>
+                                        </div>
+                        
+                                        <div class="mb-3">
+                                            <h6>Tu reseña (opcional)</h6>
+                                            {{ form.texto }}
+                                        </div>
+                                        
+                                        {% if editando %}
+                                            <button type="submit" name="guardar" class="btn btn-primary w-100">Actualizar reseña</button>
+                                            <button type="button" id="cancelarEdicion" class="btn btn-outline-secondary w-100 mt-2">Cancelar edición</button>
+                                        {% else %}
+                                            <button type="submit" id="btnEnviar" name="guardar" class="btn btn-primary w-100">Enviar reseña</button>
+                                        {% endif %}
+                                    </div>
+                                </form>
+                            {% endif %}
+                    {% endif %}
+                    <hr>
+                </div>    
+            </div>
     </div>
 
 <!--Espacio JavaScript para mostrar formulario-->
@@ -106,6 +109,64 @@
         }
     });
 </script>
+
+
+<!--JavaScript para desarrollar actualizacion de Resena-->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const formulario = document.getElementById("formularioResena");
+        if (!formulario) return;
+
+        formulario.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            if (!validarFormulario()) return;
+
+            const formData = new FormData(formulario);
+            const csrfToken = formData.get("csrfmiddlewaretoken");
+            const modo = formData.get("Modo");
+
+            try {
+                const response = await fetch(window.location.href, {
+                    method: "POST",
+                    headers: {
+                        "X-CSRFToken": csrfToken,
+                    },
+                    body: formData,
+                });
+
+                if (response.ok) {
+                    const mensaje = modo === "editar"
+                        ? "¡Tu reseña fue actualizada exitosamente!"
+                        : "¡Tu reseña fue enviada exitosamente!";
+                    mostrarMensaje(mensaje, "success");
+
+                    formulario.classList.add("d-none");
+
+                    const url = new URL(window.location);
+                    url.searchParams.delete("edit");
+                    window.history.replaceState({}, "", url);
+                } else {
+                    mostrarMensaje("Error al procesar la reseña.", "danger");
+                }
+            } catch (error) {
+                mostrarMensaje("Error al conectar con el servidor.", "danger");
+            }
+        });
+
+        function mostrarMensaje(texto, tipo) {
+            const contenedor = document.querySelector(".card-body .row");
+            if (!contenedor) return;
+            contenedor.querySelectorAll('.alert').forEach(el => el.remove());
+
+            const alertDiv = document.createElement("div");
+            alertDiv.className = `alert alert-${tipo}`;
+            alertDiv.role = "alert";
+            alertDiv.textContent = texto;
+            contenedor.appendChild(alertDiv);
+        }
+    });
+</script>
+    
 
 <!--Espacio JavaScript para desarrollar interaccion con estrellas-->
 <script>
@@ -146,15 +207,15 @@
             });
         }
     });    
-    </script>
+</script>
 
-    <!--Control de validaciones para el formulario-->
-    <script>
-        function validarFormulario() {
-            const tituloInput = document.querySelector('input[name="titulo"]');
-            const ratingInput = document.querySelector('input[name="calificacion"]');
+<!--Control de validaciones para el formulario-->
+<script>
+    function validarFormulario() {
+        const tituloInput = document.querySelector('input[name="titulo"]');
+        const ratingInput = document.querySelector('input[name="calificacion"]');
         
-            let mensaje = "";
+        let mensaje = "";
         
             if (!tituloInput.value.trim()) {
                 mensaje += "El título no puede estar vacío.\n";
@@ -169,7 +230,7 @@
                 return false; 
             }
         
-            return true;
-        }
-        </script>
+        return true;
+    }
+</script>
         

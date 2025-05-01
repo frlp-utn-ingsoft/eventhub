@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="d-flex justify-content-between align-items-center">
+                <h1 class="mb-4"> Editar Reseña </h1>
+            </div>  
+            <form method="post">
+                {% csrf_token %}
+                <div class="card p-4 mb-4"> 
+                    <div class="mb-3">
+                        <h6>Título de tu reseña *</h6>
+                        {{ form.titulo }}
+                    </div>
+    
+                    <div class="mb-3">
+                        <h6>Tu calificación *</h6>
+                        <div id="starRating" class="d-flex gap-1 fs-3">
+                            {% for i in "12345" %}
+                                <i class="bi bi-star" data-value="{{ forloop.counter }}"></i>
+                            {% endfor %}
+                        </div>
+                        {{ form.calificacion }}
+                        <p>Selecciona una calificación</p>
+                    </div>
+    
+                    <div class="mb-3">
+                        <h6>Tu reseña (opcional)</h6>
+                        {{ form.texto }}
+                    </div>
+                    
+                    <button type="submit" name="guardar" class="btn btn-primary w-100">Actualizar reseña</button>
+                    <button type="button" id="cancelarEdicion" class="btn btn-outline-secondary w-100 mt-2">Cancelar edición</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

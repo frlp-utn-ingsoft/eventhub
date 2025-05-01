@@ -271,7 +271,7 @@ CALIFICACIONES = [(i, f"{i} ⭐") for i in range(1,6)]
 
 class Rating(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
-    evento = models.ForeignKey(Event, on_delete=models.CASCADE)
+    evento = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="ratings")
     titulo = models.CharField(max_length=255)
     texto = models.TextField(blank=True)
     calificacion = models.IntegerField(choices=CALIFICACIONES) 

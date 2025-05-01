@@ -235,7 +235,32 @@ def my_events(request):
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
     comments = event.comments.all().order_by("-created_at") # type: ignore
-    return render(request, "app/event_detail.html", {"event": event, "user_is_organizer": request.user == event.organizer, "comments": comments})
+    ratings = event.ratings.all().order_by("-fecha_creacion") # type: ignore
+    cantidad_resenas = ratings.count()
+
+    editando = False
+    resena_existente = None
+    form = None
+
+    if request.user.is_authenticated:
+        try:
+            resena_existente = Rating.objects.get(usuario=request.user, evento=event.id)
+            editando= 'edit' in request.GET
+            form= Rating_Form(instance=resena_existente)
+        except Rating.DoesNotExist:
+            form = Rating_Form()
+    
+    return render(
+        request, "app/event_detail.html", 
+        {"event": event, 
+         "user_is_organizer": request.user == event.organizer, 
+         "comments": comments, 
+         "ratings": ratings,
+         "form": form,
+         "editando": editando,
+         "tiene_resena": resena_existente is not None,
+         "cantidad_resenas": cantidad_resenas, 
+        })
 
 @login_required
 @organizer_required
@@ -703,9 +728,9 @@ def mark_as_read(request, id):
     return redirect("notifications")
 
 @login_required
-def event_rating(request, id):
-    evento = get_object_or_404(Event, pk=id)
-    resenas = Rating.objects.filter(evento=evento)
+def event_rating(request, event_id):
+    evento = get_object_or_404(Event, pk=event_id)
+    resenas = Rating.objects.filter(evento=evento).order_by("-fecha_creacion")
     cantidad_resenas = resenas.count()
 
     try:
@@ -714,33 +739,35 @@ def event_rating(request, id):
     except Rating.DoesNotExist:
         resena_existente = None
         editando = False
-        
+
     if request.method == 'POST':
+        form = Rating_Form(request.POST, instance=resena_existente)
+
         if 'guardar' in request.POST:
-            form = Rating_Form(request.POST, instance=resena_existente)
             if form.is_valid():
                 nueva_resena = form.save(commit=False)
-                nueva_resena.usuario = request.user 
+                nueva_resena.usuario = request.user
                 nueva_resena.evento = evento
                 nueva_resena.save()
                 messages.success(request, "¡Tu reseña fue guardada exitosamente!")
-            return redirect('event_detail', id=evento.id) # type: ignore
-        
+                return redirect('event_detail', id=evento.id)
+
         elif 'eliminar' in request.POST and resena_existente:
             resena_existente.delete()
             messages.success(request, "¡Tu reseña fue eliminada exitosamente!")
-            return redirect('event_detail', id=evento.id) # type: ignore
+            return redirect('event_detail', id=evento.id)
 
         elif 'cancelar' in request.POST:
-            form = Rating_Form()
-            return redirect('event_detail', id=evento.id) #type: ignore
+            return redirect('event_detail', id=evento.id)
 
-    form = Rating_Form(instance=resena_existente)            
-        
+    else:
+        form = Rating_Form(instance=resena_existente)
+
     return render(request, 'app/event_rating.html', {
-        'evento': evento,
-        'ratings' : resenas,
+        'event': evento,
+        'ratings': resenas,
         'form': form,
         'editando': editando,
-        'cantidad_resenas': cantidad_resenas
+        'tiene_resena': resena_existente is not None,
+        'cantidad_resenas': cantidad_resenas,
     })
