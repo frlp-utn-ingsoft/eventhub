@@ -56,3 +56,22 @@ def compra(request, id):
     # Si es GET, mostrar formulario
     return render(request, 'tickets/compra.html', {'event': event})
 
+def eliminacion(request):
+    """Vista para mostrar tickets y datos del usuario asociado"""
+    if request.method == 'POST':
+        ticket_id = request.POST.get('ticket_code')
+        if ticket_id:
+            Ticket.objects.filter(ticket_code=ticket_id).delete() #vincular funcion en el front
+        return redirect(reverse('tickets:eliminacion')) #redireccionar a la misma vista para mostrar los tickets restantes
+    if request.method == 'GET':
+        tickets= [
+            {
+                'ticket_code': ticket.ticket_code,
+                'usuario': ticket.user.email,
+                'evento': ticket.event.title,
+                'quantity': ticket.quantity,
+                'type': ticket.type
+            }
+            for ticket in Ticket.objects.select_related('user', 'event').all()
+        ]
+        return render(request, 'tickets/eliminacion.html', {'tickets': tickets})

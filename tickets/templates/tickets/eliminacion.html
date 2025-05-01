@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Lista de Tickets{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Tickets</h1>
+    </div>
+
+    <table class="table table-hover">
+        <thead>
+            <tr>
+                <th>Usuario</th>
+                <th>Evento</th>
+                <th>Cantidad</th>
+                <th>TipoEntrada</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket in tickets %}
+            <tr>
+                <td>{{ ticket.usuario }}</td>
+                <td>{{ ticket.evento }}</td>
+                <td>{{ ticket.quantity }}</td>
+                <td>{{ ticket.type }}</td>
+                <td>
+                    <form method="POST" action="{% url 'tickets:eliminacion' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="ticket_code" value="{{ ticket.ticket_code }}">
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
