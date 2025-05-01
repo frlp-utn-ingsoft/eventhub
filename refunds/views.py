@@ -23,7 +23,7 @@ def refundCreateView(request, refund_id=None):
             refund = form.save(commit=False)
             refund.user = user
             refund.save()
-            return redirect("/events/")
+            return redirect("/refunds/")
     else:
         form = RefundForm(instance=refund)
 
@@ -51,16 +51,41 @@ def refundDeleteView(request, id):
         return redirect("/refunds/")
 
     if request.method == "POST":
-        request.delete()
+        refund.delete()
         return redirect("/refunds/")
     return render(request, "refunds/refund_confirm_delete.html", {"refund": refund})
 
 @login_required
-def refundConfirmActionView(request,id):
+def refundConfirmActionView(request, id):
     user = request.user
-    refund = get_object_or_404(Refund,id=id)
+    refund = get_object_or_404(Refund, id=id)
 
     if not user.is_organizer:
-        return redirect("/refunds/")
-    
-    return render(request, "refunds/refund_confirm_action.html", {"refund": refund})
+        return redirect('refunds:refund_list')
+
+    if refund.status != 'pending':
+        return redirect('refunds:refund_list')
+
+    if request.method == "POST":
+        action = request.POST.get('action')
+
+        if action == 'approve':
+            refund.status = 'approved'
+        elif action == 'reject':
+            refund.status = 'rejected'
+        else:
+            return redirect('refunds:refund_list')
+        refund.save()
+        return redirect('refunds:refund_list')
+
+    # esta parte esta para primero acceder y tener la accion y luego cuando se hace el post poder definir la accion
+    else: 
+        action = request.GET.get('action')
+
+        if action not in ['approve', 'reject']:
+             return redirect('refunds:refund_list')
+        context = {
+            'refund': refund,
+            'action': action,
+        }
+        return render(request, "refunds/refund_confirm_action.html", context)
