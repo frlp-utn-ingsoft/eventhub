@@ -35,6 +35,7 @@ urlpatterns = [
     path("ticket/new/<int:event_id>/", views.purchase_ticket, name="ticket_create"),
     path("ticket/edit/<int:ticket_id>/", views.edit_ticket, name="ticket_edit"),
     path("ticket/delete/<int:ticket_id>/", views.ticket_delete, name="ticket_delete"),
+    path("events/<int:event_id>/tickets/", views.event_tickets, name="event_tickets"),
     
     
     path('events/<int:event_id>/rate/', views.create_rating, name='create_rating'),

@@ -75,3 +75,18 @@ def edit_ticket(request, ticket_id):
         "event": ticket.event,
         "ticket_types": dict(Ticket.TICKET_TYPES).keys()
     })
+
+
+@login_required
+def event_tickets(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+
+    # Asegúrate que solo el organizador puede ver los tickets
+    if request.user != event.organizer:
+        return redirect("events")
+
+    tickets = Ticket.objects.filter(event=event).order_by('-buy_date')
+    return render(request, "app/ticket/event_tickets.html", {
+        "event": event,
+        "tickets": tickets
+    })
