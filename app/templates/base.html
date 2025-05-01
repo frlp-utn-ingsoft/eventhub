@@ -18,7 +18,6 @@
         name="viewport"
         content="width=device-width, initial-scale=1"
     />
-
 </head>
 
 <body>
@@ -49,6 +48,9 @@
                             <li class="nav-item">
                                 {% navbar_link 'events' 'Eventos' %}
                             </li>
+                            <li class="nav-item">
+                                {% navbar_link 'venue_list' 'Lugares' %}
+                            </li>
                         </ul>
                     </div>
 
@@ -68,7 +70,7 @@
                     <a
                         class="btn btn-sm btn-outline-primary"
                         href="{% url 'login' %}"
-                    >Ingresá</>
+                    >Ingresá</a>
                     <a
                         class="btn btn-sm btn-primary"
                         href="{% url 'register' %}"

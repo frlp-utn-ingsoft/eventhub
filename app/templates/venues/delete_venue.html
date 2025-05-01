@@ -1,0 +1,7 @@
+<h2>Eliminar ubicación</h2>
+<p>¿Estás segura de eliminar <strong>{{ venue.name }}</strong>?</p>
+<form method="post">
+    {% csrf_token %}
+    <button type="submit">Sí, eliminar</button>
+</form>
+<a href="{% url 'venue_list' %}">No, volver</a>

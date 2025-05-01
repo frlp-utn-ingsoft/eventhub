@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="card" style="max-width: 600px; margin: auto; padding: 20px;">
+    <h2>Crear Nueva Ubicación</h2>
+    <form method="post">
+      {% csrf_token %}
+      
+      <div class="form-group">
+        {{ form.name.label_tag }}
+        {{ form.name }}
+      </div>
+
+      <div class="form-group">
+        {{ form.address.label_tag }}
+        {{ form.address }}
+      </div>
+
+      <div class="form-group">
+        {{ form.city.label_tag }}
+        {{ form.city }}
+      </div>
+
+      <div class="form-group">
+        {{ form.capacity.label_tag }}
+        {{ form.capacity }}
+      </div>
+
+      <div class="form-group">
+        {{ form.contact.label_tag }}
+        {{ form.contact }}
+      </div>
+
+      <br>
+      <button type="submit" class="btn btn-primary">Crear Ubicación</button>
+    </form>
+  </div>
+{% endblock %}

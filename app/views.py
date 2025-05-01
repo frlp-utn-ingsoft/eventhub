@@ -4,7 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.contrib import messages
-
+from .models import Venue
+from .forms import VenueForm
 
 from .models import Event, User, Rating
 from .forms import RatingForm
@@ -212,3 +213,47 @@ def event_form(request, id=None):
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer, "min_date": min_date},
     )
+
+
+
+
+# LISTA DE VENUES 
+@login_required
+def venue_list(request):
+    venues = Venue.objects.all()  # 👉 NO filtramos por usuario
+    return render(request, 'venues/venue_list.html', {'venues': venues})
+
+
+# CREAR
+@login_required
+def create_venue(request):
+    form = VenueForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        venue = form.save(commit=False)
+        venue.organizer = request.user
+        venue.save()
+        return redirect('venue_list')
+    return render(request, 'venues/create_venue.html', {'form': form})
+
+# EDITAR
+@login_required
+def edit_venue(request, venue_id):
+    venue = get_object_or_404(Venue, id=venue_id, organizer=request.user)
+    form = VenueForm(request.POST or None, instance=venue)
+    if request.method == 'POST' and form.is_valid():
+        form.save()
+        return redirect('venue_list')
+    return render(request, 'venues/edit_venue.html', {'form': form})
+
+# ELIMINAR
+@login_required
+def delete_venue(request, venue_id):
+    venue = get_object_or_404(Venue, id=venue_id, organizer=request.user)
+    if request.method == 'POST':
+        venue.delete()
+        return redirect('venue_list')
+    return render(request, 'venues/delete_venue.html', {'venue': venue})
+
+def venue_detail(request, id):
+    venue = get_object_or_404(Venue, id=id)
+    return render(request, 'venues/venue_detail.html', {'venue': venue})

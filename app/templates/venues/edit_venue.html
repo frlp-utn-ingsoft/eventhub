@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container mt-4" style="max-width: 600px;">
+    <h2 class="mb-4">Editar ubicación</h2>
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        {{ form.name.label_tag }}
+        {{ form.name }}
+      </div>
+
+      <div class="mb-3">
+        {{ form.address.label_tag }}
+        {{ form.address }}
+      </div>
+
+      <div class="mb-3">
+        {{ form.city.label_tag }}
+        {{ form.city }}
+      </div>
+
+      <div class="mb-3">
+        {{ form.capacity.label_tag }}
+        {{ form.capacity }}
+      </div>
+
+      <div class="mb-3">
+        {{ form.contact.label_tag }}
+        {{ form.contact }}
+      </div>
+
+      <button type="submit" class="btn btn-primary">
+        <i class="bi bi-check-circle"></i> Guardar cambios
+      </button>
+      <a href="{% url 'venue_list' %}" class="btn btn-outline-secondary ms-2">
+        Cancelar
+      </a>
+    </form>
+  </div>
+{% endblock %}

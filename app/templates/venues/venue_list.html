@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Lugares de evento</h2>
+    {% if user.is_superuser or user.is_organizer %}
+      <a href="{% url 'create_venue' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Crear Ubicación
+      </a>
+    {% endif %}
+  </div>
+
+  {% if venues %}
+    <table class="table align-middle">
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Ciudad</th>
+          <th>Dirección</th>
+          <th>Capacidad</th>
+          <th>Contacto</th>
+          <th class="text-end">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for venue in venues %}
+          <tr>
+            <td>{{ venue.name }}</td>
+            <td>{{ venue.city }}</td>
+            <td>{{ venue.address }}</td>
+            <td>{{ venue.capacity }} personas</td>
+            <td>{{ venue.contact }}</td>
+            <td class="text-end">
+              <div class="d-inline-flex gap-1">
+                <a href="{% url 'venue_detail' venue.id %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                  <i class="bi bi-eye"></i>
+                </a>
+              
+                {% if user.is_superuser or user.is_organizer %}
+                  <a href="{% url 'edit_venue' venue.id %}" class="btn btn-sm btn-outline-secondary" title="Editar">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <form method="post" action="{% url 'delete_venue' venue.id %}" class="d-inline"
+                        onsubmit="return confirm('¿Estás seguro de que deseas eliminar la ubicación: {{ venue.name }}?')">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+              </div>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    {% if user.is_superuser or user.is_organizer %}
+      <div class="alert alert-info">Todavía no creaste ningun lugar de evento.</div>
+    {% else %}
+      <div class="alert alert-info">No hay lugares de evento disponibles.</div>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}
