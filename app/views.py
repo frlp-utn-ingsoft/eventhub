@@ -9,7 +9,7 @@ from .forms import NotificationForm,TicketForm,RefundRequestForm
 from .models import Event, User, Notification, User_Notification,Ticket
 from datetime import timedelta
 from .models import Event, User, Ticket, Comment, Venue
-from .forms import TicketForm
+from .forms import TicketForm, VenueForm
 from django.db.models import Count
 from .models import RefundRequest
 
@@ -335,7 +335,7 @@ def ticket_create(request, event_id):
     if request.method == "POST":
         form = TicketForm(request.POST)
         if form.is_valid():
-            ticket = form.save(commit=False)
+            ticket = form.save(commit=False)  
             ticket.user = request.user
             ticket.event = event
             ticket.save()
@@ -525,4 +525,75 @@ def refund_update(request, refund_id):
 
     return redirect("refund_list")
 
+
+
+
+#Listado de todos los Venue (solo para organizadores)
+@login_required
+def venue_list(request):
+    print(request.user)
+    if not request.user.is_organizer:
+        messages.error(request, "Los usuarios no pueden visualizar ubicaciones.")
+        return redirect("events")  # Redirige a la lista de eventos si no es organizador
+    venues = Venue.objects.all()
+    print(venues) 
+    if not venues:
+        messages.info(request, "No tienes ubicaciones registradas.")  
+    return render(request, "app/venue_list.html", {"venues": venues})
+
+
+#Alta Venue (solo para organizadores)
+@login_required
+def venue_create(request):
+    if not request.user.is_organizer:
+        messages.error(request, "Los usuarios no pueden crear ubicaciones.")
+        return redirect("events")
+
+    if request.method == "POST":
+        form = VenueForm(request.POST)
+        if form.is_valid():
+            messages.success(request, "Ubicación creado exitosamente.")
+            form.save()
+            return redirect("venue_list")
+    else:
+        form = VenueForm()
+    return render(request, "app/venue_form.html", {"form": form, "action": "Crear"})
+
+
+#Editar Venue (solo para organizadores)
+@login_required
+def venue_update(request, venue_id):
+    if not request.user.is_organizer:
+        messages.error(request, "Los usuarios no pueden modificar ubicaciones.")
+        return redirect("events")
+    venue = get_object_or_404(Venue, id=venue_id)
+
+    if request.method == "POST":
+        form = VenueForm(request.POST, instance=venue)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Ubucación actualizada exitosamente.")
+            return redirect("venue_list")
+    else:
+        form = VenueForm(instance=venue)
+
+    return render(request, "app/venue_form.html", {"form": form, "action": "Editar"})
+
+
+# Eliminar Venue (solo para organizadores)
+@login_required
+def venue_delete(request, venue_id):
+    if not request.user.is_organizer:
+        messages.error(request, "Los usuarios no pueden eliminar ubicaciones.")
+        return redirect("events")
+    venue = get_object_or_404(Venue, id=venue_id)
+
+    if request.method == "POST":
+        venue.delete()
+        messages.success(request, "Ubicación eliminada exitosamente.")
+        return redirect("venue_list")
+    
+    return render(request, "app/venue_confirm_delete.html", {"venue": venue})
+
+   
 
