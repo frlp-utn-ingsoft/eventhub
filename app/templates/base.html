@@ -29,7 +29,7 @@
             <a class="navbar-brand" href="/">EventHub</a>
 
             <div class="hstack gap-2">
-                {% if user.is_authenticated and user.is_organizer %}
+                {% if user.is_authenticated and user.is_organizer %}  <!-- Navbar solo visible para los organizadores-->
                     <button
                         class="navbar-toggler"
                         type="button"
@@ -47,10 +47,15 @@
                         id="navbar-content"
                     >
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            <!--enlace a ticket_list-->
+                        
                             <li class="nav-item">
                                 {% navbar_link 'organizator_comment' 'Comentarios' %}
                             </li>
+                            <!-- boton de acceso a Ubicaciones, solo es visible para los organizadores-->
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'venue_list' %}">Ubicaciones</a>
+                            </li>
+                            
                         </ul>
                     </div>
                 {% endif %}

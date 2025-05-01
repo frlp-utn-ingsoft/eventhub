@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 
 
+=======
+from django import forms
+from .models import Notification,Ticket,Event,User,RefundRequest,Venue
+>>>>>>> 54abcc69881458e27fc64e08f1a37179a37bd9cf
 from datetime import datetime
 
 from django import forms
@@ -174,3 +179,15 @@ class RefundRequestForm(forms.ModelForm):
              'reason': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Explicá el motivo'}),
         }   
 
+
+class VenueForm(forms.ModelForm):
+        name = forms.CharField(label='Nombre de la ubicación', max_length=255, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Estadio Nacional'}))
+        address = forms.CharField(label='Dirección', max_length=255, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Av. Grecia 2001'}))
+        city = forms.CharField(label='Ciudad', max_length=100, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Buenos Aires'}))
+        capacity = forms.IntegerField(label='Capacidad (Número de Personas)', widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 1000'}))
+        contact = forms.CharField(label='Contacto', widget=forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Describe las características principales de la ubicación...', 'rows': 5}))
+
+        class Meta:
+            model = Venue
+            fields = ['name', 'address', 'city', 'capacity', 'contact']
+            # Ya no necesitamos definir widgets aquí porque los definimos arriba

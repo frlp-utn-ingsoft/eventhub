@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
-
+from django.core.validators import MaxValueValidator
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -83,6 +83,8 @@ class Event(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     categories = models.ManyToManyField('Category', related_name="event_categories", blank=True)  # Allowing nulls 
 
+    venue = models.ForeignKey('Venue', on_delete=models.CASCADE, related_name='events', null=True, blank=True) ## agg fk para la relacion events / venue
+
     def __str__(self):
         return self.title
 
@@ -99,7 +101,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer):
+    def new(cls, title, description, scheduled_at, organizer, venue):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -110,15 +112,17 @@ class Event(models.Model):
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
+            venue=venue,  ## agg para la relacion events / venue
         )
 
         return True, None
 
-    def update(self, title, description, scheduled_at, organizer):
+    def update(self, title, description, scheduled_at, organizer, venue):
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
+        self.venue = venue or self.venue ## agg para la relacion events / venue
 
         self.save()
 
@@ -246,6 +250,16 @@ class User_Notification(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.notification.title}"
+
+class Venue(models.Model):
+    name = models.CharField(max_length=25)
+    address = models.CharField(max_length=30)
+    city = models.CharField(max_length=25)
+    capacity = models.PositiveIntegerField(validators=[MaxValueValidator(300000)])
+    contact = models.TextField(max_length=200)
+
+    def __str__(self):
+        return f"{self.name} | {self.address}, {self.city} | Capacidad: {self.capacity} | Contacto: {self.contact}"
 
 class RefundRequest(models.Model):
     approved = models.BooleanField(null=True, blank=True)

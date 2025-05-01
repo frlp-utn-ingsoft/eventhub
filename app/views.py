@@ -1,4 +1,5 @@
 import datetime
+from datetime import timedelta
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
@@ -7,7 +8,7 @@ from django.db.models import Count
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .forms import NotificationForm, RefundRequestForm, TicketForm
+from .forms import NotificationForm, RefundRequestForm, TicketForm, VenueForm
 from .models import (
     Category,
     Comment,
@@ -17,6 +18,7 @@ from .models import (
     Ticket,
     User,
     User_Notification,
+    Venue,
 )
 
 
@@ -90,6 +92,7 @@ def events(request):
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event.objects.prefetch_related("categories"), id=id)
+    event = get_object_or_404(Event, id=id)
     comments = event.comment.all()  # type: ignore # related_name='comment'
 
     if request.method == 'POST':
@@ -142,6 +145,7 @@ def event_form(request, id=None):
         date = request.POST.get("date")
         time = request.POST.get("time")
         category_ids = request.POST.getlist("categories")  
+        venue_id = request.POST.get("venue")  # <-- lo agg para la relacion events/ venue
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
@@ -152,16 +156,23 @@ def event_form(request, id=None):
 
         
         if id is None:
-            event = Event.new(title, description, scheduled_at, request.user)
+            event = Event.new(title, description, scheduled_at, request.user) # type: ignore
             if event[0]:  
                 event_instance = Event.objects.get(title=title, description=description, scheduled_at=scheduled_at)
                 event_instance.categories.set(category_ids)  
                 event_instance.save()
         else:
             event_instance = get_object_or_404(Event, pk=id)
-            event_instance.update(title, description, scheduled_at, request.user)
+            event_instance.update(title, description, scheduled_at, request.user) # type: ignore
             event_instance.categories.set(category_ids) 
             event_instance.save()
+        venue = get_object_or_404(Venue, pk=venue_id)  # <-- lo agg para la relacion events/ venue
+
+        if id is None:
+            Event.new(title, description, scheduled_at, request.user, venue)
+        else:
+            event = get_object_or_404(Event, pk=id)
+            event.update(title, description, scheduled_at, request.user, venue)
 
         return redirect("events")
 
@@ -169,10 +180,13 @@ def event_form(request, id=None):
     if id is not None:
         event = get_object_or_404(Event, pk=id)
 
+    venues = Venue.objects.all()  # <-- lo agg para la relacion events/ venue, para el dropdown en el template
+
     return render(
         request,
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer, "categories": categories},
+        {"event": event, "user_is_organizer": request.user.is_organizer, "venues": venues,  } # <-- lo agg para la relacion events/ venue # type: ignore
     )
 
 @login_required
@@ -345,7 +359,7 @@ def ticket_create(request, event_id):
     if request.method == "POST":
         form = TicketForm(request.POST)
         if form.is_valid():
-            ticket = form.save(commit=False)
+            ticket = form.save(commit=False)  
             ticket.user = request.user
             ticket.event = event
             ticket.save()
@@ -410,15 +424,21 @@ def comentarios_organizador(request):
 
     return render(request, 'app/organizator_comment.html', {'comentarios': comentarios})
 #Eliminar Comentarios
-
+@login_required
 def delete_comment(request, comment_id):
     comentario = get_object_or_404(Comment, id=comment_id)
 
-    # Verificar que el usuario que intenta eliminar el comentario es el mismo que lo creó
-    if comentario.user == request.user:
-        comentario.delete()
+    # Obtener el evento asociado al comentario
+    evento = comentario.event  # Suponiendo que el comentario tiene un campo 'evento' como clave foránea.
 
-    return redirect('organizator_comment')  # Redirige a la vista de los comentarios o al listado de eventos
+    # Comprobar si el usuario actual es el organizador del evento
+    if evento.organizer == request.user: # type: ignore
+        comentario.delete()
+        messages.success(request, "Comentario eliminado con éxito.")
+    else:
+        messages.error(request, "No tienes permiso para eliminar este comentario, solo el organizador del evento puede hacerlo.")
+    
+    return redirect('organizator_comment')
 
 @login_required #Solicitud de reembolso
 def refund_request(request, ticket_code):
@@ -587,3 +607,70 @@ def delete_category(request, id):
         category.delete()
         return redirect('/categories/')
     return redirect('/categories/')
+
+#Listado de todos los Venue (solo para organizadores)
+@login_required
+def venue_list(request):
+    print(request.user)
+    if not request.user.is_organizer:
+        messages.error(request, "Los usuarios no pueden visualizar ubicaciones.")
+        return redirect("events")  # Redirige a la lista de eventos si no es organizador
+    venues = Venue.objects.all()
+    print(venues) 
+    if not venues:
+        messages.info(request, "No tienes ubicaciones registradas.")  
+    return render(request, "app/venue_list.html", {"venues": venues})
+
+
+#Alta Venue (solo para organizadores)
+@login_required
+def venue_create(request):
+    if not request.user.is_organizer:
+        messages.error(request, "Los usuarios no pueden crear ubicaciones.")
+        return redirect("events")
+
+    if request.method == "POST":
+        form = VenueForm(request.POST)
+        if form.is_valid():
+            messages.success(request, "Ubicación creada exitosamente.")
+            form.save()
+            return redirect("venue_list")
+    else:
+        form = VenueForm()
+    return render(request, "app/venue_form.html", {"form": form, "action": "Crear"})
+
+
+#Editar Venue (solo para organizadores)
+@login_required
+def venue_update(request, venue_id):
+    if not request.user.is_organizer:
+        messages.error(request, "Los usuarios no pueden modificar ubicaciones.")
+        return redirect("events")
+    venue = get_object_or_404(Venue, id=venue_id)
+
+    if request.method == "POST":
+        form = VenueForm(request.POST, instance=venue)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Ubicación actualizada exitosamente.")
+            return redirect("venue_list")
+    else:
+        form = VenueForm(instance=venue)
+
+    return render(request, "app/venue_form.html", {"form": form, "action": "Editar"})
+
+
+@login_required
+def venue_delete(request, venue_id):
+    """Elimina un venue existente."""
+    if not request.user.is_organizer:
+        messages.error(request, "Los usuarios no pueden eliminar ubicaciones.")
+        return redirect("events")
+    venue = get_object_or_404(Venue, pk=venue_id)
+    if request.method == "POST":
+        venue.delete()
+        messages.success(request, "Ubicación eliminada exitosamente.")
+    return redirect("venue_list") # Siempre redirige a la lista de venues
+
+   
+
