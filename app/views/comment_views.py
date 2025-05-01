@@ -9,13 +9,18 @@ from app.models import Comment, Event
 def view_comments(request, event_id=None):
     """
     Vista para mostrar los comentarios. Si el usuario es organizador,
-    muestra todos los comentarios en formato tabla. Si no, muestra solo
+    muestra los comentarios de sus eventos en formato tabla. Si no, muestra solo
     los comentarios del evento específico.
     """
     if request.user.is_organizer:
-        # Para organizadores, mostrar todos los comentarios
-        comments = Comment.objects.all().order_by('-created_at')
+        # Para organizadores, mostrar comentarios de sus eventos
+        organizer_events = Event.objects.filter(organizer=request.user)
+        comments = Comment.objects.filter(event__in=organizer_events).order_by('-created_at')
         template = 'app/comments/comments_section_organizer.html'
+        context = {
+            'comments': comments,
+            'event': None
+        }
     else:
         # Para usuarios normales, mostrar comentarios del evento específico
         if not event_id:
@@ -23,11 +28,12 @@ def view_comments(request, event_id=None):
         event = get_object_or_404(Event, pk=event_id)
         comments = Comment.objects.filter(event=event)
         template = 'app/comments/comments_section.html'
+        context = {
+            'comments': comments,
+            'event': event
+        }
     
-    return render(request, template, {
-        'comments': comments,
-        'event': event if not request.user.is_organizer else None
-    })
+    return render(request, template, context)
 
 @login_required
 def add_comment(request, id):
