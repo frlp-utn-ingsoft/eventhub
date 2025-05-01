@@ -75,7 +75,7 @@
                 </td>
                 <td>{{ notification.created_at|date:"d M Y, H:i" }}</td>
                 <td>
-                    <a href="" class="btn btn-sm btn-warning">
+                    <a href="{% url 'edit_notification' notification.id %}" class="btn btn-sm btn-warning">
                         ✏️
                     </a>
                     <a href="{% url 'delete_notification' notification.id %}" class="btn btn-sm btn-danger">

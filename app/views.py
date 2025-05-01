@@ -194,9 +194,14 @@ def delete_location(request, location_id):
 
 
 @login_required
-def create_notification(request):
+def create_notification(request, notification_id=None):
     events = Event.objects.all()
     users = User.objects.all()
+
+    notification = None
+    if notification_id:
+        notification = get_object_or_404(Notification, id=notification_id)
+
     if request.method == 'POST':
         title = request.POST.get('title')
         message = request.POST.get('message')
@@ -212,22 +217,41 @@ def create_notification(request):
                 'users': users,
                 'errors': errors,
                 'form_data': request.POST,
+                'notification': notification,
             })
 
         event_selected = Event.objects.get(id=event_id)
-        notification = Notification.new(title, message, event_selected, priority)
+        if notification:
+
+            notification.title = title
+            notification.message = message
+            notification.event = event_selected
+            notification.priority = priority
+            notification.save()
+
+
+            NotificationXUser.objects.filter(notification=notification).delete()
+        else:
+
+            notification = Notification.new(title, message, event_selected, priority)
+
 
         if recipient_type == 'all':
             for user in users:
-                NotificationXUser.new(notification=notification, user=user)
+                NotificationXUser.objects.create(notification=notification, user=user)
         elif recipient_type == 'specific' and specific_user_id:
             specific_user = User.objects.get(id=specific_user_id)
-            NotificationXUser.new(notification=notification, user=specific_user)
+            NotificationXUser.objects.create(notification=notification, user=specific_user)
+
 
         return redirect('list_notifications')
 
-    return render(request, 'notifications/create_notification.html', {'events': events, 'users': users})
 
+    return render(request, 'notifications/create_notification.html', {
+        'events': events,
+        'users': users,
+        'notification': notification,
+    })
 @login_required
 def list_notifications(request):
     search = request.GET.get('search', '')

@@ -5,25 +5,37 @@
     <div class="row">
         <div class="col-md-8">
             <div class="card p-4 shadow-sm">
-                <h2 class="mb-4">Crear Notificación</h2>
+                <h2 class="mb-4">
+                    {% if notification %}
+                    Editar Notificación
+                {% else %}
+                    Crear Notificación
+                {% endif %}
+                </h2>
                 <form method="post">
                     {% csrf_token %}
                     <div class="mb-3">
                         <label class="form-label fw-bold">Título de la notificación *</label>
-                        <input type="text" name="title" class="form-control" placeholder="Ej: Cambio de horario del evento" required>
+                        <input type="text" name="title" class="form-control"
+                            placeholder="Ej: Cambio de horario del evento" value="{{ notification.title|default:'' }}"
+                            required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Mensaje *</label>
-                        <textarea name="message" class="form-control" placeholder="Escribe el contenido de la notificación..." required></textarea>
+                        <textarea name="message" class="form-control"
+                            placeholder="Escribe el contenido de la notificación..."
+                            required>{{ notification.message|default:'' }}</textarea>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Evento relacionado *</label>
-                        <select name="event" class="form-control">
-                            <option value="" disabled selected>Selecciona un evento</option>
-                            {% for event in events %}
-                                <option value="{{ event.id }}">{{ event.title }}</option>
-                            {% endfor %}
-                        </select>
+                        <label for="event" class="form-label fw-bold">Evento relacionado *</label>
+                                <select name="event" id="event" class="form-control">
+                                    <option value="" disabled {% if not notification %}selected{% endif %}>Selecciona un evento</option>
+                                    {% for event in events %}
+                                    <option value="{{ event.id }}" {% if notification and notification.event.id == event.id %}selected{% endif %}>
+                                        {{ event.title }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Destinatarios *</label>
@@ -45,15 +57,16 @@
                         </div>
                     </div>
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Prioridad *</label>
-                        <select name="priority" class="form-control">
-                            <option value="" disabled selected>Selecciona una prioridad</option>
-                            <option value="low">Baja</option>
-                            <option value="medium">Media</option>
-                            <option value="high">Alta</option>
-                        </select>
+                        <label for="priority" class="form-label fw-bold">Prioridad *</label>
+                                <select name="priority" id="priority" class="form-control">
+                                    <option value="low" {% if notification and notification.priority == 'low' %}selected{% endif %}>Baja</option>
+                                    <option value="medium" {% if notification and notification.priority == 'medium' %}selected{% endif %}>Media</option>
+                                    <option value="high" {% if notification and notification.priority == 'high' %}selected{% endif %}>Alta</option>
+                                </select>
                     </div>
-                    <button type="submit" class="btn btn-primary">Enviar Notificación</button>
+                    <button type="submit" class="btn btn-primary">
+                        {% if notification %}Actualizar{% else %}Crear{% endif %} Notificación
+                    </button>
                 </form>
             </div>
         </div>
@@ -72,7 +85,8 @@
                         <span class="text-warning">💡</span> Usa la prioridad alta solo para notificaciones urgentes.
                     </li>
                     <li>
-                        <span class="text-warning">💡</span> Considera enviar por correo electrónico las notificaciones importantes.
+                        <span class="text-warning">💡</span> Considera enviar por correo electrónico las notificaciones
+                        importantes.
                     </li>
                 </ul>
             </div>
