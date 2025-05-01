@@ -33,6 +33,21 @@
                     </div>
                     <div class="d-flex align-items-center mb-3">
                         <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-geo-alt text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Ubicación</h6>
+                            <p class="mb-0">
+                                {% if event.venue %}
+                                    {{ event.venue.name }} ({{ event.venue.city }})
+                                {% else %}
+                                    No asignada
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
                             <i class="bi bi-person text-primary"></i>
                         </div>
                         <div>

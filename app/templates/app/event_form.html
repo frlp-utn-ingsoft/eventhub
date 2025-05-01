@@ -57,6 +57,17 @@
                                         name="time" />
                                 </div>
                             </div>
+                            <div class="mb-3">
+                                <label for="venue" class="form-label">Ubicación del Evento</label>
+                                <select class="form-control" id="venue" name="venue">
+                                    <option value="" {% if not event.venue %}selected{% endif %}>---------</option>
+                                    {% for venue in venues %}
+                                        <option value="{{ venue.id }}" {% if event.venue.id == venue.id %}selected{% endif %}>
+                                            {{ venue.name }} ({{ venue.city }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
                             <div>
                                 <button type="submit" class="btn btn-primary">Crear Evento</button>
                             </div>
