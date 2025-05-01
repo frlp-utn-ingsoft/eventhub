@@ -36,7 +36,19 @@ class RefundForm(forms.ModelForm):
 
     accept_policy = forms.BooleanField(
         label="Entiendo y acepto la política de reembolsos.",
-        required=True, 
+        required=True,
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         error_messages={'required': 'Debes aceptar la política de reembolsos para continuar.'}
     )
+
+    def clean_ticket_code(self):
+        ticket_code = self.cleaned_data.get("ticket_code")
+
+        if not ticket_code:
+            return ticket_code
+
+        if not self.instance.pk:
+            if Refund.objects.filter(ticket_code=ticket_code).exists():
+                raise forms.ValidationError("Ya existe una solicitud de reembolso para este ticket.")
+
+        return ticket_code
