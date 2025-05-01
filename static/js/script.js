@@ -4,7 +4,7 @@ function adjustQuantity(amount) {
   if (isNaN(value)) value = 0;
   value = Math.max(1, value + amount);
   input.value = value;
-  actualizarResumen(); // actualiza el resumen al cambiar la cantidad
+  actualizarResumen(); 
 }
 
 function actualizarResumen() {
@@ -22,9 +22,31 @@ function actualizarResumen() {
   document.getElementById("total").innerText = total.toFixed(2);
 }
 
-// Actualizar resumen cuando cambia cantidad o tipo
+function validarPago() {
+  const campos = ['card_number', 'card_expiry', 'card_cvv', 'card_name'];
+  for (const id of campos) {
+    const campo = document.getElementById(id);
+    if (!campo || !campo.value.trim()) {
+      alert("Por favor completa todos los campos del método de pago.");
+      campo?.focus();
+      return false;
+    }
+  }
+  return true;
+}
+
+
 window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("id_quantity").addEventListener("input", actualizarResumen);
   document.getElementById("id_type").addEventListener("change", actualizarResumen);
   actualizarResumen();
+
+  const form = document.querySelector("form");
+  if (form) {
+    form.addEventListener("submit", (e) => {
+      if (!validarPago()) {
+        e.preventDefault();
+      }
+    });
+  }
 });
