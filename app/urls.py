@@ -17,5 +17,6 @@ urlpatterns = [
     path('my_refunds/', views.my_refunds, name='my_refunds'),
     path('manage_refunds/', views.manage_refunds, name='manage_refunds'),
     path('refund_detail/<int:id>/', views.refund_detail, name='refund_detail'),
-    path('edit_refund/<int:id>/', views.edit_refund, name='edit_refund'),    
+    path('edit_refund/<int:id>/', views.edit_refund, name='edit_refund'),  
+    path('delete_refund/<int:id>/', views.delete_refund, name='delete_refund'),  
 ]

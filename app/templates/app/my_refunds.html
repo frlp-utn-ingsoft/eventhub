@@ -60,14 +60,10 @@
                         title="Editar">
                         <i class="bi bi-pencil" aria-hidden="true"></i>
                     </a>
-                    <form action="" method="POST">
+                    <form action="{% url 'delete_refund' r.id %}" method="POST" onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta solicitud?');">
                         {% csrf_token %}
-                        <button class="btn btn-sm btn-outline-danger"
-                            title="Eliminar"
-                            type="submit"
-                            aria-label="Eliminar"
-                            titile="Eliminar">
-                            <i class="bi bi-trash" aria-hidden="true"></i>
+                        <button type="submit" class="btn btn-sm btn-outline-danger" title="Eliminar" aria-label="Eliminar">
+                            <i class="bi bi-trash"></i>
                         </button>
                     </form>
             </div>

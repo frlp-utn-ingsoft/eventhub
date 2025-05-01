@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .models import Event, User, RefundRequest, Ticket
 from .forms import RefundRequestForm, RefundApprovalForm
+from django.http import Http404
 
 
 def register(request):
@@ -86,7 +87,6 @@ def event_delete(request, id):
         return redirect("events")
 
     return redirect("events")
-
 
 @login_required
 def event_form(request, id=None):
@@ -198,3 +198,16 @@ def edit_refund(request, id):
         form = RefundRequestForm(instance=refund_request)
     
     return render(request, 'app/refund_request.html', {'form': form})
+
+@login_required
+def delete_refund(request, id):
+    refund = get_object_or_404(RefundRequest, pk=id)
+
+    if refund.user != request.user and not request.user.is_organizer:
+        return redirect("my_refunds")
+
+    if request.method == "POST":
+        refund.delete()
+        return redirect("my_refunds")
+
+    return redirect("my_refunds")
