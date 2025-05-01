@@ -183,14 +183,20 @@ class Event(models.Model):
         )
         event.categories.set(categories)
         return True, None
-
+    
     def update(self, title, categories, venue, description, scheduled_at, organizer):
         self.title = title or self.title
         self.description = description or self.description
         self.venue = venue or self.venue
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
-        self.categories.set(categories)
+
+        if categories is not None:
+            if isinstance(categories, models.Manager):
+                raise ValueError("Error updating event.categories")
+            self.save()
+            self.categories.set(categories)
+
         self.save()
 
 class Refund(models.Model):
