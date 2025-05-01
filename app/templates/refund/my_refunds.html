@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Mis Reembolsos{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2>Mis Solicitudes de Reembolso</h2>
+        <a href="{% url 'refund_create' %}" class="btn btn-success">Nueva solicitud</a>
+    </div>
+
+    {% if refunds %}
+        <div class="table-responsive">
+            <table class="table table-bordered align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Código Ticket</th>
+                        <th>Motivo</th>
+                        <th>Estado</th>
+                        <th>Fecha creación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for refund in refunds %}
+                        <tr>
+                            <td>{{ refund.ticket_code }}</td>
+                            <td>{{ refund.reason }}</td>
+                            <td>
+                                {% if refund.aproved %}
+                                    <span class="badge bg-success">Aprobado</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Rechazado</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ refund.created_at|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                {% if not refund.aproved %}
+                                    <a href="{% url 'refund_edit' refund.id %}" class="btn btn-sm btn-primary">Editar</a>
+                                    <form method="POST" action="{% url 'refund_delete' refund.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro?')">Eliminar</button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-muted">No editable</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No hiciste ninguna solicitud todavía.</p>
+    {% endif %}
+</div>
+{% endblock %}
