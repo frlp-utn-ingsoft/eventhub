@@ -20,8 +20,8 @@
         <thead>
             <tr>
                 <th>Título</th>
-                <th>Descripción</th>
                 <th>Fecha</th>
+                <th>Organizador</th>
                 <th>Categorías</th>
                 <th>Acciones</th>
             </tr>
@@ -30,9 +30,8 @@
             {% for event in events%}
                 <tr>
                     <td class="text-primary">{{ event.title }}</td>
-                    <td>{{ event.description }}</td>
                     <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
-                    <td>
+                    <td>{{ event.organizer }}<td>
                         {% if event.categories.exists %}
                         <div class="d-flex flex-wrap gap-1">
                             {% for category in event.categories.all %}
