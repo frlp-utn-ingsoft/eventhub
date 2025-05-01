@@ -1,5 +1,10 @@
 from django import forms
 from .models import Rating, Venue, Event
+from django import forms
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
+import re
+
 
 class RatingForm(forms.ModelForm):
     class Meta:
@@ -24,6 +29,8 @@ class RatingForm(forms.ModelForm):
             raise forms.ValidationError("Debe seleccionar una calificación.")
         return score
 
+
+
 class VenueForm(forms.ModelForm):
     class Meta:
         model = Venue
@@ -38,7 +45,8 @@ class VenueForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'placeholder': 'Ej: Estadio Nacional',
-                'class': 'form-control'
+                'class': 'form-control',
+                'maxlength': '100'
             }),
             'address': forms.TextInput(attrs={
                 'placeholder': 'Ej: Av. Grecia 2001',
@@ -46,18 +54,43 @@ class VenueForm(forms.ModelForm):
             }),
             'city': forms.TextInput(attrs={
                 'placeholder': 'Chile',
-                'class': 'form-control'
+                'class': 'form-control',
+                'maxlength': '100'
             }),
             'capacity': forms.NumberInput(attrs={
                 'placeholder': 'Ej: 1000',
                 'class': 'form-control'
             }),
             'contact': forms.Textarea(attrs={
-                'placeholder': 'Describe las características principales de la ubicación...',
+                'placeholder': 'Ej: contacto@email.com o +54 911 12345678',
                 'class': 'form-control',
-                'rows': 3
+                'rows': 3,
+                'maxlength': '100'
             }),
         }
+
+    def clean_capacity(self):
+        capacity = self.cleaned_data.get('capacity')
+        if capacity is not None and capacity <= 0:
+            raise ValidationError("La capacidad no puede ser cero.")
+        return capacity
+
+    def clean_contact(self):
+        contact = self.cleaned_data.get('contact', '').strip()
+
+        email_valid = True
+        try:
+            validate_email(contact)
+        except ValidationError:
+            email_valid = False
+
+        phone_valid = bool(re.match(r'^\+?\d[\d\s\-\(\)]{7,}$', contact))
+
+        if not (email_valid or phone_valid):
+            raise ValidationError("El contacto debe ser un número de teléfono válido o una dirección de email.")
+        
+        return contact
+
 
 class EventForm(forms.ModelForm):
     class Meta:
