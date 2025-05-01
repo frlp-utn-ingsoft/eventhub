@@ -35,16 +35,19 @@
                                        title="Ver comentario">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    <form method="POST" action="{% url 'delete_comment' comment.id %}" class="d-inline" style="margin-left: 2px;">
-                                        {% csrf_token %}
-                                        <button type="submit" 
-                                                class="btn btn-sm btn-outline-danger" 
-                                                title="Eliminar"
-                                                onclick="return confirm('¿Estás seguro de que deseas eliminar este comentario?');">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger" 
+                                            title="Eliminar"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal{{ comment.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
                                 </div>
+
+                                <!-- Modal para este comentario -->
+                                {% with object=comment delete_url_name='delete_comment' title="Eliminar Comentario" message="¿Estás seguro de que deseas eliminar este comentario?" %}
+                                    {% include 'app/common/delete_modal.html' %}
+                                {% endwith %}
                             </td>
                         </tr>
                         {% empty %}
