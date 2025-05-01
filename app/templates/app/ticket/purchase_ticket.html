@@ -41,26 +41,64 @@
               <option value="VIP"     {% if ticket.type == "VIP"     %}selected{% endif %}>VIP</option>
             </select>
           </div>
-
           <!-- Datos de Tarjeta -->
           <h5 class="mb-3">Datos de la tarjeta</h5>
+
           <div class="mb-3">
             <label for="card_number" class="form-label">Número de tarjeta</label>
-            <input type="text" class="form-control" id="card_number" name="card_number" placeholder="1234 5678 9012 3456" required>
+            <input
+              type="text"
+              class="form-control"
+              id="card_number"
+              name="card_number"
+              placeholder="1234 5678 9012 3456"
+              maxlength="16"
+              inputmode="numeric"
+              pattern="\d{16}"
+              title="Ingresa 16 dígitos"
+              required>
           </div>
+
           <div class="row mb-3">
             <div class="col-md-6">
               <label for="expiry_date" class="form-label">Fecha de expiración</label>
-              <input type="text" class="form-control" id="expiry_date" name="expiry_date" placeholder="MM/AA" required>
+              <!-- Usamos type="month" para elegir mes/año -->
+              <input
+                type="month"
+                class="form-control"
+                id="expiry_date"
+                name="expiry_date"
+                min="{{ now|date:'Y-m' }}" 
+                required>
             </div>
             <div class="col-md-6">
               <label for="cvv" class="form-label">CVV</label>
-              <input type="text" class="form-control" id="cvv" name="cvv" placeholder="123" required>
+              <input
+                type="text"
+                class="form-control"
+                id="cvv"
+                name="cvv"
+                placeholder="123"
+                maxlength="3"
+                inputmode="numeric"
+                pattern="\d{3}"
+                title="Ingresa 3 dígitos"
+                required>
             </div>
           </div>
+
           <div class="mb-4">
             <label for="card_name" class="form-label">Nombre en la tarjeta</label>
-            <input type="text" class="form-control" id="card_name" name="card_name" placeholder="Juan Pérez" required>
+            <input
+              type="text"
+              class="form-control"
+              id="card_name"
+              name="card_name"
+              placeholder="Juan Pérez"
+              minlength="2"
+              title="Ingresa tu nombre tal como aparece en la tarjeta"
+              required
+              >
           </div>
           <div class="form-check mb-4">
             <input class="form-check-input"
