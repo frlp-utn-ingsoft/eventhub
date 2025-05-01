@@ -169,7 +169,6 @@ class Event(models.Model):
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
     attendees = models.ManyToManyField(User, related_name="attended_events", blank=True)
     categories = models.ManyToManyField(Category, related_name="events")
@@ -189,7 +188,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, categories=None):
+    def new(cls, title, description, scheduled_at, organizer, venue, categories=None):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -200,6 +199,7 @@ class Event(models.Model):
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
+            venue=venue,
         )
         
         if categories:
@@ -207,11 +207,12 @@ class Event(models.Model):
 
         return True, None
 
-    def update(self, title=None, description=None, scheduled_at=None, organizer=None, categories=None):
+    def update(self, title=None, description=None, scheduled_at=None, organizer=None, categories=None, venue=None):
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
+        self.venue = venue or self.venue
 
         self.save()
     
@@ -394,6 +395,7 @@ class Rating(models.Model):
         self.save()
         
         return True, None
+    
 class Comment(models.Model):
     title = models.CharField(max_length=200)
     text = models.TextField()

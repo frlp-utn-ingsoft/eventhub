@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Event, User, Ticket, Comment, Notification
+from .models import Event, User, Ticket, Comment, Notification, Venue
 from django.contrib import messages
 
 from .models import Event, User, Rating, Category
@@ -115,6 +115,7 @@ def event_form(request, event_id=None):
     if not user.is_organizer:
         return redirect("events")
     
+    venues = Venue.objects.all()
     categories = Category.objects.filter(is_active=True)
     event_categories = []
     event = {}
@@ -129,6 +130,8 @@ def event_form(request, event_id=None):
         date = request.POST.get("date")
         time = request.POST.get("time")
         categories = request.POST.getlist("categories")
+        venue_id = request.POST.get("venue")
+        venue = get_object_or_404(Venue, pk=venue_id)
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
@@ -138,10 +141,10 @@ def event_form(request, event_id=None):
         )
 
         if event_id is None:
-            Event.new(title, description, scheduled_at, request.user, categories)
+            Event.new(title, description, scheduled_at, request.user, categories, venue)
         else:
             event = get_object_or_404(Event, pk=event_id)
-            event.update(title, description, scheduled_at, request.user, categories)
+            event.update(title, description, scheduled_at, request.user, categories, venue)
 
         return redirect("events")
 
@@ -152,7 +155,8 @@ def event_form(request, event_id=None):
             "event": event,
             "categories": categories,
             "event_categories": event_categories,
-            "user_is_organizer": request.user.is_organizer
+            "user_is_organizer": request.user.is_organizer,
+            "venues": venues
         },
     )
 

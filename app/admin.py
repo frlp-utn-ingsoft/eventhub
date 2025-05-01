@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Event, Category, Rating, Comment, Notification, User
+from .models import Event, Category, Rating, Comment, Notification, User, Venue
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
@@ -38,4 +38,9 @@ class NotificationAdmin(admin.ModelAdmin):
 class UserAdmin(admin.ModelAdmin):
     list_display = ('username', 'email', 'is_organizer', 'is_staff')
     list_filter = ('is_organizer', 'is_staff', 'is_active')
-    search_fields = ('username', 'email', 'first_name', 'last_name')  
+    search_fields = ('username', 'email', 'first_name', 'last_name')
+
+@admin.register(Venue)
+class VenueAdmin(admin.ModelAdmin):
+    list_display = ('name', 'adress', 'capacity')
+    search_fields = ('name', 'adress') 

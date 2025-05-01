@@ -77,6 +77,17 @@
                                     </div>
                                     {% endfor %}
                                 </div>
+                                <div>
+                                    <label for="venue">Venue:</label>
+                                    <select name="venue" class="form-select" required>
+                                        <option value="" disabled selected>Selecciona un venue</option>
+                                        {% for venue in venues %}
+                                          <option value="{{ venue.id }}" {% if event.venue.id == venue.id %}selected{% endif %}>
+                                            {{ venue.name }}
+                                          </option>
+                                        {% endfor %}
+                                      </select>
+                                </div>
                             </div>
 
                             <div>
