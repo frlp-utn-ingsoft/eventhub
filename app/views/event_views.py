@@ -11,17 +11,17 @@ def event_form(request, id=None):
 
     if not user.is_organizer:
         return redirect("events")
-
+    
     if request.method == "POST":
         event_id = request.POST.get("id")
         title = request.POST.get("title")
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
-        category_id = request.POST.get("category")
-        category = None
-        if category_id is not None:
-            category = get_object_or_404(Category, pk=category_id)
+        category_ids = list(map(int, request.POST.getlist('categories[]')))
+        categories = None
+        if category_ids:
+            categories = Category.objects.filter(id__in=category_ids)
         venue_id = request.POST.get("venue")
         venue = None
         if venue_id is not None:
@@ -34,10 +34,10 @@ def event_form(request, id=None):
         )
 
         if event_id is None:
-            Event.new(title, category, venue, description, scheduled_at, request.user)
+            Event.new(title, categories, venue, description, scheduled_at, request.user)
         else:
             event = get_object_or_404(Event, pk=event_id)
-            event.update(title, category, venue, description, scheduled_at, request.user)
+            event.update(title, categories, venue, description, scheduled_at, request.user)
 
         return redirect("events")
 
@@ -47,13 +47,15 @@ def event_form(request, id=None):
 
     categories = Category.objects.all()
     venues = Venue.get_venues_by_user(user)
+    selected_categories = event.categories.all() if event else []
     return render(
         request,
         "app/event/event_form.html",
         {
             "event": event, 
             "user_is_organizer": request.user.is_organizer, 
-            "categories": categories, 
+            "categories": categories,
+            "selected_categories": selected_categories,
             "venues": venues
         },
     )
@@ -81,8 +83,15 @@ def event_detail(request, id):
     # Si la calificación se guardó correctamente, actualizar las calificaciones
     if rating_saved:
         ratings = Rating.objects.filter(event=event)
+    event_categories = event.categories.all() if event else []
         
-    return render(request, "app/event/event_detail.html", {"event": event,'ratings': ratings ,"categories": categories, "user_is_organizer": request.user.is_organizer})
+    return render(request, "app/event/event_detail.html", {
+        "event": event,
+        'ratings': ratings,
+        "categories": categories, 
+        "user_is_organizer": request.user.is_organizer,
+        "event_categories": event_categories
+        })
 
 
 

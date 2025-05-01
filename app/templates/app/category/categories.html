@@ -3,65 +3,65 @@
 {% block title %}Categoría{% endblock %}
 
 {% block content %}
+{% include "app/category/category_modal.html" with category=None %}
+
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Categoría</h1>
-            <a
-                href="{% url 'category_form' %}"
-                class="btn btn-primary"
-            >
-                <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
-                Crear Categoría
-            </a>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal">
+            <i class="bi bi-plus-circle"></i>
+            Crear categoría
+        </button>
     </div>
     <table class="table">
         <thead>
             <tr>
-                <th>Título</th>
-                <th>Dirección</th>
-                <th>Ciudad</th>
-                <th>Capacidad</th>
-                <th>Contacto</th>
+                <th>Nombre</th>
+                <th>Descripcion</th>
+                <th>Activa</th>
+                <th>Eventos</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
-            {% for category in categorys%}
+            {% for category in categories%}
                 <tr>
                     <td>{{ category.name }}</td>
-                    <td>{{ category.address }}</td>
-                    <td>{{ category.city }}</td>
-                    <td>{{ category.capacity }}</td>
-                    <td>{{ category.contact }}</td>
+                    <td>{{ category.description }}</td>
+                    <td>
+                        {% if category.is_active %}
+                            Si
+                        {% else %}
+                            No
+                        {% endif %}
+                    </td>
+                    <td>{{ category.event_count  }}</td>
                     <td>
                         <div class="hstack gap-1">
-                            <a href="{% url 'category_detail' category.id %}"
-                               class="btn btn-sm btn-outline-primary"
-                               aria-label="Ver detalle"
-                               title="Ver detalle">
-                                <i class="bi bi-eye" aria-hidden="true"></i>
-                            </a>
-                                <a href="{% url 'category_edit' category.id %}"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    aria-label="Editar"
-                                    title="Editar">
+                            <button type="button" 
+                                class="btn btn-sm btn-outline-secondary" 
+                                data-bs-toggle="modal" 
+                                data-bs-target="#categoryModal{{ category.id }}">
                                     <i class="bi bi-pencil" aria-hidden="true"></i>
-                                </a>
-                                <form action="{% url 'category_delete' category.id %}" method="POST">
-                                    {% csrf_token %}
-                                    <button class="btn btn-sm btn-outline-danger"
-                                        title="Eliminar"
-                                        type="submit"
-                                        aria-label="Eliminar"
-                                        titile="Eliminar">
-                                        <i class="bi bi-trash" aria-hidden="true"></i>
-                                    </button>
-                                </form>
+                            </button>
+                            {% include "app/category/category_modal.html" with category=category %}
+                            <button class="btn btn-sm btn-outline-danger"
+                                title="Eliminar"
+                                type="submit"
+                                aria-label="Eliminar"
+                                data-bs-toggle="modal" 
+                                data-bs-target="#deleteModal{{ category.id }}">
+                                <i class="bi bi-trash" aria-hidden="true"></i>
+                            </button>
+                            {% with title_text="Eliminar categoría: "|add:category.name %}
+                                {% include "app/common/delete_modal.html" with object=category delete_url_name='category_delete' title=title_text message="¿Estás seguro de que deseas eliminar esta categoría?" %}
+                            {% endwith %}
                         </div>
                     </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center">No hay Categoríaes creados</td>
+                    <td colspan="4" class="text-center">No hay categorias creadas</td>
                 </tr>
             {% endfor %}
         </tbody>

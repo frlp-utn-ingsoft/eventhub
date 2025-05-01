@@ -6,6 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+# Por conceso general se agregan las migraciones de Django a git
+**/migrations/*.py
+**/migrations/__pycache__/
+
 # Distribution / packaging
 .Python
 build/

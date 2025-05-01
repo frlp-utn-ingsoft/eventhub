@@ -141,11 +141,11 @@ class Event(models.Model):
     description = models.TextField()
     scheduled_at = models.DateTimeField()
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
-    category = models.ForeignKey(Category,
-        on_delete=models.SET_NULL,
-        null=True,
+    categories = models.ManyToManyField(
+        Category,
         blank=True,
-        related_name='events')
+        related_name='events'
+    )
     venue = models.ForeignKey(Venue,
         on_delete=models.SET_NULL,
         null=True,
@@ -158,7 +158,7 @@ class Event(models.Model):
         return self.title
 
     @classmethod
-    def validate(cls, title, category, venue, description, scheduled_at):
+    def validate(cls, title, categories, venue, description, scheduled_at):
         errors = {}
         if title == "":
             errors["title"] = "Por favor ingrese un titulo"
@@ -169,30 +169,34 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, category, venue, description, scheduled_at, organizer):
-        errors = Event.validate(title, category, venue, description, scheduled_at)
+    def new(cls, title, categories, venue, description, scheduled_at, organizer):
+        errors = Event.validate(title, categories, venue, description, scheduled_at)
 
         if len(errors.keys()) > 0:
             return False, errors
-
-        Event.objects.create(
+        event = Event.objects.create(
             title=title,
-            category=category,
             venue=venue,
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
         )
-
+        event.categories.set(categories)
         return True, None
-
-    def update(self, title, category, venue, description, scheduled_at, organizer):
+    
+    def update(self, title, categories, venue, description, scheduled_at, organizer):
         self.title = title or self.title
         self.description = description or self.description
-        self.category = category or self.category
         self.venue = venue or self.venue
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
+
+        if categories is not None:
+            if isinstance(categories, models.Manager):
+                raise ValueError("Error updating event.categories")
+            self.save()
+            self.categories.set(categories)
+
         self.save()
 
 class Refund(models.Model):
