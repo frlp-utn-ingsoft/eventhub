@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h1>Lista de Ubicaciones</h1>
+
+  {% if messages %}
+    <ul class="messages">
+      {% for message in messages %}
+        <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if venues %}
+    <ul>
+      {% for venue in venues %}
+        <li>
+          {{ venue.name }} - {{ venue.address }}, {{ venue.city }}
+          {% if user.is_organizer %}
+            <a href="{% url 'venue_edit' venue.id %}">Editar</a>
+            <a href="{% url 'venue_delete' venue.id %}">Eliminar</a>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No hay ubicaciones registradas.</p>
+  {% endif %}
+
+  {% if user.is_organizer %}
+    <a href="{% url 'venue_create' %}">Crear Nueva Ubicación</a>
+  {% endif %}
+{% endblock %}

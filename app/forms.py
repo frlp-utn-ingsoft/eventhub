@@ -171,7 +171,7 @@ class RefundRequestForm(forms.ModelForm):
 
 class VenueForm(forms.ModelForm):
     class Meta:
-        model : Venue
+        model = Venue
         fields = ['name', 'address', 'city', 'capacity', 'contact']
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Estadio Nacional'}),
