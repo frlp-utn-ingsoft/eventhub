@@ -1,8 +1,5 @@
 from django import forms
-from .models import Rating
-from .models import Venue
-
-
+from .models import Rating, Venue, Event
 
 class RatingForm(forms.ModelForm):
     class Meta:
@@ -26,8 +23,6 @@ class RatingForm(forms.ModelForm):
         if not score:
             raise forms.ValidationError("Debe seleccionar una calificación.")
         return score
-
-#############
 
 class VenueForm(forms.ModelForm):
     class Meta:
@@ -63,3 +58,23 @@ class VenueForm(forms.ModelForm):
                 'rows': 3
             }),
         }
+
+class EventForm(forms.ModelForm):
+    class Meta:
+        model = Event
+        fields = ['title', 'description', 'scheduled_at', 'venue']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'scheduled_at': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'venue': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        venues = Venue.objects.all()
+        if venues.exists():
+            self.fields['venue'].queryset = venues
+        else:
+            self.fields['venue'].choices = [('', 'No hay ubicaciones disponibles')]
+            self.fields['venue'].disabled = True

@@ -12,6 +12,17 @@
                 {% endif %}
             </h1>
 
+            {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+
+            {% if not venues %}
+                <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                    <span>No hay lugares disponibles. Por favor, crea uno primero.</span>
+                    <a class="btn btn-sm btn-secondary" href="{% url 'create_venue' %}">Crear lugar</a>
+                </div>
+            {% endif %}
+
             <div class="card">
                 <div class="card-body">
                     <form id="eventForm" action="{% if event.id %}{% url 'event_edit' id=event.id %}{% else %}{% url 'event_form' %}{% endif %}" method="POST">
@@ -58,8 +69,22 @@
                                         name="time" />
                                 </div>
                             </div>
+
                             <div>
-                                <button type="submit" class="btn btn-primary">
+                                <label for="venue" class="form-label">Lugar del evento</label>
+                                <select class="form-select" id="venue" name="venue" required {% if not venues %}disabled{% endif %}>
+                                    <option value="">Seleccionar lugar</option>
+                                    {% for venue in venues %}
+                                        <option value="{{ venue.id }}" {% if event.venue.id == venue.id %}selected{% endif %}>
+                                            {{ venue.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div>
+                                <button type="submit" class="btn btn-primary"
+                                        {% if not venues %}disabled{% endif %}>
                                     {% if event.id %}
                                         Guardar Cambios
                                     {% else %}

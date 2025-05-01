@@ -1,7 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.conf import settings  # esto permite usar el usuario que el sistema tenga
-
+from django.conf import settings
 
 
 class User(AbstractUser):
@@ -29,14 +28,26 @@ class User(AbstractUser):
         return errors
 
 
+class Venue(models.Model):
+    name = models.CharField("Nombre", max_length=100)
+    address = models.CharField("Dirección", max_length=200)
+    city = models.CharField("Ciudad", max_length=100)
+    capacity = models.PositiveIntegerField("Capacidad")
+    contact = models.TextField("Información de contacto")
+    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name
+
+
 class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
+    venue = models.ForeignKey(Venue, on_delete=models.SET_NULL, null=True, blank=True)  # NUEVO
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
 
     def __str__(self):
         return self.title
@@ -54,7 +65,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer):
+    def new(cls, title, description, scheduled_at, organizer, venue=None):  # MODIFICADO
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -65,17 +76,19 @@ class Event(models.Model):
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
+            venue=venue,  # NUEVO
         )
 
         return True, None
 
-    def update(self, title, description, scheduled_at, organizer):
+    def update(self, title, description, scheduled_at, organizer, venue=None):  # MODIFICADO
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
-
+        self.venue = venue or self.venue  # NUEVO
         self.save()
+
 
 class Rating(models.Model):
     event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='ratings')
@@ -87,16 +100,3 @@ class Rating(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.score} estrellas"
-    
-   ###############
-
-class Venue(models.Model):
-    name = models.CharField("Nombre", max_length=100)
-    address = models.CharField("Dirección", max_length=200)
-    city = models.CharField("Ciudad", max_length=100)
-    capacity = models.PositiveIntegerField("Capacidad")
-    contact = models.TextField("Información de contacto")
-    organizer = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-
-    def __str__(self):
-        return self.name

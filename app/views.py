@@ -4,13 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.contrib import messages
-from .models import Venue
-from .forms import VenueForm
-
-
-from .models import Event, User, Rating
-from .forms import RatingForm
-
+from .models import Venue, Event, User, Rating
+from .forms import VenueForm, RatingForm
 
 
 def register(request):
@@ -72,6 +67,7 @@ def events(request):
         "app/events.html",
         {"events": events, "user_is_organizer": request.user.is_organizer},
     )
+
 
 @login_required
 def rating_create(request, id):
@@ -144,6 +140,7 @@ def rating_delete(request, id, rating_id):
             return redirect("event_detail", id=id)
     return redirect("event_detail", id=id)
 
+
 @login_required
 def event_delete(request, id):
     user = request.user
@@ -156,8 +153,8 @@ def event_delete(request, id):
         event.delete()
         return redirect("events")
 
-
     return redirect("event_detail", id=id)
+
 
 @login_required
 def event_form(request, id=None):
@@ -168,51 +165,71 @@ def event_form(request, id=None):
 
     event = None
 
+    if id is not None:
+        event = get_object_or_404(Event, pk=id)
+
+    # Obtener solo los venues del organizador
+    venues = Venue.objects.filter(organizer=request.user)
+    today = timezone.localtime().date()
+    min_date = today + datetime.timedelta(days=1)
+
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
+        venue_id = request.POST.get("venue")
+
+        # Validar campos obligatorios
+        if not venue_id:
+            return render(
+                request,
+                "app/event_form.html",
+                {
+                    "event": event,
+                    "user_is_organizer": user.is_organizer,
+                    "min_date": min_date,
+                    "venues": venues,
+                    "error": "Debe seleccionar un lugar para el evento.",
+                },
+            )
 
         [year, month, day] = map(int, date.split("-"))
         [hour, minutes] = map(int, time.split(":"))
+        scheduled_at = timezone.make_aware(datetime.datetime(year, month, day, hour, minutes))
 
-        scheduled_at = timezone.make_aware(
-            datetime.datetime(year, month, day, hour, minutes)
-        )
-
-        # Validar: que la FECHA del evento sea al menos el día de mañana (sin importar hora)
-        today = timezone.localtime().date()
         if scheduled_at.date() <= today:
             return render(
                 request,
                 "app/event_form.html",
                 {
                     "event": event,
-                    "user_is_organizer": request.user.is_organizer,
+                    "user_is_organizer": user.is_organizer,
+                    "min_date": min_date,
+                    "venues": venues,
                     "error": "La fecha debe ser a partir de mañana.",
-                    "min_date": (today + datetime.timedelta(days=1)),
                 },
             )
 
+        venue = get_object_or_404(Venue, pk=venue_id, organizer=user)
+
         if id is None:
-            Event.new(title, description, scheduled_at, request.user)
+            Event.new(title, description, scheduled_at, user, venue)
         else:
-            event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user)
+            event.update(title, description, scheduled_at, user, venue)
 
         return redirect("events")
-
-    if id is not None:
-        event = get_object_or_404(Event, pk=id)
-
-    today = timezone.localtime().date()
-    min_date = today + datetime.timedelta(days=1)
 
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer, "min_date": min_date},
+        {
+            "event": event,
+            "user_is_organizer": user.is_organizer,
+            "min_date": min_date,
+            "venues": venues,
+            "no_venues": not venues.exists(),  # <- Para mostrar un mensaje en el template
+        },
     )
 
 
