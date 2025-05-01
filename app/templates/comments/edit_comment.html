@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <div class="container mt-4">
+    <h2>Editar Comentario</h2>
+
+    <form method="post">
+      {% csrf_token %}
+      
+      <div class="mb-3">
+        <label for="title" class="form-label">Título:</label>
+        <input type="text" id="title" name="title" class="form-control" value="{{ comment.title }}" required>
+      </div>
+
+      <div class="mb-3">
+        <label for="description" class="form-label">Descripción:</label>
+        <textarea id="description" name="description" class="form-control" rows="5" required>{{ comment.description }}</textarea>
+      </div>
+
+      <div class="d-flex justify-content-between">
+        <button type="submit" class="btn btn-primary">Guardar cambios</button>
+        <a href="{% url 'event_detail' id=comment.event.id %}" class="btn btn-secondary">Cancelar</a>
+      </div>
+    </form>
+  </div>
+{% endblock %}

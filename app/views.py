@@ -2,8 +2,9 @@ import datetime
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
 from django.utils import timezone
-from .models import Event, User, Location
+from .models import Event, User, Location, Comments
 
 
 def register(request):
@@ -70,7 +71,43 @@ def events(request):
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
-    return render(request, "app/event_detail.html", {"event": event})
+    comments = Comments.objects.filter(event=event).order_by('-created_at')
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        errors = {}
+
+        if not title:
+            errors['title'] = "El título no puede estar vacío."
+        if not description:
+            errors['description'] = "La descripción no puede estar vacía."
+
+        if not errors:
+            Comments.objects.create(
+                title=title,
+                description=description,
+                user=request.user,
+                event=event
+            )
+            return redirect('event_detail', id=event.id)
+
+        # Si hay errores, los devolvemos al template
+        return render(request, 'app/event_detail.html', {
+            'event': event,
+            'comments': comments,
+            'errors': errors,
+            'title': title,
+            'description': description,
+            'user_is_organizer': event.organizer == request.user
+        })
+
+    # GET request normal
+    return render(request, 'app/event_detail.html', {
+        'event': event,
+        'comments': comments,
+        'user_is_organizer': event.organizer == request.user
+    })
 
 
 @login_required
@@ -191,3 +228,36 @@ def delete_location(request, location_id):
     location = get_object_or_404(Location, id=location_id)
     location.delete()
     return redirect('locations_list')
+
+@login_required
+def edit_comment(request, comment_id):
+    comment = get_object_or_404(Comments, pk=comment_id, user=request.user)
+
+    if request.method == "POST":
+        comment.title = request.POST.get('title', '')
+        comment.description = request.POST.get('description', '')
+        comment.save()
+        return redirect('event_detail', id=comment.event.id)
+
+    return render(request, 'comments/edit_comment.html', {'comment': comment})
+
+def delete_comment(request, comment_id):
+    try:
+        comment = Comments.objects.get(id=comment_id)
+    except Comments.DoesNotExist:
+        messages.error(request, "Comentario no encontrado.")
+        return redirect('event_list')  # O redirige a donde quieras
+
+    # Verifica si el usuario actual es el autor del comentario o un administrador
+    if request.user != comment.user and not request.user.is_staff:
+        messages.error(request, "No tienes permiso para eliminar este comentario.")
+        return redirect('event_detail', id=comment.event.id)
+
+    # Si el método de solicitud es POST, procedemos a eliminar el comentario
+    if request.method == 'POST':
+        comment.delete()
+        messages.success(request, "Comentario eliminado exitosamente.")
+        return redirect('event_detail', id=comment.event.id)
+
+    # Si no es POST, mostramos una confirmación de eliminación
+    return render(request, 'comments/delete_comment.html', {'comment': comment})
