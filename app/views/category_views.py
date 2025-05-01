@@ -1,8 +1,10 @@
 from django.contrib.auth.decorators import login_required
+from django.db.models import Count
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
+
 from app.models import Category
-from django.db.models import Count
+
 
 @login_required
 def category_form(request, id=None):
@@ -25,17 +27,16 @@ def category_form(request, id=None):
                     "app/category/categories.html",
                     {
                         "errors": data,
-                        "category": category, 
-                        "user_is_organizer": request.user.is_organizer, 
-                        "categories": categories
+                        "user_is_organizer": request.user.is_organizer,
+                        "categories": categories,
                     },
                 )
         else:
             category = get_object_or_404(Category, pk=category_id)
             category.update(title, description, is_active=True)
         return redirect("categories")
-    
-    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/')) # refresh last screen
+
+    return HttpResponseRedirect(request.META.get("HTTP_REFERER", "/"))  # refresh last screen
 
 
 @login_required
@@ -43,13 +44,14 @@ def categories(request):
     user = request.user
     if not user.is_organizer:
         return redirect("events")
-    categories = Category.objects.annotate(event_count=Count('events'))
+    categories = Category.objects.annotate(event_count=Count("events"))
 
     return render(
         request,
         "app/category/categories.html",
         {"categories": categories},
     )
+
 
 @login_required
 def category_delete(request, id):
