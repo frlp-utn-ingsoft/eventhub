@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 <div class="container">
@@ -7,10 +8,7 @@
             <h1>{{ event.title }}</h1>
             <div>
                 {% if user_is_organizer %}
-                    <a
-                        href="{% url 'event_edit' event.id %}"
-                        class="btn btn-outline-primary me-2"
-                    >
+                    <a href="{% url 'event_edit' event.id %}" class="btn btn-outline-primary me-2">
                         <i class="bi bi-pencil me-1"></i>Editar
                     </a>
                 {% endif %}
@@ -23,6 +21,7 @@
                 <h5 class="card-title">Detalles del Evento</h5>
                 <p class="card-text">{{ event.description }}</p>
                 <div class="mt-4">
+                    <!-- Información del Evento (Fecha, Organizador, Categorías) -->
                     <div class="d-flex align-items-center mb-3">
                         <div class="bg-light rounded-circle p-2 me-3">
                             <i class="bi bi-calendar-event text-primary"></i>
@@ -61,19 +60,23 @@
                     <div class="row mt-5">
                         <h3>Calificaciones</h3>
                         {% for r in event.ratings.all %}
-                            <div class="mb-3 p-3 bg-light border rounded">
+                            <div class="mb-3 p-3 bg-light border rounded {% if r.user == request.user %}border-primary bg-info bg-opacity-25{% endif %}">
+                                {% if r.user == request.user %}
+                                    <p class="text-primary font-weight-bold">Tu calificación</p>
+                                {% endif %}
                                 <div class="d-flex justify-content-between">
                                     <strong>{{ r.user.username }}</strong>
                                     <small class="text-muted">{{ r.created_at|date:"d/m/Y H:i" }}</small>
                                 </div>
-                                <div class="text-warning mb-1">
-                                    {{ r.rating }} ★
-                                </div>
+                                {% for i in "12345" %}
+                                    {% with i|add:"0" as i_int %}
+                                        <i class="bi {% if i_int <= r.rating %}bi-star-fill{% else %}bi-star{% endif %} text-warning"></i>
+                                    {% endwith %}
+                                {% endfor %}
                                 <h5>{{ r.title }}</h5>
                                 <p>{{ r.text }}</p>
-                    
                                 {% if request.user == r.user or user_is_organizer %}
-                                    <a href="{% url 'rating_edit' r.id %}" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    <a href="#rating-form" class="btn btn-sm btn-outline-primary">Editar</a>
                                     <a href="{% url 'rating_delete' r.id %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
                                 {% endif %}
                             </div>
@@ -81,24 +84,59 @@
                             <p class="text-muted">Aún no hay calificaciones para este evento.</p>
                         {% endfor %}
                     </div>
+                                  
                     {% if not user_is_organizer %}
-                    <hr>
-                        <div class="mt-4">
-                            <h4>{% if form.instance.pk %}Editar{% else %}Agregar{% endif %} Calificación</h4>
-                            <form method="POST">
-                                {% csrf_token %}
-                                <div class="vstack gap-3">
-                                    {{ form.as_p }}
-                                    <button type="submit" class="btn btn-primary">
-                                        {% if form.instance.pk %}Guardar Cambios{% else %}Enviar Calificación{% endif %}
-                                    </button>
+                    <hr class="mt-5">
+                    <div class="mt-4">
+                        <h4>{% if form.instance.pk %}Editar{% else %}Agregar{% endif %} Calificación</h4>
+                        <form method="POST" id="rating-form">
+                            {% csrf_token %}
+                            <div class="vstack gap-3">
+                                <div>
+                                    <label class="form-label">Puntaje</label>
+                                    <div id="star-rating" class="mb-2" data-rating-current="{{ form.rating.value|default:"0" }}">
+                                        {% with form.rating.value|default:"0"|add:"0" as rating_val %}
+                                            {% for i in "12345" %}
+                                                <input type="radio" name="rating" value="{{ forloop.counter }}" id="star{{ forloop.counter }}"
+                                                       class="d-none"
+                                                       {% if form.rating.value|stringformat:"s" == forloop.counter|stringformat:"s" %}checked{% endif %}>
+                                                <label for="star{{ forloop.counter }}" class="star fs-3 text-warning" role="button" data-value="{{ forloop.counter }}">
+                                                    <i class="bi {% if forloop.counter <= rating_val %}bi-star-fill{% else %}bi-star{% endif %}"></i>
+                                                </label>
+                                            {% endfor %}
+                                        {% endwith %}
+                                    </div>
+                                </div>                                                          
+                                <div>
+                                    {{ form.title.label_tag }}
+                                    {{ form.title }}
                                 </div>
-                            </form>
-                        </div>
-                    {% endif %}               
+
+                                <div>
+                                    {{ form.text.label_tag }}
+                                    {{ form.text }}
+                                </div>
+
+                                {% if errors %}
+                                    <div class="alert alert-danger">
+                                        Por favor corregí los errores en el formulario.
+                                    </div>
+                                {% endif %}
+
+                                <button type="submit" class="btn btn-primary">
+                                    {% if form.instance.pk %}Guardar Cambios{% else %}Enviar Calificación{% endif %}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{% static 'js/events.js' %}"></script>
 {% endblock %}

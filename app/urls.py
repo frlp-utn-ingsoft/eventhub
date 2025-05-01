@@ -23,6 +23,5 @@ urlpatterns = [
     path("notifications/<int:pk>/delete/", views.NotificationDelete.as_view(), name="notifications_delete"),
     path("notifications/<int:pk>/read/", views.NotificationMarkRead.as_view(), name="notifications_read"),
     path("notifications/dropdown/", views.NotificationDropdown.as_view(), name="notifications_dropdown"),
-    path("ratings/<int:rating_id>/edit/", views.rating_edit, name="rating_edit"),
     path("ratings/<int:rating_id>/delete/", views.rating_delete, name="rating_delete"),
 ]

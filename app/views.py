@@ -77,36 +77,38 @@ def events(request):
         {"events": events, "user_is_organizer": request.user.is_organizer},
     )
 
-
-from .forms import RatingForm
-
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
-    user = request.user
 
-    # Ver si ya existe una calificación de este usuario para este evento
-    existing_rating = Rating.objects.filter(event=event, user=user).first()
-    form = RatingForm(instance=existing_rating)
+    try:
+        rating = Rating.objects.get(event=event, user=request.user)
+    except Rating.DoesNotExist:
+        rating = None
 
-    if request.method == "POST" and not user.is_organizer:
-        form = RatingForm(request.POST, instance=existing_rating)
+    if request.method == "POST":
+        if rating:
+            form = RatingForm(request.POST, instance=rating)
+        else:
+            form = RatingForm(request.POST)
         if form.is_valid():
-            rating = form.save(commit=False)
-            rating.user = user
-            rating.event = event
-            rating.save()
-            return redirect("event_detail", id=id)
+            new_rating = form.save(commit=False)
+            new_rating.user = request.user
+            new_rating.event = event
+            new_rating.save()
+            return redirect("event_detail", id=event.id) # type: ignore
+    else:
+        if rating:
+            form = RatingForm(instance=rating)
+        else:
+            form = RatingForm()
 
-    return render(
-        request,
-        "app/event_detail.html",
-        {
-            "event": event,
-            "form": form,
-            "user_is_organizer": user.is_organizer,
-        },
-    )
+    return render(request, "app/event_detail.html", {
+        "event": event,
+        "form": form,
+        "rating": rating,
+    })
+
 
 
 @login_required
@@ -306,24 +308,6 @@ class NotificationDropdown(LoginRequiredMixin, View):
         return JsonResponse({"html": html})
       
 ################### feature/rating ################### 
-@login_required
-def rating_edit(request, rating_id):
-    rating = get_object_or_404(Rating, pk=rating_id)
-
-    if rating.user != request.user:
-        return redirect("event_detail", id=rating.event.id) # type: ignore
-
-    if request.method == "POST":
-        form = RatingForm(request.POST, instance=rating)
-        if form.is_valid():
-            form.save()
-            return redirect("event_detail", id=rating.event.id) # type: ignore
-    else:
-        form = RatingForm(instance=rating)
-
-    return render(request, "rating/rating_form.html", {"form": form, "event": rating.event})
-
-
 @login_required
 def rating_delete(request, rating_id):
     rating = get_object_or_404(Rating, pk=rating_id)
