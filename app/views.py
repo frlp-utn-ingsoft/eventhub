@@ -5,7 +5,6 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from django.contrib import messages
 from .models import Event, User, Notification, NotificationUser, Category, Ticket, Event, TicketForm
 from .validations.notifications import createNotificationValidations
 from django.db.models import Count
@@ -74,7 +73,9 @@ def login_view(request):
     return render(request, "accounts/login.html")
 
 def home(request):
-    return render(request, "home.html")
+    return render(request, "home.html", {
+        "user_is_organizer": request.user.is_authenticated and request.user.is_organizer
+    })
 
 def verVenues(request):
     venues = Venue.objects.all() 
