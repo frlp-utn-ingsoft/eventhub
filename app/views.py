@@ -6,6 +6,7 @@ from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .form import NotificationForm
+from django.db.models import Q
 
 from .models import Category, Event, Notification, User
 
@@ -157,7 +158,25 @@ def category_form(request, id=None):
 
 def notification_list(request):
     notifications = Notification.objects.all()
-    return render(request, 'app/notification/list.html', {'notifications': notifications})
+    events = Event.objects.all()
+
+    search_query = request.GET.get('search', '').strip()
+    event_id = request.GET.get('event')
+    priority = request.GET.get('priority')
+
+
+    # Filtrar por búsqueda (asumiendo que buscás en el título o contenido)
+    if search_query:
+        notifications = notifications.filter(Q(title__icontains=search_query))
+
+    if event_id:
+        notifications = notifications.filter(event__id=event_id)
+
+    if priority:
+        notifications = notifications.filter(Priority=priority)
+
+    return render(request, 'app/notification/list.html', {'notifications': notifications,'events': events})
+
 
 
 def notification_create(request):
@@ -168,7 +187,7 @@ def notification_create(request):
         is_read = request.POST.get('is_read') == 'on'
         recipient = request.POST.get('recipient')
         event_id = request.POST.get('event')
-        sprecific_user=request.POST.get('specific_user')
+        specific_user=request.POST.get('specific_user')
    
         event=Event.objects.get(id = event_id)
 
@@ -183,11 +202,11 @@ def notification_create(request):
 
         if recipient == 'all':
             addressee_users = User.objects.all()
-            notification.addressee.set(addressee_users)  # Usamos .set() para asignar todos los usuarios
+            notification.addressee.set(addressee_users)  
         elif recipient == 'specific':
             try:
                 specific_user = User.objects.get(id=specific_user)
-                notification.addressee.set([specific_user])  # Usamos .set() con una lista de un solo usuario
+                notification.addressee.set([specific_user]) 
             except User.DoesNotExist:
                 # Manejar el caso en que el usuario específico no existe
                 eventos = Event.objects.all()
