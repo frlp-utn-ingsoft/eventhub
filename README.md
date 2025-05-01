@@ -4,11 +4,11 @@ Aplicaci√≥n web para venta de entradas utilizada en la cursada 2025 de Ingenier√
 
 ## Dependencias
 
-- python 3
-- Django
-- sqlite
-- playwright
-- ruff
+-   python 3
+-   Django
+-   sqlite
+-   playwright
+-   ruff
 
 ## Instalar dependencias
 
@@ -31,6 +31,10 @@ Aplicaci√≥n web para venta de entradas utilizada en la cursada 2025 de Ingenier√
 `python manage.py runserver`
 
 ## Integrantes
-- Espamer Martin
-- Lanzzavecchia Cespedes Ignacio
-- Wacelinka Ariana
+
+-   Espamer Martin
+-   Lanzzavecchia Cespedes Ignacio
+-   Wacelinka Ariana
+-   J. Bautista Cuenca
+-   Molteni Baltazar
+-   Ocampo Simon

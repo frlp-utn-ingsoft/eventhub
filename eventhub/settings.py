@@ -34,6 +34,7 @@ INSTALLED_APPS = [
     "app",
     "comments",
     "category",
+    "refunds",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.staticfiles",
