@@ -4,12 +4,10 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.contrib import messages
-
-
-from .models import Event, User, Rating
-from .forms import RatingForm
-
-
+from .models import Event, User, Rating, Category
+from .forms import RatingForm, CategoryForm
+from django.db.models import Count
+from django.contrib import messages
 
 def register(request):
     if request.method == "POST":
@@ -89,7 +87,6 @@ def rating_create(request, id):
 
     return redirect("event_detail", id=id)
 
-
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
@@ -154,7 +151,6 @@ def event_delete(request, id):
         event.delete()
         return redirect("events")
 
-
     return redirect("event_detail", id=id)
 
 @login_required
@@ -164,6 +160,9 @@ def event_form(request, id=None):
     if not user.is_organizer:
         return redirect("events")
 
+    categories = Category.objects.all()
+    selected_categories = []
+
     event = None
 
     if request.method == "POST":
@@ -171,6 +170,9 @@ def event_form(request, id=None):
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
+        selected_categories = [
+            int(cat_id) for cat_id in request.POST.getlist("categories") if cat_id.isdigit()
+        ]
 
         [year, month, day] = map(int, date.split("-"))
         [hour, minutes] = map(int, time.split(":"))
@@ -179,7 +181,6 @@ def event_form(request, id=None):
             datetime.datetime(year, month, day, hour, minutes)
         )
 
-        # Validar: que la FECHA del evento sea al menos el día de mañana (sin importar hora)
         today = timezone.localtime().date()
         if scheduled_at.date() <= today:
             return render(
@@ -212,3 +213,56 @@ def event_form(request, id=None):
         "app/event_form.html",
         {"event": event, "user_is_organizer": request.user.is_organizer, "min_date": min_date},
     )
+
+@login_required
+def category_list(request):
+    if request.user.is_organizer:
+        categories = Category.objects.all().annotate(event_count=Count('events'))
+    else:
+        categories = Category.objects.filter(is_active=True).annotate(event_count=Count('events'))
+
+    return render(
+        request,
+        'app/category_list.html',
+        {'categories': categories, 'user_is_organizer': request.user.is_organizer}
+    )
+
+@login_required
+def category_form(request, id=None):
+    if not request.user.is_organizer:
+        return redirect('category_list') 
+
+    if id:
+        category = get_object_or_404(Category, pk=id)
+    else:
+        category = None
+
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            if id:
+                messages.success(request, 'La categoría fue actualizada con éxito')
+            else:
+                messages.success(request, 'La categoría fue creada con éxito')
+            return redirect('category_list') 
+    else:
+        form = CategoryForm(instance=category)
+
+    return render(request, 'app/category_form.html', {'form': form})
+
+def category_detail(request, id):
+    category = get_object_or_404(Category, pk=id)
+    return render(request, 'app/category_detail.html', {'category': category})
+
+@login_required
+def category_delete(request, id):
+    if not request.user.is_organizer:
+        return redirect('category_list')  
+
+    category = get_object_or_404(Category, pk=id)
+    if request.method == 'POST':
+        category.delete()
+        messages.success(request, 'La categoría fue eliminada con éxito')
+        return redirect('category_list')  
+    return redirect('category_list')

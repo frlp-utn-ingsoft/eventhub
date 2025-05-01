@@ -18,11 +18,9 @@
         name="viewport"
         content="width=device-width, initial-scale=1"
     />
-
 </head>
 
 <body>
-    <!-- Navbar solo visible si el usuario está autenticado -->
     <nav class="navbar navbar-expand-md bg-body-tertiary">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">EventHub</a>
@@ -41,16 +39,19 @@
                         <span class="navbar-toggler-icon"></span>
                     </button>
 
-                    <div
-                        class="collapse navbar-collapse"
-                        id="navbar-content"
-                    >
+                    <div class="collapse navbar-collapse" id="navbar-content">
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                             <li class="nav-item">
                                 {% navbar_link 'events' 'Eventos' %}
                             </li>
+                    
+                            {% if user.is_authenticated %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'category_list' %}">Categorías</a>
+                                </li>
+                            {% endif %}
                         </ul>
-                    </div>
+                    </div>                    
 
                     <form
                         class="d-flex"
@@ -68,7 +69,7 @@
                     <a
                         class="btn btn-sm btn-outline-primary"
                         href="{% url 'login' %}"
-                    >Ingresá</>
+                    >Ingresá</a>
                     <a
                         class="btn btn-sm btn-primary"
                         href="{% url 'register' %}"
@@ -78,6 +79,17 @@
         </div>
     </nav>
 
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
     {% block content %}
     {% endblock %}
 </body>
@@ -86,5 +98,16 @@
     integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq"
     crossorigin="anonymous"
 ></script>
-
+<script>
+    setTimeout(() => {
+        document.querySelectorAll('.alert').forEach((alertEl) => {
+          alertEl.classList.remove('show'); 
+    
+          alertEl.addEventListener('transitionend', () => {
+            const bsAlert = bootstrap.Alert.getOrCreateInstance(alertEl);
+            bsAlert.close();
+          });
+        });
+      }, 1000);
+  </script>
 </html>

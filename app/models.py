@@ -1,7 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
 
@@ -26,12 +25,20 @@ class User(AbstractUser):
 
         return errors
 
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    is_active = models.BooleanField(default=False)
+
+    def __str__(self):
+        return self.name
 
 class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
+    categories = models.ManyToManyField('Category', related_name='events', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -43,44 +50,52 @@ class Event(models.Model):
         errors = {}
 
         if title == "":
-            errors["title"] = "Por favor ingrese un titulo"
+            errors["title"] = "Por favor, ingrese un título"
 
         if description == "":
-            errors["description"] = "Por favor ingrese una descripcion"
+            errors["description"] = "Por favor, ingrese una descripción"
 
         return errors
-
+    
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer):
+    def new(cls, title, description, scheduled_at, organizer, categories=None):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
             return False, errors
 
-        Event.objects.create(
-            title=title,
-            description=description,
-            scheduled_at=scheduled_at,
-            organizer=organizer,
+        event = Event.objects.create(
+        title=title,
+        description=description,
+        scheduled_at=scheduled_at,
+        organizer=organizer,
         )
 
-        return True, None
+        if categories:
+            event.categories.set(categories) 
 
-    def update(self, title, description, scheduled_at, organizer):
+        return event
+
+    def update(self, title, description, scheduled_at, organizer, categories=None):
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
-
         self.save()
+        
+        if categories is not None:
+            self.categories.set(categories)
+
+        return self  
 
 class Rating(models.Model):
     event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='ratings')
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     comment = models.TextField(blank=True, null=True)
-    score = models.PositiveSmallIntegerField()  # entre 1 y 5
+    score = models.PositiveSmallIntegerField() 
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.user.username} - {self.score} estrellas"
+
