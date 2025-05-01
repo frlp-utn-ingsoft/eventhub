@@ -1,15 +1,6 @@
-<<<<<<< HEAD
-
-
-=======
-from django import forms
-from .models import Notification,Ticket,Event,User,RefundRequest,Venue
->>>>>>> 54abcc69881458e27fc64e08f1a37179a37bd9cf
 from datetime import datetime
-
 from django import forms
-
-from .models import Event, Notification, RefundRequest, Ticket, User
+from .models import Event, Notification, RefundRequest, Ticket, User, Venue
 
 
 class NotificationForm(forms.ModelForm):
