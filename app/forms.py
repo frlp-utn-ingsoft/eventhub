@@ -1,5 +1,5 @@
 from django import forms
-from .models import Notification,Ticket,Event,User,RefundRequest
+from .models import Notification,Ticket,Event,User,RefundRequest,Venue
 from datetime import datetime
 
 class NotificationForm(forms.ModelForm):
@@ -169,3 +169,14 @@ class RefundRequestForm(forms.ModelForm):
              'reason': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Explicá el motivo'}),
         }   
 
+class VenueForm(forms.ModelForm):
+    class Meta:
+        model : Venue
+        fields = ['name', 'address', 'city', 'capacity', 'contact']
+        widgets = {
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Estadio Nacional'}),
+            'address': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Av. Grecia 2001'}),
+            'city': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Buenos Aires'}),
+            'capacity': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 1000'}),
+            'contact': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Describe las caracteristicas principales'}),
+            }

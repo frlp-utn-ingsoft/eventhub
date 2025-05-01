@@ -8,8 +8,8 @@ from django.utils import timezone
 from .forms import NotificationForm,TicketForm,RefundRequestForm
 from .models import Event, User, Notification, User_Notification,Ticket
 from datetime import timedelta
-from .models import Event, User, Ticket, Comment
-from .forms import TicketForm
+from .models import Event, User, Ticket, Comment, Venue
+from .forms import TicketForm, VenueForm
 from django.db.models import Count
 from .models import RefundRequest
 
@@ -86,7 +86,7 @@ def events(request):
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, id=id)
-    comments = event.comment.all()  # related_name='comment'
+    comments = event.comment.all()  # type: ignore # related_name='comment'
 
     if request.method == 'POST':
         tittle = request.POST.get('tittle')
@@ -98,7 +98,7 @@ def event_detail(request, id):
             event=event,
             created_date=timezone.now()
         )
-        return redirect('event_detail', id=event.id)
+        return redirect('event_detail', id=event.id) # type: ignore
 
     return render(request, 'app/event_detail.html', {
         'event': event,
@@ -134,6 +134,7 @@ def event_form(request, id=None):
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
+        venue_id = request.POST.get("venue")  # <-- lo agg para la relacion events/ venue
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
@@ -142,11 +143,13 @@ def event_form(request, id=None):
             datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
         )
 
+        venue = get_object_or_404(Venue, pk=venue_id)  # <-- lo agg para la relacion events/ venue
+
         if id is None:
-            Event.new(title, description, scheduled_at, request.user)
+            Event.new(title, description, scheduled_at, request.user, venue)
         else:
             event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user)
+            event.update(title, description, scheduled_at, request.user, venue)
 
         return redirect("events")
 
@@ -154,10 +157,12 @@ def event_form(request, id=None):
     if id is not None:
         event = get_object_or_404(Event, pk=id)
 
+    venues = Venue.objects.all()  # <-- lo agg para la relacion events/ venue, para el dropdown en el template
+
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer},
+        {"event": event, "user_is_organizer": request.user.is_organizer, "venues": venues,  } # <-- lo agg para la relacion events/ venue
     )
 
 @login_required
@@ -330,7 +335,7 @@ def ticket_create(request, event_id):
     if request.method == "POST":
         form = TicketForm(request.POST)
         if form.is_valid():
-            ticket = form.save(commit=False)
+            ticket = form.save(commit=False)  
             ticket.user = request.user
             ticket.event = event
             ticket.save()
@@ -526,4 +531,75 @@ def refund_update(request, refund_id):
 
     return redirect("refund_list")
 
+
+
+
+#Listado de todos los Venue (solo para organizadores)
+@login_required
+def venue_list(request):
+    print(request.user)
+    if not request.user.is_organizer:
+        messages.error(request, "Los usuarios no pueden visualizar ubicaciones.")
+        return redirect("events")  # Redirige a la lista de eventos si no es organizador
+    venues = Venue.objects.all()
+    print(venues) 
+    if not venues:
+        messages.info(request, "No tienes ubicaciones registradas.")  
+    return render(request, "app/venue_list.html", {"venues": venues})
+
+
+#Alta Venue (solo para organizadores)
+@login_required
+def venue_create(request):
+    if not request.user.is_organizer:
+        messages.error(request, "Los usuarios no pueden crear ubicaciones.")
+        return redirect("events")
+
+    if request.method == "POST":
+        form = VenueForm(request.POST)
+        if form.is_valid():
+            messages.success(request, "Ubicación creado exitosamente.")
+            form.save()
+            return redirect("venue_list")
+    else:
+        form = VenueForm()
+    return render(request, "app/venue_form.html", {"form": form, "action": "Crear"})
+
+
+#Editar Venue (solo para organizadores)
+@login_required
+def venue_update(request, venue_id):
+    if not request.user.is_organizer:
+        messages.error(request, "Los usuarios no pueden modificar ubicaciones.")
+        return redirect("events")
+    venue = get_object_or_404(Venue, id=venue_id)
+
+    if request.method == "POST":
+        form = VenueForm(request.POST, instance=venue)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Ubucación actualizada exitosamente.")
+            return redirect("venue_list")
+    else:
+        form = VenueForm(instance=venue)
+
+    return render(request, "app/venue_form.html", {"form": form, "action": "Editar"})
+
+
+# Eliminar Venue (solo para organizadores)
+@login_required
+def venue_delete(request, venue_id):
+    if not request.user.is_organizer:
+        messages.error(request, "Los usuarios no pueden eliminar ubicaciones.")
+        return redirect("events")
+    venue = get_object_or_404(Venue, id=venue_id)
+
+    if request.method == "POST":
+        venue.delete()
+        messages.success(request, "Ubicación eliminada exitosamente.")
+        return redirect("venue_list")
+    
+    return render(request, "app/venue_confirm_delete.html", {"venue": venue})
+
+   
 
