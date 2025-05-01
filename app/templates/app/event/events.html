@@ -33,19 +33,16 @@
                     <td>{{ event.title }}</td>
                     <td>{{ event.description }}</td>
                     <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
-
                     <td>
+                        <div style="row">
                         {% for category in event.categories.all %}
-                            {% if not forloop.last %}
-                            <div class="row align-items-center ml-2">
-                                <div class="mx-1 align-self-center">
+                                <div class="align-self-center">
                                     <span class="badge badge-secondary bg-primary">{{ category.name }}</span>
                                 </div>
-                            </div>
-                            {% endif %}
-                        {% empty %}
-                            Sin categoría
-                        {% endfor %}
+                                {% empty %}
+                                Sin categoría
+                                {% endfor %}
+                        </div>
                     </td>
                     <td>{{ event.venue }}</td>
                     <td>

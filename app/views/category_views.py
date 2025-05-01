@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from app.models import Category
+from django.db.models import Count
 
 @login_required
 def category_form(request, id=None):
@@ -42,7 +43,8 @@ def categories(request):
     user = request.user
     if not user.is_organizer:
         return redirect("events")
-    categories = Category.objects.all()
+    categories = Category.objects.annotate(event_count=Count('events'))
+
     return render(
         request,
         "app/category/categories.html",
