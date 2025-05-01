@@ -127,11 +127,24 @@ def event_form(request, id=None):
     )
 
 
+@login_required
 def category_list(request):
-    categories = Category.objects.annotate(event_count=Count('event'))
-    return render(request, 'app/category_list.html', {'categories': categories})
+    if request.user.is_organizer:
+        categories = Category.objects.all().annotate(event_count=Count('event'))
+    else:
+        categories = Category.objects.filter(is_active=True).annotate(event_count=Count('event'))
 
+    return render(
+        request,
+        'app/category_list.html',
+        {'categories': categories, 'user_is_organizer': request.user.is_organizer}
+    )
+
+@login_required
 def category_form(request, id=None):
+    if not request.user.is_organizer:
+        return redirect('category_list') 
+
     if id:
         category = get_object_or_404(Category, pk=id)
     else:
@@ -145,7 +158,7 @@ def category_form(request, id=None):
                 messages.success(request, 'La categoría fue actualizada con éxito')
             else:
                 messages.success(request, 'La categoría fue creada con éxito')
-            return redirect('category_list')
+            return redirect('category_list') 
     else:
         form = CategoryForm(instance=category)
 
@@ -155,10 +168,14 @@ def category_detail(request, id):
     category = get_object_or_404(Category, pk=id)
     return render(request, 'app/category_detail.html', {'category': category})
 
+@login_required
 def category_delete(request, id):
+    if not request.user.is_organizer:
+        return redirect('category_list')  
+
     category = get_object_or_404(Category, pk=id)
     if request.method == 'POST':
         category.delete()
         messages.success(request, 'La categoría fue eliminada con éxito')
-        return redirect('category_list')
+        return redirect('category_list')  
     return redirect('category_list')

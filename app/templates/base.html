@@ -45,10 +45,10 @@
                                 {% navbar_link 'events' 'Eventos' %}
                             </li>
                     
-                            {% if user.is_authenticated and user.is_organizer %}
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'category_list' %}">Categorías</a>
-                            </li>
+                            {% if user.is_authenticated %}
+                                <li class="nav-item">
+                                    <a class="nav-link" href="{% url 'category_list' %}">Categorías</a>
+                                </li>
                             {% endif %}
                         </ul>
                     </div>                    
