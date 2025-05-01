@@ -22,4 +22,11 @@ urlpatterns = [
     path("organizer/refund/", views.RefundRequestsAdminView.as_view(), name="refunds_admin"),
     path("organizer/refund/aprobar/<int:pk>/", views.approve_refund_request, name="refund_approve"),
     path("organizer/refund/rechazar/<int:pk>/", views.reject_refund_request, name="refund_reject"),
+    
+    
+    
+    path("my-tickets/", views.my_tickets, name="my_tickets"),
+    path("ticket/new/<int:event_id>/", views.purchase_ticket, name="ticket_create"),
+    path("ticket/edit/<int:ticket_id>/", views.edit_ticket, name="ticket_edit"),
+    path("ticket/delete/<int:ticket_id>/", views.ticket_delete, name="ticket_delete"),
 ]
