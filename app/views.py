@@ -3,7 +3,8 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Event, User, Location
+from django.db.models import Count
+from .models import Event, User, Location, Category
 
 
 def register(request):
@@ -101,6 +102,8 @@ def event_form(request, id=None):
         time = request.POST.get("time")
         location_id = request.POST.get("location")
         location = Location.objects.filter(id=location_id).first() if location_id else None
+        category_ids = request.POST.getlist("categories")
+        categories = Category.objects.filter(id__in=category_ids)
 
 
         [year, month, day] = date.split("-")
@@ -116,11 +119,13 @@ def event_form(request, id=None):
             event = get_object_or_404(Event, pk=id)
             event.update(title, description, scheduled_at, request.user, location)
 
+        event.categories.set(categories)
         return redirect("events")
     
     
     event = {}
     locations = Location.objects.all()
+    categories = Category.objects.all()
 
     if id is not None:
         event = get_object_or_404(Event, pk=id)
@@ -128,7 +133,7 @@ def event_form(request, id=None):
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer, "locations": locations},
+        {"event": event, "user_is_organizer": request.user.is_organizer, "locations": locations, "categories": categories},
     )
 
 
@@ -191,3 +196,45 @@ def delete_location(request, location_id):
     location = get_object_or_404(Location, id=location_id)
     location.delete()
     return redirect('locations_list')
+
+@login_required
+def list_categories(request):
+    categories = Category.objects.annotate(event_qty=Count('eventcategory'))
+    return render(request, 'categories/list_categories.html', {'categories': categories})
+
+@login_required
+def manage_category(request, category_id=None):
+    category = None
+    if category_id:
+        category = get_object_or_404(Category, id=category_id)
+
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        description = request.POST.get('description')
+        is_active = request.POST.get('is_active') == 'on' if category else True
+
+        errors = Category.validate(name, description)
+
+        if errors:
+            return render(request, 'categories/create_category.html', {
+                'category': category,
+                'errors': errors,
+                'form_data': request.POST,
+            })
+
+        if category:
+            category.update(name=name, description=description, is_active=is_active)
+        else:
+            Category.new(name, description)
+
+        return redirect('categories_list')
+
+    return render(request, 'categories/create_category.html', {
+        'category': category
+    })
+    
+@login_required
+def delete_category(request, category_id):
+    category = get_object_or_404(Category, id=category_id)
+    category.delete()
+    return redirect('categories_list')
