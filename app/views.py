@@ -173,7 +173,7 @@ def manage_refunds(request):
 def refund_detail(request, id):
     refund = get_object_or_404(RefundRequest, id=id)
     try:
-        ticket = Ticket.objects.get(code=refund.ticket_code)
+        ticket = Ticket.objects.get(ticket_code=refund.ticket_code)
         event = ticket.event
     except Ticket.DoesNotExist:
         ticket = None

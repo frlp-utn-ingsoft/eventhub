@@ -31,7 +31,7 @@ class RefundRequestForm(forms.ModelForm):
     def clean_ticket_code(self):
         ticket_code = self.cleaned_data.get('ticket_code')
         try:
-           ticket = Ticket.objects.get(code=ticket_code)
+           ticket = Ticket.objects.get(ticket_code=ticket_code)
         except Ticket.DoesNotExist:
             raise forms.ValidationError(
                 "El código de ticket no es válido o no está registrado."

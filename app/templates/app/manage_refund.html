@@ -41,22 +41,24 @@
                         title="Ver detalle">
                         <i class="bi bi-eye" aria-hidden="true"></i>
                     </a>
-                        <a href=""
-                            class="btn btn-sm btn-outline-secondary"
-                            aria-label="Editar"
-                            title="Editar">
-                            <i class="bi bi-check-lg" aria-hidden="true"></i>
-                        </a>
-                        <form action="" method="POST">
+                        {% if r.approved is None %}
+                          <form method="post" class="d-inline">
                             {% csrf_token %}
-                            <button class="btn btn-sm btn-outline-danger"
-                                title="Eliminar"
-                                type="submit"
-                                aria-label="Eliminar"
-                                titile="Eliminar">
-                                <i class="bi bi-x-lg" aria-hidden="true"></i>
+                            <input type="hidden" name="refund_id" value="{{ r.id }}">
+
+                            <button type="submit" name="approve" value="1"
+                                    class="btn btn-sm btn-outline-success"
+                                    title="Aprobar">
+                              <i class="bi bi-check-lg"></i>
                             </button>
-                        </form>
+
+                            <button type="submit" name="reject" value="1"
+                                    class="btn btn-sm btn-outline-danger"
+                                    title="Rechazar">
+                              <i class="bi bi-x-lg"></i>
+                            </button>
+                          </form>
+                        {% endif %}
                 </div>
             </td>
         </tr>

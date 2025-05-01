@@ -75,11 +75,11 @@ class Event(models.Model):
         self.save()
 
 class Ticket(models.Model):
-    code = models.CharField(max_length=100, unique=True)
+    ticket_code = models.CharField(max_length=100, unique=True)
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
 
     def __str__(self):
-        return self.code
+        return self.ticket_code
 
 class RefundRequest(models.Model):
     REASON_CHOICES = [
@@ -101,5 +101,5 @@ class RefundRequest(models.Model):
     @property
     def event(self):
         from .models import Ticket
-        ticket = Ticket.objects.get(code=self.ticket_code)
+        ticket = Ticket.objects.get(ticket_code=self.ticket_code)
         return ticket.event
