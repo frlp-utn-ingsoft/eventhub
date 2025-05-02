@@ -786,38 +786,3 @@ def event_editar_rating(request, event_id, rating_id):
         'ratings': Rating.objects.filter(evento=evento).select_related('usuario'),
         'cantidad_resenas': Rating.objects.filter(evento=evento).count()
     })
-
-
-
-#@login_required
-#def event_editar_rating(request, event_id, rating_id):
-#    evento = get_object_or_404(Event, pk=event_id)
-    
-#    try:
-#        resena_existente = Rating.objects.get(usuario=request.user, id=rating_id, evento=event_id)
-#    except Rating.DoesNotExist:
-#        messages.error(request, "No se encontro la reseña a editar.")
-#        return redirect("event_detail", id=event_id)
-    
-#    form = Rating_Form(request.POST or None, instance=resena_existente)
-
-#    if request.method == 'POST':
-            
-#            if form.is_valid():
-#                rating_id = request.POST.get('rating_id')
-#                rating = Rating.objects.filter(id=rating_id, usuario=request.user).first()
-#                titulo = request.POST.get('titulo')
-#                calificacion = request.POST.get('calificacion')
-#                texto = request.POST.get('texto')
-#                if rating:
-#                    rating.update(titulo, calificacion, texto)
-#                    messages.success(request, "¡Tu reseña fue editada exitosamente!")
-#                return redirect(request.path, id=evento.id)
-
-#    return render(request, 'app/event_detail.html', {
-#        'event': evento,
-#        'resena': resena_existente,
-#        'editando': True
-#    })
-
-

@@ -1,18 +1,20 @@
 
-                <div class="card-body p-0">
-                    <div class="row">
-                        {% if messages %}
-                            {% for message in messages%}
-                                <div class="alert alert-success" role="alert">
-                                    {{ message }}
-                                </div>
-                            {% endfor %}
-                        {% endif %}
-                    </div>
+                <div class="card-body p-0">                    
 
                     <div class="bg-body-tertiary w-100 p-2 mb-3">
                         <h5 class="card-title m-0 ps-2">Calificaciones y Reseñas ({{ cantidad_resenas }})</h5>
                     </div>
+
+                    <div id="mensajeResena" class="mb-3">
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>   
                         
                     <div class="px-3">
                         {% for rating in ratings %}
@@ -75,14 +77,11 @@
                             {% csrf_token %}
                             <div class="card p-4 mb-4">
 
-                                <div id="mensajeResena" class="mb-3"></div>
-
                                 <div class="mb-3">
                                     <h6>Título de tu reseña *</h6>
                                     {{ form.titulo }}
                                 </div>
                         
-                                
                                 <div class="mb-3">
                                     <h6>Tu calificación *</h6>
                                     <div id="starRating" class="d-flex gap-1 fs-3">
@@ -93,7 +92,6 @@
                                     {{ form.calificacion }}
                                 </div>
                         
-                                
                                 <div class="mb-3">
                                     <h6>Tu reseña (opcional)</h6>
                                     {{ form.texto }}
@@ -114,7 +112,7 @@
             </div>
     </div>
 
-<!--Espacio JavaScript para mostrar formulario-->
+<!--Espacio JavaScript para controlar la visualizacion del formulario-->
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const boton = document.getElementById("mostrarFormulario");
@@ -128,32 +126,33 @@
         }
     });
     </script>
-    
 
 
-<!--JavaScript para desarrollar actualizacion de Resena-->
+<!--JavaScript para desarrollar actualizacion, creacion y eliminacion de Reseñas-->
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const formulario = document.getElementById("formularioResena");
-        if (!formulario) return;
-
-        function mostrarMensaje(texto, tipo = "success") {
-            const contenedor = document.getElementById("mensajeResena");
-            if (!contenedor) return;
+    function mostrarMensaje(texto, tipo = "success") {
+        const contenedor = document.getElementById("mensajeResena");
+        if (!contenedor) return;
     
-            contenedor.innerHTML = ''; 
+        contenedor.innerHTML = '';
     
-            const alerta = document.createElement("div");
-            alerta.className = `alert alert-${tipo}`;
-            alerta.role = "alert";
-            alerta.textContent = texto;
-            contenedor.appendChild(alerta);
-            contenedor.scrollIntoView({ behavior: "smooth", block: "center" });
+        const alerta = document.createElement("div");
+        alerta.className = `alert alert-${tipo} alert-dismissible fade show`;
+        alerta.role = "alert";
+        alerta.innerHTML = `
+            ${texto}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        contenedor.appendChild(alerta);
+        contenedor.scrollIntoView({ behavior: "smooth", block: "center" });
     
-            setTimeout(() => alerta.remove(), 4000);
-        }
-    });
+        setTimeout(() => {
+            const bsAlert = bootstrap.Alert.getOrCreateInstance(alerta);
+            bsAlert.close();
+        }, 4000);
+    }
 </script>
+    
 
 <!--Espacio JavaScript para desarrollar interaccion con estrellas-->
 <script>
@@ -196,7 +195,7 @@
     });    
 </script>
 
-<!--Control de validaciones para el formulario-->
+<!--JavaScript para el control de validaciones para el formulario-->
 <script>
     function validarFormulario() {
         const tituloInput = document.querySelector('input[name="titulo"]');
@@ -209,7 +208,7 @@
             }
         
             if (!ratingInput.value || ratingInput.value === "0") {
-                mensaje += "Debes seleccionar una calificación con estrellas.\n";
+                mensaje += "Debes seleccionar una calificación en estrellas.\n";
             }
         
             if (mensaje) {
@@ -221,7 +220,7 @@
     }
 </script>
 
-<!--Espacio JavaScript para desarrollar  el boton de cancelar edicion-->
+<!--Espacio JavaScript para desarrollar  el funcionamiento del boton de "cancelar edicion"-->
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const cancelarBtn = document.getElementById("cancelarEdicion");
