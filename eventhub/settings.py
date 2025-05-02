@@ -134,3 +134,5 @@ LOGIN_REDIRECT_URL = "/events/"
 LOGIN_URL = "/accounts/login/"
 
 LOGOUT_REDIRECT_URL = "/accounts/login/"
+
+FIELD_ENCRYPTION_KEY = 'DLq3YXqJ_PeLOEdmPb9u9WE1H9bchzls_zHohINynPo='

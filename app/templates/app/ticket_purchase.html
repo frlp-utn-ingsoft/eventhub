@@ -1,0 +1,257 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="text-danger mt-4">
+        <a href="{% url 'events' %}" class="text-decoration-none text-secondary mb-3 d-inline-block">
+            <i class="bi bi-arrow-left me-2"></i>Volver a mis evento
+        </a>
+    </div>
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 mb-4">
+                <div class="card-body p-4">
+                    <h6 class="text-secondary mb-0">Comprar Entrada</h6>
+                    <h3 class="mb-2">{{ event.title }}</h3>
+                    <div class="mb-2 d-flex align-items-center text-muted">
+                        <i class="bi bi-calendar me-2"></i>
+                        <span>{{ event.formatted_date }}</span>
+                    </div>
+                    <div class="mb-2 d-flex align-items-center text-muted">
+                        <i class="bi bi-geo-alt me-2"></i>
+                        <span>{{ event.location }}</span>
+                    </div>
+                    <div class="mb-4 d-flex align-items-center text-muted">
+                        <i class="bi bi-person me-2"></i>
+                        <span>{{ event.organizer }}</span>
+                    </div>
+
+                    {% if messages %}
+                        {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label class="form-label">Cantidad de entradas</label>
+                            <div class="input-group">
+                                <button type="button" class="btn btn-outline-secondary" id="decrease-btn">-</button>
+                                <input type="text" class="form-control text-center" id="id_quantity" name="quantity" value="{{ ticket_form.quantity.value|default:'1' }}" readonly>
+                                <button type="button" class="btn btn-outline-secondary" id="increase-btn">+</button>
+                            </div>
+                            <small class="text-muted">Disponibles: {{ event.available_tickets }} entradas</small>
+                            {% if ticket_form.quantity.errors %}
+                            <div class="text-danger small">{{ ticket_form.quantity.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">Tipo de entrada</label>
+                            {{ ticket_form.type }}
+                            {% if ticket_form.type.errors %}
+                            <div class="text-danger small">{{ ticket_form.type.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Método de pago</label>
+                            <div class="mb-3">
+                                <label class="form-label">Tipo de tarjeta</label>
+                                {{ payment_form.card_type }}
+                                {% if payment_form.card_type.errors %}
+                                    <div class="text-danger small">{{ payment_form.card_type.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Número de tarjeta</label>
+                                {% if payment_form.card_number.field.widget.input_type %}
+                                    {{ payment_form.card_number }}
+                                {% else %}
+                                    <input type="text" name="{{ payment_form.card_number.html_name }}" 
+                                           id="{{ payment_form.card_number.id_for_label }}" 
+                                           class="form-control" 
+                                           placeholder="1234 5678 9012 3456" 
+                                           value="{{ payment_form.card_number.value|default:'' }}">
+                                {% endif %}
+                                {% if payment_form.card_number.errors %}
+                                    <div class="text-danger small">{{ payment_form.card_number.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+
+                            <div class="row">
+                                <div class="col-6 mb-3">
+                                    <label class="form-label">Fecha de expiración</label>
+                                    <input type="text" 
+                                           name="{{ payment_form.expiry_date.html_name|default:'expiry_date' }}" 
+                                           id="{{ payment_form.expiry_date.id_for_label|default:'id_expiry_date' }}" 
+                                           class="form-control w-100" 
+                                           placeholder="MM/AA" 
+                                           value="{{ payment_form.expiry_date.value|default:'' }}">
+                                    {% if payment_form.expiry_date.errors %}
+                                        <div class="text-danger small">{{ payment_form.expiry_date.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="col-6 mb-3">
+                                    <label class="form-label">CVV</label>
+                                    <input type="text" 
+                                           name="{{ payment_form.cvv.html_name|default:'cvv' }}" 
+                                           id="{{ payment_form.cvv.id_for_label|default:'id_cvv' }}" 
+                                           class="form-control w-100" 
+                                           placeholder="123" 
+                                           value="{{ payment_form.cvv.value|default:'' }}">
+                                    {% if payment_form.cvv.errors %}
+                                        <div class="text-danger small">{{ payment_form.cvv.errors.0 }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Nombre en la tarjeta</label>
+                                {% if payment_form.card_holder.field.widget.input_type %}
+                                    {{ payment_form.card_holder }}
+                                {% else %}
+                                    <input type="text" name="{{ payment_form.card_holder.html_name }}" 
+                                           id="{{ payment_form.card_holder.id_for_label }}" 
+                                           class="form-control" 
+                                           placeholder="Juan Pérez" 
+                                           value="{{ payment_form.card_holder.value|default:'' }}">
+                                {% endif %}
+                                {% if payment_form.card_holder.errors %}
+                                    <div class="text-danger small">{{ payment_form.card_holder.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            {{ ticket_form.accept_terms }}
+                            <label class="form-check-label" for="id_accept_terms">
+                                Acepto los <a href="#" class="text-decoration-none">términos y condiciones</a> y la <a href="#" class="text-decoration-none">política de privacidad</a>
+                            </label>
+                            {% if ticket_form.accept_terms.errors %}
+                            <div class="text-danger small">{{ ticket_form.accept_terms.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-primary w-100">Confirmar compra</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Resumen de compra</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Precio por entrada:</span>
+                        <span class="fw-bold" id="precio-entrada">${{ event.general_price|default:'45.99' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Cantidad:</span>
+                        <span class="fw-bold" id="cantidad-entradas">1</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Subtotal:</span>
+                        <span class="fw-bold" id="subtotal">${{ event.general_price|default:'45.99' }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-3">
+                        <span>Impuestos (10%):</span>
+                        <span class="fw-bold" id="impuestos">${{ event.tax_amount|default:'4.60' }}</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold">Total:</span>
+                        <span class="fw-bold" id="total">${{ event.total_price|default:'50.59' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Información importante</h5>
+                    <ul class="list-unstyled m-0 p-0">
+                        <li class="mb-2 d-flex">
+                            <i class="bi bi-info-circle text-primary me-2"></i>
+                            <span>Las entradas son personales e intransferibles.</span>
+                        </li>
+                        <li class="mb-2 d-flex">
+                            <i class="bi bi-info-circle text-primary me-2"></i>
+                            <span>Puedes solicitar un reembolso hasta 48 horas antes del evento.</span>
+                        </li>
+                        <li class="mb-2 d-flex">
+                            <i class="bi bi-info-circle text-primary me-2"></i>
+                            <span>Recibirás tu entrada en tu correo electrónico.</span>
+                        </li>
+                        <li class="d-flex">
+                            <i class="bi bi-info-circle text-primary me-2"></i>
+                            <span>Presenta tu entrada digital o impresa el día del evento.</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const typeSelect = document.querySelector('#id_type');
+    const quantityInput = document.querySelector('#id_quantity');
+    const decreaseBtn = document.querySelector('#decrease-btn');
+    const increaseBtn = document.querySelector('#increase-btn');
+    const precioEntrada = document.querySelector('#precio-entrada');
+    const cantidadEntradas = document.querySelector('#cantidad-entradas');
+    const subtotal = document.querySelector('#subtotal');
+    const impuestos = document.querySelector('#impuestos');
+    const total = document.querySelector('#total');
+
+    const prices = {
+        "GENERAL": parseFloat("{{ event.general_price|default:'45.99' }}"),
+        "VIP": parseFloat("{{ event.vip_price|default:'89.99' }}")
+    };
+
+    decreaseBtn.addEventListener('click', function() {
+        let quantity = parseInt(quantityInput.value);
+        if (quantity > 1) {
+            quantityInput.value = quantity - 1;
+            updateSummary();
+        }
+    });
+
+    increaseBtn.addEventListener('click', function() {
+        let quantity = parseInt(quantityInput.value);
+        if (quantity < 10) {
+            quantityInput.value = quantity + 1;
+            updateSummary();
+        }
+    });
+
+    function updateSummary() {
+        const ticketType = typeSelect.value;
+        const quantity = parseInt(quantityInput.value) || 0;
+        const price = prices[ticketType] || 0;
+
+        const subtotalValue = price * quantity;
+        const taxes = subtotalValue * 0.1;
+        const totalValue = subtotalValue + taxes;
+
+        precioEntrada.textContent = `$${price.toFixed(2)}`;
+        cantidadEntradas.textContent = quantity;
+        subtotal.textContent = `$${subtotalValue.toFixed(2)}`;
+        impuestos.textContent = `$${taxes.toFixed(2)}`;
+        total.textContent = `$${totalValue.toFixed(2)}`;
+    }
+
+    typeSelect.addEventListener('change', updateSummary);
+    updateSummary();
+});
+</script>
+{% endblock %}
