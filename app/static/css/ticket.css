@@ -1,0 +1,19 @@
+input[type=number]::-webkit-inner-spin-button, 
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.card-body.ticket .form-label {
+  font-weight: 600;
+  color: #333;
+
+}
+
+.card-body.ticket input{
+  color: #333;
+  font-weight: 600;
+  background-color: #fff !important;
+  border-radius: 0.5rem !important;
+  border: 1px solid #ccc !important;
+}

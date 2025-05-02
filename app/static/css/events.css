@@ -1,0 +1,11 @@
+.card.events{
+    background: linear-gradient(135deg, #1e1e2f, #2c2c54);
+}
+
+.card.events .form-control {
+    color: #000000;
+}
+.crearEvento:hover{
+    background: #43b982 !important;
+    color: #fff !important;
+}

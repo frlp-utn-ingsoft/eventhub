@@ -1,24 +1,30 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
+<style>
+    ::placeholder {
+        color: #6c757d !important; /* Un gris más oscuro */
+        opacity: 1 !important; /* Asegura que el color sea visible */
+    }
+</style>
+<div class="containerEventos mt-5">
     <div class="row">
         <div class="col-md-8 offset-md-2">
             <h1 class="mb-4">
                 {% if event.id %}
-                    Editar evento
+                Editar evento
                 {% else %}
-                    Crear evento
+                Crear evento
                 {% endif %}
             </h1>
 
-            <div class="card">
+            <div class="card events">
                 <div class="card-body">
-                    <form action="{% url 'event_form' %}" method="POST">
+                    <form action="{% if event.id %}{% url 'event_edit' event.id %}{% else %}{% url 'event_form' %}{% endif %}" method="POST">
                         {% csrf_token %}
                         <div class="vstack gap-3">
                             <div>
-                                <label for="title" class="form-label">Título del Evento</label>
+                                <label for="title" class="form-label events">Título del Evento</label>
                                 <input class="form-control"
                                     id="title"
                                     required=""
@@ -26,8 +32,9 @@
                                     value="{{ event.title }}"
                                     name="title" />
                             </div>
+
                             <div>
-                                <label for="description" class="form-label">Descripción</label>
+                                <label for="description" class="form-label events">Descripción</label>
                                 <textarea
                                     class="form-control"
                                     id="description"
@@ -35,9 +42,26 @@
                                     rows="4"
                                     required="">{{ event.description }}</textarea>
                             </div>
+                            <div>
+                                <label for="venue" class="form-label">Ubicación</label>
+                                <div class="d-flex align-items-center gap-3">
+                                    <select name="venue" id="venue" class="form-select" style="width: 81%;" required>
+                                        <option value="">Seleccionar una ubicación</option>
+                                        {% for venue in venues %}
+                                        <option value="{{ venue.id }}" {% if event.venue and event.venue.id == venue.id %}selected{% endif %}>
+                                            {{ venue.name }} - {{ venue.city }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                    <button type="button" class="btn btn-eventgub-green crearEvento" data-bs-toggle="modal" data-bs-target="#venueModal">
+                                        Nueva Ubicación
+                                    </button>
+                                </div>
+                            </div>
+
                             <div class="row">
                                 <div class="col-md-6">
-                                    <label for="date" class="form-label">Fecha</label>
+                                    <label for="date" class="form-label events">Fecha</label>
                                     <input
                                         class="form-control"
                                         id="date"
@@ -47,22 +71,94 @@
                                         name="date" />
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="time" class="form-label">Hora</label>
+                                    <label for="time" class="form-label events">Hora</label>
                                     <input
                                         class="form-control"
                                         id="time"
                                         required=""
                                         type="time"
-                                        value="{{ event.scheduled_at|date:'g:i'}}"
+                                        value="{{ event.scheduled_at|date:'H:i'}}"
                                         name="time" />
                                 </div>
                             </div>
                             <div>
-                                <button type="submit" class="btn btn-primary">Crear Evento</button>
+                                <label for="categories" class="form-label events">Categorías</label>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {% for cat in categories %}
+                                                <div class="form-check">
+                                                    <input
+                                                        class="form-check-input"
+                                                        type="checkbox"
+                                                        name="categories"
+                                                        id="category_{{ cat.id }}"
+                                                        value="{{ cat.id }}"
+                                                        {% if cat.id in selected_categories %}checked{% endif %}>
+                                                    <label class="form-check-label ms-1" for="category_{{ cat.id }}">
+                                                        <span class="badge bg-light text-dark">{{ cat.name }}</span>
+                                                    </label>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-eventgub-green crearEvento">
+                                    {% if event.id %}
+                                        Editar Evento
+                                    {% else %}
+                                        Crear Evento
+                                    {% endif %}
+                                </button>
+                                <a href="{% url 'events' %}" class="btn btn-outline-eventhub">Cancelar</a>
                             </div>
                         </div>
                     </form>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Separo la estructura del modal al cargar una nueva ubicacion -->
+<div class="modal fade" id="venueModal" tabindex="-1" aria-labelledby="venueModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="venueModalLabel">Nueva Ubicación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="venueForm" method="POST" action="{% url 'venue_form' %}">
+                    {% csrf_token %}
+                    <div class="vstack gap-3">
+                        <div>
+                            <label for="name" class="form-label text-dark">Nombre</label>
+                            <input class="form-control" id="name" required type="text" name="name" placeholder="Ej: Estadio Nacional" >
+                        </div>
+                        <div>
+                            <label for="address" class="form-label text-dark">Dirección</label>
+                            <input class="form-control" id="address" required type="text" name="address" placeholder="Ej: Av. Grecia 2001">
+                        </div>
+                        <div>
+                            <label for="city" class="form-label text-dark">Ciudad</label>
+                            <input class="form-control" id="city" required type="text" name="city" placeholder="Ej: Santiago">
+                        </div>
+                        <div>
+                            <label for="capacity" class="form-label text-dark">Capacidad</label>
+                            <input class="form-control" id="capacity" required type="number" name="capacity" placeholder="Ej: 1000">
+                        </div>
+                        <div>
+                            <label for="contact" class="form-label text-dark">Contacto</label>
+                            <input class="form-control" id="contact" required type="text" name="contact" placeholder="Ej: contacto@ejemplo.com">
+                        </div>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                            <button type="submit" class="btn btn-eventgub-green crearEvento">Guardar Ubicación</button>
+                        </div>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

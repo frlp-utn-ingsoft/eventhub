@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load static %}
+{% load form_tags %}
+
+{% block content %}
+<div class="containerNotificaciones my-5">
+  <div class="row">
+    <!-- === Columna Izquierda: Formulario === -->
+    <div class="col-lg-8">
+      <div class="form-notif">
+        <!-- Botón para volver atrás -->
+        <button type="button" class="btn btn-outline-secondary mb-3" onclick="history.back()">
+            ← Volver
+          </button>
+        <h2 class="mb-4 text-start">Crear Notificación</h2>
+
+        
+
+        <form method="post" class="row g-3">{% csrf_token %}
+
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <!-- Título -->
+          <div class="col-12">
+            <label class="form-label">{{ form.title.label }}</label>
+            {{ form.title|add_class:"form-control form-animate" }}
+          </div>
+
+          <!-- Mensaje -->
+          <div class="col-12">
+            <label class="form-label">{{ form.message.label }}</label>
+            {{ form.message|add_class:"form-control form-animate" }}
+          </div>
+
+          <!-- Destinatarios -->
+          <div class="col-12">
+            <label class="form-label">Destinatarios *</label>
+            <div class="form-check">
+              {{ form.target }}
+            </div>
+          </div>
+
+          <!-- Evento -->
+          <div class="col-md-6" id="field_event">
+            <label class="form-label">{{ form.event.label }}</label>
+            {{ form.event|add_class:"form-select form-animate" }}
+          </div>
+
+          <!-- Usuario -->
+          <div class="col-md-6" id="field_user">
+            <label class="form-label">{{ form.user.label }}</label>
+            {{ form.user|add_class:"form-select select-user form-animate" }}
+          </div>
+
+          <!-- Prioridad -->
+          <div class="col-md-6">
+            <label class="form-label">{{ form.priority.label }}</label>
+            {{ form.priority|add_class:"form-select form-animate" }}
+          </div>
+
+          {{ form.to_all_event_attendees }} <!-- hidden -->
+
+          <!-- Botones -->
+          <div class="col-12 d-flex justify-content-end gap-2 mt-3">
+            <button type="submit" class="btn btn-eventgub-green crearNotificacion">
+              Crear Notificación
+            </button>
+            <a href="{% url 'notifications_list' %}" class="btn btn-outline-eventhub">Cancelar</a>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- === Columna Derecha: Consejos === -->
+    <div class="col-lg-4">
+      <div class="card border-warning shadow-sm">
+        <div class="card-body">
+          <h5 class="card-title text-warning">📌 Consejos</h5>
+          <ul class="small">
+            <li>📝 Usá títulos claros y concisos para captar la atención.</li>
+            <li>📌 Incluí toda la información relevante en el mensaje.</li>
+            <li>⚠️ Usá la prioridad alta solo para notificaciones urgentes.</li>
+            <li>📧 Considerá enviar por correo electrónico las notificaciones importantes.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+    function toggleTargetFields() {
+      const selected = document.querySelector('input[name="target"]:checked')?.value;
+      const fieldEvent = document.getElementById("field_event");
+      const fieldUser = document.getElementById("field_user");
+  
+      if (selected === "event") {
+        fieldEvent.classList.remove("d-none");
+        fieldUser.classList.add("d-none");
+      } else if (selected === "user") {
+        fieldUser.classList.remove("d-none");
+        fieldEvent.classList.add("d-none");
+      } else {
+        fieldEvent.classList.add("d-none");
+        fieldUser.classList.add("d-none");
+      }
+    }
+  
+    document.addEventListener("DOMContentLoaded", () => {
+      document.querySelectorAll('input[name="target"]').forEach(radio => {
+        radio.addEventListener("change", toggleTargetFields);
+      });
+      toggleTargetFields(); // Llama al inicio para mostrar el campo correcto
+    });
+  </script>
+{% endblock %}

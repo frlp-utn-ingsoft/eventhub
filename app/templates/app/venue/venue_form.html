@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    ::placeholder {
+        color: #6c757d !important; /* Un gris más oscuro */
+        opacity: 1 !important; /* Asegura que el color sea visible */
+    }
+</style>
+<div class="containerEventos mt-5">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <h1 class="mb-4">
+                {% if venue %}
+                Editar Ubicación
+                {% else %}
+                Crear Nueva Ubicación
+                {% endif %}
+            </h1>
+
+            <div class="card events">
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <div class="vstack gap-3">
+                            <div>
+                                <label for="name" class="form-label">Nombre de la ubicación *</label>
+                                <input class="form-control" id="name" required type="text" name="name"
+                                    placeholder="Ej: Estadio Nacional"
+                                    value="{{ form.name.value|default_if_none:'' }}" />
+                            </div>
+                            <div>
+                                <label for="address" class="form-label">Dirección *</label>
+                                <input class="form-control" id="address" required type="text" name="address"
+                                    placeholder="Ej: Av. Grecia 2001"
+                                    value="{{ form.address.value|default_if_none:'' }}" />
+                            </div>
+                            <div>
+                                <label for="city" class="form-label">Ciudad *</label>
+                                <input class="form-control" id="city" required type="text" name="city"
+                                    placeholder="Chile"
+                                    value="{{ form.city.value|default_if_none:'' }}" />
+                            </div>
+                            <div>
+                                <label for="capacity" class="form-label">Capacidad (número de personas) *</label>
+                                <input class="form-control" id="capacity" required type="number" name="capacity"
+                                    placeholder="Ej: 1000"
+                                    value="{{ form.capacity.value|default_if_none:'' }}" />
+                            </div>
+                            <div>
+                                <label for="contact" class="form-label">Contacto *</label>
+                                <textarea class="form-control" id="contact" required name="contact" rows="3"
+                                    placeholder="Describe las características principales de la ubicación...">{{ form.contact.value|default_if_none:'' }}</textarea>
+                            </div>
+                            <div class="d-flex justify-content gap-1">
+                                <button type="submit" class="btn btn-eventgub-green crearEvento">
+                                    {% if venue %}
+                                        Guardar Cambios
+                                    {% else %}
+                                        Crear Ubicación
+                                    {% endif %}
+                                </button>
+                                <a href="{% url 'venue_list' %}" class="btn btn-outline-eventhub">Cancelar</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
