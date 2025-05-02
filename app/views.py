@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .forms import NotificationForm,TicketForm,RefundRequestForm,RatingForm,CommentForm, VenueForm
+from .forms import NotificationForm,TicketForm,RefundRequestForm,RatingForm,CommentForm, VenueForm, EventForm
 from .models import Event, User, Notification, User_Notification,Ticket, Rating, RefundRequest
 from datetime import timedelta
 from .models import (
@@ -166,73 +166,52 @@ def event_form(request, id=None):
     if not user.is_organizer:
         return redirect("events")
 
-    venues = Venue.objects.all()
-    categories = Category.objects.all()
+    if id:
+        instance = get_object_or_404(Event, pk=id)
+    else:
+        instance = None
 
     if request.method == "POST":
-        title = request.POST.get("title")
-        description = request.POST.get("description")
-        date = request.POST.get("date")
-        time = request.POST.get("time")
-        category_ids = request.POST.getlist("categories")  
-        venue_id = request.POST.get("venue")  # <-- lo agg para la relacion events/ venue
+        form = EventForm(request.POST, instance=instance)
 
-        # VALIDACIONES
-        if not category_ids:
-            messages.error(request, "Debes seleccionar al menos una categoría.", extra_tags='categoria')
-            return render(request, "app/event_form.html", {
-                "event": request.POST,  # podés usar un diccionario si necesitás repoblar datos
-                "user_is_organizer": request.user.is_organizer,
-                "categories": categories,
-                "venues": venues,
-            })
+        if form.is_valid():
+            event = form.save(commit=False)
+            event.organizer = request.user
 
-        if not venue_id:
-            messages.error(request, "Debes seleccionar una ubicación.", extra_tags='ubicacion')
-            return render(request, "app/event_form.html", {
-                "event": request.POST,
-                "user_is_organizer": request.user.is_organizer,
-                "categories": categories,
-                "venues": venues,
-            })
+            # Combinar date y time desde POST para formar scheduled_at
+            date = request.POST.get("date")
+            time = request.POST.get("time")
+            if date and time:
+                try:
+                    y, m, d = map(int, date.split("-"))
+                    h, mi = map(int, time.split(":"))
+                    event.scheduled_at = timezone.make_aware(datetime.datetime(y, m, d, h, mi))
+                except Exception:
+                    form.add_error(None, "Fecha y hora inválidas.")
+                    return render(request, "app/event_form.html", {
+                        "form": form,
+                        "user_is_organizer": request.user.is_organizer
+                    })
 
+            event.save()
+            form.save_m2m()
 
-        [year, month, day] = date.split("-")
-        [hour, minutes] = time.split(":")
-
-        scheduled_at = timezone.make_aware(
-            datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
-        )
-
-        venue = get_object_or_404(Venue, pk=venue_id)# <-- lo agg para la relacion events/ venue
-        
-        if id is None:
-            event = Event.new(title, description, scheduled_at, request.user, venue) # type: ignore
-            if event[0]:  
-                event_instance = Event.objects.get(title=title, description=description, scheduled_at=scheduled_at)
-                event_instance.categories.set(category_ids)  
-                event_instance.save()
+            return redirect("events")
         else:
-            event_instance = get_object_or_404(Event, pk=id)
-            event_instance.update(title, description, scheduled_at, request.user, venue) # type: ignore
-            event_instance.categories.set(category_ids) 
-            event_instance.save()
-  
+            messages.error(request, "Corregí los errores.")
+    else:
+        # Cargar el form con instancia si hay edición
+        initial = {}
+        if instance:
+            initial['date'] = instance.scheduled_at.date()
+            initial['time'] = instance.scheduled_at.time().strftime("%H:%M")
 
+        form = EventForm(instance=instance, initial=initial)
 
-        return redirect("events")
-
-    event = {}
-    if id is not None:
-        event = get_object_or_404(Event, pk=id)
-
-    venues = Venue.objects.all()  # <-- lo agg para la relacion events/ venue, para el dropdown en el template
-
-    return render(
-        request,
-        "app/event_form.html",
-        {"event": event, "user_is_organizer": request.user.is_organizer, "categories": categories, "venues": venues}, # <-- lo agg para la relacion events/ venue # type: ignore
-    )
+    return render(request, "app/event_form.html", {
+        "form": form,
+        "user_is_organizer": request.user.is_organizer
+    })
 
 @login_required
 def notifications(request):

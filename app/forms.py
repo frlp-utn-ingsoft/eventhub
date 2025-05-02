@@ -1,7 +1,7 @@
 
 from datetime import datetime
 from django import forms
-from .models import Event, Notification, RefundRequest, Ticket, User, Venue,Rating,Comment
+from .models import Event, Notification, RefundRequest, Ticket, User, Venue,Rating,Comment, Category
 
 
 class NotificationForm(forms.ModelForm):
@@ -216,3 +216,108 @@ class VenueForm(forms.ModelForm):
             model = Venue
             fields = ['name', 'address', 'city', 'capacity', 'contact']
             # Ya no necesitamos definir widgets aquí porque los definimos arriba
+
+
+class VenueChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj: Venue):
+        return f"{obj.name} - {obj.city} - {obj.address}"
+
+class EventForm(forms.ModelForm):
+
+    title = forms.CharField(
+        label='Título del Evento',
+        max_length=60, 
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
+
+    description = forms.CharField(
+        label='Descripción',
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
+        max_length=200
+    )
+
+    # Definir los campos de la fecha y hora con los widgets correspondientes
+    date = forms.DateField( label='Fecha', widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
+    time = forms.TimeField( label='Hora', widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}))
+
+    # Campo de categorías (modelo de relación de varios a varios)
+    categories = forms.ModelMultipleChoiceField(
+        queryset=Category.objects.all(),  # Establece el queryset directamente aquí
+        widget=forms.CheckboxSelectMultiple, 
+        required=True,
+        label='Categorías'
+    )
+
+    venue = VenueChoiceField(  # Use the custom field here
+        queryset=Venue.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=True,
+        label='Ubicación',
+        empty_label="Selecciona una ubicación",  # Opcional
+        to_field_name="id",  # Opcional
+    )
+
+    class Meta:
+        model = Event
+        fields = ['title', 'description', 'date', 'time', 'categories', 'venue']  # Añadí 'date' y 'time' al form
+        labels = {
+            'title': 'Título del Evento',
+            'description': 'Descripción',
+            'date': 'Fecha',
+            'time': 'Hora',
+            'categories': 'Categorías',
+            'venue': 'Ubicación',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Asignación de clases a los campos para estilizar
+        self.fields['title'].widget.attrs.update({'class': 'form-control'})
+        self.fields['description'].widget.attrs.update({'class': 'form-control', 'rows': 4})
+        self.fields['venue'].widget.attrs.update({'class': 'form-control'})
+        self.fields['date'].widget.attrs.update({'class': 'form-control'})
+        self.fields['time'].widget.attrs.update({'class': 'form-control'})
+        
+
+    # Agregar validaciones personalizadas
+    def clean_title(self):
+        title = self.cleaned_data.get('title')
+        if not title:
+            raise forms.ValidationError("El título es obligatorio.")
+        return title
+
+    def clean_description(self):
+        description = self.cleaned_data.get('description')
+        if not description:
+            raise forms.ValidationError("La descripción es obligatoria.")
+        return description
+
+    def clean_date(self):
+        date = self.cleaned_data.get('date')
+        if not date:
+            raise forms.ValidationError("La fecha es obligatoria.")
+        if date:
+            today = date.today()
+            if date < today:
+                raise forms.ValidationError("La fecha del evento debe ser hoy o posterior.")
+        return date
+
+    def clean_time(self):
+        time = self.cleaned_data.get('time')
+        if not time:
+            raise forms.ValidationError("La hora es obligatoria.")
+        return time
+
+    def clean_categories(self):
+        categories = self.cleaned_data.get('categories')
+        # Si deseas que al menos una categoría esté seleccionada:
+        if not categories:
+            raise forms.ValidationError("Debes seleccionar al menos una categoría.")
+        return categories
+
+    def clean_venue(self):
+        venue = self.cleaned_data.get('venue')
+        if not venue:
+            raise forms.ValidationError("La ubicación es obligatoria.")
+        return venue
