@@ -118,6 +118,7 @@ def eliminarVenue(request, pk):
 
 
 @login_required
+@organizer_required
 def categories(request):
 
     categories = Category.objects.annotate(event_count=Count('events')).order_by('updated_at')
@@ -278,7 +279,6 @@ def event_delete(request, id):
     return redirect("events")
 
 @login_required
-@organizer_required
 def event_form(request, id=None):
     user = request.user
 
