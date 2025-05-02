@@ -1,11 +1,139 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Formulario de Ticket</title>
-</head>
-<body>
-    <h1>Formulario de Ticket</h1>
-</body>
-</html>
+{% extends 'base.html' %}
+{% block content %}
+<div class="col-12 mb-0 mt-2">
+    <button
+        class="btn btn-sm btn-outline-secondary mb-0 ms-4"
+        type="button"
+        onclick="window.location.href='{% url 'events' %}'"
+    >
+        Volver
+    </button>
+</div>
+<div class="container mt-1">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                {% if errors %}
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            {% for error in errors.values %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                <div class="card-header">
+                    <h5 class="card-title">Comprar entrada</h5>
+                    <h5 class="card-title">{{ event.id }}</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'ticket_form' event_id %}" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="ticketQuantity" class="form-label"><strong>Cantidad de entrada</strong></label>
+                            <div class="input-group">
+                                <button class="btn btn-outline-secondary" type="button" onclick="decreaseQuantity()">-</button>
+                                <input type="number" name="ticketQuantity" id="ticketQuantity" class="form-control text-center" value="1" min="1">
+                                <button class="btn btn-outline-secondary" type="button" onclick="increaseQuantity()">+</button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ticketType" class="form-label"><strong>Tipo de entrada</strong></label>
+                            <select name="ticketType" id="ticketType" class="form-select" required>
+                                {% for ticket in ticket_types %}
+                                    <option value="{{ ticket.id }}" data-price="{{ ticket.price }}">{{ ticket.name }} - ${{ ticket.price }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% include 'app/cardForm.html' %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="termsAndConditions" required>
+                            <label class="form-check-label" for="termsAndConditions">
+                                Acepto los términos y condiciones y la política de privacidad
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Comprar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Resumen de compra</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <p class="card-text">Precio de entrada:</p>
+                                    <p class="card-text">Cantidad:</p>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <p class="card-text" id="ticketPrice">$0.00</p>
+                                    <p class="card-text" id="ticketQuantitySummary">0</p>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-6">
+                                    <p class="card-text">Total:</p>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <p class="card-text" id="totalPrice">$0.00</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Información importante</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Solo puede modificar el ticket en los 30 minutos siguientes a la compra.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function increaseQuantity() {
+        const quantityInput = document.getElementById('ticketQuantity');
+        quantityInput.value = parseInt(quantityInput.value) + 1;
+        updateSummary();
+    }
+
+    function decreaseQuantity() {
+        const quantityInput = document.getElementById('ticketQuantity');
+        if (parseInt(quantityInput.value) > 1) {
+            quantityInput.value = parseInt(quantityInput.value) - 1;
+        }
+        updateSummary();
+    }
+
+    function updateSummary() {
+        const quantity = parseInt(document.getElementById('ticketQuantity').value);
+        const ticketTypeSelect = document.getElementById('ticketType');
+        const selectedOption = ticketTypeSelect.options[ticketTypeSelect.selectedIndex];
+        const price = parseFloat(selectedOption.getAttribute('data-price'));
+
+        if (!isNaN(price)) {
+            document.getElementById('ticketPrice').textContent = `$${price.toFixed(2)}`;
+            document.getElementById('ticketQuantitySummary').textContent = quantity;
+            document.getElementById('totalPrice').textContent = `$${(price * quantity).toFixed(2)}`;
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('ticketQuantity').addEventListener('input', updateSummary);
+        document.getElementById('ticketType').addEventListener('change', updateSummary);
+        updateSummary();
+    });
+</script>
+{% endblock %}

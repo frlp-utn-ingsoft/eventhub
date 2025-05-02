@@ -1,0 +1,41 @@
+<p class="card-text"><strong>Método de pago</strong></p>
+<div class="card" style="background-color: #f8f9fa;">
+    <div class="card-body">
+        <div class="mb-3">
+            <label for="cardNumber" class="form-label">Número de tarjeta</label>
+            <input type="text" id="cardNumber" class="form-control" placeholder="1234 5678 9012 3456" maxlength="19" required>
+        </div>
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="expirationDate" class="form-label">Fecha de expiración</label>
+                <input type="text" id="expirationDate" class="form-control" placeholder="MM/AA" maxlength="5">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="cvv" class="form-label">CVV</label>
+                <input type="text" id="cvv" class="form-control" placeholder="123" maxlength="3">
+            </div>
+        </div>
+        <div class="mb-3">
+            <label for="cardHolderName" class="form-label">Nombre del titular</label>
+            <input type="text" id="cardHolderName" class="form-control" placeholder="Nombre completo">
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('cardNumber').addEventListener('input', function (e) {
+        let value = e.target.value.replace(/\D/g, ''); 
+        e.target.value = value.replace(/(\d{4})(?=\d)/g, '$1 ');
+    });
+    document.getElementById('expirationDate').addEventListener('input', function (e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length > 2) {
+            value = value.slice(0, 2) + '/' + value.slice(2);
+        }
+        e.target.value = value.slice(0, 5);
+    });
+    document.getElementById('cvv').addEventListener('input', function (e) {
+        let value = e.target.value.replace(/\D/g, '');
+        e.target.value = value.slice(0, 3);
+    });
+</script>

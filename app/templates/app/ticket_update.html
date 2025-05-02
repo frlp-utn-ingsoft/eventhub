@@ -1,11 +1,154 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Actualizar Ticket</title>
-</head>
-<body>
-    <h1>Actualizar Ticket</h1>
-</body>
-</html>
+{% extends 'base.html' %}
+{% block content %}
+<div class="col-12 mb-0 mt-2">
+    <button
+        class="btn btn-sm btn-outline-secondary mb-0 ms-4"
+        type="button"
+        onclick="window.location.href='{% url 'tickets' %}'"
+    >
+        Volver
+    </button>
+</div>
+<div class="container mt-1">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                {% if errors %}
+                    <div class="alert alert-danger">
+                        <ul class="mb-0">
+                            {% for error in errors.values %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                <div class="card-header">
+                    <h5 class="card-title">Actualizar ticket</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{% url 'ticket_update' ticket.ticket_code %}" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="quantity" class="form-label"><strong>Cantidad de entrada</strong></label>
+                            <div class="input-group">
+                                <button class="btn btn-outline-secondary" type="button" onclick="decreaseQuantity()">-</button>
+                                <input type="number" name="quantity" id="quantity" class="form-control text-center" value="{{ ticket.quantity }}" min="1">
+                                <button class="btn btn-outline-secondary" type="button" onclick="increaseQuantity()">+</button>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="ticket_type" class="form-label"><strong>Tipo de entrada</strong></label>
+                            <select name="ticket_type" id="ticket_type" class="form-select" required>
+                                {% for ticket_type in ticket_types %}
+                                    <option value="{{ ticket_type.id }}" data-price="{{ ticket_type.price }}" {% if ticket_type.id == ticket.ticket_type.id %}selected{% endif %}>
+                                        {{ ticket_type.name }} - ${{ ticket_type.price }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% include 'app/cardForm.html' %}
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" name="termsAndConditions" required>
+                            <label class="form-check-label" for="termsAndConditions">
+                                Acepto los términos y condiciones y la política de privacidad
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Actualizar</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="row">
+                <div class="col-12 mb-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Resumen de actualización</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-6">
+                                    <p class="card-text">Precio de entrada:</p>
+                                    <p class="card-text">Cantidad:</p>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <p class="card-text" id="ticketPrice">$0.00</p>
+                                    <p class="card-text" id="ticketQuantitySummary">0</p>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-6">
+                                    <p class="card-text">Nuevo total:</p>
+                                    <p class="card-text">Total original:</p>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <p class="card-text" id="totalPrice">$0.00</p>
+                                    <p class="card-text" id="OriginalTotalPrice">${{ ticket.total_price }}</p>
+                                </div>
+                            </div>
+                            <hr>
+                            <div class="row">
+                                <div class="col-6">
+                                    <p class="card-text">Diferencia:</p>
+                                </div>
+                                <div class="col-6 text-end">
+                                    <p class="card-text" id="differencePrice">$0.00</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title">Información importante</h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">Solo puede modificar el ticket en los 30 minutos siguientes a la compra.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function increaseQuantity() {
+        const quantityInput = document.getElementById('quantity');
+        quantityInput.value = parseInt(quantityInput.value) + 1;
+        updateSummary();
+    }
+
+    function decreaseQuantity() {
+        const quantityInput = document.getElementById('quantity');
+        if (parseInt(quantityInput.value) > 1) {
+            quantityInput.value = parseInt(quantityInput.value) - 1;
+        }
+        updateSummary();
+    }
+
+    function updateSummary() {
+    const quantity = parseInt(document.getElementById('quantity').value);
+    const ticketTypeSelect = document.getElementById('ticket_type');
+    const selectedOption = ticketTypeSelect.options[ticketTypeSelect.selectedIndex];
+    const price = parseFloat(selectedOption.getAttribute('data-price'));
+    const originalTotal = parseFloat(document.getElementById('OriginalTotalPrice').textContent.replace('$', ''));
+
+    if (!isNaN(price)) {
+        const newTotal = price * quantity;
+        document.getElementById('ticketPrice').textContent = `$${price.toFixed(2)}`;
+        document.getElementById('ticketQuantitySummary').textContent = quantity;
+        document.getElementById('totalPrice').textContent = `$${newTotal.toFixed(2)}`;
+        document.getElementById('differencePrice').textContent = `$${(newTotal - originalTotal).toFixed(2)}`;
+    }
+}
+
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('quantity').addEventListener('input', updateSummary);
+        document.getElementById('ticket_type').addEventListener('change', updateSummary);
+        updateSummary();
+    });
+</script>
+{% endblock %}

@@ -1,11 +1,82 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Detalle de Ticket</title>
-</head>
-<body>
-    <h1>Detalle de Ticket</h1>
-</body>
-</html>
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="col-12 mb-0 mt-2">
+    <button
+        class="btn btn-sm btn-outline-secondary mb-0 ms-4"
+        type="button"
+        onclick="window.location.href='{% url 'tickets' %}'"
+    >
+        Volver
+    </button>
+</div>
+<div class="container mt-1">
+    {% if errors %}
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                {% for error in errors.values %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    <div class="row align-items-center">
+        <h1 class="mb-0">Detalle del ticket #{{ ticket.id }}</h1>
+        <p>Generación: {{ ticket.buy_date|date:"l, j \\d\\e F \\d\\e Y, H:i"}}</p>
+    </div>       
+    <div class="row">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h3 class="card-title mb-3">{{ ticket.event.title }}</h3>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light rounded-circle p-2 me-3">
+                                <i class="bi bi-calendar-event text-primary"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">Fecha y Hora</h6>
+                                <p class="mb-0">{{ ticket.event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light rounded-circle p-2 me-3">
+                                <i class="bi bi-person text-primary"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">Organizador</h6>
+                                <p class="mb-0">{{ ticket.event.organizer }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h3 class="card-title mb-3">Entradas</h3>
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-light rounded-circle p-2 me-3">
+                                    <i class="bi bi-ticket text-primary"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Tipo entrada</h6>
+                                    <p class="mb-0">{{ ticket.ticket_type.name }} - ${{ ticket.ticket_type.price }}</p>
+                                    <p class="mb-0">Cantidad: {{ticket.quantity}}</p>
+                                </div>
+                            </div>
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="bg-light rounded-circle p-2 me-3">
+                                    <i class="bi bi-currency-dollar text-primary"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-0">Total</h6>
+                                    <p class="mb-0">${{ ticket.total_price }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
