@@ -1,0 +1,44 @@
+[
+    {
+        "model": "app.refoundrequest",
+        "pk": 1,
+        "fields": {
+            "id": 1,
+            "approved": "pending",
+            "approval_date": "2025-04-27",
+            "ticket_code": "TCK-001",
+            "reason": "El evento fue cancelado por lluvia",
+            "details": "Se notificó por correo el mismo día",
+            "created_at": "2025-04-26T10:00:00Z",
+            "updated_at": "2025-04-26T10:00:00Z"
+        }
+    },
+    {
+        "model": "app.refoundrequest",
+        "pk": 2,
+        "fields": {
+            "id": 2,
+            "approved": "approved",
+            "approval_date": "2025-04-28",
+            "ticket_code": "TCK-002",
+            "reason": "Compra duplicada",
+            "details": "El usuario accidentalmente compró dos veces",
+            "created_at": "2025-04-26T11:30:00Z",
+            "updated_at": "2025-04-28T09:00:00Z"
+        }
+    },
+    {
+        "model": "app.refoundrequest",
+        "pk": 3,
+        "fields": {
+            "id": 3,
+            "approved": "denied",
+            "approval_date": "2025-04-29",
+            "ticket_code": "TCK-003",
+            "reason": "El evento no acepta devoluciones",
+            "details": "",
+            "created_at": "2025-04-27T15:45:00Z",
+            "updated_at": "2025-04-29T08:00:00Z"
+        }
+    }
+]

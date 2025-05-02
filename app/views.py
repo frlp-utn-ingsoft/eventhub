@@ -5,7 +5,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Event, User, Notification, NotificationUser, Category, Ticket, Event, TicketForm
+from .models import Event, RefoundRequest, User, Notification, NotificationUser, Category, Ticket, Event, TicketForm
 from .validations.notifications import createNotificationValidations
 from django.db.models import Count
 import math
@@ -748,3 +748,63 @@ def event_rating(request, id):
         'editando': editando,
         'cantidad_resenas': cantidad_resenas
     })
+
+@login_required
+def request_refound(request):
+    user = request.user
+    refounds = []
+    print(user.is_organizer)
+    if user.is_organizer :
+        refounds = RefoundRequest.objects.all()
+    else:
+        refounds = RefoundRequest.objects.filter(user_id= user.id )
+
+    if request.method == 'POST':
+        ticket_code= request.POST.get('ticketCode')
+        reason= request.POST.get('refundReason')
+        details= request.POST.get('additionalDetails')
+        refound=RefoundRequest.new(
+            ticket_code,
+            reason,
+            details,
+            user
+        )
+        return render(
+        request,
+        'app/refound_request.html',{
+            "user_is_organizer": user.is_organizer,
+            "refounds": refounds
+        }
+    )
+    print(refounds)
+    return render(
+        request,
+        'app/refound_request.html',{
+            "user_is_organizer": user.is_organizer,
+            "refounds": refounds
+        }
+    )
+
+@login_required
+def delete_refound(request,id):
+    if request.method == 'POST':
+        refound=get_object_or_404(RefoundRequest, pk=id)
+        refound.delete()
+
+@login_required
+def update_refound(request, id):
+    if request.method == 'POST':
+        refound=get_object_or_404(RefoundRequest, pk=id)
+        refound.ticket_code = request.POST.get('ticketCode')
+        refound.reason = request.POST.get('refundReason')
+        refound.details = request.POST.get('additionalDetails')
+        refound.save()
+
+@login_required
+@organizer_required
+def approved_or_deny(request, id):
+    if request.method == 'POST':
+        refound=get_object_or_404(RefoundRequest, pk=id)
+        refound.approved= request.POST.get('approved')
+        refound.approval_date = datetime.today()
+        refound.save()

@@ -1,4 +1,5 @@
 
+import datetime
 from django import forms
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -308,3 +309,26 @@ class Rating_Form(forms.ModelForm):
             }),
         }
     
+class RefoundRequest(models.Model):
+    REFOUND_STATES= [('pending', 'PENDIENTE'), ('approved', 'APROBADA'), ('denied', 'DENEGADA')]
+
+    approved = models.CharField(choices= REFOUND_STATES,default= 'pending')
+    approval_date = models.DateField(default=None, null=True, blank=True)
+    ticket_code = models.TextField(max_length=50)
+    reason = models.TextField(max_length=255)
+    details= models.TextField(blank=True, max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
+    user_id = models.ForeignKey(User, on_delete= models.CASCADE)
+
+    @classmethod
+    def new(cls, ticket_code, reason, details, user):
+        refound= cls.objects.create(
+            ticket_code= ticket_code,
+            reason=reason,
+            details=details,
+            user_id=user
+        )
+
+        return refound
+

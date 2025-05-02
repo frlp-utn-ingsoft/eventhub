@@ -47,7 +47,8 @@ if [ -d "$dir_data" ]; then
     $python_interpreter manage.py loaddata "./fixtures/events.json" && \
     $python_interpreter manage.py loaddata "./fixtures/tickets.json" && \
     $python_interpreter manage.py loaddata "./fixtures/comments.json" && \
-    $python_interpreter manage.py loaddata "./fixtures/notifications.json"
+    $python_interpreter manage.py loaddata "./fixtures/notifications.json" \
+    $python_interpreter manage.py loaddata "./fixtures/refounds_request.json"
     
     echo "✅ Datos de prueba cargados."
 else

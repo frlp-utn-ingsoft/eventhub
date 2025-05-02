@@ -60,11 +60,13 @@
                             {% navbar_link 'venue_list' 'Lugares' %}
                         </li>
                     {% endif %}
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        <li class="nav-item">
-                            {% navbar_link 'my_tickets' 'Mis Tickets' %}
-                        </li>
-                    </ul>
+                    <li class="nav-item">
+                        {% navbar_link 'my_tickets' 'Mis Tickets' %}
+                    </li>
+                    <li class="nav-item">
+                        {% navbar_link 'refound' 'Solicitud Reembolso' %}
+                    </li>
+
                 </ul>
                 <form class="d-flex" action="{% url 'logout' %}" method="POST">
                     {% csrf_token %}
