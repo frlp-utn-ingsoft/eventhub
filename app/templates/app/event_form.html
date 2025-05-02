@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
-<form action="{% if event.pk %}{% url 'event_edit' event.id %}{% else %}{% url 'event_create' %}{% endif %}" method="POST">
+<form action="{% if event.pk %}{% url 'event_edit' event.id %}{% else %}{% url 'event_form' %}{% endif %}" method="POST">
     {% csrf_token %}
     <div class="vstack gap-3 px-5 mx-5 py-4">
         <div>
