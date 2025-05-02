@@ -6,7 +6,7 @@
             <small class="text-muted">Publicado el {{ comment.created_date|date:"d M Y H:i" }}</small>  <!-- Fecha de publicación -->
             <h5 class="card-title fw-bold">{{ comment.tittle }}</h5>  <!-- Muestra el texto del comentario -->
             <p class="card-text ">{{ comment.text }}</p>  <!-- Muestra el texto del comentario -->
-            {% if not user.is_authenticated or not  user.is_organizer %}
+            {% if user.is_authenticated or not user.is_organizer %}
                 {% if comment.user == user %}
                     <a href="{% url 'edit_comment' comment.id %}"
                         class="btn btn-sm btn-outline-secondary"
@@ -34,10 +34,10 @@
         {% csrf_token %}
         <div>
         <h6 class="card-title"> Titulo del Comentario *</h6>
-        <input type="text" class="form-control mb-2" name="title" placeholder="Ingresa el titulo de tu comentario">
+        <input type="text" class="form-control mb-2" name="title" placeholder="Ingresa el titulo de tu comentario" required>
         
         <h6 class="card-title mt-4"> Contenido del Comentario *</h6>
-        <textarea class="form-control py-2 mb-2" name="text" rows="4" placeholder="Escribe el contenido del comentario aquí"></textarea>
+        <textarea class="form-control py-2 mb-2" name="text" rows="4" placeholder="Escribe el contenido del comentario aquí" required></textarea>
     
         <button type="submit" name="comment_submit" class="btn btn-primary mb-4">Subir</button>
         </div>
