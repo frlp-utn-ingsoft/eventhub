@@ -26,6 +26,10 @@ Aplicaci√≥n web para venta de entradas utilizada en la cursada 2025 de Ingenier√
 
 `python manage.py loaddata fixtures/events.json`
 
+### Sembrar datos en la base de datos
+
+`python seed.py`
+
 ## Iniciar app
 
 `python manage.py runserver`

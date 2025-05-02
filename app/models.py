@@ -144,7 +144,7 @@ class Category(models.Model):
             is_active=is_active,
         )
 
-        return True, None
+        return True, category
 
     def update(self, name=None, description=None, is_active=None):
         if name and name != self.name:
@@ -189,7 +189,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, categories=None):
+    def new(cls, title, description, scheduled_at, organizer, venue, categories=None):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -200,19 +200,24 @@ class Event(models.Model):
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
+            venue=venue
         )
         
         if categories:
             event.categories.set(categories)
 
-        return True, None
+        return True, event
 
-    def update(self, title=None, description=None, scheduled_at=None, organizer=None, categories=None):
+    def update(self, title=None, description=None, scheduled_at=None, organizer=None, venue=None, categories=None):
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
-
+        self.venue = venue or self.venue
+        
+        if categories:
+            self.categories.set(categories)
+            
         self.save()
     
    

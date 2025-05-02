@@ -3,12 +3,10 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Event, User, Ticket, Comment, Notification, Venue
+from .models import Event, User, Ticket, Comment, Notification
 from django.contrib import messages
 
-from .models import Event, User, Ticket, RefundRequest
-from .models import Event, User, Rating, Category
-from .forms import CategoryForm
+from .models import Event, User, Ticket, RefundRequest, Rating, Category
 
 
 def is_organizer(user):
@@ -117,6 +115,7 @@ def event_form(request, event_id=None):
         return redirect("events")
     
     categories = Category.objects.filter(is_active=True)
+    
     venues = Venue.objects.all()
     event_categories = []
     event = {}
@@ -128,10 +127,13 @@ def event_form(request, event_id=None):
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
+        
         venue_id = request.POST.get("venue")
         date = request.POST.get("date")
         time = request.POST.get("time")
         categories = request.POST.getlist("categories")
+        venue = request.POST.getlist("venue")
+
 
         venue = get_object_or_404(Venue, pk=venue_id)
         [year, month, day] = date.split("-")
@@ -169,6 +171,7 @@ def event_form(request, event_id=None):
         {
             "event": event,
             "categories": categories,
+            
             "venues": venues,
             "event_categories": event_categories,
             "user_is_organizer": request.user.is_organizer
@@ -232,6 +235,7 @@ def approve_refund_request(request, id):
     refund.approval = True
     refund.approval_date = timezone.now()
     refund.save()
+
     return redirect("organizer_refund")
 
 @login_required
@@ -254,6 +258,7 @@ def view_refund_request(request, id):
     refund = get_object_or_404(RefundRequest, pk=id)
     #verificar si la solicitud de reembolso ya fue aprobada o rechazada
     return render(request, "app/view_refund_request.html", {"refund": refund})
+
 @login_required
 def buy_ticket(request, id):
     event = get_object_or_404(Event, pk=id)
@@ -351,7 +356,7 @@ def ticket_edit(request, id):
 @login_required
 def create_rating(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
-    
+
     # Verificar que el usuario no sea el organizador
     if request.user == event.organizer:
         messages.error(request, "Los organizadores no pueden calificar sus propios eventos.")
@@ -361,6 +366,7 @@ def create_rating(request, event_id):
     if Rating.objects.filter(event=event, user=request.user).exists():
         messages.error(request, "Ya has calificado este evento.")
         return redirect("event_detail", event_id=event.id)
+    
     
     if request.method == "POST":
         title = request.POST.get("title")
@@ -455,9 +461,10 @@ def add_comment(request, event_id):
         return redirect("event_detail", event_id=event_id)
     
     if request.method == "POST":
+        user = request.user
         title = request.POST.get("title")
         text = request.POST.get("text")
-        
+
         if not title or not text:
             messages.error(request, "El título y el comentario son obligatorios.")
             return redirect("event_detail", event_id=event_id)
@@ -466,17 +473,15 @@ def add_comment(request, event_id):
             title=title,
             text=text,
             event=event,
-            user=request.user
+            user=user
         )
         messages.success(request, "Tu comentario ha sido publicado.")
-        
     return redirect("event_detail", event_id=event_id)
 
 
 @login_required
 def delete_comment(request, event_id, comment_id):
     comment = get_object_or_404(Comment, id=comment_id, event_id=event_id)
-    
     # Verificar que el usuario es el dueño del comentario o es el organizador del evento
     if comment.user != request.user and not request.user.is_organizer:
         messages.error(request, "No tienes permiso para eliminar este comentario.")
@@ -492,7 +497,6 @@ def delete_comment(request, event_id, comment_id):
 @login_required
 def update_comment(request, event_id, comment_id):
     comment = get_object_or_404(Comment, id=comment_id, event_id=event_id)
-    
     # Verificar que el usuario es el dueño del comentario
     if comment.user != request.user:
         messages.error(request, "No tienes permiso para editar este comentario.")

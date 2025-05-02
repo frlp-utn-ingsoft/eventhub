@@ -1,7 +1,6 @@
 from django import forms
 from .models import RefundRequest
 from .models import Category
-
 from .models import Ticket
 
 class RefundRequestForm(forms.ModelForm):
