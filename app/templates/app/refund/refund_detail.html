@@ -1,0 +1,49 @@
+{# templates/app/refund/refund_detail.html #}
+{% extends "base.html" %}
+{% block title %}Detalle de Solicitud{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Detalle de Solicitud #{{ refund.id }}</h2>
+
+  <ul class="list-group">
+    <li class="list-group-item">
+      <strong>Código de Entrada:</strong> {{ refund.ticket_code }}
+    </li>
+    <li class="list-group-item">
+      <strong>Evento:</strong> {{ refund.event_title }}
+    </li>
+    <li class="list-group-item">
+      <strong>Solicitante:</strong> {{ refund.user.username }}
+    </li>
+    <li class="list-group-item">
+      <strong>Motivo y Detalles:</strong> {{ refund.reason }}
+    </li>
+    <li class="list-group-item">
+      <strong>Fecha de Solicitud:</strong> {{ refund.created_at|date:"d/m/Y H:i" }}
+    </li>
+    <li class="list-group-item">
+      <strong>Estado:</strong>
+        {% if refund.approved == True %}
+            Aprobado ({{ refund.approval_date|date:"d/m/Y H:i" }})
+        {% elif refund.approved == False %}
+            Rechazado ({{ refund.approval_date|date:"d/m/Y H:i" }})
+        {% else %}
+            Pendiente
+        {% endif %}
+
+    </li>
+  </ul>
+
+  {# Elegimos el “volver” adecuado según el rol #}
+  {% if request.user.is_organizer %}
+    <a href="{% url 'manage_refund_requests' %}" class="btn btn-secondary mt-3">
+      ← Volver a las solicitudes
+    </a>
+  {% else %}
+    <a href="{% url 'my_refund_requests' %}" class="btn btn-secondary mt-3">
+      ← Volver a mis solicitudes
+    </a>
+  {% endif %}
+</div>
+{% endblock %}

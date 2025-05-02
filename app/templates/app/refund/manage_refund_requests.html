@@ -1,0 +1,63 @@
+{# templates/app/refund/manage_refund_requests.html #}
+{% extends "base.html" %}
+
+{% block title %}Gestionar Reembolsos{% endblock %}
+{% block content %}
+<div class="container mt-4">
+  <h2>Solicitudes de Reembolso</h2>
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Código de Entrada</th>
+        <th>Evento</th>
+        <th>Solicitante</th>
+        <th>Fecha de Solicitud</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for refund in refunds %}
+        <tr>
+          <td>{{ refund.ticket_code }}</td>
+          <td>{{ refund.event_title }}</td>
+          <td>{{ refund.user.username }}</td>
+          <td>{{ refund.created_at|date:"d/m/Y H:i" }}</td>
+          <td>
+            {% if refund.approved == True %}
+                Aprobado
+            {% elif refund.approved == False %}
+                Rechazado
+            {% else %}
+                Pendiente
+            {% endif %}
+
+          </td>
+          <td class="d-flex gap-1">
+            <a href="{% url 'refund_detail' refund.id %}"
+               class="btn btn-sm btn-outline-primary"
+               title="Ver">
+              <i class="bi bi-eye"></i>
+            </a>
+            {% if refund.approved == None %}
+              <a href="{% url 'approve_refund_request' refund.id %}"
+                 class="btn btn-sm btn-outline-success"
+                 title="Aprobar">
+                <i class="bi bi-check-lg"></i>
+              </a>
+              <a href="{% url 'reject_refund_request' refund.id %}" class="btn btn-sm btn-outline-danger" title="Rechazar">
+                <i class="bi bi-x-lg"></i>
+              </a>
+              
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6" class="text-center">No hay solicitudes de reembolso.</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -59,6 +59,14 @@
                         </div>
                     </div>
                 </div>
+                <div class="d-flex justify-content-end mt-4">
+                    {% if user.is_authenticated and not user.is_organizer %}
+                      <a href="{% url 'ticket_create' event.id %}" class="btn btn-primary">
+
+                        Comprar Ticket
+                      </a>
+                    {% endif %}
+                  </div>
             </div>
         </div>
     </div>
