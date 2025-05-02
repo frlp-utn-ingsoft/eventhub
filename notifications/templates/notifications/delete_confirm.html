@@ -17,7 +17,6 @@
                     <div class="card mb-4">
                         <div class="card-body bg-light">
                              <h5 class="card-title">{{ notification.title }}</h5>
-                             {# Mostrar el mensaje completo o truncado, dependiendo de tu preferencia #}
                              <p class="card-text mb-2">{{ notification.message }}</p>
                              <hr class="my-2">
                              <div class="d-flex justify-content-between small text-muted">
@@ -35,15 +34,15 @@
                          </div>
                      </div>
 
-                    {# Este formulario enviará la solicitud POST para eliminar #}
+                 
                     <form action="{% url 'notifications:delete_notification' notification.pk %}" method="POST">
                         {% csrf_token %}
                         <div class="d-flex justify-content-end gap-2">
-                            {# Botón para cancelar - regresa a la página de gestión #}
+        
                             <a href="{% url 'notifications:notification_management' %}" class="btn btn-secondary">
                                 <i class="bi bi-x-lg me-1"></i> Cancelar
                             </a>
-                            {# Botón para confirmar la eliminación #}
+                          
                             <button type="submit" class="btn btn-danger">
                                 <i class="bi bi-trash me-1"></i> Eliminar
                             </button>
