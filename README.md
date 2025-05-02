@@ -6,6 +6,7 @@ Aplicación web para venta de entradas utilizada en la cursada 2025 de Ingenier�
 - Alvite Damián 32422
 - Capre Rodrigo 31877
 - Elizalde Benjamín 32030
+- Canu Santiago 31626
 
 ## Dependencias
 
