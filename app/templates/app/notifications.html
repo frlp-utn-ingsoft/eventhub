@@ -5,12 +5,14 @@
 {% block content %}
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1>Gestionar Notificaciones</h1>
         {% if user_is_organizer %}
+            <h1>Gestionar Notificaciones</h1>
             <a href="{% url 'notification_form' %}" class="btn btn-primary">
                 <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
                 Crear Notificacion
             </a>
+        {% else %}
+            <h1>Mis Notificaciones</h1>
         {% endif %}
     </div>
 
@@ -22,6 +24,9 @@
                 <th>Destinatarios</th>
                 <th>Prioridad</th>
                 <th>Fecha de Envio</th>
+                {% if not user_is_organizer %}
+                    <th>Estado</th>
+                {% endif %}
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -53,6 +58,15 @@
                         {% endif %}
                     </td>
                     <td>{{ notification.created_at }}</td>
+                    {% if not user_is_organizer %}
+                        <td>
+                            {% if not notification.is_read %}
+                                <span class="badge bg-warning">No leída</span>
+                            {% else %}
+                                <span class="badge bg-success">Leída</span>
+                            {% endif %}
+                        </td>
+                    {% endif %}
                     <td>
                         <div class="hstack gap-1">
                             <a href=""

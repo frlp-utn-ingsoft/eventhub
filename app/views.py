@@ -332,7 +332,13 @@ def venue_form(request, id):
 
 @login_required
 def notifications(request):
-    notifications = Notification.objects.all().order_by("title")
+
+    if request.user.is_organizer:
+        notifications = Notification.objects.all().order_by("created_at")
+    else:
+        notifications = Notification.objects.filter(user=request.user).order_by("created_at")
+
+
     return render(
         request,
         "app/notifications.html",
