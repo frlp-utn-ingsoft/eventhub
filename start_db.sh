@@ -1,6 +1,6 @@
 #!/bin/bash
 
-python_interpreter="python3"
+python_interpreter="python"
 #python_interpreter="python3"
 
 db_file="db.sqlite3"
