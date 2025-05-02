@@ -66,44 +66,43 @@ class RefundRequestForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.user = user
 
-        # Precarga motivo y detalles al editar
+        # Al editar, no mostramos el checkbox de políticas
         if self.instance and self.instance.pk:
             self.fields.pop('acepta_politicas')
+            # descomponer reason en motivo + detalles
             reason = self.instance.reason or ""
             motivo_text, detalles_text = (reason.split(": ", 1) + [""])[:2]
-            # asignar initial
-            key = next((k for k,v in self.MOTIVO_CHOICES if v == motivo_text), 'otro')
+            key = next((k for k, v in self.MOTIVO_CHOICES if v == motivo_text), 'otro')
             self.initial.update({'motivo': key, 'detalles': detalles_text})
 
     def clean_ticket_code(self):
-        code = self.cleaned_data['ticket_code'].strip()
+        code = self.cleaned_data.get('ticket_code', '').strip()
         if not code:
+            # este error se sigue asociando al campo
             raise ValidationError("El código de ticket es obligatorio.")
 
         # 1) Buscamos el Ticket
         try:
             ticket = Ticket.objects.get(ticket_code=code)
         except Ticket.DoesNotExist:
-            raise ValidationError("Código de ticket inválido: no existe ese Ticket.")
+            # error no-campo, aparecerá en form.non_field_errors
+            self.add_error(None, "Código de ticket inválido, por favor verificalo.")
+            return code
 
-        # 2) Tomamos la fecha del evento desde scheduled_at
-        event_dt = ticket.event.scheduled_at   # DateTimeField
-        event_date = event_dt.date()           # convertimos a date
+        # 2) Tomamos la fecha del evento
+        event_date = ticket.event.scheduled_at.date()
 
-        # 3) Calculamos días pasados hasta hoy
-        today = timezone.localdate()           # equivalente a timezone.now().date()
-        dias_pasados = (today - event_date).days
-
+        # 3) Calculamos días pasados
+        dias_pasados = (timezone.localdate() - event_date).days
         if dias_pasados > 30:
-            raise ValidationError(
-                f"Han pasado {dias_pasados} días desde el evento ({event_date}); "
-                "ya no se aceptan reembolsos."
+            self.add_error(
+                None,
+                f"Han pasado {dias_pasados} días desde el evento ({event_date}); ya no se aceptan reembolsos."
             )
 
-        # Lo guardamos por si lo necesitás en save()
+        # guardamos el objeto para el save() si hace falta
         self.cleaned_data['ticket_obj'] = ticket
         return code
-
 
     def clean_detalles(self):
         text = self.cleaned_data.get('detalles', '').strip()
@@ -115,24 +114,25 @@ class RefundRequestForm(forms.ModelForm):
         cleaned = super().clean()
         ticket_code = cleaned.get('ticket_code')
 
-        # Validación de duplicados de solicitudes pendientes
+        # Validación de duplicados solo al crear
         if ticket_code and self.user and self.instance.pk is None:
-            if RefundRequest.objects.filter(
+            existe = RefundRequest.objects.filter(
                 user=self.user,
                 ticket_code=ticket_code,
                 approved__isnull=True
-            ).exists():
-                raise ValidationError("Ya tenés una solicitud pendiente para ese ticket.")
+            ).exists()
+            if existe:
+                self.add_error(None, "Ya tenés una solicitud pendiente para ese ticket.")
         return cleaned
 
     def save(self, commit=True):
-        motivo_label = dict(self.MOTIVO_CHOICES).get(self.cleaned_data['motivo'], '')
+        # reconstruir el campo reason
+        motivo_label = dict(self.MOTIVO_CHOICES)[self.cleaned_data['motivo']]
         detalles = self.cleaned_data.get('detalles', '').strip()
         razon = motivo_label + (f": {detalles}" if detalles else "")
 
         instance = super().save(commit=False)
         instance.reason = razon
-
         if commit:
             instance.save()
         return instance
