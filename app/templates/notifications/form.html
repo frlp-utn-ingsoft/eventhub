@@ -1,6 +1,4 @@
 {% extends "base.html" %}
-{% load widget_tweaks %}  {# ← necesario para add_class #}
-
 {% block content %}
 <div class="container my-5">
   <div class="form-notif">
@@ -9,41 +7,16 @@
       {% if view.object %}Editar{% else %}Crear{% endif %} notificación
     </h2>
 
-    <form method="post" novalidate class="row g-3">
-      {% csrf_token %}
+    <!-- layout responsivo con grid -->
+    <form method="post" class="row g-3">{% csrf_token %}
+      <div class="col-12 col-md-6">{{ form.user.label_tag }}{{ form.user }}</div>
+      <div class="col-12 col-md-6">{{ form.priority.label_tag }}{{ form.priority }}</div>
+      <div class="col-12">{{ form.title.label_tag }}{{ form.title }}</div>
+      <div class="col-12">{{ form.message.label_tag }}{{ form.message }}</div>
 
-      <!-- Destinatario -->
-      <div class="col-12 col-md-6">
-        <label for="{{ form.user.id_for_label }}" class="form-label fw-semibold">Destinatario</label>
-        {{ form.user|add_class:"form-select" }}
-      </div>
-
-      <!-- Prioridad -->
-      <div class="col-12 col-md-6">
-        <label for="{{ form.priority.id_for_label }}" class="form-label fw-semibold">Prioridad</label>
-        {{ form.priority|add_class:"form-select" }}
-      </div>
-
-      <!-- Título -->
-      <div class="col-12">
-        <label for="{{ form.title.id_for_label }}" class="form-label fw-semibold">Título</label>
-        {{ form.title|add_class:"form-control" }}
-      </div>
-
-      <!-- Mensaje -->
-      <div class="col-12">
-        <label for="{{ form.message.id_for_label }}" class="form-label fw-semibold">Mensaje</label>
-        {{ form.message|add_class:"form-control" }}
-      </div>
-
-      <!-- Botones -->
       <div class="col-12 d-flex flex-column flex-md-row gap-2 justify-content-end">
-        <button type="submit" class="btn btn-notif btn-notif-success">
-          Guardar
-        </button>
-        <a href="{% url 'notifications_list' %}" class="btn btn-notif btn-notif-outline">
-          Cancelar
-        </a>
+        <button class="btn btn-notif btn-eventgub-green" type="submit">Guardar</button>
+        <a href="{% url 'notifications_list' %}" class="btn btn-notif btn-outline-eventhub">Cancelar</a>
       </div>
     </form>
 

@@ -1,0 +1,59 @@
+/* ====== FONDO DE VIDEO ====== */
+#bg-video{
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    object-fit:cover;
+    z-index:-1;               /* detrás del contenido */
+  }
+  
+  /* ====== TARJETA ====== */
+  .auth-card{
+    backdrop-filter:blur(18px);
+    border:1px solid rgba(255,255,255,.15);
+    border-radius:1rem;
+  }
+  .card .navbar-brand{
+    display: flex;
+    justify-content: center;
+  }
+  .form-check-label{
+    color: #ffffff
+  }
+  .card-title{
+    font-size:2rem;
+    font-weight:700;
+    margin-bottom:.5rem;
+    color:#ffffff;
+  }
+  
+  .iniciarSesion{
+    color:#fff;
+    font-size:2rem;
+    font-weight:700;
+  }
+  
+  /* Botones rojos (reutilizamos las clases globales) */
+  .btn-eventhub{
+    background:#e4222d;
+    border:#e4222d;
+    color:#fff;
+  }
+  .btn-eventhub:hover{background:#ff4753;border-color:#ff4753}
+  
+  /* input transparente */
+  .form-control{
+    background:rgb(255, 255, 255);
+    border:1px solid rgb(112, 61, 61);
+    color:#fff;
+  }
+  .form-control::placeholder{color:#ddd}
+  .form-label{color:#eee}
+  
+  /* en pantallas chicas reduce ancho */
+  @media(max-width:575px){
+    .card-title{font-size:2.8rem}
+    .iniciarSesion{font-size:1.6rem}
+  }
+  

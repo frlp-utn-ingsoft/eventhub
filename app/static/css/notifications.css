@@ -47,7 +47,18 @@
   transition:background .2s;
   cursor:pointer;
 }
-
+.navbar-light .navbar-toggler-icon,
+.navbar-toggler-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='30' viewBox='0 0 30 30'%3E%3Cpath stroke='rgba(255,255,255,1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+  
+}
+.navbar-toggler {
+  border-color: rgba(255,255,255,0.55);
+}
+.navbar-toggler:focus,
+.navbar-toggler:hover {
+  border-color: rgba(255,255,255,0.85);
+}
 #notifDropdown a:hover,
 #notifDropdown span:hover{
   background:rgba(0,123,255,.07);
@@ -121,6 +132,18 @@
 @keyframes scaleIn{from{opacity:0; transform:scale(.95)}to{opacity:1; transform:scale(1)}}
 
 .form-notif label{font-weight:500;}
+
+/* select con scroll fino */
+.select-user {
+  scrollbar-width: thin;
+  scrollbar-color: var(--notif-accent) transparent;
+}
+
+.select-user::-webkit-scrollbar { width: 6px; }
+.select-user::-webkit-scrollbar-thumb {
+  background: var(--notif-accent);
+  border-radius: 10px;
+}
 
 /*----------- 6. RESPONSIVE ---------------------------------*/
 @media (max-width: 576px){

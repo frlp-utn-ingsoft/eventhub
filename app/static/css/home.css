@@ -1,0 +1,35 @@
+/* -------- HERO -------- */
+#heroCarousel{width:100%;height:100vh;margin:0}
+#heroCarousel .carousel-item{width:100%;height:100%;transition:opacity .2s}
+.carousel-inner{
+    height: 100%;
+}
+#heroCarousel .carousel-item img{width:100%;height:100%;object-fit:cover}
+#heroCarousel .carousel-caption{inset:0;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:0 2rem;color:#fff;text-shadow:0 4px 10px rgb(0 0 0/.55);user-select:none;}
+.slide-title{font-size:clamp(2rem,4vw+1rem,3.6rem);font-weight:700;margin-bottom:.4rem}
+.slide-text{font-size:clamp(1rem,1vw+.8rem,1.25rem);user-select:none}
+.carousel-control-prev,.carousel-control-next{width:4rem}
+.carousel-control-prev{left:.75rem}
+.carousel-control-next{right:.75rem}
+.carousel-control-prev-icon,.carousel-control-next-icon{width:3rem;height:3rem}
+@media (max-width:800px){
+  #heroCarousel .carousel-caption{padding-top:15vh}
+  .carousel-control-prev,.carousel-control-next{width:3rem}
+  .carousel-control-prev-icon,.carousel-control-next-icon{width:2.4rem;height:2.4rem}
+}
+
+/* -------- BENEFICIOS -------- */
+.benefits-section{background:linear-gradient(135deg,#d7d7d7,#f0f0f0);padding:5rem 2rem;text-align:center}
+.benefits-title{font-weight:900;font-size:2.5rem;margin-bottom:3rem}
+.benefits-title .brand{color:#e4222d;font-size:3rem}
+.icon-wrapper{width:90px;height:90px;background:linear-gradient(to bottom,#cfcfcf,#f5f5f5);border-radius:20px;display:flex;justify-content:center;align-items:center;overflow:hidden;position:relative;transition:transform .3s}
+.icon-wrapper img{ width:48px; height:48px; filter:brightness(0); transition:filter .3s; -webkit-transition:filter .3s; -moz-transition:filter .3s; -ms-transition:filter .3s; -o-transition:filter .3s; cursor: pointer;}
+.icon-wrapper::before{content:"";position:absolute;bottom:0;left:0;width:100%;height:0;background:linear-gradient(to top,#e4222d,#f58b0f,#ffe600);transition:height .4s}
+.feature-box:hover .icon-wrapper{transform:scale(1.1)}
+.feature-box:hover .icon-wrapper::before{height:100%}
+.feature-box:hover img{filter:brightness(1)}
+.benefit-title{font-weight:600;margin-top:1rem;font-size:1.25rem}
+
+/* Fade-up animation */
+.fade-up{opacity:0;transform:translateY(40px);transition:.6s ease-out}
+.fade-up.is-visible{opacity:1;transform:none}
