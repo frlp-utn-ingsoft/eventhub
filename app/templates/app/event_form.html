@@ -198,24 +198,20 @@
                             </div>
                             
                            
-                            <div class="mb-3">
+                           <div class="mb-3">
                                 <label class="form-label">Categorías</label>
-                                <select class="form-select {% if form.categories.errors %}is-invalid{% endif %}" 
-                                        name="categories" 
-                                        multiple
-                                        size="5">
+                                <div class="row">
                                     {% for cat in categories %}
-                                        <option value="{{ cat.id }}"
-                                            {% if cat.id in form.categories.value %}selected{% endif %}>
-                                            {{ cat.name }}
-                                        </option>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="categories" value="{{ cat.id }}"
+                                                    {% if cat in event.categories.all %}checked{% endif %}>
+                                                <label class="form-check-label">{{ cat.name }}</label>
+                                            </div>
+                                        </div>
                                     {% endfor %}
-                                </select>
-                                {% if form.categories.errors %}
-                                    <div class="invalid-feedback">{{ form.categories.errors }}</div>
-                                {% endif %}
+                                </div>
                             </div>
-                            
                             
                             {% if form.non_field_errors %}
                                 <div class="alert alert-danger">
@@ -403,3 +399,53 @@
     });
 </script>
 {% endblock %}
+@login_required
+def edit_event(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    
+    if not request.user.is_organizer:
+        return redirect('events')
+        
+    if request.method == 'POST':
+        form = EventForm(request.POST, request.FILES, instance=event)
+        if form.is_valid():
+            updated_event = form.save(commit=False)
+            
+            scheduled_date = form.cleaned_data.get('scheduled_date')
+            scheduled_time = form.cleaned_data.get('scheduled_time')
+            
+            if scheduled_date and scheduled_time:
+                combined_datetime = datetime.datetime.combine(scheduled_date, scheduled_time)
+                updated_event.scheduled_at = timezone.make_aware(combined_datetime)
+            
+            general_diff = updated_event.general_tickets_total - event.general_tickets_total
+            vip_diff = updated_event.vip_tickets_total - event.vip_tickets_total
+            
+            updated_event.general_tickets_available = event.general_tickets_available + general_diff
+            updated_event.vip_tickets_available = event.vip_tickets_available + vip_diff
+            
+            updated_event.save()
+            form.save_m2m()
+            return redirect('event_detail', event_id=event.pk)
+    else:
+        initial_data = {
+            'title': event.title,
+            'description': event.description,
+            'general_price': event.general_price,
+            'vip_price': event.vip_price,
+            'general_tickets_total': event.general_tickets_total,
+            'vip_tickets_total': event.vip_tickets_total,
+            'scheduled_date': event.scheduled_at.date(),
+            'scheduled_time': event.scheduled_at.time()
+        }
+        form = EventForm(initial=initial_data, instance=event)
+    
+    return render(
+        request,
+        "app/event_form.html",
+        {
+            "form": form,
+            "title": "Editar Evento",
+            "event": event,
+        },
+    )

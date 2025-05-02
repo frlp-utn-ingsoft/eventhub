@@ -161,18 +161,7 @@ class EventForm(forms.ModelForm):
 
     class Meta:
         model = Event
-        fields = [
-            'title', 
-            'description', 
-            'scheduled_date',
-            'scheduled_time',
-            'venue',
-            'general_price', 
-            'vip_price', 
-            'general_tickets_total', 
-            'vip_tickets_total',
-            'categories'
-        ]
+        fields = '__all__' 
         widgets = {
             'description': forms.Textarea(attrs={'rows': 4}),
             'venue': forms.Select(attrs={'class': 'form-control'}),

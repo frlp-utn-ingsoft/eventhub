@@ -15,10 +15,7 @@
     </div>
 
     <form method="get" class="row align-items-end mb-4 gx-2 gy-2">
-        <div class="col-md-auto">
-            <label for="titulo" class="form-label">Título</label>
-            <input type="text" class="form-control" id="titulo" name="titulo" value="{{ request.GET.titulo }}">
-        </div>
+        
 
         <div class="col-md-auto">
             <label for="venue" class="form-label">Ubicación</label>
@@ -32,7 +29,7 @@
             </select>
         </div>
 
-        <div class="col-md-auto">
+        <div class="col-md-4">
             <label for="categoria" class="form-label">Categoría</label>
             <select name="categoria" id="categoria" class="form-select">
                 <option value="">Todas</option>

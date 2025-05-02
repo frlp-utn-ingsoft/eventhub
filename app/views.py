@@ -16,7 +16,6 @@ from django.db import transaction
 from .models import Event, Ticket, User, PaymentInfo, Rating, Category, Venue, RefundRequest
 from .forms import EventForm, TicketForm, PaymentForm, TicketFilterForm, RatingForm, CategoryForm, VenueForm, RefundRequestForm, RefundApprovalForm
 
-
 def register(request):
     if request.method == "POST":
         email = request.POST.get("email")
@@ -60,7 +59,7 @@ def login_view(request):
     return render(request, "accounts/login.html")
 
 def home(request):
-    return render(request, 'home.html')
+    return render(request, "home.html")
 
 @login_required
 def events(request):
@@ -220,9 +219,15 @@ def edit_event(request, event_id):
             'general_tickets_total': event.general_tickets_total,
             'vip_tickets_total': event.vip_tickets_total,
             'scheduled_date': event.scheduled_at.date(),
-            'scheduled_time': event.scheduled_at.time()
+            'scheduled_time': event.scheduled_at.time(),
+            'venue': event.venue.id if event.venue else None,
+            # Agrega aquí cualquier otro campo que necesites
         }
         form = EventForm(initial=initial_data, instance=event)
+    
+    # Pasa las categorías y venues al contexto
+    categories = Category.objects.all()
+    venues = Venue.objects.all()
     
     return render(
         request,
@@ -231,6 +236,8 @@ def edit_event(request, event_id):
             "form": form,
             "title": "Editar Evento",
             "event": event,
+            "categories": categories,
+            "venues": venues,
         },
     )
 
@@ -577,10 +584,7 @@ def category_delete(request, id):
 
 @login_required
 def venue_list(request):
-    if request.user.is_organizer:
-        venues = Venue.objects.filter(organizer=request.user)
-    else:
-        venues = Venue.objects.all()  
+    venues = Venue.objects.all()
     return render(request, 'venues/venue_list.html', {'venues': venues})
 
 @login_required
@@ -591,37 +595,40 @@ def create_venue(request):
     form = VenueForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         venue = form.save(commit=False)
-        venue.organizer = request.user
+        venue.organizer = request.user  
         venue.save()
-        messages.success(request, "¡Ubicacion creada con éxito!")
+        messages.success(request, "¡Ubicación creada con éxito!")
         return redirect('venue_list')
+    
     return render(request, 'venues/create_venue.html', {'form': form})
 
 @login_required
 def edit_venue(request, venue_id):
     venue = get_object_or_404(Venue, id=venue_id)
 
-    if not request.user.is_organizer or venue.organizer != request.user:
-        return HttpResponseForbidden("No tenés permiso para editar esta ubicación.")
+    if not request.user.is_organizer:
+        return HttpResponseForbidden("Solo los organizadores pueden editar ubicaciones.")
     
     form = VenueForm(request.POST or None, instance=venue)
     if request.method == 'POST' and form.is_valid():
         form.save()
-        messages.success(request, "¡Ubicacion editada con éxito!")
+        messages.success(request, "¡Ubicación editada con éxito!")
         return redirect('venue_list')
+    
     return render(request, 'venues/edit_venue.html', {'form': form})
 
 @login_required
 def delete_venue(request, venue_id):
     venue = get_object_or_404(Venue, id=venue_id)
 
-    if not request.user.is_organizer or venue.organizer != request.user:
-        return HttpResponseForbidden("No tenés permiso para eliminar esta ubicación.")
+    if not request.user.is_organizer:
+        return HttpResponseForbidden("Solo los organizadores pueden eliminar ubicaciones.")
     
     if request.method == 'POST':
         venue.delete()
-        messages.success(request, "¡Ubicacion eliminada con éxito!")
+        messages.success(request, "¡Ubicación eliminada con éxito!")
         return redirect('venue_list')
+    
     return render(request, 'venues/delete_venue.html', {'venue': venue})
 
 @login_required
@@ -664,54 +671,49 @@ def event_form(request, id=None):
         return redirect("events")
 
     if id:
-        event = get_object_or_404(Event, pk=id, organizer=request.user)
+        event = get_object_or_404(Event, pk=id)
         form = EventForm(request.POST or None, request.FILES or None, instance=event)
     else:
         event = None
         form = EventForm(request.POST or None, request.FILES or None)
+
+    venues = Venue.objects.all()
+    categories = Category.objects.all()
 
     if request.method == "POST" and form.is_valid():
         try:
             with transaction.atomic():
                 event = form.save(commit=False)
                 event.organizer = request.user
-                
-                
+
                 scheduled_date = form.cleaned_data.get('scheduled_date')
                 scheduled_time = form.cleaned_data.get('scheduled_time')
-                
+
                 if scheduled_date and scheduled_time:
                     combined_datetime = datetime.datetime.combine(scheduled_date, scheduled_time)
                     event.scheduled_at = timezone.make_aware(combined_datetime)
-                
-                
+
                 if not id:
                     event.general_tickets_available = event.general_tickets_total
                     event.vip_tickets_available = event.vip_tickets_total
-                
+
                 event.save()
-                form.save_m2m()  
-                
+                form.save_m2m()
+
                 messages.success(request, "Evento guardado exitosamente")
                 return redirect('event_detail', id=event.id)
-                
+
         except Exception as e:
             messages.error(request, f"Error al guardar el evento: {str(e)}")
-           
             print(f"Error saving event: {str(e)}")
 
- 
-    venues = Venue.objects.filter(organizer=request.user)
-    categories = Category.objects.all()
-    
-   
     initial = {}
     if event:
         initial = {
             'scheduled_date': event.scheduled_at.date(),
             'scheduled_time': event.scheduled_at.time()
         }
-    
+
     return render(request, 'app/event_form.html', {
         'form': form,
         'event': event,
@@ -826,4 +828,3 @@ def delete_refund(request, id):
         return redirect("my_refunds")
 
     return redirect("my_refunds")
-

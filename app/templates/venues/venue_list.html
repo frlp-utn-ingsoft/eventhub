@@ -37,7 +37,7 @@
                   <i class="bi bi-eye"></i>
                 </a>
 
-                {% if user.is_organizer and venue.organizer == user %}
+                {% if user.is_organizer %}
                   <a href="{% url 'edit_venue' venue.id %}" class="btn btn-sm btn-outline-secondary" title="Editar">
                     <i class="bi bi-pencil"></i>
                   </a>

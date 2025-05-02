@@ -1,7 +1,18 @@
-<h2>Eliminar ubicación</h2>
-<p>¿Estás segura de eliminar <strong>{{ venue.name }}</strong>?</p>
-<form method="post">
-    {% csrf_token %}
-    <button type="submit">Sí, eliminar</button>
-</form>
-<a href="{% url 'venue_list' %}">No, volver</a>
+{% extends 'base.html' %}
+
+{% block content %}
+  <div class="container mt-4" style="max-width: 600px;">
+    <h2 class="mb-4 text-danger">Eliminar ubicación</h2>
+    <p>¿Estás segura/o de eliminar la ubicación <strong>{{ venue.name }}</strong>?</p>
+
+    <form method="post" class="mt-3">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger">
+        <i class="bi bi-trash"></i> Sí, eliminar
+      </button>
+      <a href="{% url 'venue_list' %}" class="btn btn-outline-secondary ms-2">
+        Cancelar
+      </a>
+    </form>
+  </div>
+{% endblock %}
