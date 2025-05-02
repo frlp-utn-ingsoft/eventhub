@@ -252,31 +252,52 @@ def create_notification(request, notification_id=None):
         'users': users,
         'notification': notification,
     })
+
 @login_required
 def list_notifications(request):
     search = request.GET.get('search', '')
     event_filter = request.GET.get('event_filter', '')
     priority_filter = request.GET.get('priority_filter', '')
 
-    notifications = Notification.objects.all()
-    if search:
-        notifications = notifications.filter(title__icontains=search)
-    if event_filter:
-        notifications = notifications.filter(event_id=event_filter)
-    if priority_filter:
-        notifications = notifications.filter(priority=priority_filter)
+    if request.user.is_staff:  # user admin
+        notifications = Notification.objects.all()
+        if search:
+            notifications = notifications.filter(title__icontains=search)
+        if event_filter:
+            notifications = notifications.filter(event_id=event_filter)
+        if priority_filter:
+            notifications = notifications.filter(priority=priority_filter)
 
-    events = Event.objects.all()
-    users = User.objects.all()
+        events = Event.objects.all()
+        users = User.objects.all()
 
-    return render(request, 'notifications/notifications.html', {
-        'notifications': notifications,
-        'events': events,
-        'users': users,
-    })
+        return render(request, 'notifications/notifications_admin.html', {
+            'notifications': notifications,
+            'events': events,
+            'users': users,
+        })
+    else:  # user normal
+        notifications = NotificationXUser.objects.filter(user=request.user).select_related('notification')
+        unread_count = notifications.filter(is_read=False).count()  # Contar solo las no leídas
+        return render(request, 'notifications/notifications_user.html', {
+            'notifications': notifications,
+            'unread_count': unread_count,
+        })
 
 @login_required
 def delete_notification(request, notification_id):
     notification = get_object_or_404(Notification, id=notification_id)
     notification.delete()
+    return redirect('list_notifications')
+
+@login_required
+def read_notification(request, notification_user_id):
+    notification_user = get_object_or_404(NotificationXUser, id=notification_user_id, user=request.user)
+    notification_user.is_read = True
+    notification_user.save()
+    return redirect('list_notifications')
+
+@login_required
+def read_all_notifications(request):
+    NotificationXUser.objects.filter(user=request.user, is_read=False).update(is_read=True)
     return redirect('list_notifications')
