@@ -192,8 +192,9 @@ def notification_list(request):
     if user.is_organizer:
         return render(request, 'app/notification/list.html', {'notifications': notifications,'events': events})
     else:
-        notifications=user.notification_set.all()
-        return render(request, 'app/notification/bandejaEntrada.html', {'notifications': notifications})
+        notifications = Notification.objects.filter(addressee=request.user).order_by('-created_at')
+        unread_count = Notification.objects.filter(addressee=request.user, is_read=False).count()
+        return render(request, 'app/notification/bandejaEntrada.html', {'notifications': notifications, 'unread_count': unread_count })
 
 
 @login_required
@@ -264,6 +265,22 @@ def notification_delete(request, pk):
         return redirect('/notification/')
     return render(request, 'app/notification/delete_confirm.html', {'notification': notification})
 
+
+@login_required
+def notification_mark_as_read(request, pk):
+    notification = get_object_or_404(Notification, pk=pk)
+    if request.method == 'POST':
+        notification.is_read = True
+        notification.save()
+        return redirect('/notification/')
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/')) # refresh last screen
+
+@login_required
+def notification_mark_all_as_read(request):
+    if request.method == 'GET':
+        Notification.objects.filter(addressee=request.user, is_read=False).update(is_read=True)
+        return redirect('/notification/')
+    return HttpResponseRedirect(request.META.get('HTTP_REFERER', '/')) # refresh last screen
 
 @login_required
 def venue_form(request, id=None):
