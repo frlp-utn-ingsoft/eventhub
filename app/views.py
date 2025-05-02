@@ -1,8 +1,9 @@
-import datetime
+from datetime import datetime
 from functools import wraps
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
+from django.http import HttpResponseNotAllowed
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .models import Event, RefoundRequest, User, Notification, NotificationUser, Category, Ticket, Event, TicketForm
@@ -796,7 +797,6 @@ def event_editar_rating(request, event_id, rating_id):
 def request_refound(request):
     user = request.user
     refounds = []
-    print(user.is_organizer)
     if user.is_organizer :
         refounds = RefoundRequest.objects.all()
     else:
@@ -832,7 +832,7 @@ def delete_refound(request):
     if request.method == 'POST':
         refound=get_object_or_404(RefoundRequest, pk=request.POST.get("id"))
         refound.delete()
-        return redirect('refounds')
+        return redirect('refound')
 
 
 @login_required
@@ -843,15 +843,15 @@ def update_refound(request):
         refound.reason = request.POST.get('refundReason')
         refound.details = request.POST.get('additionalDetails')
         refound.save()
-        return redirect('refounds')
+    return redirect('refound')
 
 
 @login_required
 @organizer_required
-def approved_or_deny(request):
+def approved_or_deny(request, id):
     if request.method == 'POST':
-        refound=get_object_or_404(RefoundRequest, pk=request.get.POST("id"))
+        refound=get_object_or_404(RefoundRequest, pk=id)
         refound.approved= request.POST.get('approved')
-        refound.approval_date = datetime.today()
+        refound.approval_date = datetime.now()
         refound.save()
-        return redirect('refounds')
+    return redirect('refound')

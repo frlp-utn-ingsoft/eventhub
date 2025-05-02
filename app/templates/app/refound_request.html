@@ -27,24 +27,34 @@
               </thead>
               <tbody>
                 {% for refound in refounds  %}
-                {{refound.id}}
                 <tr>
                   <td><a href="#">{{refound.ticket_code}}</a></td>
                   <td>{{refound.user_id}}</td>
                   <td>{{refound.created_at}}</td>
-                  <td><span class="badge bg-warning text-dark">{{refound.approved}}</span></td>
+                  <td>
+                    {% if refound.approved == 'pending' %}
+                    <span class="badge bg-warning text-dark">PENDIENTE</span>
+                    {% elif refound.approved == 'approved' %}
+                      <span class="badge bg-success">APROBADA</span>
+                    {% elif refound.approved == 'denied' %}
+                      <span class="badge bg-danger">DENEGADA</span>
+                    {% else %}
+                      <span class="badge bg-secondary">DESCONOCIDO</span>
+                    {% endif %}
+                  </td>
                   <td>
                     <button 
                     class="btn btn-outline-primary btn-sm me-1"
                     data-bs-toggle="modal" 
                     data-bs-target="#refoundModal"
-                    data-code="123231"
-                    data-motive="1"
-                    data-add-details="detalles adicionales"
-                    data-refound-id="123998888"
+                    data-code="{{refound.ticket_code}}"
+                    data-motive="{{refound.reason}}"
+                    data-add-details="{{refound.details}}"
+                    data-refound-id="{{refound.id}}"
                     ><i class="bi bi-eye"></i></button>
                     {% if user_is_organizer %}
-                    <form action="{% url 'approved_or_deny' %}">
+                    <form action="{% url 'approved_or_deny' refound.id %}" method="POST">
+                      {% csrf_token %}
                       <button class="btn btn-outline-success btn-sm me-1" name="approved" value="approved"><i class="bi bi-check"></i></button>
                       <button class="btn btn-outline-danger btn-sm" name="approved" value="denied"><i class="bi bi-x"></i></button>
                     </form>
@@ -108,7 +118,7 @@
     const modalDetail = document.getElementById('refoundModal')
     const deleteButton = document.getElementById('delete-button')
     const sendButton = document.getElementById('send-button')
-    const form= document.getElementById('refound_form')
+      const form= document.getElementById('refound_form')
 
     modalDetail.addEventListener('show.bs.modal', function (event) {
       const button = event.relatedTarget
@@ -129,7 +139,6 @@
         modalDetail.querySelector('#additionalDetails').value = additionalDetails;
         modalDetail.querySelector('#refound_id').value = inputId;
         refound_form.action= editUrl
-
       }else {
         deleteButton.classList.add('d-none')
         sendButton.textContent= "Enviar Solicitud"
