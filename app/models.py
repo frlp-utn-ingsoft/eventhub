@@ -286,6 +286,12 @@ class Rating(models.Model):
     
     def __str__(self):
         return f'{self.usuario} - {self.evento} ({self.calificacion}⭐)'
+    
+    def update(self, titulo, calificacion, texto):
+        self.titulo = titulo
+        self.calificacion = calificacion
+        self.texto = texto
+        self.save()  
 
 class Rating_Form(forms.ModelForm):
     class Meta:

@@ -21,7 +21,7 @@
                         
                         <div class="card-footer" data-event-date="{{ ticket.event.scheduled_at|date:'Y-m-d H:i' }}">
                             <a href="{% url 'ticket_detail' ticket.id %}" class="btn btn-primary">Ver Detalle</a>
-                            <a href="{% url 'event_rating' ticket.event.id %}" class="btn btn-primary rate-btn" data-event-date="{{ ticket.event.scheduled_at|date:'Y-m-d H:i' }}">Calificar evento</a>
+                            <a href="{% url 'event_guardar_rating' ticket.event.id %}" class="btn btn-primary rate-btn" data-event-date="{{ ticket.event.scheduled_at|date:'Y-m-d H:i' }}">Calificar evento</a>
                         </div>                        
                         
                     </div>

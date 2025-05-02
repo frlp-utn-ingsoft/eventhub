@@ -18,8 +18,13 @@
                         {% for rating in ratings %}
                             <div class="card mb-4 shadow-sm">
                                 <div class="card-body">
-                                    <h6 class="card-title">{{ rating.usuario.username }}</h6>
-                                    <h6 class="card-subtitle mb-2 text-muted">{{ rating.fecha_creacion|date:"d/m/Y H:i" }}</h6>
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-person-circle fs-3 me-2"></i>
+                                        <div>
+                                            <h6 class="card-title">{{ rating.usuario.username }}</h6>
+                                            <h6 class="card-subtitle mb-2 text-muted">{{ rating.fecha_creacion|date:"d/m/Y H:i" }}</h6>
+                                        </div>
+                                    </div>
                                     <p class="card-text"><strong>{{ rating.titulo }}</strong></p>
                                     <p class="card-text">
                                         {% for i in "12345" %}
@@ -33,11 +38,12 @@
                                     <p class="card-text">{{ rating.texto }}</p>
 
                                     {% if user.is_authenticated and user == rating.usuario or user.is_staff %}
-                                        <form method="post" style="display: inline;" onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta reseña?');">
+                                        <form method="post" style="display: inline;" action="{% url 'event_eliminar_rating' event.id rating.id %}" onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta reseña?');">
                                             {% csrf_token %}
+                                            <input type="hidden" name="rating_id" value="{{ rating.id }}">
                                             <button type="submit" name="eliminar" class="btn btn-sm btn-danger">Eliminar</button>
                                         </form>
-                                        <a href="{% url 'event_detail' event.id %}?edit" class="btn btn-sm btn-warning">Editar</a>
+                                        <a href="{% url 'event_editar_rating' event.id rating.id %}?edit" class="btn btn-sm btn-success">Editar</a>
                                     {% endif %}
                                 </div>
                             </div>
@@ -45,52 +51,65 @@
                             <p>Aún no hay reseñas para este evento. ¡Sé el primero en opinar!</p>
                         {% endfor %}
 
+                        <hr>
 
                         {% if user.is_authenticated %}
-    
-                            {% if not tiene_resena and not editando %}
-                                <button id="mostrarFormulario" class="btn btn-success mb-3">Crear nueva reseña</button>
+                            {% if not resena %}
+                                <button id="mostrarFormulario" class="btn btn-primary mb-3">Crear nueva reseña</button>
+                            {%endif%}
+
+                            {% if editando %}
+                                <form method="post" id="formularioResena"
+                                    action="{% url 'event_editar_rating' event.id resena.id %}"
+                                    onsubmit="return validarFormulario();">
+                                <input type="hidden" name="Modo" value="editar">
+                            {% elif not resena %}
+                                <form method="post" id="formularioResena" class="d-none"
+                                    action="{% url 'event_guardar_rating' event.id %}"
+                                    onsubmit="return validarFormulario();">
+                                <input type="hidden" name="Modo" value="crear">
                             {% endif %}
+
+                            {% if editando or not resena %}
+                                <h6>{% if editando %}Editar tu reseña{% else %}Crear reseña{% endif %}</h6>
+                            {% csrf_token %}
+                            <div class="card p-4 mb-4">
+
+                                <div id="mensajeResena" class="mb-3"></div>
+
+                                <div class="mb-3">
+                                    <h6>Título de tu reseña *</h6>
+                                    {{ form.titulo }}
+                                </div>
                         
-                            {% if editando or not tiene_resena %}
-                                <form method="post" id="formularioResena" 
-                                    class="{% if not editando%}d-none{% endif %}" onsubmit="return validarFormulario();">
-                                    <input type="hidden" name="Modo" value="{% if editando %}editar{% else %}crear{% endif %}">
-                                    <h6>{% if editando %}Editar tu reseña{% else %}Crear reseña{% endif %}</h6>
-                                    {% csrf_token %}
-                                    <div class="card p-4 mb-4"> 
-                                        <div class="mb-3">
-                                            <h6>Título de tu reseña *</h6>
-                                            {{ form.titulo }}
-                                        </div>
-                        
-                                        <div class="mb-3">
-                                            <h6>Tu calificación *</h6>
-                                            <div id="starRating" class="d-flex gap-1 fs-3">
-                                                {% for i in "12345" %}
-                                                    <i class="bi bi-star" data-value="{{ forloop.counter }}"></i>
-                                                {% endfor %}
-                                            </div>
-                                            {{ form.calificacion }}
-                                            <p>Selecciona una calificación</p>
-                                        </div>
-                        
-                                        <div class="mb-3">
-                                            <h6>Tu reseña (opcional)</h6>
-                                            {{ form.texto }}
-                                        </div>
-                                        
-                                        {% if editando %}
-                                            <button type="submit" name="guardar" class="btn btn-primary w-100">Actualizar reseña</button>
-                                            <button type="button" id="cancelarEdicion" class="btn btn-outline-secondary w-100 mt-2">Cancelar edición</button>
-                                        {% else %}
-                                            <button type="submit" name="guardar" class="btn btn-primary w-100">Enviar reseña</button>
-                                        {% endif %}
+                                
+                                <div class="mb-3">
+                                    <h6>Tu calificación *</h6>
+                                    <div id="starRating" class="d-flex gap-1 fs-3">
+                                        {% for i in "12345" %}
+                                            <i class="bi bi-star" data-value="{{ forloop.counter }}"></i>
+                                        {% endfor %}
                                     </div>
-                                </form>
-                            {% endif %}
+                                    {{ form.calificacion }}
+                                </div>
+                        
+                                
+                                <div class="mb-3">
+                                    <h6>Tu reseña (opcional)</h6>
+                                    {{ form.texto }}
+                                </div>
+                        
+                                
+                                {% if editando %}
+                                    <button type="submit" class="btn btn-primary w-100">Actualizar reseña</button>
+                                    <button type="button" id="cancelarEdicion" class="btn btn-outline-secondary w-100 mt-2">Cancelar edición</button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-primary w-100">Enviar reseña</button>
+                                {% endif %}
+                            </div>
+                        </form>
+                        {% endif %}
                     {% endif %}
-                    <hr>
                 </div>    
             </div>
     </div>
@@ -100,7 +119,7 @@
     document.addEventListener("DOMContentLoaded", function () {
         const boton = document.getElementById("mostrarFormulario");
         const formulario = document.getElementById("formularioResena");
-
+    
         if (boton && formulario) {
             boton.addEventListener("click", function () {
                 formulario.classList.remove("d-none");
@@ -108,7 +127,8 @@
             });
         }
     });
-</script>
+    </script>
+    
 
 
 <!--JavaScript para desarrollar actualizacion de Resena-->
@@ -117,20 +137,23 @@
         const formulario = document.getElementById("formularioResena");
         if (!formulario) return;
 
-        function mostrarMensaje(texto, tipo) {
-            const contenedor = document.querySelector(".card-body .row");
+        function mostrarMensaje(texto, tipo = "success") {
+            const contenedor = document.getElementById("mensajeResena");
             if (!contenedor) return;
-            contenedor.querySelectorAll('.alert').forEach(el => el.remove());
-
-            const alertDiv = document.createElement("div");
-            alertDiv.className = `alert alert-${tipo}`;
-            alertDiv.role = "alert";
-            alertDiv.textContent = texto;
-            contenedor.appendChild(alertDiv);
+    
+            contenedor.innerHTML = ''; 
+    
+            const alerta = document.createElement("div");
+            alerta.className = `alert alert-${tipo}`;
+            alerta.role = "alert";
+            alerta.textContent = texto;
+            contenedor.appendChild(alerta);
+            contenedor.scrollIntoView({ behavior: "smooth", block: "center" });
+    
+            setTimeout(() => alerta.remove(), 4000);
         }
     });
 </script>
-    
 
 <!--Espacio JavaScript para desarrollar interaccion con estrellas-->
 <script>
@@ -197,4 +220,27 @@
         return true;
     }
 </script>
-        
+
+<!--Espacio JavaScript para desarrollar  el boton de cancelar edicion-->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const cancelarBtn = document.getElementById("cancelarEdicion");
+        const formulario = document.getElementById("formularioResena");
+        const botonCrear = document.getElementById("mostrarFormulario");
+    
+        if (cancelarBtn) {
+            cancelarBtn.addEventListener("click", function () {
+                formulario.classList.add("d-none");
+    
+                if (botonCrear) {
+                    botonCrear.classList.remove("d-none");
+                }
+    
+                const url = new URL(window.location);
+                url.searchParams.delete("edit");
+                window.history.replaceState({}, document.title, url);
+            });
+        }
+    });
+</script>
+    
