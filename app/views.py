@@ -56,12 +56,7 @@ def login_view(request):
 
 
 def home(request):
-    images = [
-        'img/slides1.jpeg',
-        'img/slide2.jpg',
-        'img/slide3.jpg',
-    ]
-    return render(request, 'home.html', {'images': images})
+    return render(request, 'home.html')
 
 
 @login_required
