@@ -1,11 +1,69 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista de Tipos de Ticket</title>
-</head>
-<body>
-    <h1>Lista de Tipos de Ticket</h1>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block title %}Tipos de Ticket{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Tipo de Tickets</h1>
+        {% if user_is_organizer %}
+            <a
+                href="{% url 'ticket_type_form' %}"
+                class="btn btn-primary"
+            >
+                <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
+                Crear Tipo de Ticket
+            </a>
+        {% endif %}
+    </div>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Precio</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket_type in ticket_types %}
+                <tr>
+                    <td>{{ ticket_type.name }}</td>
+                    <td>{{ ticket_type.price }}</td>
+                    <td>
+                        <div class="hstack gap-1">
+                            <a href=""
+                               class="btn btn-sm btn-outline-primary"
+                               aria-label="Ver detalle"
+                               title="Ver detalle">
+                                <i class="bi bi-eye" aria-hidden="true"></i>
+                            </a>
+                            {% if user_is_organizer %}
+                                <a href="{% url 'ticket_type_update' ticket_type.id %}"
+                                    class="btn btn-sm btn-outline-secondary"
+                                    aria-label="Editar"
+                                    title="Editar">
+                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                                </a>
+                                <form action="" method="POST">
+                                    {% csrf_token %}
+                                    <button class="btn btn-sm btn-outline-danger"
+                                        title="Eliminar"
+                                        type="submit"
+                                        aria-label="Eliminar"
+                                        titile="Eliminar">
+                                        <i class="bi bi-trash" aria-hidden="true"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">No hay Tickets disponibles</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

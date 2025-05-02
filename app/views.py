@@ -475,18 +475,18 @@ def ticket_update(request, id):
 @login_required
 def ticket_types(request):
     user = request.user
-    if not user.is_organizer:
+    if not user.is_organizer and not user.is_superuser:
         return redirect("events")
     ticket_types = TicketType.objects.all().order_by("price")
-    return render(request, "app/ticket_types.html", {"ticket_types": ticket_types})
+    return render(request, "app/ticket_types.html", {"ticket_types": ticket_types,"user_is_organizer": user.is_organizer},)
 
 @login_required
-def ticket_type_delete(request, ticket_type_id):
+def ticket_type_delete(request, id):
     if request.method == "POST":
         user = request.user
-        if not user.is_organizer:
+        if not user.is_superuser:
             return redirect("events")
-        ticket_type = get_object_or_404(TicketType, pk=ticket_type_id)
+        ticket_type = get_object_or_404(TicketType, pk=id)
         ticket_type.delete()
         return redirect("ticket_types")
     else:
@@ -495,7 +495,7 @@ def ticket_type_delete(request, ticket_type_id):
 @login_required
 def ticket_type_form(request):
     user = request.user
-    if not user.is_organizer:
+    if not user.is_superuser:
         return redirect("events")
     if request.method == "POST":
         name = request.POST.get("name")
@@ -513,14 +513,14 @@ def ticket_type_form(request):
                     "data": request.POST,
                 },
             )        
-    else: return redirect("ticket_types")
+    else: return render(request, "app/ticket_type_form.html")
     
 @login_required
-def ticket_type_update(request, ticket_type_id):
+def ticket_type_update(request, id):
     user = request.user
-    if not user.is_organizer:
+    if not user.is_superuser:
         return redirect("events")
-    ticket_type = get_object_or_404(TicketType, pk=ticket_type_id)
+    ticket_type = get_object_or_404(TicketType, pk=id)
     if request.method == "POST":
         price = float(request.POST.get("price"))
         success, result = ticket_type.update(price)
@@ -537,4 +537,6 @@ def ticket_type_update(request, ticket_type_id):
                     "ticket_type": ticket_type,
                 },
             )
-    else: return redirect("ticket_types")
+    else: return render(request, "app/ticket_type_update.html", {"ticket_type": ticket_type})
+
+

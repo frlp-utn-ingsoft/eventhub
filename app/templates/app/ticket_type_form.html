@@ -1,11 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crear tipo de Ticket</title>
-</head>
-<body>
-    <h1>Crear tipo de Ticket</h1>
-</body>
-</html>
+{%extends base.html%}
+{%block content%}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="mb-4">Crear tipo de ticket</h1>
+            <div class="card">
+                <div class="card-body">
+                    <form action="{% url 'ticket_type_form' %}" method="POST">
+                        {% csrf_token %}
+                        <div class="vstack gap-3">
+                            <div>
+                                <label for="title" class="form-label">Nombre del Ticket</label>
+                                <input class="form-control" id="price" name="price" type="number" required="">
+                                    {{ticket_type.price}}
+                                </input>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary">Crear tipo de ticket</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

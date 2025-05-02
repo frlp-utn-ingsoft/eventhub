@@ -292,12 +292,12 @@ class TicketType(models.Model):
     @classmethod
     def validate(cls, name, price):
         errors = {}
-
+        if cls.objects.filter(name=name).exists():
+            errors["name"] = "Ya existe un tipo de ticket con ese nombre"
         if name == "":
             errors["name"] = "El nombre es requerido"
-
-        if price is None or price <= 0:
-            errors["price"] = "El precio debe ser mayor a 0"
+        if price is None or not isinstance(price, (int, float)) or price <= 0:
+            errors["price"] = "El precio debe ser un número mayor a 0"
 
         return errors
 
@@ -316,9 +316,8 @@ class TicketType(models.Model):
         return True, None
 
     def update(self, price):
-        errors=TicketType.validate(self.name, price)
-        if len(errors.keys()) > 0:
-            return False, errors
+        if price is None or not isinstance(price, (int, float)) or price <= 0:
+            return False, {"price": "El precio debe ser un número mayor a 0"}
         self.price = price
         self.save()
 
