@@ -1,15 +1,10 @@
 from django import forms
-<<<<<<< HEAD
-from django.contrib.auth import get_user_model
-from .models import Category
-from .models import Notification
-
-User = get_user_model()
-=======
 from .models import RefundRequest, Ticket, Category, Notification, Event
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.contrib.auth import get_user_model
 
+User = get_user_model()
 # --- Formulario de Refunds ---
 class RefundRequestForm(forms.ModelForm):
     MOTIVO_CHOICES = [
@@ -145,7 +140,6 @@ class TicketForm(forms.ModelForm):
         })
 
 # --- Formulario de Notificaciones ---
->>>>>>> e9ee48e5647ab6f5af65397f399146f7d37e8ae5
 class NotificationForm(forms.ModelForm):
     class Meta:
         model  = Notification
@@ -166,7 +160,6 @@ class NotificationForm(forms.ModelForm):
             "message":  "Mensaje",
         }
 
-<<<<<<< HEAD
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         # solo usuarios NO organizadores
@@ -176,9 +169,6 @@ class NotificationForm(forms.ModelForm):
         self.fields["user"].label_from_instance = (
             lambda u: f"{(u.get_full_name() or u.username).title()} ({u.email})"
         )
-=======
-# --- Formulario de Categorías ---
->>>>>>> e9ee48e5647ab6f5af65397f399146f7d37e8ae5
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
