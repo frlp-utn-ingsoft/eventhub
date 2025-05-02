@@ -1,126 +1,113 @@
 {% extends 'base.html' %}
+
 {% block content %}
 <div class="container">
-  <div class="row mb-4">
-    <div class="col">
-      <h1>{{ event.title }}</h1>
-    </div>
-    <div class="col text-end">
-      {% if user_is_organizer %}
-      <a href="{% url 'event_edit' event.id %}" class="btn btn-outline-primary">
-        <i class="bi bi-pencil"></i> Editar
-      </a>
-      {% endif %}
-    </div>
-  </div>
-
-  <div class="card mb-4">
-    <div class="card-body">
-      <h5 class="card-title">Detalles del Evento</h5>
-      <p>{{ event.description }}</p>
-      <p><i class="bi bi-calendar-event"></i> {{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
-      <p><i class="bi bi-person"></i> {{ event.organizer }}</p>
-    </div>
-  </div>
-
-  <!-- BOTONES para toggle -->
-  <div class="card mb-3 bg-light">
-    <div class="card-body d-flex gap-3">
-      <button id="btn-comments" class="btn btn-sm btn-outline-secondary"
-              onclick="toggleSection('comments-section','btn-comments')" aria-expanded="false">
-        Comentarios ({{ num_comments }})
-      </button>
-      <button id="btn-ratings" class="btn btn-sm btn-outline-secondary"
-              onclick="toggleSection('ratings-section','btn-ratings')" aria-expanded="false">
-        Ratings ({{ num_ratings }})
-      </button>
-    </div>
-  </div>
-
-  <!-- CONTENEDOR COLLAPSIBLE -->
-  <div class="card mb-4">
-    <div class="card-body">
-
-      <!-- SECCIÓN COMENTARIOS -->
-      <div id="comments-section" style="display: none;">
-        <h5>Comentarios</h5>
-        {% for comment in comments %}
-        <div class="mb-3 pb-2 border-bottom">
-          <strong>{{ comment.user.username }}</strong>
-          <small class="text-muted">{{ comment.created_date|date:"d M Y H:i" }}</small>
-          <h6>{{ comment.tittle }}</h6>
-          <p>{{ comment.text }}</p>
+    <div class="row">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1>{{ event.title }}</h1>
+            <div>
+            {% if user_is_organizer %}
+                <a
+                    href="{% url 'event_edit' event.id %}"
+                    class="btn btn-outline-primary me-2"
+                >
+                    <i class="bi bi-pencil me-1"></i>Editar
+                </a>
+            {% endif %}
         </div>
-        {% empty %}
-        <p>No hay comentarios aún.</p>
-        {% endfor %}
-
-        <hr>
-        <h6>Deja tu comentario</h6>
-        <form method="POST">
-          {% csrf_token %}
-          {{ comment_form.tittle.label_tag }}
-          {{ comment_form.tittle }}
-          {{ comment_form.text.label_tag }}
-          {{ comment_form.text }}
-          <button type="submit" name="submit_comment" class="btn btn-primary mt-2">
-            Enviar comentario
-          </button>
-        </form>
-      </div>
-
-      <!-- Sección de Ratings -->
-        <div id="ratings-section" style="display: none;">
-            <h5>Reseñas</h5>
-            {% for rating in ratings %}
-            <div class="mb-3 pb-2 border-bottom">
-            <strong>{{ rating.user.username }}</strong>
-            <small class="text-muted">{{ rating.created_at|date:"d M Y H:i" }}</small>
-            <h6>{{ rating.title }}</h6>
-        
-            {% with "show_"|add:rating.id as star_input_name %}
-                {% include "components/star_rating.html" with name=star_input_name selected=rating.rating readonly=True %}
-            {% endwith %}
-
-
-            <p>{{ rating.text }}</p>
-        
-            {% if rating.user == user %}
-            <a href="{% url 'rating_edit' rating.id %}" class="btn btn-sm btn-outline-secondary">
-                <i class="bi bi-pencil"></i>
-            </a>
-            {% endif %}
-            {% if rating.user == user or user_is_organizer %}
-            <a href="{% url 'rating_delete' rating.id %}" class="btn btn-sm btn-outline-danger">
-                <i class="bi bi-trash"></i>
-            </a>
-            {% endif %}
+    </div>
+    <div class="row">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Detalles del Evento</h5>
+                <p class="card-text">{{ event.description }}</p>
+                <div class="mt-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-calendar-event text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Fecha y Hora</h6>
+                            <p class="mb-0">{{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-geo-alt text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Ubicación</h6>
+                            <p class="mb-0">
+                                {% if event.venue %}
+                                    {{ event.venue.name }} ({{ event.venue.city }})
+                                {% else %}
+                                    No asignada
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-person text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Organizador</h6>
+                            <p class="mb-0">{{ event.organizer }}</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                      <div class="bg-light rounded-circle p-2 me-3">
+                          <i class="bi bi-tags text-primary"></i>
+                      </div>
+                      <div>
+                          <h6 class="mb-0">Categorías</h6>
+                          <p class="mb-0">
+                              {% if event.categories.all %}
+                                  {% for category in event.categories.all %}
+                                      {{ category.name }}{% if not forloop.last %}, {% endif %}
+                                  {% endfor %}
+                              {% else %}
+                                  Sin categoría
+                              {% endif %}
+                          </p>
+                      </div>
+                  </div>
+                </div>
             </div>
-            {% empty %}
-            <p>No hay reseñas aún.</p>
-            {% endfor %}
-        
-            <hr>
-            <h6>Deja tu reseña</h6>
-        
-            <form method="POST">
-            {% csrf_token %}
-            {% include "app/partials/rating.html" with form=rating_form %}
-            </form>
         </div>
-        
+            <!-- Botón para mostrar comentarios -->
+            <div class="card mb-2 mt-2" style="background-color: lightgray;">
+                <nav>
+                    <button class="btn btn-secondary" style="border: none; background-color: lightgray; color: black ; font-size: 17pt;" onclick="toggleComments()">Comentarios ({{ num_comments|default:0 }})</button>
+                    <button class="btn btn-secondary" style="border: none; background-color: lightgray; color: black ; font-size: 17pt;" onclick="toggleRatings()">Ratings ({{ num_ratings|default:0 }})</button>
+                </nav>
+                
+            </div>
+            
+            <!-- Div contenedor de comentarios -->
+            <div class="card mb-4" id="comments-section" style="display: none;">
+                {% include "app/partials/comment.html" %}
+                <!--Aca usas lo mismo de arriba pero con partials/Ratings-->
+            </div>
+             <!-- Div contenedor de comentarios -->
+             <div class="card mb-4" id="ratings-section" style="display: none;">
+                {% include "app/partials/rating.html" %}
+              <!--Aca usas lo mismo de arriba pero con partials/Ratings-->
+          </div>
+
+            <script>
+            function toggleComments() {
+                const section = document.getElementById('comments-section');
+                section.style.display = section.style.display === 'none' ? 'block' : 'none';
+            }
+            </script>
+            <script>
+              function toggleRatings() {
+                  const section = document.getElementById('ratings-section');
+                  section.style.display = section.style.display === 'none' ? 'block' : 'none';
+              }
+              </script>
 
     </div>
-  </div>
 </div>
-
-<script>
-function toggleSection(sectionId, btnId) {
-  const sec = document.getElementById(sectionId);
-  const btn = document.getElementById(btnId);
-  const isOpen = sec.style.display === 'block';
-  sec.style.display = isOpen ? 'none' : 'block';
-  btn.setAttribute('aria-expanded', !isOpen);
-}
-</script>
 {% endblock %}

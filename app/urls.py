@@ -10,6 +10,7 @@ urlpatterns = [
     path("accounts/login/", views.login_view, name="login"),
     #Events
     path("events/", views.events, name="events"),
+    
     path("events/create/", views.event_form, name="event_form"),
     path("events/<int:id>/edit/", views.event_form, name="event_edit"),
     path('events/<int:event_id>/', views.event_detail, name='event_detail'),
@@ -32,6 +33,7 @@ urlpatterns = [
     #Comentario
     path('organizator_comment/', views.comentarios_organizador, name='organizator_comment'),
     path('eliminar_comentario/<int:comment_id>/', views.delete_comment, name='delete_comment'),
+    path('edit_comment/<int:comment_id>/edit/', views.edit_comment, name='edit_comment'),
     #RefundRequest
     path('refunds/', views.refund_list, name='refund_list'),
     path('refunds/<int:refund_id>/approve/', views.approve_refund, name='approve_refund'),
@@ -39,4 +41,16 @@ urlpatterns = [
     path('refunds/<int:refund_id>/delete/', views.delete_refund, name='delete_refund'),
     path('refunds/create/', views.create_refund, name='create_refund'),
     path('refunds/<int:refund_id>/update/', views.refund_update, name='refund_update'),
+    #Category
+    path('categories/', views.list_categories, name='list_categories'),
+    path('categories/create/', views.category_form, name='category_form'),
+    path('categories/<int:id>/update/', views.category_form, name='update_category'),
+    path('categories/<int:id>/delete/', views.delete_category, name='delete_category'),
+    #Venue
+    path('venues/', views.venue_list, name='venue_list'),
+    path('venues/create/', views.venue_create, name='venue_create'),
+    path('venues/<int:venue_id>/edit/', views.venue_update, name='venue_edit'),
+    path('venues/<int:venue_id>/delete/', views.venue_delete, name='venue_delete'),
+
 ]
+

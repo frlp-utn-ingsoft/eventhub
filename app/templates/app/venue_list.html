@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="mb-4 text-center">Mis Ubicaciones</h1>
+
+   
+    {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+                <div class="alert alert-info {{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% if request.user.is_organizer %}
+    <div class="text-center mb-3">
+        <a href="{% url 'venue_create' %}" class="btn btn-success">Crear Nueva Ubicación</a>
+    </div>
+    {% endif %}
+
+
+    {% if venues %}
+        <div class="row justify-content-center">
+            {% for venue in venues %}
+                <div class="col-md-8 mb-4">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ venue.name }}</h5>
+                            <p class="card-text mb-2">
+                                <strong>Dirección:</strong> {{ venue.address }}<br>
+                                <strong>Ciudad:</strong> {{ venue.city }}<br>
+                                <strong>Capacidad:</strong> {{ venue.capacity }} personas<br>
+                                <strong>Contacto:</strong> {{ venue.contact }}
+                            </p>
+                            <div class="d-flex justify-content-end">
+                                {% if request.user.is_organizer %}
+                                    <a href="{% url 'venue_edit' venue.id %}" class="btn btn-sm btn-primary me-2">Editar</a>
+                                    <form method="post" action="{% url 'venue_delete' venue.id %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar esta ubicación?')">Eliminar</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info" role="alert">
+            No tienes ubicaciones registradas.
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); /* sombra leve inicial */
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* sombra más intensa en hover */
+    }
+</style>
+{% endblock %}

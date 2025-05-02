@@ -1,6 +1,8 @@
-from django import forms
-from .models import Notification,Ticket,Event,User,RefundRequest,Rating,Comment
+
 from datetime import datetime
+from django import forms
+from .models import Event, Notification, RefundRequest, Ticket, User, Venue,Rating,Comment
+
 
 class NotificationForm(forms.ModelForm):
     event = forms.ModelChoiceField(
@@ -193,3 +195,24 @@ class CommentForm(forms.ModelForm):
             'tittle': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ingresa el título de tu comentario'}),
             'text': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Escribe el contenido del comentario aquí', 'rows': 4}),
         }
+class RefundRequestForm(forms.ModelForm):
+    class Meta:
+        model = RefundRequest
+        fields = ['ticket_code', 'reason']
+        widgets = {
+            'ticket_code': forms.TextInput(attrs={'class': 'form-control'}),
+             'reason': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Explicá el motivo'}),
+        }   
+
+
+class VenueForm(forms.ModelForm):
+        name = forms.CharField(label='Nombre de la ubicación', max_length=255, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Estadio Nacional'}))
+        address = forms.CharField(label='Dirección', max_length=255, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Av. Grecia 2001'}))
+        city = forms.CharField(label='Ciudad', max_length=100, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Buenos Aires'}))
+        capacity = forms.IntegerField(label='Capacidad (Número de Personas)', widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 1000'}))
+        contact = forms.CharField(label='Contacto', widget=forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Describe las características principales de la ubicación...', 'rows': 5}))
+
+        class Meta:
+            model = Venue
+            fields = ['name', 'address', 'city', 'capacity', 'contact']
+            # Ya no necesitamos definir widgets aquí porque los definimos arriba

@@ -1,18 +1,60 @@
 {% block content %}
 <div class="mb-4">
-    <h6>{{ form.title.label_tag }}</h6>
-    <input type="text" class="form-control" name="title" value="{{ form.title.value }}" placeholder="Título de la reseña">
 
-    <h6 class="mt-4">{{ form.rating.label_tag }}</h6>
-    <div class="d-flex align-items-center">
-        {% include "components/star_rating.html" with name="rating" selected=form.rating.value %}
+    <!-- Mostrar ratings existentes -->
+    {% for rating in ratings %}
+    <div class="card-body">
+        <h6 class="bi bi-person">{{ rating.user.username }}</h6>
+        <small class="text-muted">Publicado el {{ rating.created_at|date:"d M Y H:i" }}</small>
+        <h5 class="card-title fw-bold">{{ rating.title }}</h5>
+        <p class="card-text">{{ rating.text }}</p>
+        <!-- Mostrar estrellas en modo lectura -->
+        {% include "components/star_rating.html" with name="readonly_rating_{{ rating.id }}" selected=rating.rating readonly=True %}
+            {% if rating.user == user %}
+                <a href="{% url 'rating_edit' rating.id %}"
+                class="btn btn-sm btn-outline-secondary"
+                aria-label="Editar"
+                title="Editar">
+                <i class="bi bi-pencil" aria-hidden="true"></i>
+                </a>
+                <a href="{% url 'rating_delete' rating.id %}"
+                    class="btn btn-sm btn-outline-danger"
+                    aria-label="Eliminar"
+                    title="Eliminar"
+                    onclick="return confirm('¿Estás seguro de que quieres eliminar esta reseña?');">
+                    <i class="bi bi-trash" aria-hidden="true"></i>
+                </a>
+            {% endif %}
+        <hr>
     </div>
+    
+    {% empty %}
+    <div class="card-body">
+        <p class="card-text">No hay reseñas aún.</p>
+    </div>
+    {% endfor %}
 
-    <h6 class="mt-4">{{ form.text.label_tag }}</h6>
-    <textarea class="form-control" name="text" rows="4" placeholder="Escribe tu reseña aquí">{{ form.text.value }}</textarea>
+    <!-- Formulario de nueva reseña -->
+    <form method="POST">
+        {% csrf_token %}
+        <h5>Ingrese el Título</h5>
+        <input type="text" class="form-control" name="title" placeholder="Título de la reseña" required>
 
-    <button type="submit" class="btn btn-primary mt-3">
-        Enviar calificación
-    </button>
+        <h6 class="mt-4">Puntuación</h6>
+        {% include "components/star_rating.html" with name="rating" selected=0 %}
+
+        <h6 class="mt-4">Ingrese el comentario</h6>
+        <textarea class="form-control" name="text" rows="4" placeholder="Escribe tu reseña aquí" required></textarea>
+
+        <button type="submit" name="rating_submit" class="btn btn-primary mt-3">Enviar calificación</button>
+    </form>
+
 </div>
+
+<!-- Bootstrap JS -->
+<script
+    src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq"
+    crossorigin="anonymous"
+></script>
 {% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <div class="container mt-4">
+        <!-- Contenedor para el título y el botón alineados a la derecha -->
+        <div class="d-flex justify-content-between mb-3">
+            <h2 class="mb-0">Categorías</h2>
+            <a href="{% url 'category_form' %}" class="btn btn-primary">Crear Categoría</a>
+        </div>
+
+        {% if categories %}
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Eventos Asociados</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category in categories %}
+                        <tr>
+                            <td>{{ category.name }}</td>
+                            <td>{{ category.description }}</td>
+                            <td>{{ category.event_set.count }}</td>  <!-- Cambié a count() -->
+                            <td>
+                                <div class="hstack gap-1">
+                                {% if user.is_organizer%}
+                                    <a href="{% url 'update_category' category.id %}"
+                                       class="btn btn-sm btn-outline-secondary"
+                                       aria-label="Editar"
+                                       title="Editar">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                                    </a>
+                                    <form action="{% url 'delete_category' category.id %}" method="POST">
+                                        {% csrf_token %}
+                                        <button class="btn btn-sm btn-outline-danger"
+                                                title="Eliminar"
+                                                type="submit"
+                                                aria-label="Eliminar">
+                                            <i class="bi bi-trash" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <div class="alert alert-info" role="alert">
+                No hay categorías registradas.
+            </div>
+        {% endif %}
+    </div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .table-hover tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+</style>
+{% endblock %}

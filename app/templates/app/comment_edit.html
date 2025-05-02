@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Editar Comentario</h2>
+    <form method="POST">
+        {% csrf_token %}
+        <div>
+        <h6 class="card-title"> Titulo del Comentario *</h6>
+        <input type="text" class="form-control mb-2" name="title" placeholder="Ingresa el titulo de tu comentario">
+        
+        <h6 class="card-title mt-4"> Contenido del Comentario *</h6>
+        <textarea class="form-control py-2 mb-2" name="text" rows="4" placeholder="Escribe el contenido del comentario aquí"></textarea>
+    
+        <button type="submit" name="comment_submit" class="btn btn-primary mb-4">Subir</button>
+        <a href="{% url 'event_detail' comment.event.id %}" class="btn btn-secondary ms-2">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}
