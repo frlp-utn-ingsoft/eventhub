@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="containerCategorias mt-5">
     <div class="row">
         <div class="col-md-8 offset-md-2">
             <h1 class="mb-4">
@@ -12,7 +12,7 @@
                 {% endif %}
             </h1>
 
-            <div class="card">
+            <div class="card categoria">
                 <div class="card-body">
                     <form method="POST">
                         {% csrf_token %}
@@ -39,14 +39,14 @@
                             </div>
 
                             <div>
-                                <button type="submit" class="btn btn-primary">
+                                <button type="submit" class="btn btn-eventgub-green crearCategoria">
                                     {% if category %}
                                         Editar Categoría
                                     {% else %}
                                         Crear Categoría
                                     {% endif %}
                                 </button>
-                                <a href="{% url 'categories' %}" class="btn btn-outline-secondary">Cancelar</a>
+                                <a href="{% url 'categories' %}" class="btn btn-outline-eventhub">Cancelar</a>
                             </div>
                         </div>
                     </form>

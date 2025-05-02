@@ -12,3 +12,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
   
+
+  document.addEventListener("DOMContentLoaded", () => {
+    const nav = document.getElementById("navbar-content");
+    const burger = document.querySelector(".navbar-toggler");
+  
+    burger?.addEventListener("click", () => {
+      nav.classList.toggle("animate-slide-down");
+      // al cerrar (hidden.bs.collapse) quitamos la clase
+      nav.addEventListener("hidden.bs.collapse", () =>
+        nav.classList.remove("animate-slide-down"), { once: true });
+    });
+  });
