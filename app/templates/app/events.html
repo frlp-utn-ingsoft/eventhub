@@ -21,6 +21,8 @@
             <tr>
                 <th>Título</th>
                 <th>Fecha</th>
+                <th>Ubicación</th>
+                <th>Organizador</th>
                 <th>Categorías</th>
                 <th>Acciones</th>
             </tr>
@@ -29,9 +31,17 @@
             {% for event in events %}
                 <tr>
                     <td>{{ event.title }}</td>
-                    <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
+                    <td>{{ event.scheduled_at|date:"d M Y, H:i" }}</td>
                     <td>
-                        {% if event.categories.all %}
+                        {% if event.venue %}
+                            {{ event.venue.name }}
+                        {% else %}
+                            Sin ubicación
+                        {% endif %}
+                    </td>
+                    <td>{{ event.organizer.username }}</td>
+                    <td>
+                        {% if event.categories.exists %}
                             <div class="d-flex flex-wrap">
                                 {% for category in event.categories.all %}
                                     <span class="badge bg-light text-dark mb-1 me-2">{{ category.name }}</span>
@@ -56,13 +66,12 @@
                                     title="Editar">
                                     <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
-                                <form action="{% url 'event_delete' event.id %}" method="POST">
+                                <form action="{% url 'event_delete' event.id %}" method="POST" style="display: inline;">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-danger"
                                         title="Eliminar"
                                         type="submit"
-                                        aria-label="Eliminar"
-                                        titile="Eliminar">
+                                        aria-label="Eliminar">
                                         <i class="bi bi-trash" aria-hidden="true"></i>
                                     </button>
                                 </form>
@@ -72,7 +81,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center">No hay eventos disponibles</td>
+                    <td colspan="6" class="text-center">No hay eventos disponibles</td>
                 </tr>
             {% endfor %}
         </tbody>

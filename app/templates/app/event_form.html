@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 
 {% block content %}
+<style>
+    ::placeholder {
+        color: #6c757d !important; /* Un gris más oscuro */
+        opacity: 1 !important; /* Asegura que el color sea visible */
+    }
+</style>
 <div class="containerEventos mt-5">
     <div class="row">
         <div class="col-md-8 offset-md-2">
@@ -38,8 +44,8 @@
                             </div>
                             <div>
                                 <label for="venue" class="form-label">Ubicación</label>
-                                <div class="d-flex align-items-center">
-                                    <select name="venue" id="venue" class="form-select me-2" required>
+                                <div class="d-flex align-items-center gap-3">
+                                    <select name="venue" id="venue" class="form-select" style="width: 81%;" required>
                                         <option value="">Seleccionar una ubicación</option>
                                         {% for venue in venues %}
                                         <option value="{{ venue.id }}" {% if event.venue and event.venue.id == venue.id %}selected{% endif %}>
@@ -47,7 +53,7 @@
                                         </option>
                                         {% endfor %}
                                     </select>
-                                    <button type="button" class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#venueModal">
+                                    <button type="button" class="btn btn-eventgub-green crearEvento" data-bs-toggle="modal" data-bs-target="#venueModal">
                                         Nueva Ubicación
                                     </button>
                                 </div>
@@ -127,27 +133,28 @@
                     {% csrf_token %}
                     <div class="vstack gap-3">
                         <div>
-                            <label for="name" class="form-label">Nombre</label>
-                            <input class="form-control" id="name" required type="text" name="name">
+                            <label for="name" class="form-label text-dark">Nombre</label>
+                            <input class="form-control" id="name" required type="text" name="name" placeholder="Ej: Estadio Nacional" >
                         </div>
                         <div>
-                            <label for="address" class="form-label">Dirección</label>
-                            <input class="form-control" id="address" required type="text" name="address">
+                            <label for="address" class="form-label text-dark">Dirección</label>
+                            <input class="form-control" id="address" required type="text" name="address" placeholder="Ej: Av. Grecia 2001">
                         </div>
                         <div>
-                            <label for="city" class="form-label">Ciudad</label>
-                            <input class="form-control" id="city" required type="text" name="city">
+                            <label for="city" class="form-label text-dark">Ciudad</label>
+                            <input class="form-control" id="city" required type="text" name="city" placeholder="Ej: Santiago">
                         </div>
                         <div>
-                            <label for="capacity" class="form-label">Capacidad</label>
-                            <input class="form-control" id="capacity" required type="number" name="capacity">
+                            <label for="capacity" class="form-label text-dark">Capacidad</label>
+                            <input class="form-control" id="capacity" required type="number" name="capacity" placeholder="Ej: 1000">
                         </div>
                         <div>
-                            <label for="contact" class="form-label">Contacto</label>
-                            <input class="form-control" id="contact" required type="text" name="contact">
+                            <label for="contact" class="form-label text-dark">Contacto</label>
+                            <input class="form-control" id="contact" required type="text" name="contact" placeholder="Ej: contacto@ejemplo.com">
                         </div>
-                        <div class="d-flex justify-content-end">
-                            <button type="submit" class="btn btn-primary">Guardar Ubicación</button>
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                            <button type="submit" class="btn btn-eventgub-green crearEvento">Guardar Ubicación</button>
                         </div>
                     </div>
                 </form>
