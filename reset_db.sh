@@ -1,14 +1,7 @@
 #!/bin/bash
 
 python_interpreter="python"
-# if command -v python3 &>/dev/null; then
-#     python_interpreter="python3"
-# elif command -v python &>/dev/null; then
-#     python_interpreter="python"
-# else
-#     echo "Error: No se encontró un intérprete de Python válido."
-#     exit 1
-# fi
+#python_interpreter="python3"
 
 # 1. eliminar la base de datos del proyecto
 echo "==> Eliminando base de datos..."
@@ -33,7 +26,7 @@ echo "==> Creando migraciones..."
 $python_interpreter manage.py makemigrations
 $python_interpreter manage.py migrate
 
-4. crear superusuario
+#4. crear superusuario
 read -p "¿Desea crear un superusuario? (y/n): " create_superuser
 if [ "$create_superuser" == "y" ]; then
     $python_interpreter manage.py createsuperuser
