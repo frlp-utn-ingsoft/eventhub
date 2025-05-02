@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .models import Event, User, Ticket, Comment, Notification, Venue
 from django.contrib import messages
+import uuid
 
 from .models import Event, User, Ticket, RefundRequest
 from .models import Event, User, Rating, Category
@@ -230,6 +231,15 @@ def organizer_refund_requests(request):
     refund_requests = RefundRequest.objects.filter(
         user__tickets__event__in=organizer_events
     ).distinct().select_related("user")
+
+    # Asignar el evento relacionado a cada refund request
+    for r in refund_requests:
+        try:
+            ticket_code_uuid = uuid.UUID(r.ticket_code)
+            ticket = Ticket.objects.get(ticket_code=ticket_code_uuid, user=r.user)
+            r.event = ticket.event
+        except (Ticket.DoesNotExist, ValueError, TypeError):
+            r.event = None
 
     return render(request, "app/organizer_refund_requests.html", {
         "refund_requests": refund_requests,
