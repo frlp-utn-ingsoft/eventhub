@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0">Editar Ticket</h3>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        <div class="alert-messages mb-4">
+                            {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <form method="post" id="ticket-update-form">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="id_type" class="form-label">Tipo de entrada</label>
+                            {{ form.type }}
+                            {% if form.type.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.type.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="id_quantity" class="form-label">Cantidad</label>
+                            {{ form.quantity }}
+                            {% if form.quantity.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.quantity.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.accept_terms }}
+                                <label class="form-check-label" for="id_accept_terms">
+                                    Acepto los términos y condiciones y la política de privacidad
+                                </label>
+                            </div>
+                            {% if form.accept_terms.errors %}
+                                <div class="text-danger">
+                                    {% for error in form.accept_terms.errors %}{{ error }}{% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'ticket_detail' ticket_id=ticket.id %}" class="btn btn-secondary me-md-2">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> Guardar cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Resumen de cambios</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Actual:</h6>
+                            <ul class="list-group">
+                                <li class="list-group-item">Tipo: {{ ticket.get_type_display }}</li>
+                                <li class="list-group-item">Cantidad: {{ ticket.quantity }}</li>
+                                <li class="list-group-item">Total: ${{ ticket.total|floatformat:2 }}</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Nuevo:</h6>
+                            <ul class="list-group" id="preview-data">
+                                <li class="list-group-item">Tipo: <span id="preview-type">{{ ticket.get_type_display }}</span></li>
+                                <li class="list-group-item">Cantidad: <span id="preview-quantity">{{ ticket.quantity }}</span></li>
+                                <li class="list-group-item">Total: <span id="preview-total">${{ ticket.total|floatformat:2 }}</span></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const generalPrice = parseFloat("{{ ticket.event.general_price }}");
+    const vipPrice = parseFloat("{{ ticket.event.vip_price }}");
+    
+    const typeSelect = document.getElementById('id_type');
+    const quantityInput = document.getElementById('id_quantity');
+    const previewType = document.getElementById('preview-type');
+    const previewQuantity = document.getElementById('preview-quantity');
+    const previewTotal = document.getElementById('preview-total');
+    
+    function updatePreview() {
+        const typeText = typeSelect.value === 'VIP' ? 'VIP' : 'General';
+        const quantity = parseInt(quantityInput.value) || 0;
+        const price = typeSelect.value === 'VIP' ? vipPrice : generalPrice;
+        const subtotal = price * quantity;
+        const taxes = subtotal * 0.1;
+        const total = subtotal + taxes;
+        
+        if (previewType) previewType.textContent = typeText;
+        if (previewQuantity) previewQuantity.textContent = quantity;
+        if (previewTotal) previewTotal.textContent = '$' + total.toFixed(2);
+    }
+    
+    if (typeSelect) typeSelect.addEventListener('change', updatePreview);
+    if (quantityInput) quantityInput.addEventListener('input', updatePreview);
+    
+    updatePreview();
+});
+</script>
+{% endblock %}
