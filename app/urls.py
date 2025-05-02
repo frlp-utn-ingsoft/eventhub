@@ -1,9 +1,12 @@
 from django.contrib.auth.views import LogoutView
 from django.urls import path
+
 from . import views
 
 urlpatterns = [
     path("", views.home, name="home"),
+    path("inicio/", views.home_user, name="home_user"),
+    path("inicio-organizador/", views.home_organizer, name="home_organizer"),
     path("accounts/register/", views.register, name="register"),
     path("accounts/logout/", LogoutView.as_view(), name="logout"),
     path("accounts/login/", views.login_view, name="login"),
@@ -13,11 +16,16 @@ urlpatterns = [
     path("events/<int:id>/", views.event_detail, name="event_detail"),
     path("events/<int:id>/delete/", views.event_delete, name="event_delete"),
     path("ratings/<int:rating_id>/delete/", views.rating_delete, name="rating_delete"),
-    path("ubicaciones/", views.venue_list, name="venue_list"),  # Ruta para la lista de ubicaciones
-    path("ubicaciones/nueva/", views.venue_form, name="venue_form"),  # Ruta para crear una ubicación
-    path("ubicaciones/<int:id>/editar/", views.venue_form, name="venue_form"),  # Ruta para editar una ubicación
-    path("ubicaciones/<int:id>/", views.venue_detail, name="venue_detail"),  # Ruta para ver detalles de una ubicación
-    path("ubicaciones/<int:id>/eliminar/", views.venue_delete, name="venue_delete"),  # Ruta para eliminar una ubicación
+    path('event/<int:event_id>/comments/add/', views.comment_create, name="comment_add"),
+    path('comment/<int:pk>/delete/', views.comment_delete, name="comment_delete"),
+    path("events/comments/", views.organizer_comments, name="organizer_comments"),
+    path('comment/<int:pk>/hard-delete/', views.comment_hard_delete, name="comment_hard_delete"),
+    path('comment/<int:pk>/edit/', views.comment_update, name="comment_edit"),
+    path("ubicaciones/", views.venue_list, name="venue_list"),
+    path("ubicaciones/nueva/", views.venue_form, name="venue_form"),
+    path("ubicaciones/<int:id>/editar/", views.venue_form, name="venue_form"),
+    path("ubicaciones/<int:id>/", views.venue_detail, name="venue_detail"),
+    path("ubicaciones/<int:id>/eliminar/", views.venue_delete, name="venue_delete"),
     path('tickets/', views.ticket_list, name='ticket_list'),
     path("tickets/create/<int:event_id>/", views.ticket_create, name="ticket_create"),
     path('tickets/<int:pk>/edit/', views.ticket_update, name='ticket_update'),
@@ -34,8 +42,6 @@ urlpatterns = [
     path("notifications/<int:pk>/read/", views.NotificationMarkRead.as_view(), name="notifications_read"),
     path("notifications/<int:pk>/", views.notification_detail, name="notifications_detail"),
     path("notifications/dropdown/", views.NotificationDropdown.as_view(), name="notifications_dropdown"),
-    
-    ## Refunds
     path("refunds/", views.my_refund_requests, name="my_refund_requests"),
     path("refunds/new/", views.new_refund_request, name="create_refund_request"),
     path('refunds/<int:id>/edit/', views.edit_refund_request, name='edit_refund_request'),

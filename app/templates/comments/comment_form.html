@@ -1,0 +1,33 @@
+<div class="card shadow-sm mb-4">
+  <div class="card-body">
+    <form method="post" action="{% url 'comment_add' event.id %}">
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label for="id_title" class="form-label">Título del comentario *</label>
+        <input type="text"
+               name="title"
+               maxlength="100"
+               required
+               class="form-control"
+               id="id_title"
+               placeholder="Escribe un título para tu comentario...">
+      </div>
+
+      <div class="mb-3">
+        <label for="id_content" class="form-label">Contenido del comentario *</label>
+        <textarea name="content"
+                  cols="40"
+                  rows="4"
+                  required
+                  class="form-control"
+                  id="id_content"
+                  placeholder="Escribe tu comentario aquí..."></textarea>
+      </div>
+
+      <button type="submit" class="btn btn-primary">
+        Publicar comentario
+      </button>
+    </form>
+  </div>
+</div>

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}?v=1">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/home.js' %}?v=1" defer></script>
+{% endblock %}
+
+{% block content %}
+<div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="3000" data-bs-touch="true">
+  <div class="carousel-inner">
+    <div class="carousel-item active">
+      <img src="{% static 'img/slide1.webp' %}" class="d-block w-100" alt="Eventos para vos">
+      <div class="carousel-caption text-start">
+        <h1 class="slide-title">¡Bienvenido a EventHub!</h1>
+        <p class="slide-text">Explorá y asistí a eventos increíbles.</p>
+      </div>
+    </div>
+    <div class="carousel-item">
+      <img src="{% static 'img/slide3.webp' %}" class="d-block w-100" alt="Experiencia">
+      <div class="carousel-caption text-center">
+        <h1 class="slide-title">Compartí tu experiencia</h1>
+        <p class="slide-text">Dejá tu opinión y ayudá a otros asistentes.</p>
+      </div>
+    </div>
+  </div>
+
+  <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Anterior</span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Siguiente</span>
+  </button>
+</div>
+
+<section id="features" class="benefits-section">
+  <h2 class="benefits-title fade-up">
+    <span class="brand">EventHub</span> — Lo mejor para tus fines de semana
+  </h2>
+
+  <div class="row g-4 justify-content-center">
+    <div class="col-md-4 text-center feature-box fade-up">
+      <div class="icon-wrapper mx-auto">
+        <img src="{% static 'img/tiempo.svg' %}" alt="" />
+      </div>
+      <h5 class="benefit-title">Entradas al instante</h5>
+      <p class="text-muted">Reservá tus lugares con solo unos clics.</p>
+    </div>
+
+    <div class="col-md-4 text-center feature-box fade-up">
+      <div class="icon-wrapper mx-auto">
+        <img src="{% static 'img/experiencia.svg' %}" alt="" />
+      </div>
+      <h5 class="benefit-title">Valorá lo vivido</h5>
+      <p class="text-muted">Compartí feedback y hacé crecer la comunidad.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

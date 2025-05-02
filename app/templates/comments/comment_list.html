@@ -1,0 +1,45 @@
+{% for comment in comments %}
+  <div class="border rounded p-3 mb-3 position-relative">
+    <div class="d-flex justify-content-between">
+      <div>
+        <strong>{{ comment.user.username }}</strong><br>
+        <small class="text-muted">{{ comment.created_at|date:"d M Y, H:i" }}</small>
+      </div>
+
+      {% if request.user == comment.user or request.user == event.organizer %}
+        <div class="dropdown">
+          <button class="btn btn-link dropdown-toggle" type="button"
+                  id="dropdownMenu{{ comment.pk }}"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false">
+            ⋮
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end"
+              aria-labelledby="dropdownMenu{{ comment.pk }}">
+              {% if request.user == comment.user %}
+              <li>
+                <a class="dropdown-item" href="{% url 'comment_edit' comment.pk %}">Editar</a>
+              </li>
+            {% endif %}
+            
+            <li>
+              <form action="{% url 'comment_delete' comment.pk %}"
+                    method="post"
+                    onsubmit="return confirm('¿Seguro que quieres eliminar?');">
+                {% csrf_token %}
+                <button type="submit" class="dropdown-item text-danger">
+                  Eliminar
+                </button>
+              </form>
+            </li>
+          </ul>
+        </div>
+      {% endif %}
+    </div>
+
+    <h6 class="mt-2 mb-1">{{ comment.title }}</h6>
+    <p class="mb-0">{{ comment.content }}</p>
+  </div>
+{% empty %}
+  <p>No hay comentarios aún.</p>
+{% endfor %}

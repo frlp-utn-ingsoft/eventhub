@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+  <h1 class="mb-4">Comentarios en tus eventos</h1>
+
+  {% if comentarios %}
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>Evento</th>
+          <th>Usuario</th>
+          <th>Comentario</th>
+          <th>Fecha</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for comentario in comentarios %}
+          <tr>
+            <td>
+              <a href="{% url 'event_detail' comentario.event.id %}">
+                {{ comentario.event.title }}
+              </a>
+            </td>
+            <td>{{ comentario.user.username }}</td>
+            <td>{{ comentario.content|truncatechars:30 }}</td>
+            <td>{{ comentario.created_at|date:"d M Y, H:i" }}</td>
+            <td>
+              {% if request.user == comentario.user or request.user == comentario.event.organizer %}
+                <form action="{% url 'comment_hard_delete' comentario.pk %}" method="post" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-outline-danger btn-sm" title="Eliminar permanentemente">
+                    <i class="bi bi-trash"></i> <!-- Ícono de Bootstrap, opcional -->
+                  </button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No hay comentarios en tus eventos.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}?v=1">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/home.js' %}?v=1" defer></script>
+{% endblock %}
+
+{% block content %}
+<div id="heroCarousel" class="carousel slide carousel-fade" data-bs-ride="carousel" data-bs-interval="3000" data-bs-touch="true">
+  <div class="carousel-inner">
+    <div class="carousel-item active">
+      <img src="{% static 'img/slide2.webp' %}" class="d-block w-100" alt="Organizador EventHub">
+      <div class="carousel-caption text-start">
+        <h1 class="slide-title">¡Hola, organizador!</h1>
+        <p class="slide-text">Gestioná tus eventos con total control.</p>
+      </div>
+    </div>
+    <div class="carousel-item">
+      <img src="{% static 'img/slide1.webp' %}" class="d-block w-100" alt="Eventos y entradas">
+      <div class="carousel-caption text-end">
+        <h1 class="slide-title">Todo desde un mismo lugar</h1>
+        <p class="slide-text">Entradas, notificaciones y asistentes en un clic.</p>
+      </div>
+    </div>
+  </div>
+
+  <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Anterior</span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Siguiente</span>
+  </button>
+</div>
+
+<section id="features" class="benefits-section">
+  <h2 class="benefits-title fade-up">
+    <span class="brand">EventHub</span> — Organización al alcance de tu mano
+  </h2>
+
+  <div class="row g-4 justify-content-center">
+    <div class="col-md-4 text-center feature-box fade-up">
+      <div class="icon-wrapper mx-auto">
+        <img src="{% static 'img/tiempo.svg' %}" alt="" />
+      </div>
+      <h5 class="benefit-title">Creá en minutos</h5>
+      <p class="text-muted">Publicá y administrá eventos al instante.</p>
+    </div>
+
+    <div class="col-md-4 text-center feature-box fade-up">
+      <div class="icon-wrapper mx-auto">
+        <img src="{% static 'img/experiencia.svg' %}" alt="" />
+      </div>
+      <h5 class="benefit-title">Conocé a tu audiencia</h5>
+      <p class="text-muted">Accedé a calificaciones y mejorá tus propuestas.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

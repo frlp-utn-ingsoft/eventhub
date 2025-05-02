@@ -9,13 +9,37 @@ from django.views import generic, View
 from django.urls import reverse, reverse_lazy
 from django.http import JsonResponse
 from django.template.loader import render_to_string
+from django.urls import reverse, reverse_lazy
+from django.utils import timezone
+from django.views import View, generic
 from django.db import transaction
 from django.db.models import Q
+
+from .forms import (
+    CategoryForm,
+    CommentForm,
+    NotificationForm,
+    RatingForm,
+    RefundRequestForm,
+    TicketForm,
+    VenueForm,
+)
+from .models import (
+    Category,
+    Comment,
+    Event,
+    Notification,
+    Rating,
+    RefundRequest,
+    Ticket,
+    User,
+    Venue,
+)
 from .utils import format_datetime_es
 from .models import Rating
+from django.shortcuts import resolve_url
+from django.conf import settings
 
-from .models import Event, User, Ticket, Category, Notification, RefundRequest, Venue
-from .forms import RatingForm, TicketForm, CategoryForm, NotificationForm, RefundRequestForm, VenueForm
 
 # ------------------- Registro y login -------------------
 def register(request):
@@ -60,18 +84,25 @@ def login_view(request):
             )
 
         login(request, user)
-        return redirect("events")
+        return redirect(resolve_url(settings.LOGIN_REDIRECT_URL))  # 👈 Esto usa el valor de settings.py
 
     return render(request, "accounts/login.html")
 
 
 def home(request):
-    # Usuario autenticado → redirigimos a su página principal (events)
     if request.user.is_authenticated:
-        return redirect("events")          # o "home_organizer" / "home_user" más adelante
-
-    # Visitante → página pública
+        if request.user.is_organizer:
+            return render(request, "home_organizer.html")
+        return render(request, "home_user.html")
     return render(request, "home_guest.html")
+
+@login_required
+def home_user(request):
+    return render(request, "home_user.html")
+
+@login_required
+def home_organizer(request):
+    return render(request, "home_organizer.html")
 
 # ------------------- Eventos -------------------
 @login_required
@@ -83,11 +114,13 @@ def events(request):
         {"events": events, "user_is_organizer": request.user.is_organizer},
     )
 
+
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
     edit_mode = request.GET.get("edit_rating") == "1"
-
+    comments = Comment.objects.filter(event=event, is_deleted=False).order_by('-created_at')
+    form = CommentForm()
     try:
         rating = Rating.objects.get(event=event, user=request.user)
     except Rating.DoesNotExist:
@@ -123,6 +156,7 @@ def event_detail(request, id):
 
     return render(request, "app/event_detail.html", {
         "event": event,
+        'comments': comments,
         "form": form,
         "rating": rating,
         "edit_mode": edit_mode,
@@ -355,6 +389,104 @@ def refund_detail(request, id):
         "app/refund/refund_detail.html",
         {"refund": refund}
     )
+# 🟢 Vista para listar todos los comentarios de un evento
+def comment_list(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    comments = Comment.objects.filter(event=event)
+    return render(request, 'comments/comment_list.html', {'event': event, 'comments': comments})
+
+@login_required
+def comment_create(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+
+    if request.method == "POST":
+        form = CommentForm(request.POST)
+        if form.is_valid():
+            comment = form.save(commit=False)
+            comment.user = request.user
+            comment.event = event
+            comment.save()
+    return redirect('event_detail', id=event.pk)
+
+@login_required
+def comment_update(request, pk):
+    comment = get_object_or_404(Comment, pk=pk)
+
+    if comment.user != request.user:
+        return redirect('event_detail', id=comment.event.pk)
+
+    if request.method == "POST":
+        form = CommentForm(request.POST, instance=comment)
+        if form.is_valid():
+            form.save()
+            return redirect('event_detail', id=comment.event.pk)
+    else:
+        form = CommentForm(instance=comment)  # renderiza el formulario con datos actuales
+
+    return render(request, 'comments/comment_edit.html', {
+    'form': form,
+    'event': comment.event,
+    'original_comment': comment
+})
+
+
+
+# Eliminar un comentario (lógico, solo POST)
+@login_required
+def comment_delete(request, pk):
+    comment = get_object_or_404(Comment, pk=pk)
+    event = comment.event
+
+    is_author = request.user == comment.user
+    is_event_organizer = request.user == event.organizer
+
+    if not (is_author or is_event_organizer):
+        return redirect('event_detail', id=event.pk)
+
+    if request.method == 'POST':
+        comment.is_deleted = True
+        comment.save()
+
+        if is_event_organizer and not is_author:
+            return redirect('organizer_comments')  # vista que vos definas
+        else:
+            return redirect('event_detail', id=event.pk)
+
+    # Si alguien accede por GET, redirigir (no permitir)
+    return redirect('event_detail', id=event.pk)
+@login_required
+def organizer_comments(request):
+    # 1️⃣ Solo los organizadores pueden entrar
+    if not request.user.is_organizer:
+        return redirect("events")  # redirige al listado de eventos
+
+    # 2️⃣ Traer todos los eventos creados por este organizador
+    eventos = Event.objects.filter(organizer=request.user)
+
+    # 3️⃣ Filtrar todos los comentarios de esos eventos
+    comentarios = Comment.objects.filter(
+        event__in=eventos
+    ).select_related("event", "user").order_by("-created_at")
+
+    # 4️⃣ Renderizar el template con la lista de comentarios
+    return render(request, "comments/organizer_comments.html", {
+        "comentarios": comentarios
+    })
+
+@login_required
+def comment_hard_delete(request, pk):
+    comment = get_object_or_404(Comment, pk=pk)
+
+    # Solo el organizador del evento puede eliminar completamente
+    if request.user != comment.event.organizer:
+        return redirect('events')
+
+    if request.method == 'POST':
+        comment.delete()  # Borrado total
+        return redirect('organizer_comments')
+
+    return redirect('organizer_comments')
+
 
 
 @login_required
@@ -526,7 +658,7 @@ def notifications_list(request):
 
     # Agregar fecha formateada
     for notif in received_notifications:
-        notif.formatted_date = format_datetime_es(notif.created_at)
+        notif.formatted_date = format_datetime_es(notif.created_at) # type: ignore
 
     sent_notifications = None
     if hasattr(request.user, 'is_organizer') and request.user.is_organizer:
@@ -539,7 +671,7 @@ def notifications_list(request):
             sent_notifications = sent_notifications.filter(priority=filter_priority)
 
         for notif in sent_notifications:
-            notif.formatted_date = format_datetime_es(notif.created_at)
+            notif.formatted_date = format_datetime_es(notif.created_at) # type: ignore
 
     all_events = tickets_user_events
 
@@ -617,7 +749,7 @@ def notification_detail(request, pk):
         return redirect("notifications_list")
 
     # Formatear fecha en español
-    notification.formatted_date = format_datetime_es(notification.created_at)
+    notification.formatted_date = format_datetime_es(notification.created_at) # type: ignore
 
     return render(request, "notifications/notifications_detail.html", {
         "notification": notification
