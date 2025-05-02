@@ -149,75 +149,11 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add = True)
     priority = models.CharField(max_length=6,choices=[("High","High"),("Medium","Medium"),("Low","Low")])
     users = models.ManyToManyField(User, related_name= "notificaciones")
+    event = models.ForeignKey(Event, null=True, blank=True, on_delete=models.SET_NULL) 
 
     def __str__(self):
         return self.title
     
-    @classmethod
-    def validate(cls,title,message, priority):
-        errors = {}
-
-        if not title:
-            errors["title"] = "El título no puede estar vacío."
-        
-        if not message:
-            errors["message"] = "El mensaje no puede estar vacío."
-
-        if priority not in ["High","Medium","Low"]:
-            errors["priority"] = "La prioridad debe ser High, Medium o Low"
-
-        return errors
-    
-    @classmethod    
-    def new(cls, title, message, priority, users):
-        errors = cls.validate(title, message,priority)
-
-        if errors:
-            return False, errors
-
-        notif = cls(title=title, message=message, priority=priority)
-        notif.save()
-
-        if users:
-            notif.users.set(users)
-
-        return True, notif
-
-    @classmethod
-    def update(cls, notif_id, title, message, priority, users):
-
-        try:
-            notif = cls.objects.get(id=notif_id)
-
-            errors = cls.validate(title, message,priority)
-
-            if errors:  
-                return False, errors  
-
-            notif.title = title
-            notif.message = message
-            notif.priority = priority
-            notif.save() 
-
-            if users:
-                notif.users.set(users) 
-
-            return True, notif
-
-        except cls.DoesNotExist:
-            return False, "Notificación no encontrada."
-        
-    @classmethod
-    def delete_id(cls,notif_id):
-
-        try:
-            notif = cls.objects.get(id = notif_id )
-            notif.delete()
-            return True, "Notificacion eliminada"
-        
-        except cls.DoesNotExist:
-            return False, "Notificacion no encontrada"
-        
 class Rating(models.Model):
     title = models.CharField(max_length=255)
     text = models.TextField()

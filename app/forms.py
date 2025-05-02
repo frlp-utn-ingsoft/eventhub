@@ -21,7 +21,7 @@ class NotificationForm(forms.ModelForm):
 
     class Meta:
         model = Notification
-        fields = ["title", "message", "priority"]  
+        fields = ["title", "message", "priority","event"]  
 
         widgets = {
             "title": forms.TextInput(attrs={
