@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-3">
+    <div class="row">
+        <div class="col-md-8">
+            <h1 class="mb-3">
+                {% if notification.id %}
+                    Editar Notificación 
+                {% else %}
+                    Crear Notificación
+                {% endif %}
+            </h1>
+        </div>
+    <div class="row mb-3">  
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-body">
+                    {% if errors %}
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                {% for error in errors.values %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="vstack gap-3">
+                            <div>
+                                <label for="title" class="form-label">Titulo de la notificación <span class="text-danger">*</span></label>
+                                <input
+                                    type="text"
+                                    class="form-control"
+                                    id="title"
+                                    name="title"
+                                    required
+                                    value="{{ notification.title|default_if_none:'' }}"
+                                    placeholder="Ej: Cambio de horario del evento" />
+                            </div>
+                            <div>
+                                <label for="message" class="form-label">Mensaje <span class="text-danger">*</span></label>
+                                <textarea
+                                    class="form-control"
+                                    id="message"
+                                    name="message"
+                                    rows="4"
+                                    placeholder="Escribe el contenido de la notificación...">{{ notification.message|default_if_none:'' }}</textarea>
+                            </div>
+                            <div>
+                                <label for="event_id" class="form-label">Evento Relacionado <span class="text-danger">*</span></label>
+                                <select class="form-select" id="event_id" name="event_id" required>
+                                    <option value="">Seleccionar un evento</option>
+                                    {% for event in events %}
+                                        <option value="{{ event.id }}"{% if event.id == notification.event_id %} selected{% endif %}>{{ event.title }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <label for="user_type">Destinatarios <span class="text-danger">*</span></label>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="radio" name="user_type" id="all_users" value="all" checked>
+                                    <label class="form-check-label" for="all_users">Todos los asistentes del evento</label>
+                                </div>
+                                <div class="form-check mt-2">
+                                    <input class="form-check-input" type="radio" name="user_type" id="specific_user" value="specific" >
+                                    <label class="form-check-label" for="specific_user">Usuario específico</label>
+                                </div>
+                                <div class="mt-2">
+                                    <select class="form-select" id="user_id" name="specific_user_id" disabled>
+                                        <option value="">Seleccionar un usuario</option>
+                                        {% for user in users %}
+                                            <option value="{{ user.id }}"{% if notification.user_id == user.id %} selected{% endif %}>{{ user.username }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="priority" class="form-label">Prioridad <span class="text-danger">*</span></label>
+                                <select class="form-select" id="priority" name="priority" required>
+                                    {% for notificationPriority in notificationPrioritys %}
+                                        <option value="{{ notificationPriority.id }}"{% if notificationPriority.id == notification.notificationPriority_id %} selected{% endif %}>{{ notificationPriority.description }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if notification.id %}Guardar Cambios{% else %}Enviar Notificación{% endif %}
+                                </button>
+                                <a href="{% url 'notifications' %}" class="btn btn-secondary">Cancelar</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+            <div class="col-md-4">
+                <div class="card">
+                  <div class="card-header">Consejos</div>
+                  <div class="card-body">
+                    <ul class="list-unstyled">
+                        <li><i class="bi bi-lightbulb text-warning me-2"></i> Usa títulos claros y concisos para captar la atención.</li>
+                      <li><i class="bi bi-lightbulb text-warning me-2"></i> Incluye toda la información relevante en el mensaje.</li>
+                      <li><i class="bi bi-lightbulb text-warning me-2"></i> Usa la prioridad alta solo para notificaciones urgentes.</li>
+                      <li><i class="bi bi-lightbulb text-warning me-2"></i> Considera enviar por correo electrónico las notificaciones importantes.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const allUsersRadio = document.getElementById("all_users");
+        const specificUserRadio = document.getElementById("specific_user");
+        const userSelect = document.getElementById("user_id");
+    
+        allUsersRadio.addEventListener("change", function () {
+            if (this.checked) {
+                userSelect.disabled = true;
+            }
+        });
+    
+        specificUserRadio.addEventListener("change", function () {
+            if (this.checked) {
+                userSelect.disabled = false;
+            }
+        });
+    });
+</script>
+{% endblock %}
+

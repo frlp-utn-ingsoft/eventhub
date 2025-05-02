@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Category, Event, User, Venue
+from .models import Category, Event, User, Venue, Notification, NotificationPriority
 
 
 def register(request):
@@ -329,3 +329,64 @@ def venue_form(request, id):
         "app/venue_form.html",
         {"venue": venue, "user_is_organizer": request.user.is_organizer,},
     )
+
+@login_required
+def notifications(request):
+    notifications = Notification.objects.all().order_by("title")
+    return render(
+        request,
+        "app/notifications.html",
+        {"notifications": notifications, "user_is_organizer": request.user.is_organizer},
+    )
+
+@login_required
+def notification_form(request, id=None):
+    notificationPrioritys= NotificationPriority.objects.all()
+    events= Event.objects.all()
+    users= User.objects.all()
+    errors = {}
+    if request.method == "POST":
+        title = request.POST.get("title")
+        message = request.POST.get("message")
+        event_id = request.POST.get("event")
+        event = get_object_or_404(Event, pk=event_id) if event_id else None
+        priority_id = request.POST.get("priority")
+        priority= get_object_or_404(NotificationPriority, pk=priority_id)
+        
+        if id is None:
+            success, errors = Notification.new(title, message, event,users, priority)
+            if not success:
+                notification = {
+                    "title": title,
+                    "message": message,
+                    "priority": NotificationPriority.objects.get(pk=priority_id),
+                }
+                return render(request, "app/notification_form.html", {
+                    "errors": errors,
+                    "notification": notification,
+                    "user_is_organizer": request.user.is_organizer,
+                })
+            return redirect("notifications")
+        
+        else:
+            notification = get_object_or_404(Notification, pk=id)
+            success, errors = notification.update(title, message, priority_id)
+            if not success:
+                return render(request, "app/notification_form.html", {
+                    "errors": errors,
+                    "notification": notification,
+                    "user_is_organizer": request.user.is_organizer,
+                })
+            return redirect("notifications")
+        
+    notification = {}
+    if id is not None:
+        notification = get_object_or_404(Notification, pk=id)
+
+    return render(
+        request,
+        "app/notification_form.html",
+        {"notification": notification, "user_is_organizer": request.user.is_organizer, "events":events, "users":users, "notificationPrioritys":notificationPrioritys,},
+    )
+
+    

@@ -200,6 +200,7 @@ class Venue(models.Model):
 class Notification(models.Model):
     title=models.CharField(max_length=200)
     message=models.TextField()
+    event=models.ForeignKey(Event, on_delete=models.CASCADE, related_name='notifications', null=True, blank=True)
     user=models.ManyToManyField(User, related_name='notifications')
     created_at=models.DateTimeField(auto_now_add=True)
     priority=models.ForeignKey('NotificationPriority', on_delete=models.SET_NULL, null=True, blank=True)
@@ -209,7 +210,7 @@ class Notification(models.Model):
         return self.title
     
     @classmethod
-    def validate(cls, title, message, user_id):
+    def validate(cls, title, message):
         errors = {}
         if not title.strip():
             errors["title"] = "El título no puede estar vacío"
@@ -219,28 +220,27 @@ class Notification(models.Model):
         if not message.strip():
             errors["message"] = "El mensaje no puede estar vacío"
 
-        if user_id is None:
-            errors["user"] = "El usuario es requerido"
-
         return errors
     
-    def new(cls, title, message, user, priority=1):
-        errors = cls.validate(title, message, user.id)
+    @classmethod
+    def new(cls, title, message, event, users, priority):
+        errors = cls.validate(title, message)
 
         if errors:
             return False, errors
 
-        Notification.objects.create(
+        notification = Notification.objects.create(
             title=title.strip(),
             message=message.strip(),
-            user=user,
+            event=event,
             priority=priority,
         )
+        notification.user.set(users)
 
         return True, None
     
     def update(self, title, message, user, priority=1):
-        errors = self.validate(title, message, user.id)
+        errors = self.validate(title, message)
 
         if errors:
             return False, errors
