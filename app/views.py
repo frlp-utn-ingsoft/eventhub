@@ -756,7 +756,7 @@ def event_eliminar_rating(request, event_id, rating_id):
     rating = get_object_or_404(Rating, pk=rating_id)
 
     if request.method == 'POST':
-        rating = Rating.objects.filter(id=rating_id, usuario=request.user).first()
+        rating = Rating.objects.filter(id=rating_id, evento=event_id).first()
         if rating:
             rating.delete()
             messages.success(request, "¡Tu reseña fue eliminada exitosamente!")
