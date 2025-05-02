@@ -73,37 +73,12 @@ def event_detail(request, id):
     event = get_object_or_404(Event, id=id)
     comments = Comment.objects.filter(event=event, is_deleted=False).order_by('-created_at')
     form = CommentForm()
-    editing_comment_id = None
-    editing_form = None
-
-    if request.method == "POST":
-        # Si no es edición, lo tratamos como creación
-        if 'edit_comment' not in request.POST:
-            form = CommentForm(request.POST)
-            if form.is_valid():
-                comment = form.save(commit=False)
-                comment.user = request.user
-                comment.event = event
-                comment.save()
-                return redirect('event_detail', id=event.pk)
-        else:
-            # Editar
-            comment_id = request.POST.get('comment_id')
-            comment = get_object_or_404(Comment, id=comment_id, user=request.user)
-            editing_form = CommentForm(request.POST, instance=comment)
-            editing_comment_id = comment.pk
-            if editing_form.is_valid():
-                editing_form.save()
-                return redirect('event_detail', id=event.pk)
 
     return render(request, 'app/event_detail.html', {
         'event': event,
         'comments': comments,
         'form': form,
-        'editing_comment_id': editing_comment_id,
-        'editing_form': editing_form,
     })
-
 
 @login_required
 def event_delete(request, id):
@@ -162,49 +137,40 @@ def comment_list(request, event_id):
     comments = Comment.objects.filter(event=event)
     return render(request, 'comments/comment_list.html', {'event': event, 'comments': comments})
 
-# 🔵 Vista para crear un comentario en un evento
-@login_required  # Asegura que el usuario esté autenticado
+@login_required
 def comment_create(request, event_id):
-    # Obtener el evento correspondiente al ID, o mostrar un error 404 si no existe
     event = get_object_or_404(Event, id=event_id)
 
-    # Si el método de la solicitud es POST, significa que el usuario está enviando el formulario
-    if request.method == 'POST':
-        form = CommentForm(request.POST)  # Crear el formulario con los datos enviados
-
-        # Verificar si el formulario es válido
+    if request.method == "POST":
+        form = CommentForm(request.POST)
         if form.is_valid():
-            comment = form.save(commit=False)  # Crear el comentario sin guardarlo aún
-            comment.user = request.user  # Asignar el usuario logueado al comentario
-            comment.event = event  # Asociar el comentario con el evento correspondiente
-            comment.save()  # Guardar el comentario en la base de datos
-            # Redirigir al usuario a la lista de comentarios del evento
-            return redirect('comment_list', event_id=event.pk)
-    else:
-        form = CommentForm()  # Si no es POST, crear un formulario vacío
+            comment = form.save(commit=False)
+            comment.user = request.user
+            comment.event = event
+            comment.save()
+    return redirect('event_detail', id=event.pk)
 
-    # Renderizar el template 'comment_form.html' y pasarle el formulario y el evento
-    return render(request, 'comments/comment_form.html', {'form': form, 'event': event})
-
-
-# 🟠 Vista para editar un comentario
-# Editar un comentario (solo el autor puede)
 @login_required
-def comment_edit(request, pk):
+def comment_update(request, pk):
     comment = get_object_or_404(Comment, pk=pk)
 
-    if request.user != comment.user:
-        return redirect('comment_list', event_id=comment.event.pk)
+    if comment.user != request.user:
+        return redirect('event_detail', id=comment.event.pk)
 
-    if request.method == 'POST':
+    if request.method == "POST":
         form = CommentForm(request.POST, instance=comment)
         if form.is_valid():
             form.save()
-            return redirect('comment_list', event_id=comment.event.pk)
+            return redirect('event_detail', id=comment.event.pk)
     else:
-        form = CommentForm(instance=comment)
+        form = CommentForm(instance=comment)  # renderiza el formulario con datos actuales
 
-    return render(request, 'comments/comment_form.html', {'form': form, 'event': comment.event})
+    return render(request, 'comments/comment_edit.html', {
+    'form': form,
+    'event': comment.event,
+    'original_comment': comment
+})
+
 
 
 # Eliminar un comentario (lógico, solo POST)

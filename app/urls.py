@@ -21,5 +21,6 @@ urlpatterns = [
         name="organizer_comments"
     ),
     path('comment/<int:pk>/hard-delete/', views.comment_hard_delete, name='comment_hard_delete'),
+    path('comment/<int:pk>/edit/', views.comment_update, name='comment_edit'),
 
 ]
