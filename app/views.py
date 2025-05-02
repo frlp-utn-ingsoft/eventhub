@@ -16,6 +16,7 @@ from django.http import JsonResponse
 from django.template.loader import render_to_string
 from .forms import RatingForm
 from .models import Rating
+from django.urls import reverse
 
 def register(request):
     if request.method == "POST":
@@ -89,9 +90,14 @@ def event_detail(request, id):
 
     if request.method == "POST":
         if rating:
+            # Verificamos que solo el usuario que creó la calificación o el organizador del evento pueda editarla
+            if rating.user != request.user and not request.user.is_organizer:
+                return redirect("event_detail", id=event.id)  # type: ignore # Bloquear edición ajena
+
             form = RatingForm(request.POST, instance=rating)
         else:
             form = RatingForm(request.POST)
+        
         if form.is_valid():
             new_rating = form.save(commit=False)
             new_rating.user = request.user
@@ -104,15 +110,20 @@ def event_detail(request, id):
         else:
             form = RatingForm()
 
+    # Calificaciones: mostrar la del usuario actual primero
+    ratings = list(event.ratings.all()) # type: ignore
+    if rating in ratings:
+        ratings.remove(rating)
+        ratings.insert(0, rating)
+
     return render(request, "app/event_detail.html", {
-    "event": event,
-    "form": form,
-    "rating": rating,
-    "edit_mode": edit_mode,
+        "event": event,
+        "form": form,
+        "rating": rating,
+        "edit_mode": edit_mode,
+        "ratings": ratings,
+        "user_is_organizer": request.user.is_organizer,  # ← Agregar esta línea
     })
-
-
-
 
 @login_required
 def event_delete(request, id):
@@ -264,7 +275,7 @@ def category_form(request, id=None):
 
 class OrganizerRequiredMixin(UserPassesTestMixin):
     def test_func(self):
-        return self.request.user.is_authenticated and self.request.user.is_organizer
+        return self.request.user.is_authenticated and self.request.user.is_organizer # type: ignore
 
 
 class NotificationList(LoginRequiredMixin, generic.ListView):
@@ -272,7 +283,7 @@ class NotificationList(LoginRequiredMixin, generic.ListView):
     paginate_by   = 10
 
     def get_queryset(self):
-        return self.request.user.notifications.all()
+        return self.request.user.notifications.all() # type: ignore
 
 class NotificationCreate(OrganizerRequiredMixin, generic.CreateView):
     model       = Notification
@@ -315,11 +326,12 @@ class NotificationDropdown(LoginRequiredMixin, View):
 def rating_delete(request, rating_id):
     rating = get_object_or_404(Rating, pk=rating_id)
     user = request.user
+    event = rating.event
 
-    if user == rating.user or user.is_organizer:
-        event_id = rating.event.id # type: ignore
+    # Solo el autor o el organizador del evento puede eliminar
+    if user == rating.user or (user.is_organizer and event.organizer == user):
+        event_id = event.id # type: ignore
         rating.delete()
-        return redirect("event_detail", id=event_id)
+        return redirect(reverse("event_detail", kwargs={"id": event_id}))
 
-    return redirect("events") 
-    
+    return redirect("events")

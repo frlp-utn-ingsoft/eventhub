@@ -67,7 +67,7 @@
                     <!-- Calificaciones -->
                     <div class="row mt-5">
                         <h3>Calificaciones</h3>
-                        {% for r in event.ratings.all %}
+                        {% for r in ratings %}
                             <div class="mb-3 p-3 bg-light border rounded {% if r.user == request.user %}border-primary bg-info bg-opacity-25{% endif %}">
                                 {% if r.user == request.user %}
                                     <p class="text-primary font-weight-bold">Tu calificación</p>
@@ -115,8 +115,11 @@
                                     <h5>{{ r.title }}</h5>
                                     <p>{{ r.text }}</p>
 
-                                    {% if request.user == r.user or user_is_organizer %}
+                                    {% if request.user == r.user %}
                                         <a href="?edit_rating=1" class="btn btn-sm btn-outline-primary">Editar</a>
+                                        <a href="{% url 'rating_delete' r.id %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                                    {% elif user_is_organizer %}
+                                        <!-- El organizador puede eliminar cualquier calificación -->
                                         <a href="{% url 'rating_delete' r.id %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
                                     {% endif %}
                                 {% endif %}
@@ -126,7 +129,7 @@
                         {% endfor %}
                     </div>
 
-                    <!-- Formulario inferior solo si no hay rating -->
+                    <!-- Formulario inferior solo si no hay rating y no es el organizador -->
                     {% if not user_is_organizer and not rating %}
                         <hr class="mt-5">
                         <div class="mt-4">
