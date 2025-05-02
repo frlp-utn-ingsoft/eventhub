@@ -30,8 +30,28 @@
                 <tr>
                     <td>{{ notification.title }}</td>
                     <td class="text-primary">{{ notification.event.title }}</td>
-                    <td>{{ notification.user }}</td>
-                    <td>{{ notification.notificationPriority_name }}</td>
+                    <td>
+                        {% with users=notification.user.all %}
+                          {% if users|length == 1 %}
+                            <span class="badge bg-secondary">Usuario específico</span>
+                          {% elif users|length > 1 %}
+                            <span class="badge bg-info">Todos ({{ users|length }})</span>
+                          {% else %}
+                            <span class="badge bg-secondary">Sin destinatarios</span>
+                          {% endif %}
+                        {% endwith %}
+                      </td>
+                    <td>
+                        {% if notification.priority.description|lower == "alta" %}
+                          <span class="badge bg-danger">Alta</span>
+                        {% elif notification.priority.description|lower == "media" %}
+                          <span class="badge bg-primary">Media</span>
+                        {% elif notification.priority.description|lower == "baja" %}
+                          <span class="badge bg-secondary">Baja</span>
+                        {% else %}
+                          <span class="badge bg-secondary">{{ notification.priority.description }}</span>
+                        {% endif %}
+                    </td>
                     <td>{{ notification.created_at }}</td>
                     <td>
                         <div class="hstack gap-1">
@@ -41,7 +61,7 @@
                             <i class="bi bi-eye"></i>
                             </a>
                             {% if user_is_organizer %}
-                                <a href=""
+                                <a href="{% url 'notification_edit' notification.id %}"
                                    class="btn btn-sm btn-outline-secondary"
                                    title="Editar">
                                     <i class="bi bi-pencil"></i>

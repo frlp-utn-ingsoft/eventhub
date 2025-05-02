@@ -210,21 +210,21 @@ class Notification(models.Model):
         return self.title
     
     @classmethod
-    def validate(cls, title, message):
+    def validate(cls, id, title, message,event, users):
         errors = {}
         if not title.strip():
             errors["title"] = "El título no puede estar vacío"
-        elif cls.objects.filter(title__iexact=title).exists():
-            errors["title"] = "Ya existe una notificación con ese título"
-
         if not message.strip():
             errors["message"] = "El mensaje no puede estar vacío"
-
+        if event is None:
+            errors["event"] = "El evento no puede ser nulo"
+        if users is None:
+            errors["users"] = "Los usuarios no pueden ser nulos"
         return errors
     
     @classmethod
     def new(cls, title, message, event, users, priority):
-        errors = cls.validate(title, message)
+        errors = cls.validate(None,title, message, event, users)
 
         if errors:
             return False, errors
@@ -235,19 +235,25 @@ class Notification(models.Model):
             event=event,
             priority=priority,
         )
-        notification.user.set(users)
+        if isinstance(users, User):
+            users = [users]
+        notification.user.set(users) 
+
 
         return True, None
     
-    def update(self, title, message, user, priority=1):
-        errors = self.validate(title, message)
+    def update(self, title, message, event, users, priority):
+        errors = self.validate(self.pk,title, message, event, users)
 
         if errors:
             return False, errors
 
         self.title = title.strip()
         self.message = message.strip()
-        self.user = user
+        self.event = event
+        if isinstance(users, User):
+            users = [users]
+        self.user.set(users) 
         self.priority = priority
         self.save()
 

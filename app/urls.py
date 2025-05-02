@@ -25,4 +25,5 @@ urlpatterns = [
     path("categories/<int:id>/", views.category_detail, name="category_detail"),
     path("notifications/", views.notifications, name="notifications"),
     path("notifications/create/", views.notification_form, name="notification_form"),
+    path("notifications/<int:id>/edit/", views.notification_form, name="notification_edit"),
 ]

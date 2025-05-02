@@ -348,13 +348,20 @@ def notification_form(request, id=None):
     if request.method == "POST":
         title = request.POST.get("title")
         message = request.POST.get("message")
-        event_id = request.POST.get("event")
+        event_id = request.POST.get("event_id")
         event = get_object_or_404(Event, pk=event_id) if event_id else None
         priority_id = request.POST.get("priority")
         priority= get_object_or_404(NotificationPriority, pk=priority_id)
-        
+        addressee_type = request.POST.getlist("addressee_type")
+
+        if "all" in addressee_type:
+            selected_users = User.objects.all()
+        elif "specific" in addressee_type:
+            user_id= request.POST.get("specific_user_id")
+            selected_users = get_object_or_404(User, pk=user_id) if user_id else None
+
         if id is None:
-            success, errors = Notification.new(title, message, event,users, priority)
+            success, errors = Notification.new(title, message, event,selected_users, priority)
             if not success:
                 notification = {
                     "title": title,
@@ -370,13 +377,15 @@ def notification_form(request, id=None):
         
         else:
             notification = get_object_or_404(Notification, pk=id)
-            success, errors = notification.update(title, message, priority_id)
+            success, errors = notification.update(title, message,event,selected_users,priority)
             if not success:
                 return render(request, "app/notification_form.html", {
                     "errors": errors,
                     "notification": notification,
                     "user_is_organizer": request.user.is_organizer,
-                })
+                     "events":events, "users":users, 
+                     "notificationPrioritys":notificationPrioritys,}
+                )
             return redirect("notifications")
         
     notification = {}
