@@ -118,8 +118,15 @@ def refund_requests_admin(request):
     if not is_organizer(user):
         return redirect("events")
 
+    # Mostrar solo las solicitudes de reembolso de los eventos organizados por el usuario actual
     refund_requests = Refund.objects.filter(event__organizer=user).order_by("-created_at")
 
-    return render(request, "refund/refund_request_admin.html", {
-        "refund_requests": refund_requests
-    })
+    # Agregar información adicional para el template
+    context = {
+        "refund_requests": refund_requests,
+        "pending_count": refund_requests.filter(approved__isnull=True).count(),
+        "approved_count": refund_requests.filter(approved=True).count(),
+        "rejected_count": refund_requests.filter(approved=False).count(),
+    }
+
+    return render(request, "refund/refund_request_admin.html", context)
