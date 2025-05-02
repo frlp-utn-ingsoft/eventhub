@@ -739,7 +739,7 @@ def venue_list(request):
     venues = Venue.objects.all()
     print(venues) 
     if not venues:
-        messages.info(request, "No tienes ubicaciones registradas.")  
+        messages.info(request, "No tienes ubicaciones registradas.", extra_tags='ubicacion')  
     return render(request, "app/venue_list.html", {"venues": venues})
 
 
@@ -753,7 +753,7 @@ def venue_create(request):
     if request.method == "POST":
         form = VenueForm(request.POST)
         if form.is_valid():
-            messages.success(request, "Ubicación creada exitosamente.")
+            messages.success(request, "Ubicación creada exitosamente.", extra_tags='ubicacion')
             form.save()
             return redirect("venue_list")
     else:
@@ -773,7 +773,7 @@ def venue_update(request, venue_id):
         form = VenueForm(request.POST, instance=venue)
         if form.is_valid():
             form.save()
-            messages.success(request, "Ubicación actualizada exitosamente.")
+            messages.success(request, "Ubicación actualizada exitosamente.", extra_tags='ubicacion')
             return redirect("venue_list")
     else:
         form = VenueForm(instance=venue)
@@ -790,7 +790,7 @@ def venue_delete(request, venue_id):
     venue = get_object_or_404(Venue, pk=venue_id)
     if request.method == "POST":
         venue.delete()
-        messages.success(request, "Ubicación eliminada exitosamente.")
+        messages.success(request, "Ubicación eliminada exitosamente.", extra_tags='ubicacion')
     return redirect("venue_list") # Siempre redirige a la lista de venues
 
    
