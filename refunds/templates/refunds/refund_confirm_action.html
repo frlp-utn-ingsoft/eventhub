@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+<div class="container my-4" style="max-width: 600px">
+    {% if action == 'approve' %}
+        <h5 class="mb-4 text-success">¿Seguro que deseas aprobar esta solicitud de reembolso?</h5>
+    {% elif action == 'reject' %}
+        <h5 class="mb-4 text-danger">¿Seguro que deseas rechazar esta solicitud de reembolso?</h5>
+    {% else %}
+        <h5 class="mb-4 text-warning">Confirmar acción sobre solicitud de reembolso</h5>
+    {% endif %}
+
+    <div class="card mt-3 py-2 px-3">
+        <div class="d-flex">
+            <div class="me-3">
+              <i class="bi bi-receipt fs-3"></i>
+            </div>
+
+            <div class="flex-grow-1">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                      <span class="fw-semibold">Ticket: {{ refund.ticket_code }}</span><br>
+                      <small class="text-muted">{{ refund.created_at|date:"d M Y, H:i" }}</small>
+                    </div>
+                    <div>
+                         {% if refund.status == 'pending' %}
+                             <span class="badge text-dark bg-warning">Pendiente</span>
+                         {% elif refund.status == 'approved' %}
+                             <span class="badge bg-success">Aprobado</span>
+                         {% elif refund.status == 'rejected' %}
+                             <span class="badge bg-danger">Rechazado</span>
+                         {% else %}
+                             <span class="badge bg-secondary">{{ refund.get_status_display }}</span>
+                         {% endif %}
+                    </div>
+                </div>
+                 <small class="text-muted">Solicitante: {{ refund.user.username }}</small>
+            </div>
+        </div>
+        {% if refund.reason %}
+            <h6 class="mt-2 mb-1">Motivo:</h6>
+            <p class="mb-0">{{ refund.reason }}</p>
+        {% endif %}
+        {% if refund.details %}
+            <h6 class="mt-2 mb-1">Detalles:</h6>
+            <p class="mb-0">{{ refund.details }}</p>
+        {% endif %}
+    </div>
+
+    <form method="post" class="text-end mt-4">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="{{ action }}">
+
+        <a href="javascript:history.back()" class="me-2 btn btn-secondary">Cancelar</a>
+
+        {% if action == 'approve' %}
+             <button type="submit" class="btn btn-success">Confirmar Aprobación</button>
+        {% elif action == 'reject' %}
+             <button type="submit" class="btn btn-danger">Confirmar Rechazo</button>
+        {% else %}
+             <button type="submit" class="btn btn-primary">Confirmar</button>
+        {% endif %}
+    </form>
+</div>
+{% endblock %}

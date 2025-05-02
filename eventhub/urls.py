@@ -19,5 +19,8 @@ from django.urls import include, path
 
 urlpatterns = [
     path("", include("app.urls")),
+    path("tickets/", include("tickets.urls", namespace="tickets")),
     path("comments/", include("comments.urls", namespace="comments")),
+    path("category/", include("category.urls", namespace="category")),
+    path("refunds/", include("refunds.urls", namespace="refunds")),
 ]
