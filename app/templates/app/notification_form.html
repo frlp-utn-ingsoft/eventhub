@@ -44,12 +44,12 @@
                 <label class="form-label">Destinatarios*</label>
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="tipo_usuario" id="user_events" value="all"
-                        {% if not form.user.value %}checked{% endif %}>
+                        {% if tipo_usuario == "all" %}checked{% endif %}>
                     <label class="form-check-label" for="user_events">Todos los asistentes del evento</label>
                 </div>
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="tipo_usuario" id="user_specific" value="specific"
-                        {% if form.user.value %}checked{% endif %}>
+                        {% if tipo_usuario == "specific" %}checked{% endif %}>
                     <label class="form-check-label" for="user_specific">Usuario específico</label>
                 </div>
             </div>

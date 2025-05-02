@@ -137,14 +137,6 @@ def event_detail(request, event_id):
     }
     return render(request, "app/event_detail.html", context)
 
-
-    return render(request, 'app/event_detail.html', {
-        'event': event,
-        'comments': Comment.objects.filter(event=event).order_by("-created_date"),
-        'num_comments': comments.count()
-    })
-    
-
 @login_required
 def event_delete(request, id):
     user = request.user
@@ -274,20 +266,20 @@ def notification_create(request):
 
 @login_required
 def notification_update(request, id):
-    notif = get_object_or_404(Notification, id = id)
+    notif = get_object_or_404(Notification, id=id)
 
     if not request.user.is_organizer:
         messages.error(request, "No tenés permiso para editar esta notificación.")
         return redirect("notifications")
 
     if request.method == "POST":
+        tipo_usuario = request.POST.get("tipo_usuario", "all")
         form = NotificationForm(request.POST, instance=notif)
 
         if form.is_valid():
             notif = form.save(commit=False)
             notif.save()
 
-            tipo_usuario = request.POST.get("tipo_usuario")
             event = form.cleaned_data.get("event")
             specific_user = form.cleaned_data.get("user")
 
@@ -300,7 +292,6 @@ def notification_update(request, id):
                     .distinct()
                 )
                 notif.users.set(user_ids)
-
             elif tipo_usuario == "specific" and specific_user:
                 notif.users.set([specific_user])
 
@@ -309,16 +300,21 @@ def notification_update(request, id):
         else:
             messages.error(request, "Errores en el formulario.")
     else:
+        specific_user = notif.users.first() if notif.users.count() == 1 else None
+        tipo_usuario = "specific" if specific_user else "all"
+
         initial_data = {
-            "event": None,
-            "user": notif.users.first() if notif.users.count() == 1 else None,
+            "event": notif.event,
+            "user": specific_user if tipo_usuario == "specific" else None,
         }
+
         form = NotificationForm(instance=notif, initial=initial_data)
 
     return render(request, "app/notification_form.html", {
         "form": form,
         "notification": notif,
         "is_update": True,
+        "tipo_usuario": tipo_usuario,
     })
 
 @login_required
