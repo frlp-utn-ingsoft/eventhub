@@ -171,6 +171,7 @@ def category_form(request, id=None):
 def notification_list(request):
     notifications = Notification.objects.all()
     events = Event.objects.all()
+    user= request.user
 
     search_query = request.GET.get('search', '').strip()
     event_id = request.GET.get('event')
@@ -187,7 +188,12 @@ def notification_list(request):
     if priority:
         notifications = notifications.filter(Priority=priority)
 
-    return render(request, 'app/notification/list.html', {'notifications': notifications,'events': events})
+
+    if user.is_organizer:
+        return render(request, 'app/notification/list.html', {'notifications': notifications,'events': events})
+    else:
+        notifications=user.notification_set.all()
+        return render(request, 'app/notification/bandejaEntrada.html', {'notifications': notifications})
 
 
 @login_required
