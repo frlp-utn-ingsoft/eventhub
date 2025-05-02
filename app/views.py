@@ -1,18 +1,20 @@
 import datetime
-from django.contrib.auth import authenticate, login
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
-from django.contrib import messages
-from django.http import HttpResponseForbidden
-from django.db.models import Count
-from .models import Event, User, Rating, Category, Venue
-from .forms import RatingForm, CategoryForm, VenueForm
 from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.http import HttpResponseForbidden, HttpResponseBadRequest, HttpResponse
+from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.utils import timezone
+from django.db.models import Count, Sum
+from django.core.exceptions import ValidationError
+from decimal import Decimal
+import qrcode
+from io import BytesIO
+import qrcode.constants
+from django.db import transaction
 
-from .forms import EventForm  
-
+from .models import Event, Ticket, User, PaymentInfo, Rating, Category, Venue
+from .forms import EventForm, TicketForm, PaymentForm, TicketFilterForm, RatingForm, CategoryForm, VenueForm
 
 def register(request):
     if request.method == "POST":
@@ -28,14 +30,11 @@ def register(request):
             return render(
                 request,
                 "accounts/register.html",
-                {
-                    "errors": errors,
-                    "data": request.POST,
-                },
+                {"errors": errors, "data": request.POST},
             )
         else:
             user = User.objects.create_user(
-            email=email, username=username, password=password, is_organizer=is_organizer
+                email=email, username=username, password=password, is_organizer=is_organizer
             )
             login(request, user)
             return redirect("events")
@@ -62,7 +61,6 @@ def login_view(request):
 def home(request):
     return render(request, "home.html")
 
-
 @login_required
 def events(request):
     events = Event.objects.all().order_by("scheduled_at")
@@ -81,7 +79,7 @@ def events(request):
     events = events.distinct()
 
     categorias = Category.objects.all()
-    venues = Venue.objects.all()  # 👈 agregamos las ubicaciones al contexto
+    venues = Venue.objects.all()
 
     return render(
         request,
@@ -90,101 +88,20 @@ def events(request):
             "events": events,
             "user_is_organizer": request.user.is_organizer,
             "categorias": categorias,
-            "venues": venues,  # 👈 las pasamos al template
+            "venues": venues,
         },
     )
-
-   
-
-@login_required
-def event_detail(request, event_id):
-    event = get_object_or_404(Event, id=event_id)
-    return render(
-        request,
-        "app/event_detail.html",
-        {
-            "event": event,
-            "user_is_organizer": request.user.is_organizer,
-        },
-    )
-
-@login_required
-def create_event(request):
-    if not request.user.is_organizer:
-        return redirect('events')
-        
-    if request.method == 'POST':
-        form = EventForm(request.POST, request.FILES)
-        if form.is_valid():
-            event = form.save(commit=False)
-            event.organizer = request.user
-            event.save()
-            form.save_m2m()  # Para guardar las relaciones many-to-many
-            return redirect('event_detail', event_id=event.id)
-    else:
-        form = EventForm()
-    
-    return render(
-        request,
-        "app/event_form.html",
-        {
-            "form": form,
-            "title": "Crear Evento",
-        },
-    )
-
-@login_required
-def edit_event(request, event_id):
-    event = get_object_or_404(Event, id=event_id)
-    
-    if not request.user.is_organizer:
-        return redirect('events')
-        
-    if request.method == 'POST':
-        form = EventForm(request.POST, request.FILES, instance=event)
-        if form.is_valid():
-            form.save()
-            return redirect('event_detail', event_id=event.id)
-    else:
-        form = EventForm(instance=event)
-    
-    return render(
-        request,
-        "app/event_form.html",
-        {
-            "form": form,
-            "title": "Editar Evento",
-            "event": event,
-        },
-    )
-
-
-@login_required
-def rating_create(request, id):
-    if request.user.is_organizer:
-        messages.error(request, "Los organizadores no pueden dejar calificaciones.")
-        return redirect("event_detail", id=id)
-
-    if request.method == "POST":
-        event = get_object_or_404(Event, pk=id)
-        title = request.POST.get("title", "").strip()
-        score = request.POST.get("score")
-        comment = request.POST.get("comment", "").strip()
-
-        Rating.objects.create(
-            event=event, user=request.user, title=title, score=score, comment=comment
-        )
-
-    return redirect("event_detail", id=id)
 
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
     ratings = Rating.objects.filter(event=event)
     user_is_organizer = event.organizer == request.user
-
+    now = timezone.now()
     rating_to_edit = None
     rating_id = request.GET.get('rating_id') or request.POST.get('rating_id')
+    
+    event_has_started = event.scheduled_at <= now
 
     if rating_id:
         rating_to_edit = get_object_or_404(Rating, pk=rating_id, event=event)
@@ -213,11 +130,11 @@ def event_detail(request, id):
         'ratings': ratings,
         'form': form,
         'rating_to_edit': rating_to_edit,
-        'user_is_organizer': user_is_organizer,
-        'show_rating_form': not user_is_organizer
+        'can_edit': user_is_organizer,
+        'now': now,
+        'event_has_started': event_has_started
     }
     return render(request, 'app/event_detail.html', context)
-
 
 @login_required
 def rating_delete(request, id, rating_id):
@@ -229,11 +146,96 @@ def rating_delete(request, id, rating_id):
             return redirect("event_detail", id=id)
     return redirect("event_detail", id=id)
 
+@login_required
+def create_event(request):
+    if not request.user.is_organizer:
+        return redirect('events')
+        
+    if request.method == 'POST':
+        form = EventForm(request.POST, request.FILES)
+        if form.is_valid():
+            event = form.save(commit=False)
+            event.organizer = request.user
+            
+            scheduled_date = form.cleaned_data.get('scheduled_date')
+            scheduled_time = form.cleaned_data.get('scheduled_time')
+            
+            if scheduled_date and scheduled_time:
+                combined_datetime = datetime.datetime.combine(scheduled_date, scheduled_time)
+                event.scheduled_at = timezone.make_aware(combined_datetime)
+            
+            event.general_tickets_available = event.general_tickets_total
+            event.vip_tickets_available = event.vip_tickets_total
+            
+            event.save()
+            form.save_m2m()
+            return redirect('event_detail', event_id=event.id)
+    else:
+        form = EventForm()
+    
+    return render(
+        request,
+        "app/event_form.html",
+        {
+            "form": form,
+            "title": "Crear Evento",
+        },
+    )
+
+@login_required
+def edit_event(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    
+    if not request.user.is_organizer:
+        return redirect('events')
+        
+    if request.method == 'POST':
+        form = EventForm(request.POST, request.FILES, instance=event)
+        if form.is_valid():
+            updated_event = form.save(commit=False)
+            
+            scheduled_date = form.cleaned_data.get('scheduled_date')
+            scheduled_time = form.cleaned_data.get('scheduled_time')
+            
+            if scheduled_date and scheduled_time:
+                combined_datetime = datetime.datetime.combine(scheduled_date, scheduled_time)
+                updated_event.scheduled_at = timezone.make_aware(combined_datetime)
+            
+            general_diff = updated_event.general_tickets_total - event.general_tickets_total
+            vip_diff = updated_event.vip_tickets_total - event.vip_tickets_total
+            
+            updated_event.general_tickets_available = event.general_tickets_available + general_diff
+            updated_event.vip_tickets_available = event.vip_tickets_available + vip_diff
+            
+            updated_event.save()
+            form.save_m2m()
+            return redirect('event_detail', event_id=event.pk)
+    else:
+        initial_data = {
+            'title': event.title,
+            'description': event.description,
+            'general_price': event.general_price,
+            'vip_price': event.vip_price,
+            'general_tickets_total': event.general_tickets_total,
+            'vip_tickets_total': event.vip_tickets_total,
+            'scheduled_date': event.scheduled_at.date(),
+            'scheduled_time': event.scheduled_at.time()
+        }
+        form = EventForm(initial=initial_data, instance=event)
+    
+    return render(
+        request,
+        "app/event_form.html",
+        {
+            "form": form,
+            "title": "Editar Evento",
+            "event": event,
+        },
+    )
 
 @login_required
 def event_delete(request, id):
-    user = request.user
-    if not user.is_organizer:
+    if not request.user.is_organizer:
         return redirect("events")
 
     event = get_object_or_404(Event, pk=id)
@@ -244,121 +246,283 @@ def event_delete(request, id):
 
     return redirect("event_detail", id=id)
 
-
-
+@login_required
+def organizer_tickets(request, event_id=None):
+    if not request.user.is_organizer:
+        return redirect('events')
+    
+    if event_id:
+        event = get_object_or_404(Event, pk=event_id, organizer=request.user)
+        tickets = Ticket.objects.filter(event=event).select_related('user').order_by('-buy_date')
+        return render(request, 'app/organizer_tickets_event.html', {
+            'event': event,
+            'tickets': tickets,
+            'total_sales': sum(t.total for t in tickets),
+            'tickets_count': tickets.count()
+        })
+    else:
+        events = Event.objects.filter(organizer=request.user).annotate(
+            tickets_sold=Count('ticket'),
+            total_sales=Sum('ticket__total')
+        ).order_by('-scheduled_at')
+        
+        return render(request, 'app/organizer_event_list.html', {
+            'events': events
+        })
 
 @login_required
-def event_form(request, id=None):
-    user = request.user
-
-    if not user.is_organizer:
-        return redirect("events")
-
-    categories = Category.objects.all()
-    venues = Venue.objects.filter(organizer=user)
-    selected_categories = []
-    event = None
-    errors = {}
-
-    if id is not None:
-        event = get_object_or_404(Event, pk=id)
-        selected_categories = list(event.categories.values_list('id', flat=True))
-
-    today = timezone.localtime().date()
-    min_date = today + datetime.timedelta(days=1)
-
-    if request.method == "POST":
-        title = request.POST.get("title")
-        description = request.POST.get("description")
-        date = request.POST.get("date")
-        time = request.POST.get("time")
-        venue_id = request.POST.get("venue")
-        category_ids = request.POST.getlist("categories")
-
+@transaction.atomic
+def ticket_purchase(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+    if request.user.is_organizer:
+        return redirect('event_detail', id=event_id)
+    
+    if request.method == 'POST':
+        ticket_form = TicketForm(request.POST, event=event)
+        payment_form = PaymentForm(request.POST)
         
-        if not venue_id:
-            errors["venue"] = "Debe seleccionar un lugar para el evento."
-
-        
-        try:
-            year, month, day = map(int, date.split("-"))
-            hour, minutes = map(int, time.split(":"))
-            scheduled_at = timezone.make_aware(datetime.datetime(year, month, day, hour, minutes))
-        except (ValueError, AttributeError):
-            errors["date"] = "Fecha u hora inválida."
-            scheduled_at = None
-
-        if scheduled_at and scheduled_at.date() <= today:
-            errors["date"] = "La fecha debe ser a partir de mañana."
-
-        
-        selected_categories = [int(cat_id) for cat_id in category_ids if cat_id.isdigit()]
-        selected_category_objects = Category.objects.filter(id__in=selected_categories)
-
-        
-        if scheduled_at:
-            validation_errors = Event.validate(title, description, scheduled_at)
-            errors.update(validation_errors)
-
-        
-        if errors:
-            return render(
-                request,
-                "app/event_form.html",
-                {
-                    "event": event,
-                    "categories": categories,
-                    "selected_categories": selected_categories,
-                    "venues": venues,
-                    "user_is_organizer": user.is_organizer,
-                    "min_date": min_date,
-                    "errors": errors
-                },
-            )
-
-        venue = get_object_or_404(Venue, pk=venue_id, organizer=user)
-
-        
-        if id is None:
-            event = Event.objects.create(
-                title=title,
-                description=description,
-                scheduled_at=scheduled_at,
-                organizer=user,
-                venue=venue,
-            )
+        if ticket_form.is_valid() and payment_form.is_valid():
+            try:
+                with transaction.atomic():
+                    ticket = ticket_form.save(commit=False)
+                    ticket.user = request.user
+                    ticket.event = event
+                    ticket.ticket_code = ticket._generate_ticket_code()
+                    
+                    price = event.general_price if ticket.type == Ticket.TicketType.GENERAL else event.vip_price
+                    ticket.subtotal = price * Decimal(ticket.quantity)
+                    ticket.taxes = ticket.subtotal * Decimal('0.10')
+                    ticket.total = ticket.subtotal + ticket.taxes
+                    ticket.payment_confirmed = True
+                    
+                    payment_info = payment_form.save(commit=False)
+                    payment_info.user = request.user
+                    
+                    if payment_form.cleaned_data.get('save_card'):
+                        payment_info.save()
+                    
+                    ticket.save()
+                    
+                    if ticket.type == Ticket.TicketType.GENERAL:
+                        event.general_tickets_available -= ticket.quantity
+                    else:
+                        event.vip_tickets_available -= ticket.quantity
+                    event.save()
+                    
+                    return redirect('ticket_detail', ticket_id=ticket.id)
+                    
+            except Exception as e:
+                print(f"Error during ticket purchase: {str(e)}")
         else:
-            event.title = title
-            event.description = description
-            event.scheduled_at = scheduled_at
-            event.venue = venue
-            event.save()
+            print("Ticket form errors:", ticket_form.errors)
+            print("Payment form errors:", payment_form.errors)
+    else:
+        ticket_form = TicketForm(event=event)
+        payment_form = PaymentForm()
 
-        event.categories.set(selected_category_objects)
-        return redirect("events")
+    return render(request, 'app/ticket_purchase.html', {
+        'event': event,
+        'ticket_form': ticket_form,
+        'payment_form': payment_form,
+    })
 
-    return render(
-        request,
-        "app/event_form.html",
-        {
-            "event": event,
-            "categories": categories,
-            "selected_categories": selected_categories,
-            "venues": venues,
-            "user_is_organizer": user.is_organizer,
-            "min_date": min_date,
-            "errors": errors,
-            "no_venues": not venues.exists(),
-        },
+@login_required
+def ticket_detail(request, ticket_id):
+    ticket = get_object_or_404(Ticket, pk=ticket_id)
+    
+    if ticket.user != request.user and (not request.user.is_organizer or request.user != ticket.event.organizer):
+        return HttpResponseForbidden("No tienes permiso para ver este ticket")
+    
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        box_size=10,
+        border=4,
     )
+    qr.add_data(ticket.ticket_code)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    
+    buffer = BytesIO()
+    img.save(buffer, 'PNG')
+    qr_code_base64 = ticket.qr_code_base64()
+    
+    return render(request, 'app/ticket_detail.html', {
+        'ticket': ticket,
+        'qr_code': qr_code_base64,
+        'is_editable': ticket.can_be_modified_by(request.user),
+        'is_organizer': request.user.is_organizer and request.user == ticket.event.organizer
+    })
 
+@login_required
+@transaction.atomic
+def ticket_update(request, ticket_id):
+    ticket = get_object_or_404(Ticket.objects.select_related('event'), pk=ticket_id)
+    
+    if not ticket.can_be_modified_by(request.user):
+        return redirect('ticket_detail', ticket_id=ticket_id)
+    
+    if not ticket._is_within_edit_window():
+        return redirect('ticket_detail', ticket_id=ticket_id)
+    
+    if request.method == 'POST':
+        form = TicketForm(request.POST, instance=ticket, event=ticket.event)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    original_type = ticket.type
+                    original_quantity = ticket.quantity
+                
+                    updated_ticket = form.save(commit=False)
+                    
+                    new_type = updated_ticket.type
+                    new_quantity = updated_ticket.quantity
+                    
+                    type_changed = original_type != new_type
+                    quantity_diff = new_quantity - original_quantity
+                    
+                    if type_changed or quantity_diff > 0:
+                        if type_changed:
+                            available = ticket.event.get_available_tickets(new_type)
+                            if available < new_quantity:
+                                messages.error(request, f"No hay suficientes entradas {new_type.lower()} disponibles")
+                                return redirect('ticket_update', ticket_id=ticket_id)
+                        else:
+                            available = ticket.event.get_available_tickets(new_type)
+                            if available < quantity_diff:
+                                messages.error(request, f"No hay suficientes entradas {new_type.lower()} disponibles")
+                                return redirect('ticket_update', ticket_id=ticket_id)
+                    
+                    price = ticket.event.general_price if new_type == Ticket.TicketType.GENERAL else ticket.event.vip_price
+                    
+                    updated_ticket.subtotal = price * Decimal(new_quantity)
+                    updated_ticket.taxes = updated_ticket.subtotal * Decimal('0.10')
+                    updated_ticket.total = updated_ticket.subtotal + updated_ticket.taxes
+                    
+                    if type_changed:
+                        if original_type == Ticket.TicketType.GENERAL:
+                            ticket.event.general_tickets_available += original_quantity
+                        else:
+                            ticket.event.vip_tickets_available += original_quantity
+                            
+                        if new_type == Ticket.TicketType.GENERAL:
+                            ticket.event.general_tickets_available -= new_quantity
+                        else:
+                            ticket.event.vip_tickets_available -= new_quantity
+                    else:
+                        if new_type == Ticket.TicketType.GENERAL:
+                            ticket.event.general_tickets_available -= quantity_diff
+                        else:
+                            ticket.event.vip_tickets_available -= quantity_diff
+                    
+                    ticket.event.save()
+                    updated_ticket.save()
+                    
+                    messages.success(request, "Ticket actualizado correctamente")
+                    return redirect('ticket_detail', ticket_id=ticket_id)
+                    
+            except Exception as e:
+                messages.error(request, f"Error al actualizar el ticket: {str(e)}")
+                print(f"Error updating ticket: {str(e)}")
+                return redirect('ticket_update', ticket_id=ticket_id)
+    else:
+        form = TicketForm(instance=ticket, event=ticket.event)
+    
+    return render(request, 'app/ticket_update.html', {
+        'form': form,
+        'ticket': ticket,
+        'now': timezone.now(),
+        'original_price': ticket.event.general_price if ticket.type == Ticket.TicketType.GENERAL else ticket.event.vip_price
+    })
+
+@login_required
+@transaction.atomic
+def ticket_delete(request, ticket_id):
+    ticket = get_object_or_404(Ticket.objects.select_related('event', 'user'), pk=ticket_id)
+    
+    if not (ticket.user == request.user or 
+            (request.user.is_organizer and request.user == ticket.event.organizer)):
+        return redirect('ticket_detail', ticket_id=ticket_id)
+    
+    if request.user.is_organizer and request.user == ticket.event.organizer:
+        redirect_url = 'organizer_tickets_event'
+        redirect_kwargs = {'event_id': ticket.event.id}
+    else:
+        redirect_url = 'ticket_list'
+        redirect_kwargs = {}
+
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                if ticket.type == Ticket.TicketType.GENERAL:
+                    ticket.event.general_tickets_available += ticket.quantity
+                else:
+                    ticket.event.vip_tickets_available += ticket.quantity
+                
+                ticket.event.save()
+                ticket.delete()
+                
+                return redirect(redirect_url, **redirect_kwargs)
+                
+        except Exception as e:
+            messages.error(request, f"Error al eliminar el ticket: {str(e)}")
+            return redirect('ticket_detail', ticket_id=ticket_id)
+    
+    return render(request, 'app/ticket_delete.html', {
+        'ticket': ticket,
+        'is_organizer': request.user.is_organizer and request.user == ticket.event.organizer,
+        'redirect_url': redirect_url,
+        'redirect_kwargs': redirect_kwargs
+    })
+
+@login_required
+def ticket_use(request, ticket_id):
+    ticket = get_object_or_404(Ticket, pk=ticket_id)
+    
+    if not request.user.is_organizer or ticket.event.organizer != request.user:
+        messages.error(request, "No tienes permiso para marcar este ticket")
+        return redirect('event_detail', id=ticket.event.id)
+    
+    if request.method == 'POST':
+        if ticket.is_used:
+            messages.warning(request, "Este ticket ya estaba marcado como usado")
+        else:
+            ticket.is_used = True
+            ticket.save()
+            messages.success(request, f"Ticket #{ticket.ticket_code} marcado como usado")
+    
+    return redirect('event_detail', id=ticket.event.id)
+
+@login_required
+def ticket_list(request):
+    now = timezone.now()
+    tickets = Ticket.objects.filter(user=request.user).select_related('event').order_by('-buy_date')
+    filter_form = TicketFilterForm(request.GET or None)
+    
+    if filter_form.is_valid():
+        filter_by = filter_form.cleaned_data.get('filter_by', 'all')
+        
+        if filter_by == 'upcoming':
+            tickets = tickets.filter(event__scheduled_at__gt=now)
+        elif filter_by == 'past':
+            tickets = tickets.filter(event__scheduled_at__lte=now)
+        elif filter_by == 'used':
+            tickets = tickets.filter(is_used=True)
+        elif filter_by == 'unused':
+            tickets = tickets.filter(is_used=False)
+    
+    return render(request, 'app/ticket_list.html', {
+        'tickets': tickets,
+        'filter_form': filter_form,
+        'now': now
+    })
 
 @login_required
 def category_list(request):
     if request.user.is_organizer:
-        categories = Category.objects.all().annotate(event_count=Count('events'))
+        categories = Category.objects.all().annotate(event_count=Count('event'))
     else:
-        categories = Category.objects.filter(is_active=True).annotate(event_count=Count('events'))
+        categories = Category.objects.filter(is_active=True).annotate(event_count=Count('event'))
 
     return render(
         request,
@@ -410,7 +574,6 @@ def category_delete(request, id):
         return redirect('category_list')  
     return redirect('category_list')
 
-
 @login_required
 def venue_list(request):
     if request.user.is_organizer:
@@ -433,7 +596,6 @@ def create_venue(request):
         return redirect('venue_list')
     return render(request, 'venues/create_venue.html', {'form': form})
 
-
 @login_required
 def edit_venue(request, venue_id):
     venue = get_object_or_404(Venue, id=venue_id)
@@ -448,8 +610,6 @@ def edit_venue(request, venue_id):
         return redirect('venue_list')
     return render(request, 'venues/edit_venue.html', {'form': form})
 
-
-
 @login_required
 def delete_venue(request, venue_id):
     venue = get_object_or_404(Venue, id=venue_id)
@@ -463,10 +623,117 @@ def delete_venue(request, venue_id):
         return redirect('venue_list')
     return render(request, 'venues/delete_venue.html', {'venue': venue})
 
-
-
 @login_required
 def venue_detail(request, venue_id):
     venue = get_object_or_404(Venue, id=venue_id)
     return render(request, 'venues/venue_detail.html', {'venue': venue})
 
+def calculate_refund_fee(ticket):
+    days_until_event = (ticket.event.scheduled_at - timezone.now()).days
+    
+    if days_until_event > 7:
+        return 0
+    elif 3 < days_until_event <= 7:
+        return 10
+    elif 1 < days_until_event <= 3:
+        return 20
+    else:
+        return 30
+
+def process_payment(card_type, card_number, expiry_month, expiry_year, cvv, card_holder, amount):
+    if card_number.endswith('1111'):
+        return False, "Tarjeta declinada por el banco emisor"
+    
+    import random
+    if random.random() < 0.05:
+        return False, "Error de conexión con el procesador de pagos"
+    
+    return True, "Pago procesado exitosamente"
+
+def process_refund(ticket, amount):
+    import random
+    if random.random() < 0.05:
+        return False
+    
+    return True
+
+@login_required
+def event_form(request, id=None):
+    if not request.user.is_organizer:
+        return redirect("events")
+
+    if id:
+        event = get_object_or_404(Event, pk=id, organizer=request.user)
+        form = EventForm(request.POST or None, request.FILES or None, instance=event)
+    else:
+        event = None
+        form = EventForm(request.POST or None, request.FILES or None)
+
+    if request.method == "POST" and form.is_valid():
+        try:
+            with transaction.atomic():
+                event = form.save(commit=False)
+                event.organizer = request.user
+                
+                
+                scheduled_date = form.cleaned_data.get('scheduled_date')
+                scheduled_time = form.cleaned_data.get('scheduled_time')
+                
+                if scheduled_date and scheduled_time:
+                    combined_datetime = datetime.datetime.combine(scheduled_date, scheduled_time)
+                    event.scheduled_at = timezone.make_aware(combined_datetime)
+                
+                
+                if not id:
+                    event.general_tickets_available = event.general_tickets_total
+                    event.vip_tickets_available = event.vip_tickets_total
+                
+                event.save()
+                form.save_m2m()  
+                
+                messages.success(request, "Evento guardado exitosamente")
+                return redirect('event_detail', id=event.id)
+                
+        except Exception as e:
+            messages.error(request, f"Error al guardar el evento: {str(e)}")
+           
+            print(f"Error saving event: {str(e)}")
+
+ 
+    venues = Venue.objects.filter(organizer=request.user)
+    categories = Category.objects.all()
+    
+   
+    initial = {}
+    if event:
+        initial = {
+            'scheduled_date': event.scheduled_at.date(),
+            'scheduled_time': event.scheduled_at.time()
+        }
+    
+    return render(request, 'app/event_form.html', {
+        'form': form,
+        'event': event,
+        'venues': venues,
+        'categories': categories,
+        'initial': initial,
+        'min_date': timezone.now().date() + datetime.timedelta(days=1)
+    })
+
+@login_required
+def rating_create(request, id):
+    if request.user.is_organizer:
+        messages.error(request, "Los organizadores no pueden dejar calificaciones.")
+        return redirect("event_detail", id=id)
+
+    if request.method == "POST":
+        event = get_object_or_404(Event, pk=id)
+        title = request.POST.get("title", "").strip()
+        score = request.POST.get("score")
+        comment = request.POST.get("comment", "").strip()
+
+        Rating.objects.create(
+            event=event, user=request.user, title=title, score=score, comment=comment
+        )
+
+    return redirect("event_detail", id=id)

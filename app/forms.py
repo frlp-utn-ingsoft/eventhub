@@ -1,9 +1,11 @@
 from django import forms
-from .models import Rating, Venue, Event , Category
-from django import forms
+from .models import Rating, Venue, Event, Category, Ticket, PaymentInfo
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
+from django.utils import timezone
+from datetime import datetime
 import re
+
 
 class RatingForm(forms.ModelForm):
     class Meta:
@@ -148,21 +150,232 @@ class VenueForm(forms.ModelForm):
 
 
 class EventForm(forms.ModelForm):
+    scheduled_date = forms.DateField(
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        label="Fecha del evento"
+    )
+    scheduled_time = forms.TimeField(
+        widget=forms.TimeInput(attrs={'type': 'time'}),
+        label="Hora del evento"
+    )
+
     class Meta:
         model = Event
-        fields = ['title', 'description', 'scheduled_at', 'venue']
+        fields = [
+            'title', 
+            'description', 
+            'scheduled_date',
+            'scheduled_time',
+            'venue',
+            'general_price', 
+            'vip_price', 
+            'general_tickets_total', 
+            'vip_tickets_total',
+            'categories'
+        ]
         widgets = {
-            'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'scheduled_at': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'description': forms.Textarea(attrs={'rows': 4}),
             'venue': forms.Select(attrs={'class': 'form-control'}),
+            'categories': forms.SelectMultiple(attrs={'class': 'form-control'}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         venues = Venue.objects.all()
         if venues.exists():
-            self.fields['venue'].queryset = venues
+           
+            self.fields['venue'] = forms.ModelChoiceField(
+                queryset=venues,
+                widget=forms.Select(attrs={'class': 'form-control'})
+            )
         else:
-            self.fields['venue'].choices = [('', 'No hay ubicaciones disponibles')]
-            self.fields['venue'].disabled = True
+           
+            self.fields['venue'] = forms.ChoiceField(
+                choices=[('', 'No hay ubicaciones disponibles')],
+                widget=forms.Select(attrs={
+                    'class': 'form-control',
+                    'disabled': True
+                })
+            )
+
+   
+    def clean(self):
+        cleaned_data = super().clean() or {}
+        venue = cleaned_data.get('venue')
+        general_tickets = cleaned_data.get('general_tickets_total', 0)
+        vip_tickets = cleaned_data.get('vip_tickets_total', 0)
+        
+        if venue and (general_tickets or vip_tickets):
+            total_tickets = general_tickets + vip_tickets
+            if total_tickets > venue.capacity:
+                raise ValidationError(
+                    f"La cantidad total de tickets ({total_tickets}) excede la capacidad del lugar ({venue.capacity})."
+                )
+        scheduled_date = cleaned_data.get('scheduled_date')
+        scheduled_time = cleaned_data.get('scheduled_time')
+
+        if scheduled_date and scheduled_time:
+            try:
+                event_datetime = timezone.make_aware(
+                    datetime.combine(scheduled_date, scheduled_time)
+                )
+                if event_datetime < timezone.now():
+                    self.add_error('scheduled_date', 'La fecha del evento no puede estar en el pasado')
+            except (TypeError, ValueError):
+                self.add_error('scheduled_date', 'Fecha u hora inválida')
+
+        general_tickets = cleaned_data.get('general_tickets_total')
+        vip_tickets = cleaned_data.get('vip_tickets_total')
+
+        if general_tickets is not None:
+            if general_tickets < 0:
+                self.add_error('general_tickets_total', 'La cantidad de tickets generales no puede ser negativa')
+        else:
+            general_tickets = 0
+
+        if vip_tickets is not None:
+            if vip_tickets < 0:
+                self.add_error('vip_tickets_total', 'La cantidad de tickets VIP no puede ser negativa')
+        else:
+            vip_tickets = 0
+
+        if general_tickets == 0 and vip_tickets == 0:
+            self.add_error(None, 'Debe haber al menos un ticket disponible (general o VIP)')
+
+        return cleaned_data
+
+
+class TicketForm(forms.ModelForm):
+    accept_terms = forms.BooleanField(
+        required=True,
+        label="Acepto los términos y condiciones y la política de privacidad",
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+
+    class Meta:
+        model = Ticket
+        fields = ['type', 'quantity']
+        widgets = {
+            'type': forms.Select(attrs={'class': 'form-control'}),
+            'quantity': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'min': 1,
+                'max': 10,
+            }),
+        }
+
+    def __init__(self, *args, **kwargs):
+        self.event = kwargs.pop('event', None)
+        super().__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean() or {}
+        scheduled_date = cleaned_data.get('scheduled_date')
+        scheduled_time = cleaned_data.get('scheduled_time')
+        
+        
+        if scheduled_date and scheduled_time:
+            try:
+               
+                naive_datetime = datetime.combine(scheduled_date, scheduled_time)
+              
+                event_datetime = timezone.make_aware(naive_datetime)
+                
+              
+                print(f"Current time: {timezone.now()}")
+                print(f"Event time: {event_datetime}")
+                
+                if event_datetime < timezone.now():
+                    self.add_error('scheduled_date', 'La fecha del evento no puede estar en el pasado')
+                    
+            except Exception as e:
+                self.add_error(None, f"Error al procesar la fecha: {str(e)}")
+        
+        return cleaned_data
+class PaymentForm(forms.ModelForm):
+    expiry_date = forms.CharField(
+        required=True,
+        widget=forms.TextInput(attrs={'placeholder': 'MM/AA'})
+    )
+
+    class Meta:
+        model = PaymentInfo  
+        fields = ['card_type', 'card_number', 'expiry_date', 'cvv', 'card_holder', 'save_card']
+        widgets = {
+            'card_number': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '1234 5678 9012 3456',
+                'data-mask': '0000 0000 0000 0000'
+            }),
+            'cvv': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'CVV',
+                'data-mask': '0000'
+            }),
+            'card_holder': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nombre como aparece en la tarjeta'
+            }),
+            'card_type': forms.Select(attrs={'class': 'form-control'})
+        }
+
+    def clean_card_number(self):
+        card_number = self.cleaned_data.get('card_number', '')
+        if not card_number:
+            raise ValidationError('Número de tarjeta requerido')
+        
+        card_number = card_number.replace(' ', '')
+        if not card_number.isdigit() or len(card_number) not in (13, 15, 16):
+            raise ValidationError('Número de tarjeta inválido')
+        return card_number
+
+    def clean_expiry_date(self):
+        expiry_date = self.cleaned_data.get('expiry_date', '')
+        if not expiry_date:
+            raise ValidationError('La fecha de expiración es requerida')
+        
+        expiry_date = expiry_date.strip()
+        if not re.match(r'^(0[1-9]|1[0-2])/\d{2}$', expiry_date):
+            raise ValidationError('Formato inválido. Use MM/AA (ej. 12/28)')
+        
+        try:
+            month, year = map(int, expiry_date.split('/'))
+            full_year = 2000 + year
+            now = timezone.now()
+            
+            if full_year < now.year or (full_year == now.year and month < now.month):
+                raise ValidationError('Tarjeta expirada')
+                
+            if full_year > now.year + 10:
+                raise ValidationError(f'Año inválido. Máximo permitido: {now.year + 10}')
+            
+            self.cleaned_data['expiry_month'] = month
+            self.cleaned_data['expiry_year'] = full_year
+            
+        except ValueError:
+            raise ValidationError('Fecha inválida')
+            
+        return expiry_date
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.expiry_month = self.cleaned_data.get('expiry_month')
+        instance.expiry_year = self.cleaned_data.get('expiry_year')
+        if commit:
+            instance.save()
+        return instance
+    
+class TicketFilterForm(forms.Form):
+    FILTER_CHOICES = (
+        ('all', 'Todos los tickets'),
+        ('upcoming', 'Eventos próximos'),
+        ('past', 'Eventos pasados'),
+        ('used', 'Tickets usados'),
+        ('unused', 'Tickets no usados'),
+    )
+    filter_by = forms.ChoiceField(
+        choices=FILTER_CHOICES,
+        required=False,
+        initial='all',
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )

@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-danger mt-4">
+        <a href="{% url 'events' %}" class="text-decoration-none text-secondary mb-3 d-inline-block">
+            <i class="bi bi-arrow-left me-2"></i>Volver a mis eventos
+        </a>
+    </div>
+
+    <div class="bg-light p-4 rounded shadow-sm mb-4">
+        <h1 class="h3 mb-3 text-primary">Entradas vendidas para <strong>{{ event.title }}</strong></h1>
+        <ul class="list-unstyled mb-0">
+            <li><i class="bi bi-calendar-event me-2"></i><strong>Fecha:</strong> {{ event.scheduled_at|date:"d/m/Y H:i" }}</li>
+            <li><i class="bi bi-cash-coin me-2"></i><strong>Total vendido:</strong> <span class="text-success">${{ total_sales|floatformat:2 }}</span> ({{ tickets_count }} entradas)</li>
+        </ul>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle border rounded shadow-sm overflow-hidden">
+            <thead class="table-primary">
+                <tr class="text-center">
+                    <th scope="col">Código</th>
+                    <th scope="col">Comprador</th>
+                    <th scope="col">Tipo</th>
+                    <th scope="col">Cantidad</th>
+                    <th scope="col">Total</th>
+                    <th scope="col">Fecha Compra</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr>
+                    <td class="text-monospace text-center">{{ ticket.ticket_code }}</td>
+                    <td class="text-center">{{ ticket.user.username }}</td>
+                    <td class="text-center">{{ ticket.get_type_display }}</td>
+                    <td class="text-center">{{ ticket.quantity }}</td>
+                    <td class="text-center text-success">${{ ticket.total|floatformat:2 }}</td>
+                    <td class="text-center">{{ ticket.buy_date|date:"d/m/Y H:i" }}</td>
+                    <td class="text-center">
+                        {% if ticket.is_used %}
+                            <span class="badge bg-success rounded-pill px-3">Usado</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark rounded-pill px-3">No usado</span>
+                        {% endif %}
+                    </td>
+                    <td class="text-center">
+                        <div class="d-flex justify-content-center gap-2">
+                            <form method="post" action="{% url 'ticket_delete' ticket.id %}" onsubmit="return confirm('¿Estás seguro que deseas eliminar esta entrada?\n\nCódigo: {{ ticket.ticket_code }}\nComprador: {{ ticket.user.username }}\n\nEsta acción no se puede deshacer.');">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger rounded-pill px-3">
+                                    <i class="bi bi-trash me-1"></i>Eliminar
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center text-muted">No se han vendido entradas para este evento</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

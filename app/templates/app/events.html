@@ -14,13 +14,13 @@
         {% endif %}
     </div>
 
-    <form method="get" class="row g-3 mb-4">
-        <div class="col-md-3">
+    <form method="get" class="row align-items-end mb-4 gx-2 gy-2">
+        <div class="col-md-auto">
             <label for="titulo" class="form-label">Título</label>
             <input type="text" class="form-control" id="titulo" name="titulo" value="{{ request.GET.titulo }}">
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-auto">
             <label for="venue" class="form-label">Ubicación</label>
             <select id="venue" name="venue" class="form-select">
                 <option value="">Todas</option>
@@ -32,7 +32,7 @@
             </select>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-auto">
             <label for="categoria" class="form-label">Categoría</label>
             <select name="categoria" id="categoria" class="form-select">
                 <option value="">Todas</option>
@@ -44,24 +44,24 @@
             </select>
         </div>
 
-        <div class="col-md-3">
+        <div class="col-md-auto">
             <label for="fecha" class="form-label">Fecha</label>
             <input type="date" class="form-control" id="fecha" name="fecha" value="{{ request.GET.fecha }}">
         </div>
 
-        <div class="col-md-3 d-flex align-items-end gap-2">
-            <button type="submit" class="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center"
+        <div class="col-md-auto d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center mt-4"
                 style="width: 40px; height: 40px;" title="Buscar">
                 🔍
             </button>
-            <a href="{% url 'events' %}" class="btn btn-outline-danger rounded-circle d-flex align-items-center justify-content-center"
+            <a href="{% url 'events' %}" class="btn btn-outline-danger rounded-circle d-flex align-items-center justify-content-center mt-4"
                 style="width: 40px; height: 40px;" title="Limpiar filtros">
                 ❌
             </a>
         </div>
     </form>
 
-    <h5 class="mt-5 mb-4 mb-3">Lista de Eventos</h5>
+    <h5 class="mt-5 mb-4">Lista de Eventos</h5>
     <table class="table mt-2">
         <thead>
             <tr>
@@ -100,7 +100,8 @@
                                     aria-label="Editar" title="Editar">
                                     <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
-                                <form action="{% url 'event_delete' event.id %}" method="POST">
+                                <form action="{% url 'event_delete' event.id %}" method="POST" style="display:inline;"
+                                      onsubmit="return confirm('¿Estás segura de que querés eliminar este evento?');">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-danger" title="Eliminar" type="submit"
                                         aria-label="Eliminar">
