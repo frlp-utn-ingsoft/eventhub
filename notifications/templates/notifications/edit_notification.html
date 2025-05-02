@@ -163,7 +163,7 @@
 </div>
 
 <script>
-    // Script para mostrar/ocultar campos según el tipo de destinatario
+    //mostrar-ocultar campos segun tipo de destinatario
     document.addEventListener('DOMContentLoaded', function() {
         const destAllRadio = document.getElementById('dest_all');
         const destSpecificRadio = document.getElementById('dest_specific');
@@ -180,11 +180,9 @@
             }
         }
         
-        // Actualizar en cambio de radio
         destAllRadio.addEventListener('change', updateSections);
         destSpecificRadio.addEventListener('change', updateSections);
-        
-        // Inicializar
+   
         updateSections();
     });
 </script>
