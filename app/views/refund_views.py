@@ -56,7 +56,7 @@ def my_refunds(request):
 def refund_edit(request, id):
     refund_obj = get_object_or_404(Refund, id=id, user=request.user)
 
-    if refund_obj.aproved:  # Ya la vio un organizer
+    if refund_obj.approved:  # Ya la vio un organizer
         return redirect("my_refunds")
 
     if request.method == "POST":
@@ -70,7 +70,7 @@ def refund_edit(request, id):
 @login_required
 def refund_delete(request, id):
     refund_obj = get_object_or_404(Refund, id=id, user=request.user)
-    if not refund_obj.aproved:  # Ya la vio un organizer
+    if not refund_obj.approved:  # Ya la vio un organizer
         refund_obj.delete()
 
     return redirect("my_refunds")
@@ -93,8 +93,8 @@ def approve_refund_request(request, pk):
         return redirect('refunds_admin')
 
     refund_obj = get_object_or_404(Refund, pk=pk)
-    if refund_obj.aproved is None:  # Verifica si es pendiente
-        refund_obj.aproved = True
+    if refund_obj.approved is None:  # Verifica si es pendiente
+        refund_obj.approved = True
         refund_obj.aproval_date = timezone.now()
         refund_obj.save()
         messages.success(request, "✅ Reembolso aprobado exitosamente.")
@@ -108,8 +108,8 @@ def reject_refund_request(request, pk):
         return redirect('refunds_admin')
 
     refund_obj = get_object_or_404(Refund, pk=pk)
-    if refund_obj.aproved is None:  # Verifica si es pendiente
-        refund_obj.aproved = False
+    if refund_obj.approved is None:  # Verifica si es pendiente
+        refund_obj.approved = False
         refund_obj.aproval_date = timezone.now()
         refund_obj.save()
         messages.success(request, "✅ Reembolso rechazado exitosamente.")

@@ -272,7 +272,9 @@
       "venue": 3,
       "created_at": "2025-01-27T02:55:25Z",
       "updated_at": "2025-01-27T02:55:25Z",
-      "categories": [10]
+      "categories": [
+        10
+      ]
     }
   },
   {
@@ -286,7 +288,9 @@
       "venue": 4,
       "created_at": "2025-03-04T08:26:48Z",
       "updated_at": "2025-03-04T08:26:48Z",
-      "categories": [3]
+      "categories": [
+        3
+      ]
     }
   },
   {
@@ -300,7 +304,9 @@
       "venue": 3,
       "created_at": "2025-04-09T00:42:26Z",
       "updated_at": "2025-04-09T00:42:26Z",
-      "categories": [1]
+      "categories": [
+        1
+      ]
     }
   },
   {
@@ -314,7 +320,9 @@
       "venue": 5,
       "created_at": "2025-02-27T17:02:50Z",
       "updated_at": "2025-02-27T17:02:50Z",
-      "categories": [2]
+      "categories": [
+        2
+      ]
     }
   },
   {
@@ -328,7 +336,11 @@
       "venue": 3,
       "created_at": "2025-03-09T18:08:52Z",
       "updated_at": "2025-03-09T18:08:52Z",
-      "categories": [2, 4, 8]
+      "categories": [
+        2,
+        4,
+        8
+      ]
     }
   },
   {
@@ -624,7 +636,7 @@
     "model": "app.refund",
     "pk": 1,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-07-28T16:47:37Z",
       "ticket_code": "FLGLW3LY89VF",
       "reason": "No pude asistir",
@@ -707,7 +719,7 @@
     "model": "app.refund",
     "pk": 2,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-10-02T04:04:44Z",
       "ticket_code": "T6VWIIUOJEN4",
       "reason": "No pude asistir",
@@ -790,7 +802,7 @@
     "model": "app.refund",
     "pk": 3,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-11-26T03:32:11Z",
       "ticket_code": "HIA53M4PL34K",
       "reason": "No pude asistir",
@@ -838,7 +850,7 @@
     "model": "app.refund",
     "pk": 4,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-05-20T17:02:45Z",
       "ticket_code": "9HH7TESI4TYS",
       "reason": "No pude asistir",
@@ -921,7 +933,7 @@
     "model": "app.refund",
     "pk": 5,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-10-03T23:38:50Z",
       "ticket_code": "CDIKSB70FJ6X",
       "reason": "No pude asistir",
@@ -1074,7 +1086,7 @@
     "model": "app.refund",
     "pk": 6,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-07-15T12:02:07Z",
       "ticket_code": "IBT3XJVGIWI3",
       "reason": "No pude asistir",
@@ -1122,7 +1134,7 @@
     "model": "app.refund",
     "pk": 7,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-10-31T08:07:07Z",
       "ticket_code": "ROKXG0Y2QIK1",
       "reason": "No pude asistir",
@@ -1170,7 +1182,7 @@
     "model": "app.refund",
     "pk": 8,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-09-23T10:28:19Z",
       "ticket_code": "CEMI7YV6AWKN",
       "reason": "No pude asistir",
@@ -1253,7 +1265,7 @@
     "model": "app.refund",
     "pk": 9,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-06-25T11:29:28Z",
       "ticket_code": "U301RDM4F698",
       "reason": "No pude asistir",
@@ -1371,7 +1383,7 @@
     "model": "app.refund",
     "pk": 10,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-05-16T02:44:28Z",
       "ticket_code": "X20XYVCYW6K7",
       "reason": "No pude asistir",
@@ -1419,7 +1431,7 @@
     "model": "app.refund",
     "pk": 11,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-08-07T03:45:14Z",
       "ticket_code": "7I29YT6CX9EN",
       "reason": "No pude asistir",
@@ -1607,7 +1619,7 @@
     "model": "app.refund",
     "pk": 12,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-10-18T07:07:07Z",
       "ticket_code": "BE17O7U3B9YT",
       "reason": "No pude asistir",
@@ -1690,7 +1702,7 @@
     "model": "app.refund",
     "pk": 13,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-06-15T00:50:19Z",
       "ticket_code": "BVFFSE9DTKI2",
       "reason": "No pude asistir",
@@ -1738,7 +1750,7 @@
     "model": "app.refund",
     "pk": 14,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-07-16T23:13:29Z",
       "ticket_code": "QPNF8FE6YH13",
       "reason": "No pude asistir",
@@ -1786,7 +1798,7 @@
     "model": "app.refund",
     "pk": 15,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-07-21T04:21:02Z",
       "ticket_code": "HJT9TQUY45GI",
       "reason": "No pude asistir",
@@ -1834,7 +1846,7 @@
     "model": "app.refund",
     "pk": 16,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-05-28T01:27:02Z",
       "ticket_code": "VUQOOW9CYFN6",
       "reason": "No pude asistir",
@@ -1952,7 +1964,7 @@
     "model": "app.refund",
     "pk": 17,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-08-05T00:21:01Z",
       "ticket_code": "978767RZ9GI3",
       "reason": "No pude asistir",
@@ -2070,7 +2082,7 @@
     "model": "app.refund",
     "pk": 18,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-05-09T12:14:19Z",
       "ticket_code": "JJDTP34XZ07R",
       "reason": "No pude asistir",
@@ -2153,7 +2165,7 @@
     "model": "app.refund",
     "pk": 19,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-11-26T07:10:33Z",
       "ticket_code": "3R1I3UPSQUXC",
       "reason": "No pude asistir",
@@ -2201,7 +2213,7 @@
     "model": "app.refund",
     "pk": 20,
     "fields": {
-      "aproved": true,
+      "approved": true,
       "aproval_date": "2025-08-14T08:09:16Z",
       "ticket_code": "F31GB1K1E9EP",
       "reason": "No pude asistir",

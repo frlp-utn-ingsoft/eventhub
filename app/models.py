@@ -201,8 +201,7 @@ class Event(models.Model):
         self.save()
 
 class Refund(models.Model):
-
-    aproved = models.BooleanField(default=False)
+    approved = models.BooleanField(default=None, null=True, blank=True)
     aproval_date = models.DateTimeField(null=True, blank=True)
     ticket_code = models.CharField(max_length=200)
     reason = models.CharField(max_length=200)
