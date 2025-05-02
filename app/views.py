@@ -1,8 +1,10 @@
 import datetime
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import get_object_or_404, redirect, render, redirect
+from django.http import HttpResponseBadRequest
 from django.utils import timezone
+
 
 from .models import Event, User, Ticket, TicketType
 
@@ -70,8 +72,13 @@ def events(request):
 
 @login_required
 def event_detail(request, id):
+    user = request.user
     event = get_object_or_404(Event, pk=id)
-    return render(request, "app/event_detail.html", {"event": event})
+    if not user.is_organizer:
+        tickets = Ticket.objects.filter(event=event, user=user).order_by("-buy_date")
+    else:
+        tickets = Ticket.objects.filter(event=event).order_by("-buy_date")
+    return render(request, "app/event_detail.html", {"event": event, "tickets": tickets})
 
 
 @login_required
@@ -127,24 +134,26 @@ def event_form(request, id=None):
     )
 
 @login_required
-def tickets(request):
+def tickets(request, event_id=None):
     user = request.user
     tickets = Ticket.objects.filter(user=user).order_by("-buy_date")
     return render(request, "app/tickets.html", {"tickets": tickets})
 
 @login_required
-def ticket_form(request):
+def ticket_form(request, event_id=None):
+    if event_id is None:
+        return HttpResponseBadRequest("Falta el parámetro event_id")
+    
+    ticket_types = TicketType.objects.all()
     if request.method == "POST":
-        event_id = request.POST.get("event_id")
-        user_id = request.POST.get("user_id")
-        ticket_type_id = request.POST.get("ticket_type_id")
-        quantity = int(request.POST.get("quantity"))
+        user = request.user
+        ticket_type_id = int(request.POST.get("ticketType"))
+        quantity = int(request.POST.get("ticketQuantity"))
         event = get_object_or_404(Event, pk=event_id)
-        user = get_object_or_404(User, pk=user_id)
         ticket_type = get_object_or_404(TicketType, pk=ticket_type_id)
         success, result = Ticket.new( event, user, ticket_type, quantity)
         if success:
-            return redirect("app/ticket_detail.html", ticket_code=result)
+            return redirect("ticket_detail", id=result)
         else:
             errors = result
             return render(
@@ -153,51 +162,45 @@ def ticket_form(request):
                 {
                     "errors": errors,
                     "data": request.POST,
-                    "event": event,
-                    "ticket_type": ticket_type,
+                    "ticket_types": ticket_types,
+                    "event_id":event_id
                 },
             )
-    else: return render(request, "app/ticket_form.html")
+    else: return render(request, "app/ticket_form.html", {"ticket_types":ticket_types, "event_id":event_id})
 
 @login_required
-def ticket_detail(request, ticket_code):
-    ticket = get_object_or_404(Ticket, ticket_code=ticket_code)
+def ticket_detail(request, id):
+    ticket = get_object_or_404(Ticket, ticket_code=id)
     return render(request, "app/ticket_detail.html", {"ticket": ticket})
 
 @login_required
-def ticket_delete(request, ticket_code):
+def ticket_delete(request, id):
     if request.method == "POST":
-        ticket = get_object_or_404(Ticket, ticket_code=ticket_code)
-        ticket.delete()
-        return redirect("tickets")
+        ticket = get_object_or_404(Ticket, ticket_code=id)
+        success, result=ticket.delete()
+        if success:
+            return redirect(tickets)
+        else:
+            return render( request, "app/ticket_detail.html", {"ticket": ticket, "errors": result})
     else:
         return redirect("tickets")
 
 @login_required
-def ticket_update(request, ticket_code):
-    ticket = get_object_or_404(Ticket, ticket_code=ticket_code)
+def ticket_update(request, id):
+    ticket = get_object_or_404(Ticket, ticket_code=id)
+    ticket_types = TicketType.objects.all()
+    if not ticket.thirty_minutes_rule():
+        return render(request, "app/ticket_detail.html", {"ticket": ticket, "errors": {"error": "El ticket solo se puede modificar en los 30 minutos posteriores a su creación"}})
     if request.method == "POST":
-        event_id = request.POST.get("event")
         ticket_type_id = request.POST.get("ticket_type")
         quantity = int(request.POST.get("quantity"))
-        event = get_object_or_404(Event, pk=event_id)
         ticket_type = get_object_or_404(TicketType, pk=ticket_type_id)
-        success, errors = ticket.update(event, ticket_type, quantity)
+        success, result = ticket.update(ticket_type, quantity)
         if success:
-            return redirect("ticket_detail", ticket_code=ticket.ticket_code)
+            return render(request, "app/ticket_detail.html", {"ticket": ticket})
         else:
-            return render(
-                request,
-                "app/ticket_update.html",
-                {
-                    "errors": errors,
-                    "data": request.POST,
-                    "ticket": ticket,
-                },
-            )
-    return render(
-        request, "app/ticket_update.html", {"ticket": ticket}
-    )
+            return render(request,"app/ticket_update.html",{"errors": result,"data": request.POST, "ticket": ticket,},)
+    return render(request, "app/ticket_update.html", {"ticket_types":ticket_types,"ticket": ticket})
 
 @login_required
 def ticket_types(request):
