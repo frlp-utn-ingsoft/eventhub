@@ -77,30 +77,38 @@
             <p>No hay calificaciones aún.</p>
         {% endfor %}
 
-        <form method="post" class="mt-4">
-            {% csrf_token %}
-            <div class="mb-3">
-                <label for="title" class="form-label">Título de tu reseña *</label>
-                <input type="text" name="title" class="form-control" placeholder="Ej: Gran experiencia" required>
-            </div>
-
-            <div class="mb-3">
-                <label class="form-label">Tu calificación *</label><br>
-                <div class="star-rating">
-                    {% for i in "54321" %}
-                        <input type="radio" name="stars" id="star{{ i }}" value="{{ i }}" required>
-                        <label for="star{{ i }}">★</label>
-                    {% endfor %}
+        {% if has_ticket %}
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="title" class="form-label">Título de tu reseña *</label>
+                    <input type="text" name="title" class="form-control" placeholder="Ej: Gran experiencia" required>
                 </div>
-                <div><small class="text-muted">Selecciona una calificación</small></div>
-            </div>
 
-            <div class="mb-3">
-                <label for="comment" class="form-label">Tu reseña</label>
-                <textarea name="comment" class="form-control" rows="3" placeholder="Comparte tu experiencia..." required></textarea>
-            </div>
+                <div class="mb-3">
+                    <label class="form-label">Tu calificación *</label><br>
+                    <div class="star-rating">
+                        {% for i in "54321" %}
+                            <input type="radio" name="stars" id="star{{ i }}" value="{{ i }}" required>
+                            <label for="star{{ i }}">★</label>
+                        {% endfor %}
+                    </div>
+                    <div><small class="text-muted">Selecciona una calificación</small></div>
+                </div>
 
-            <button type="submit" class="btn btn-primary">Enviar calificación</button>
-        </form>
+                <div class="mb-3">
+                    <label for="comment" class="form-label">Tu reseña</label>
+                    <textarea name="comment" class="form-control" rows="3" placeholder="Comparte tu experiencia..." required></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Enviar calificación</button>
+            </form>
+        {% else %}
+            <div class="alert alert-info mt-4">
+                <i class="bi bi-info-circle me-2"></i>
+                Para calificar este evento, necesitas tener una entrada. 
+                <a href="{% url 'ticket_create' event.id %}" class="alert-link">Comprar entrada</a>
+            </div>
+        {% endif %}
     </div>
 </div>

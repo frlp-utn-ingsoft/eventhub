@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from app.models import Category, Event, Rating, Venue
+from app.models import Category, Event, Rating, Venue, Ticket
 from app.views.rating_views import create_rating
 
 
@@ -94,8 +94,11 @@ def events(request):
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
     categories = Category.objects.all()
-     # Obtener todas las calificaciones de este evento
+    # Obtener todas las calificaciones de este evento
     ratings = Rating.objects.filter(event=event)
+
+    # Verificar si el usuario tiene ticket para este evento
+    has_ticket = Ticket.objects.filter(event=event, user=request.user).exists()
 
     # Llamar a la función `handle_rating` para manejar la calificación
     rating_saved = create_rating(request, event)
@@ -110,8 +113,9 @@ def event_detail(request, id):
         'ratings': ratings,
         "categories": categories, 
         "user_is_organizer": request.user.is_organizer,
-        "event_categories": event_categories
-        })
+        "event_categories": event_categories,
+        "has_ticket": has_ticket
+    })
 
 
 @login_required
