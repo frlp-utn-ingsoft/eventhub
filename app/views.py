@@ -100,7 +100,8 @@ def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
     user_rating = Rating.objects.filter(user=request.user, event=event).first()
 
-    
+    comments = Comment.objects.filter(event=event).order_by("-created_at")
+
     if not user.is_organizer:
         tickets = Ticket.objects.filter(event=event, user=user).order_by("-buy_date")
     else:
@@ -112,6 +113,7 @@ def event_detail(request, id):
         "user_rating": user_rating,
         "is_edit": user_rating is not None,
         "now": timezone.now(),
+        "comments": comments,
     })
 
 
@@ -135,7 +137,7 @@ def event_form(request, id=None):
 
     if not user.is_organizer:
         return redirect("events")
-    
+
     categories = Category.objects.filter(is_active=True)
     venues= Venue.objects.all()
     errors = {}
@@ -278,8 +280,8 @@ def venues(request):
 def venue_detail(request, id):
     venue = get_object_or_404(Venue, pk=id)
     return render(
-        request, 
-        "app/venue_detail.html", 
+        request,
+        "app/venue_detail.html",
         {"venue": venue ,"user_is_organizer": request.user.is_organizer},
     )
 
@@ -326,7 +328,7 @@ def venue_form(request, id):
             })
 
             return redirect("venues")
-        
+
         else:
             venue = get_object_or_404(Venue, pk=id)
             sucess, errors=venue.update(name, address, city, capacity, contact)
@@ -337,7 +339,7 @@ def venue_form(request, id):
                 "user_is_organizer": request.user.is_organizer,
             })
             return redirect("venue_detail",id)
-        
+
     venue = {}
     if id is not None:
         venue = get_object_or_404(Venue, pk=id)
@@ -414,7 +416,7 @@ def ticket_form(request, event_id=None):
     event=get_object_or_404(Event, pk=event_id) if event_id else None
     if event_id is None:
         return HttpResponseBadRequest("Falta el parámetro event_id")
-    
+
     ticket_types = TicketType.objects.all()
     if request.method == "POST":
         user = request.user
@@ -513,9 +515,9 @@ def ticket_type_form(request):
                     "errors": errors,
                     "data": request.POST,
                 },
-            )        
+            )
     else: return render(request, "app/ticket_type_form.html")
-    
+
 @login_required
 def ticket_type_update(request, id):
     user = request.user
@@ -604,7 +606,7 @@ def notification_form(request, id=None):
                     "user_is_organizer": request.user.is_organizer,
                 })
             return redirect("notifications")
-        
+
         else:
             notification = get_object_or_404(Notification, pk=id)
             success, errors = notification.update(title, message,event,selected_users,priority)
@@ -613,11 +615,11 @@ def notification_form(request, id=None):
                     "errors": errors,
                     "notification": notification,
                     "user_is_organizer": request.user.is_organizer,
-                     "events":events, "users":users, 
+                     "events":events, "users":users,
                      "notificationPrioritys":notificationPrioritys,}
                 )
             return redirect("notifications")
-        
+
     notification = {}
     if id is not None:
         notification = get_object_or_404(Notification, pk=id)
@@ -634,7 +636,7 @@ def notification_detail(request, id=None):
 
     if not request.user.is_organizer:
         return redirect("notifications")
-    
+
     return render(request, "app/notification_detail.html", {
         "notification": notification,
         "user_is_organizer": request.user.is_organizer,
@@ -684,4 +686,98 @@ def mark_all_notifications_read(request):
             except UserNotification.DoesNotExist:
                 pass
 
-    return redirect("notifications")    
+    return redirect("notifications")
+
+@login_required
+def comment_create(request, event_id):
+    """Vista para crear un comentario en un evento"""
+    event = get_object_or_404(Event, pk=event_id)
+
+    if request.method == "POST":
+        title = request.POST.get("title", "").strip()
+        text = request.POST.get("text", "").strip()
+
+        errors = {}
+        if not title:
+            errors["title"] = "El título es obligatorio"
+        if not text:
+            errors["text"] = "El contenido del comentario es obligatorio"
+
+        if errors:
+            return render(request, "app/event_detail.html", {
+                "event": event,
+                "comment_errors": errors,
+                "comment_data": {"title": title, "text": text},
+                "user_is_organizer": request.user.is_organizer,
+            })
+
+        comment = Comment.objects.create(
+            title=title,
+            text=text,
+            user=request.user,
+            event=event
+        )
+
+        return redirect("event_detail", event_id)
+
+    return redirect("event_detail", event_id)
+
+@login_required
+def comment_edit(request, comment_id):
+    """Vista para editar un comentario existente"""
+    comment = get_object_or_404(Comment, pk=comment_id)
+
+    # Verificar que el usuario sea el propietario del comentario
+    if comment.user != request.user:
+        return redirect("event_detail", comment.event.id)
+
+    if request.method == "POST":
+        title = request.POST.get("title", "").strip()
+        text = request.POST.get("text", "").strip()
+
+        errors = {}
+        if not title:
+            errors["title"] = "El título es obligatorio"
+        if not text:
+            errors["text"] = "El contenido del comentario es obligatorio"
+
+        if errors:
+            return render(request, "app/comment_edit.html", {
+                "comment": comment,
+                "errors": errors,
+                "user_is_organizer": request.user.is_organizer,
+            })
+
+        comment.title = title
+        comment.text = text
+        comment.save()
+
+        return redirect("event_detail", comment.event.id)
+
+    return render(request, "app/comment_edit.html", {
+        "comment": comment,
+        "user_is_organizer": request.user.is_organizer,
+    })
+
+@login_required
+def comment_delete(request, comment_id):
+    """Vista para eliminar un comentario"""
+    comment = get_object_or_404(Comment, pk=comment_id)
+    event_id = comment.event.id
+
+    # Verificar que el usuario sea el propietario del comentario
+    if comment.user != request.user:
+        return redirect("event_detail", event_id)
+
+    if request.method == "POST":
+        comment.delete()
+        return redirect("event_detail", event_id)
+
+    return render(request, "app/comment_confirm_delete.html", {
+        "comment": comment,
+        "user_is_organizer": request.user.is_organizer,
+    })
+from .models import (
+    Event, Category, Venue, Rating, Ticket, TicketType,
+    Notification, NotificationPriority, UserNotification, Comment
+)

@@ -41,4 +41,7 @@ urlpatterns = [
     path("notifications/<int:id>/", views.notification_detail, name="notification_detail"),
     path('notifications/<int:notification_id>/read/', views.mark_notification_read, name='mark_read'),
     path('notifications/mark_all_read/', views.mark_all_notifications_read, name='mark_all_read'),
+    path('comments/create/<int:event_id>/', views.comment_create, name='comment_create'),
+    path('comments/edit/<int:comment_id>/', views.comment_edit, name='comment_edit'),
+    path('comments/delete/<int:comment_id>/', views.comment_delete, name='comment_delete'),
 ]

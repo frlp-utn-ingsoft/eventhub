@@ -54,7 +54,7 @@
                             </a>
                         </span>
                     </h5>
-            
+
                     <div class="collapse" id="ratingsCollapse">
                         {% for rating in event.ratings.all %}
                             <div class="border rounded p-3 mb-3">
@@ -154,24 +154,92 @@
             direction: rtl;
             display: inline-flex;
         }
-        
+
         .rating-stars input[type="radio"] {
             display: none;
         }
-        
+
         .rating-stars label {
             font-size: 1.6rem;
             color: #ccc;
             cursor: pointer;
         }
-        
+
         .rating-stars label:hover,
         .rating-stars label:hover ~ label {
             color: #ffc107;
         }
-        
+
         .rating-stars input[type="radio"]:checked ~ label {
             color: #ffc107;
         }
     </style>
 {% endblock %}
+
+<!-- Add this section after the event details and before the tickets section -->
+<div class="card mt-4">
+    <div class="card-header">
+        <h3>Comentarios ({{ comments|length }})</h3>
+    </div>
+    <div class="card-body">
+        <!-- Lista de comentarios existentes -->
+        <div id="comments-list">
+            {% for comment in comments %}
+            <div class="comment-item mb-3 p-3 border-bottom">
+                <div class="d-flex justify-content-between">
+                    <h5>{{ comment.title }}</h5>
+                    {% if user.is_authenticated and comment.user == user %}
+                    <div>
+                        <a href="{% url 'comment_edit' comment.id %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <a href="{% url 'comment_delete' comment.id %}" class="btn btn-sm btn-outline-danger">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+                <p>{{ comment.text }}</p>
+                <div class="text-muted small">
+                    <span>{{ comment.user.username }}</span> -
+                    <span>{{ comment.created_at|date:"d M Y, H:i" }}</span>
+                </div>
+            </div>
+            {% empty %}
+            <div class="alert alert-info">No hay comentarios para este evento.</div>
+            {% endfor %}
+        </div>
+
+        <!-- Formulario para añadir comentarios -->
+        {% if user.is_authenticated %}
+        <div class="mt-4">
+            <h4>Añadir un comentario</h4>
+            <form action="{% url 'comment_create' event.id %}" method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="comment-title" class="form-label">Título del comentario *</label>
+                    <input type="text" class="form-control {% if comment_errors.title %}is-invalid{% endif %}"
+                           id="comment-title" name="title"
+                           value="{{ comment_data.title|default:'' }}" required>
+                    {% if comment_errors.title %}
+                    <div class="invalid-feedback">{{ comment_errors.title }}</div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <label for="comment-text" class="form-label">Contenido del comentario *</label>
+                    <textarea class="form-control {% if comment_errors.text %}is-invalid{% endif %}"
+                              id="comment-text" name="text" rows="3" required>{{ comment_data.text|default:'' }}</textarea>
+                    {% if comment_errors.text %}
+                    <div class="invalid-feedback">{{ comment_errors.text }}</div>
+                    {% endif %}
+                </div>
+                <button type="submit" class="btn btn-primary">Publicar comentario</button>
+            </form>
+        </div>
+        {% else %}
+        <div class="alert alert-warning mt-4">
+            <a href="{% url 'login' %}">Inicia sesión</a> para dejar un comentario.
+        </div>
+        {% endif %}
+    </div>
+</div>

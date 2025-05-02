@@ -152,10 +152,10 @@ class Venue(models.Model):
     city = models.CharField(max_length=100)
     capacity=models.IntegerField()
     contact=models.CharField(max_length=100)
-    
+
     def __str__(self):
         return self.name
-    
+
     @classmethod
     def validate(cls, name, venue_id, address, city):
         errors = {}
@@ -168,9 +168,9 @@ class Venue(models.Model):
             errors["address"] = "La dirección no puede estar vacía"
         elif cls.objects.filter(address__iexact=address, city__iexact=city).exclude(pk=venue_id).exists():
              errors["address"] = "Ya existe una ubicación con esa dirección en esta ciudad"
-    
+
         return errors
-    
+
     @classmethod
     def new(cls, name, address, city, capacity,contact):
         errors = cls.validate(name,None, address, city)
@@ -187,13 +187,13 @@ class Venue(models.Model):
         )
 
         return True, None
-    
+
     def update(self, name, address, city, capacity,contact):
 
         errors = self.validate(name, self.pk, self.address, self.city)
         if errors:
             return False, errors
-        
+
         self.name = name or self.name
         self.address = address or self.address
         self.city = city or self.city
@@ -233,18 +233,18 @@ class Ticket(models.Model):
 
         if event is None:
             errors["event"] = "El evento es requerido"
-        
+
         if user is None:
             errors["user"] = "El usuario es requerido"
-        
+
         if ticket_type is None:
             errors["ticket_type"] = "El tipo de ticket es requerido"
 
         if quantity is None or not isinstance(quantity, int) or quantity <= 0:
             errors["quantity"] = "La cantidad de tickets debe ser un número entero mayor a 0"
-        
+
         return errors
-    
+
     @classmethod
     def new(cls, event, user, ticket_type, quantity):
         errors = Ticket.validate(event, user, ticket_type, quantity)
@@ -265,7 +265,7 @@ class Ticket(models.Model):
         ticket.ticket_code = ticket.id #Figura como error, pero al crear ejectuar Ticket.create() se genera id, por lo que deberia poder copiarlo en ticket_code
         ticket.save()
         return True, ticket.ticket_code
-    
+
 
     def update(self, ticket_type, quantity):
         self.event.available_tickets -= quantity - self.quantity
@@ -300,7 +300,7 @@ class Ticket(models.Model):
             return True, None
         else:
             return False, {"error": "El ticket solo se puede eliminar en los 30 minutos posteriores a su creacion"}
-        
+
 class TicketType(models.Model):
     name = models.CharField(max_length=25)
     price = models.DecimalField(max_digits=10, decimal_places=2)
@@ -345,10 +345,10 @@ class Notification(models.Model):
     user=models.ManyToManyField(User,through='UserNotification', related_name='notifications')
     created_at=models.DateTimeField(auto_now_add=True)
     priority=models.ForeignKey('NotificationPriority', on_delete=models.SET_NULL, null=True, blank=True)
-    
+
     def __str__(self):
         return self.title
-    
+
     @classmethod
     def validate(cls, id, title, message,event, users):
         errors = {}
@@ -361,7 +361,7 @@ class Notification(models.Model):
         if users is None:
             errors["users"] = "Los usuarios no pueden ser nulos"
         return errors
-    
+
     @classmethod
     def new(cls, title, message, event, users, priority):
         errors = cls.validate(None,title, message, event, users)
@@ -377,11 +377,11 @@ class Notification(models.Model):
         )
         if isinstance(users, User):
             users = [users]
-        notification.user.set(users) 
+        notification.user.set(users)
 
 
         return True, None
-    
+
     def update(self, title, message, event, users, priority):
         errors = self.validate(self.pk,title, message, event, users)
 
@@ -393,12 +393,12 @@ class Notification(models.Model):
         self.event = event
         if isinstance(users, User):
             users = [users]
-        self.user.set(users) 
+        self.user.set(users)
         self.priority = priority
         self.save()
 
         return True, None
-    
+
 
 class NotificationPriority(models.Model):
     description=models.CharField(max_length=200, unique=True)
@@ -441,3 +441,13 @@ def create_user_notifications(sender, instance, action, pk_set, **kwargs):
         for user_id in pk_set:
             user = User.objects.get(pk=user_id)
             UserNotification.objects.get_or_create(user=user, notification=instance)
+
+class Comment(models.Model):
+    title = models.CharField(max_length=100)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
+    event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='comments')
+
+    def __str__(self):
+        return f"{self.title} - {self.user.username}"
