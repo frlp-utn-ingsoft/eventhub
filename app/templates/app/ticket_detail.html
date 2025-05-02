@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <a href="{% url 'ticket_list' %}" class="text-decoration-none text-secondary mb-3 d-inline-block">
+        <i class="bi bi-arrow-left"></i> Volver a mis tickets
+    </a>
+
+    {% if is_editable %}
+    <div class="alert alert-info">
+        <i class="bi bi-clock"></i> Puedes editar o cancelar este ticket 
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        <i class="bi bi-clock-history"></i> El período de edición ha expirado (30 minutos después de la compra)
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2>Detalles del Ticket</h2>
+                <div>
+                    {% if is_editable %}
+                    <a href="{% url 'ticket_update' ticket_id=ticket.id %}" class="btn btn-primary">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                    <form action="{% url 'ticket_delete' ticket_id=ticket.id %}" method="post" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger"
+                            onclick="return confirm('¿Estás seguro de que deseas cancelar este ticket?');">
+                            <i class="bi bi-trash"></i> Cancelar
+                        </button>
+                    </form>
+                    {% endif %}
+
+                    {% if is_organizer and not ticket.is_used %}
+                    <form method="post" action="{% url 'ticket_use' ticket_id=ticket.id %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Marcar como usado
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if messages %}
+            <div class="alert-messages mb-4">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Información del Ticket</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-12 col-md-8">
+                            <h4>{{ ticket.event.title }}</h4>
+                            <p class="text-muted">{{ ticket.event.formatted_date }}</p>
+
+                            <div class="mb-3"><strong>Código del ticket:</strong> {{ ticket.ticket_code }}</div>
+                            <div class="mb-3"><strong>Tipo:</strong> {{ ticket.get_type_display }}</div>
+                            <div class="mb-3"><strong>Cantidad:</strong> {{ ticket.quantity }}</div>
+                            <div class="mb-3">
+                                <strong>Estado:</strong>
+                                {% if ticket.is_used %}
+                                <span class="badge bg-secondary">Usado</span>
+                                {% else %}
+                                <span class="badge bg-success">Válido</span>
+                                {% endif %}
+                            </div>
+                            <div class="mb-3"><strong>Fecha de compra:</strong> {{ ticket.buy_date|date:"d/m/Y H:i" }}</div>
+                        </div>
+                        <div class="col-12 col-md-4 text-center">
+                            <div class="qr-code-container">
+                                <img src="data:image/png;base64,{{ qr_code }}" alt="QR Code" class="img-fluid">
+                                <p class="text-muted mt-2">Muestra este código para ingresar al evento</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Detalles de Pago</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3"><strong>Subtotal:</strong> ${{ ticket.subtotal|floatformat:"2" }}</div>
+                    <div class="mb-3"><strong>Impuestos (10%):</strong> ${{ ticket.taxes|floatformat:"2" }}</div>
+                    <div class="mb-3"><strong>Total pagado:</strong> ${{ ticket.total|floatformat:"2" }}</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Instrucciones</h5>
+                </div>
+                <div class="card-body">
+                    <ol class="list-group list-group-flush">
+                        <li class="list-group-item">Guarda este ticket en tu dispositivo o imprímelo</li>
+                        <li class="list-group-item">Presenta el código QR en la entrada del evento</li>
+                        <li class="list-group-item">Recuerda llevar una identificación válida</li>
+                        {% if not ticket.is_used %}
+                        <li class="list-group-item">
+                            {% if ticket.is_refundable %}
+                            <span class="text-success">Puedes solicitar un reembolso hasta 48 horas antes del evento</span>
+                            {% else %}
+                            <span class="text-danger">Ya no se permiten reembolsos para este ticket</span>
+                            {% endif %}
+                        </li>
+                        {% endif %}
+                    </ol>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Detalles del Evento</h5>
+                </div>
+                <div class="card-body">
+                    <h5>{{ ticket.event.title }}</h5>
+                    <p>{{ ticket.event.formatted_date }}</p>
+                    <p class="text-muted">Organizado por: {{ ticket.event.organizer.username }}</p>
+                    <a href="{% url 'event_detail' id=ticket.event.id %}" class="btn btn-outline-primary">
+                        Ver detalles del evento
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

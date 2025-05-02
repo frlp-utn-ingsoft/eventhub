@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block content %}
 <div class="container mt-5">
@@ -14,51 +14,146 @@
 
             <div class="card">
                 <div class="card-body">
-                    <form action="{% url 'event_form' %}" method="POST">
+                    <form method="POST">
                         {% csrf_token %}
                         <div class="vstack gap-3">
+                            <!-- Title -->
                             <div>
-                                <label for="title" class="form-label">Título del Evento</label>
+                                <label for="id_title" class="form-label">Título del Evento</label>
                                 <input class="form-control"
-                                    id="title"
-                                    required=""
+                                    id="id_title"
+                                    required
                                     type="text"
-                                    value="{{ event.title }}"
-                                    name="title" />
+                                    value="{{ form.title.value|default:'' }}"
+                                    name="title">
+                                {% if form.title.errors %}
+                                    <div class="text-danger">{{ form.title.errors }}</div>
+                                {% endif %}
                             </div>
+                            
+                            <!-- Description -->
                             <div>
-                                <label for="description" class="form-label">Descripción</label>
+                                <label for="id_description" class="form-label">Descripción</label>
                                 <textarea
                                     class="form-control"
-                                    id="description"
+                                    id="id_description"
                                     name="description"
                                     rows="4"
-                                    required="">{{ event.description }}</textarea>
+                                    required>{{ form.description.value|default:'' }}</textarea>
+                                {% if form.description.errors %}
+                                    <div class="text-danger">{{ form.description.errors }}</div>
+                                {% endif %}
                             </div>
+                            
+                            <!-- Date and Time -->
                             <div class="row">
                                 <div class="col-md-6">
-                                    <label for="date" class="form-label">Fecha</label>
+                                    <label for="id_scheduled_date" class="form-label">Fecha</label>
                                     <input
                                         class="form-control"
-                                        id="date"
-                                        required=""
+                                        id="id_scheduled_date"
+                                        required
                                         type="date"
-                                        value="{{ event.scheduled_at|date:'Y-m-d'}}"
-                                        name="date" />
+                                        value="{{ form.scheduled_date.value|date:'Y-m-d'|default:'' }}"
+                                        name="scheduled_date">
+                                    {% if form.scheduled_date.errors %}
+                                        <div class="text-danger">{{ form.scheduled_date.errors }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="time" class="form-label">Hora</label>
+                                    <label for="id_scheduled_time" class="form-label">Hora</label>
                                     <input
                                         class="form-control"
-                                        id="time"
-                                        required=""
+                                        id="id_scheduled_time"
+                                        required
                                         type="time"
-                                        value="{{ event.scheduled_at|date:'g:i'}}"
-                                        name="time" />
+                                        value="{{ form.scheduled_time.value|time:'H:i'|default:'' }}"
+                                        name="scheduled_time">
+                                    {% if form.scheduled_time.errors %}
+                                        <div class="text-danger">{{ form.scheduled_time.errors }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
+                            
+                            <!-- Prices -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="id_general_price" class="form-label">Precio General ($)</label>
+                                    <input
+                                        class="form-control"
+                                        id="id_general_price"
+                                        required
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value="{{ form.general_price.value|default:'0.00' }}"
+                                        name="general_price">
+                                    {% if form.general_price.errors %}
+                                        <div class="text-danger">{{ form.general_price.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="id_vip_price" class="form-label">Precio VIP ($)</label>
+                                    <input
+                                        class="form-control"
+                                        id="id_vip_price"
+                                        required
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value="{{ form.vip_price.value|default:'0.00' }}"
+                                        name="vip_price">
+                                    {% if form.vip_price.errors %}
+                                        <div class="text-danger">{{ form.vip_price.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Ticket Quantities -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="id_general_tickets_total" class="form-label">Total de Tickets Generales</label>
+                                    <input
+                                        class="form-control"
+                                        id="id_general_tickets_total"
+                                        required
+                                        type="number"
+                                        min="0"
+                                        value="{{ form.general_tickets_total.value|default:'0' }}"
+                                        name="general_tickets_total">
+                                    {% if form.general_tickets_total.errors %}
+                                        <div class="text-danger">{{ form.general_tickets_total.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="id_vip_tickets_total" class="form-label">Total de Tickets VIP</label>
+                                    <input
+                                        class="form-control"
+                                        id="id_vip_tickets_total"
+                                        required
+                                        type="number"
+                                        min="0"
+                                        value="{{ form.vip_tickets_total.value|default:'0' }}"
+                                        name="vip_tickets_total">
+                                    {% if form.vip_tickets_total.errors %}
+                                        <div class="text-danger">{{ form.vip_tickets_total.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <!-- Non-field errors -->
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger">
+                                    {% for error in form.non_field_errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            
                             <div>
-                                <button type="submit" class="btn btn-primary">Crear Evento</button>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if event.id %}Actualizar{% else %}Crear{% endif %} Evento
+                                </button>
                             </div>
                         </div>
                     </form>
