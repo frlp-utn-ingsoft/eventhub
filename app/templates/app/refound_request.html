@@ -27,6 +27,7 @@
               </thead>
               <tbody>
                 {% for refound in refounds  %}
+                {{refound.id}}
                 <tr>
                   <td><a href="#">{{refound.ticket_code}}</a></td>
                   <td>{{refound.user_id}}</td>
@@ -43,7 +44,7 @@
                     data-refound-id="123998888"
                     ><i class="bi bi-eye"></i></button>
                     {% if user_is_organizer %}
-                    <form action="{% url 'approved_or_deny'%}">
+                    <form action="{% url 'approved_or_deny' %}">
                       <button class="btn btn-outline-success btn-sm me-1" name="approved" value="approved"><i class="bi bi-check"></i></button>
                       <button class="btn btn-outline-danger btn-sm" name="approved" value="denied"><i class="bi bi-x"></i></button>
                     </form>
@@ -51,25 +52,6 @@
                   </td>
                 </tr>
                 {% endfor %}
-                
-                <tr>
-                  <td><a href="#">FOOD-2025-042</a></td>
-                  <td>María López</td>
-                  <td>18 abr 2025, 10:15</td>
-                  <td><span class="badge bg-success">Aprobado</span></td>
-                  <td>
-                    <button class="btn btn-outline-primary btn-sm"><i class="bi bi-eye"></i></button>
-                  </td>
-                </tr>
-                <tr>
-                  <td><a href="#">TECH-2025-103</a></td>
-                  <td>Carlos Rodríguez</td>
-                  <td>22 abr 2025, 16:45</td>
-                  <td><span class="badge bg-danger">Rechazado</span></td>
-                  <td>
-                    <button class="btn btn-outline-primary btn-sm"><i class="bi bi-eye"></i></button>
-                  </td>
-                </tr>
               </tbody>
             </table>
           </div>

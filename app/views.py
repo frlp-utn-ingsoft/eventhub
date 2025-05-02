@@ -776,7 +776,6 @@ def request_refound(request):
             "refounds": refounds
         }
     )
-    print(refounds)
     return render(
         request,
         'app/refound_request.html',{
@@ -786,25 +785,30 @@ def request_refound(request):
     )
 
 @login_required
-def delete_refound(request,id):
+def delete_refound(request):
     if request.method == 'POST':
-        refound=get_object_or_404(RefoundRequest, pk=id)
+        refound=get_object_or_404(RefoundRequest, pk=request.POST.get("id"))
         refound.delete()
+        return redirect('refounds')
+
 
 @login_required
-def update_refound(request, id):
+def update_refound(request):
     if request.method == 'POST':
-        refound=get_object_or_404(RefoundRequest, pk=id)
+        refound=get_object_or_404(RefoundRequest, pk=request.POST.get("id"))
         refound.ticket_code = request.POST.get('ticketCode')
         refound.reason = request.POST.get('refundReason')
         refound.details = request.POST.get('additionalDetails')
         refound.save()
+        return redirect('refounds')
+
 
 @login_required
 @organizer_required
-def approved_or_deny(request, id):
+def approved_or_deny(request):
     if request.method == 'POST':
-        refound=get_object_or_404(RefoundRequest, pk=id)
+        refound=get_object_or_404(RefoundRequest, pk=request.get.POST("id"))
         refound.approved= request.POST.get('approved')
         refound.approval_date = datetime.today()
         refound.save()
+        return redirect('refounds')
