@@ -14,12 +14,9 @@
             <a href="{% url 'notifications:edit_notification' notification.pk %}" class="btn btn-outline-secondary me-2" title="Editar">
                 <i class="bi bi-pencil"></i> Editar
             </a>
-            <form action="{% url 'notifications:delete_notification' notification.pk %}" method="POST" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-danger" title="Eliminar" onclick="return confirm('¿Estás seguro de que deseas eliminar la notificación \'{{ notification.title|escapejs }}\'? Esta acción no se puede deshacer.');">
-                    <i class="bi bi-trash"></i> Eliminar
-                </button>
-            </form>
+            <a href="{% url 'notifications:delete_notification' notification.pk %}" class="btn btn btn-outline-danger me-2" title="Eliminar">
+                <i class="bi bi-trash"></i> Eliminar
+            </a>
         </div>
     </div>
 
