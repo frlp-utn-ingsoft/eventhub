@@ -24,7 +24,10 @@
                     <td>
                         <a href="{% url 'event_detail' event.id %}" class="btn btn-sm btn-outline-primary" aria-label="Ir a evento" title="Ir a evento">
                             <i class="bi bi-eye"></i>
-                        </a>                        
+                        </a> 
+                        <a href="{% url 'ticket_create' event.id %}" class="btn btn-sm btn-outline-success" aria-label="Comprar ticket" title="Comprar ticket">
+                            <i class="bi bi-cart"></i>
+                        </a>                       
                     </td>
                 </tr>
             {% empty %}
