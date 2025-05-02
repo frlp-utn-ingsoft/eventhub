@@ -19,45 +19,51 @@
                 <th>Nombre</th>
                 <th>Descripción</th>
                 <th>Eventos</th>  <!-- Nueva columna para contar los eventos -->
-                <th>Estado</th>
+                {% if user_is_organizer %}
+                    <th>Estado</th> <!-- Solo visible para organizadores -->
+                {% endif %}
                 <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
             {% for category in categories %}
-                <tr>
-                    <td class="font-weight-bold text-primary">{{ category.name }}</td>
-                    <td>{{ category.description }}</td>
-                    <td>{{ category.event_count }}</td>                                       <!-- Mostrar el conteo de eventos -->
-                    <td>{% if category.is_active %}Activo{% else %}Inactivo{% endif %}</td>
-                    <td>
-                        <div class="hstack gap-1">
-                            <a href="{% url 'category_detail' category.id %}"
-                               class="btn btn-sm btn-outline-primary"
-                               aria-label="Ver detalle"
-                               title="Ver detalle">
-                                <i class="bi bi-eye" aria-hidden="true"></i>
-                            </a>
-                            {% if user_is_organizer %}
-                                <a href="{% url 'category_edit' category.id %}"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    aria-label="Editar"
-                                    title="Editar">
-                                    <i class="bi bi-pencil" aria-hidden="true"></i>
+                {% if user_is_organizer or category.is_active %}
+                    <tr>
+                        <td class="font-weight-bold text-primary">{{ category.name }}</td>
+                        <td>{{ category.description }}</td>
+                        <td>{{ category.event_count }}</td>
+                        {% if user_is_organizer %}
+                            <td>{% if category.is_active %}Activo{% else %}Inactivo{% endif %}</td>
+                        {% endif %}
+                        <td>
+                            <div class="hstack gap-1">
+                                <a href="{% url 'category_detail' category.id %}"
+                                   class="btn btn-sm btn-outline-primary"
+                                   aria-label="Ver detalle"
+                                   title="Ver detalle">
+                                    <i class="bi bi-eye" aria-hidden="true"></i>
                                 </a>
-                                <form action="{% url 'category_delete' category.id %}" method="POST">
-                                    {% csrf_token %}
-                                    <button class="btn btn-sm btn-outline-danger"
-                                        title="Eliminar"
-                                        type="submit"
-                                        aria-label="Eliminar">
-                                        <i class="bi bi-trash" aria-hidden="true"></i>
-                                    </button>
-                                </form>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
+                                {% if user_is_organizer %}
+                                    <a href="{% url 'category_edit' category.id %}"
+                                       class="btn btn-sm btn-outline-secondary"
+                                       aria-label="Editar"
+                                       title="Editar">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                                    </a>
+                                    <form action="{% url 'category_delete' category.id %}" method="POST">
+                                        {% csrf_token %}
+                                        <button class="btn btn-sm btn-outline-danger"
+                                            title="Eliminar"
+                                            type="submit"
+                                            aria-label="Eliminar">
+                                            <i class="bi bi-trash" aria-hidden="true"></i>
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                {% endif %}
             {% empty %}
                 <tr>
                     <td colspan="5" class="text-center">No hay categorías disponibles</td>

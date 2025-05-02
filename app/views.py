@@ -166,17 +166,22 @@ def event_form(request, id=None):
 ################### crud-category ###################
 @login_required
 def categories(request):
-    # Contamos los eventos por categoría usando annotate
-    categories = Category.objects.annotate(event_count=Count('events')).order_by("name")
+    if request.user.is_organizer:
+        # Si el usuario es organizador, mostramos todas las categorías
+        categories = Category.objects.annotate(event_count=Count('events')).order_by("name")
+    else:
+        # Si el usuario es común, mostramos solo las categorías activas
+        categories = Category.objects.filter(is_active=True).annotate(event_count=Count('events')).order_by("name")
 
     return render(
         request,
         "category/categories.html",
         {
-            "categories": categories,  
+            "categories": categories,
             "user_is_organizer": request.user.is_organizer,
         },
     )
+
 
 @login_required
 def category_detail(request, id):
