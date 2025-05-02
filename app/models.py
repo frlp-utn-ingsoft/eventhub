@@ -85,6 +85,49 @@ class Location(models.Model):
 
         self.save()
 
+class Category(models.Model):
+    name = models.CharField(max_length=100)
+    description = models.TextField()
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+    
+    @classmethod
+    def validate(cls, name, description):
+        errors ={}
+
+        if not name:
+            errors["name"] = "El nombre es requerido."
+
+        if not description:
+            errors["description"] = "La descripción es requerida."
+        
+        return errors
+    
+    @classmethod
+    def new(cls, name, description):
+        errors = cls.validate(name, description)
+        if errors:
+            return False, errors
+
+        Category.objects.create(
+            name=name,
+            description=description,
+        )
+
+        return True, None
+    
+    def update(self, name=None, description=None, is_active=None):
+        self.name = name or self.name
+        self.description = description or self.description
+
+        if is_active is not None:
+            self.is_active = is_active
+
+        self.save()
+
+
 
 class Event(models.Model):
     title = models.CharField(max_length=200)
@@ -94,6 +137,7 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     location = models.ForeignKey(Location, on_delete=models.SET_NULL, related_name="events", null=True, blank=True)
+    categories = models.ManyToManyField(Category, through='EventCategory')
 
 
     def __str__(self):
@@ -118,7 +162,7 @@ class Event(models.Model):
         if len(errors.keys()) > 0:
             return False, errors
 
-        Event.objects.create(
+        event = Event.objects.create(
             title=title,
             description=description,
             scheduled_at=scheduled_at,
@@ -126,7 +170,7 @@ class Event(models.Model):
             location=location,
         )
 
-        return True, None
+        return event, None
 
     def update(self, title, description, scheduled_at, organizer, location=None):
         self.title = title or self.title
@@ -136,6 +180,16 @@ class Event(models.Model):
         self.location = location if location is not None else self.location
 
         self.save()
+
+class EventCategory(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE)
+
+    class Meta:
+        unique_together = ('event', 'category')
+
+    def __str__(self):
+        return f"{self.event.title} - {self.category.name}"
 
 class Notification(models.Model):
     title = models.CharField(max_length=200)

@@ -6,15 +6,15 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Eventos</h1>
-        {% if user_is_organizer %}
-            <a
-                href="{% url 'event_form' %}"
-                class="btn btn-primary"
-            >
-                <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
-                Crear Evento
-            </a>
-        {% endif %}
+            {% if user_is_organizer %}
+                <a
+                    href="{% url 'event_form' %}"
+                    class="btn btn-primary"
+                >
+                    <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
+                    Crear Evento
+                </a>
+            {% endif %}
     </div>
     <table class="table">
         <thead>
@@ -23,6 +23,7 @@
                 <th>Descripción</th>
                 <th>Ubicacion</th>
                 <th>Fecha</th>
+                <th>Categorías</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -33,6 +34,17 @@
                     <td>{{ event.description }}</td>
                     <td>{{ event.location }}</td>
                     <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
+                    <td>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% for cat in event.categories.all %}
+                                <span class="badge rounded-pill bg-light text-dark px-3 py-2">
+                                    {{ cat.name }}
+                                </span>
+                            {% empty %}
+                                <span class="text-muted">Sin categorías</span>
+                            {% endfor %}
+                        </div>
+                    </td>
                     <td>
                         <div class="hstack gap-1">
                             <a href="{% url 'event_detail' event.id %}"
