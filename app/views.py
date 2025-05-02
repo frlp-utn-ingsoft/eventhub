@@ -5,7 +5,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .models import Event, User, Ticket, Comment, Notification, Venue
 from django.contrib import messages
+from django.db.models import Q
 import uuid
+
 
 from .models import Event, User, Ticket, RefundRequest
 from .models import Event, User, Rating, Category
@@ -230,8 +232,8 @@ def organizer_refund_requests(request):
 
     # Obtener todos los refund requests cuyos usuarios compraron tickets para esos eventos
     refund_requests = RefundRequest.objects.filter(
-        user__tickets__event__in=organizer_events
-    ).distinct().select_related("user")
+        Q(event_name__in=organizer_events.values_list("title", flat=True))
+        ).select_related("user")
 
     # Asignar el evento relacionado a cada refund request
     for r in refund_requests:
