@@ -16,10 +16,16 @@
     font-weight: 600;
     font-size: 1.5rem;
     letter-spacing: -0.5px;
+    display: flex;
+    justify-content: center;
   }
   .logout{
-    border: #dee2e6 1px solid;
-    color: #dee2e6;
+    border: #e4222d 1px solid;
+    color: #e4222d !important;
+  }
+  .logout:hover{
+    background-color: transparent;
+    border-color: #e4222d;
   }
   .navbar .btn-outline-secondary {
     border-radius: 8px;
@@ -27,7 +33,7 @@
   }
   
   .navbar .btn-outline-secondary:hover {
-    background-color: #f1f1f1;
+    color: #d3454c !important;
   }
   .navbar-nav{
     display: flex;
@@ -60,6 +66,7 @@
   }
   .nav-item{
     height: 100%;
+    padding-right: 1rem;
     color: #dee2e6;
   }
   .nav-item a{
@@ -73,6 +80,46 @@
     color: #fff !important;
     background-color: #1e1e2f;
   }
+  .navbar-nav .nav-link:hover{
+    color: #e4222cb6;
+  }
+  .navbar-nav .nav-link.active:hover{
+    color: #e4222cb0 !important;
+  }
+  /* ----------  BOTONES EVENTHUB  ---------- */
+:root{
+  --eh-red:#e4222d;
+}
+
+/* Relleno */
+.btn-eventhub{
+  background:var(--eh-red);
+  color:#fff     !important;
+  border:1px solid var(--eh-red);
+  transition:.2s;
+}
+.btn-eventhub:hover,
+.btn-eventhub:focus{
+  background:#ff4753;
+  border-color:#ff4753;
+  color:#fff     !important;
+}
+
+/* Sólo borde */
+.btn-outline-eventhub{
+  background:transparent;
+  color:var(--eh-red) !important;
+  border:1px solid   var(--eh-red);
+  transition:.2s;
+}
+.btn-outline-eventhub:hover,
+.btn-outline-eventhub:focus{
+  background:var(--eh-red);
+  color:#fff           !important;
+}
+
+
+
   /* Responsive ajuste de paddings */
   @media (max-width: 768px) {
     .navbar {

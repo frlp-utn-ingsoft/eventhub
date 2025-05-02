@@ -11,13 +11,17 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="{% static 'img/favicon.ico' %}">
     <!-- CSS principal -->
-    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20250503">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}?v=20250506">
 
 
     <!-- CSS por módulo (opcional si hay estilos específicos) -->
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=20250502">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}">
     <link rel="stylesheet" href="{% static 'css/notifications.css' %}?v=20250502">
     <link rel="stylesheet" href="{% static 'css/events.css' %}">
     <link rel="stylesheet" href="{% static 'css/accounts.css' %}">
+    <link rel="stylesheet" href="{% static 'css/login.css' %}?v=20250509">
+    <link rel="stylesheet" href="{% static 'css/register.css' %}?v=20250505">
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
@@ -71,14 +75,18 @@
       
           {% else %}
             <div class="d-flex gap-2">
-              <a class="btn btn-sm btn-outline-primary" href="{% url 'login' %}">Ingresá</a>
-              <a class="btn btn-sm btn-primary" href="{% url 'register' %}">Creá tu cuenta</a>
+              <a class="btn btn-sm btn-outline-eventhub" href="{% url 'login' %}">
+                  Ingresá
+              </a>
+              <a class="btn btn-sm btn-eventhub" href="{% url 'register' %}">
+                  Creá tu cuenta
+              </a>
             </div>
           {% endif %}
         </div>
       </nav>
 
-    <main class="container py-4">
+    <main class="container">
         {% block content %}
         {% endblock %}
     </main>
@@ -94,5 +102,6 @@
     <script src="{% static 'js/notifications.js' %}"></script>
     <script src="{% static 'js/events.js' %}"></script>
     <script src="{% static 'js/accounts.js' %}"></script>
+    <script src="{% static 'js/home.js' %}" defer></script>
 </body>
 </html>

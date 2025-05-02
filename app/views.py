@@ -63,8 +63,12 @@ def login_view(request):
 
 
 def home(request):
-    return render(request, "home.html")
+    # Usuario autenticado → redirigimos a su página principal (events)
+    if request.user.is_authenticated:
+        return redirect("events")          # o "home_organizer" / "home_user" más adelante
 
+    # Visitante → página pública
+    return render(request, "home_guest.html")
 
 @login_required
 def events(request):

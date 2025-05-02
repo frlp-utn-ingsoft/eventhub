@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="{% static 'css/home.css' %}?v=1">
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/home.js' %}?v=1" defer></script>
+{% endblock %}
+
+{% block content %}
+<!-- 🔹 Hero full-screen -->
+<div id="heroCarousel"
+     class="carousel slide carousel-fade"
+     data-bs-ride="carousel"
+     data-bs-interval="3000"
+     data-bs-touch="true">
+
+  <div class="carousel-inner">
+
+    <div class="carousel-item active">
+      <img src="{% static 'img/slide1.webp' %}" class="d-block w-100" alt="Público en concierto">
+      <div class="carousel-caption text-start">
+        <h1 class="slide-title">Descubrí tu próximo evento</h1>
+        <p  class="slide-text">Música en vivo, deportes, charlas y más.</p>
+      </div>
+    </div>
+
+    <div class="carousel-item">
+      <img src="{% static 'img/slide2.webp' %}" class="d-block w-100" alt="Organizador planificando">
+      <div class="carousel-caption">
+        <h1 class="slide-title">Organizá con facilidad</h1>
+        <p  class="slide-text">Publicá, vendé entradas y gestioná asistentes.</p>
+      </div>
+    </div>
+
+    <div class="carousel-item">
+      <img src="{% static 'img/slide3.webp' %}" class="d-block w-100" alt="Asistentes disfrutando">
+      <div class="carousel-caption text-end">
+        <h1 class="slide-title">Viví la experiencia completa</h1>
+        <p  class="slide-text">Calificá y compartí cada momento.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <button class="carousel-control-prev" type="button"
+          data-bs-target="#heroCarousel" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Anterior</span>
+  </button>
+  <button class="carousel-control-next" type="button"
+          data-bs-target="#heroCarousel" data-bs-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Siguiente</span>
+  </button>
+</div>
+
+<!-- 🔹 Sección beneficios -->
+<section id="features" class="benefits-section">
+  <h2 class="benefits-title fade-up">
+    <span class="brand">EventHub</span> — Tu puerta a los mejores eventos
+  </h2>
+
+  <div class="row g-4 justify-content-center">
+
+    <!-- Compra fácil -->
+    <div class="col-md-4 text-center feature-box fade-up">
+      <div class="icon-wrapper mx-auto">
+        <img src="{% static 'img/carrito.svg' %}" alt="" />
+      </div>
+      <h5 class="benefit-title">Compra fácil</h5>
+      <p class="text-muted">Entradas en segundos, sin filas ni sorpresas.</p>
+    </div>
+
+    <!-- Organiza en minutos -->
+    <div class="col-md-4 text-center feature-box fade-up">
+      <div class="icon-wrapper mx-auto">
+        <img src="{% static 'img/tiempo.svg' %}" alt="" />
+      </div>
+      <h5 class="benefit-title">Organizá en minutos</h5>
+      <p class="text-muted">Publicá eventos sin depender de terceros.</p>
+    </div>
+
+    <!-- Calificá tu experiencia -->
+    <div class="col-md-4 text-center feature-box fade-up">
+      <div class="icon-wrapper mx-auto">
+        <img src="{% static 'img/experiencia.svg' %}" alt="" />
+      </div>
+      <h5 class="benefit-title">Calificá tu experiencia</h5>
+      <p class="text-muted">Compartí opiniones y ayudá a la comunidad.</p>
+    </div>
+
+  </div>
+</section>
+{% endblock %}

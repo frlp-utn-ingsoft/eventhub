@@ -1,107 +1,70 @@
 {% extends "base.html" %}
-{% load to_validity_class %}
+{% load static to_validity_class %}
 
 {% block content %}
-<div class="container mt-5">
-    <div class="row">
-        <div class="col-lg-6 offset-lg-3 col-md-8 offset-md-2 col-12">
-            <div class="card shadow-sm p-4">
-                <div class="card-body">
-                    <h3 class="card-title text-center mb-4">Eventhub</h3>
-                    <form
-                        method="POST"
-                        action="/accounts/register/"
-                        class="vstack gap-3"
-                    >
-                        {% csrf_token %}
-                        <div>
-                            <label
-                                for="email"
-                                class="form-label"
-                            >Email</label>
-                            <input
-                                type="email"
-                                class="form-control {{ errors|to_validity_class:'email' }}"
-                                id="email"
-                                name="email"
-                                placeholder="Ingresá tu email"
-                                required
-                                value="{{ data.email }}"
-                            >
+<video id="bg-video" autoplay loop muted playsinline>
+  <source src="{% static 'video/fondoLoginRegistro.mp4' %}" type="video/mp4">
+</video>
 
-                            <div class="invalid-feedback">{{ errors.email }}</div>
-                        </div>
-                        <div>
-                            <label
-                                for="username"
-                                class="form-label"
-                            >Usuario</label>
-                            <input
-                                type="text"
-                                class="form-control {{ errors|to_validity_class:'username' }}"
-                                id="username"
-                                name="username"
-                                placeholder="Ingresá tu usuario"
-                                required
-                                pattern="^[A-Za-z0-9@\$\.\+-_]+"
-                                value="{{ data.username }}"
-                            >
-                            <div class="form-text">Solo letras, números y @/./+/-/_</div>
-                            <div class="invalid-feedback">{{ errors.username }}</div>
-                        </div>
-                        <div>
-                            <label
-                                for="password"
-                                class="form-label"
-                            >Contraseña</label>
-                            <input
-                                type="password"
-                                class="form-control"
-                                id="password"
-                                name="password"
-                                placeholder="Ingresá tu contraseña"
-                                required
-                                minlength="8"
-                            >
-                            <div class="form-text">Mínimo 8 caracteres. No debe ser una contraseña comunmente utilizada
-                                ni
-                                solo números.</div>
-                        </div>
-                        <div>
-                            <input
-                                type="checkbox"
-                                class="form-check-input"
-                                value="true"
-                                name="is-organizer"
-                                id="is-organizer"
-                            >
-                            <label class="form-check-label" for="is-organizer">Es organizador?</label>
-                        </div>
-                        <div>
-                            <label
-                                for="password-confirm"
-                                class="form-label"
-                            >Confirmar contraseña</label>
-                            <input
-                                type="password"
-                                class="form-control {{ errors|to_validity_class:'password' }}"
-                                id="password-confirm"
-                                name="password-confirm"
-                                placeholder="Volvé a ingresar tu contraseña"
-                                required
-                            >
-                            <div class="invalid-feedback">{{errors.password}}</div>
-                        </div>
-                        <div class="d-grid">
-                            <button
-                                type="submit"
-                                class="btn btn-primary"
-                            >Registrate</button>
-                        </div>
-                    </form>
-                </div>
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-6 col-md-8 col-11">
+      <div class="card auth-card shadow-sm p-4">
+        <a class="navbar-brand mb-2" href="/">
+            <img src="{% static 'img/logo2.png' %}" width="130" height="70" alt="EventHub">
+        </a>
+        <div class="card-body">
+            
+          <h2 class="card-title text-center mb-4">Creá tu cuenta</h2>
+
+          <form method="POST" class="vstack gap-3" novalidate>
+            {% csrf_token %}
+
+            <!-- Email -->
+            <div>
+              <label for="email" class="form-label">Email</label>
+              <input id="email" name="email" type="email"
+                     class="form-control {{ errors|to_validity_class:'email' }}"
+                     placeholder="Ingresá tu email" value="{{ data.email }}" required>
+              <div class="invalid-feedback">{{ errors.email }}</div>
             </div>
+
+            <!-- Usuario -->
+            <div>
+              <label for="username" class="form-label">Usuario</label>
+              <input id="username" name="username" type="text"
+                     class="form-control {{ errors|to_validity_class:'username' }}"
+                     placeholder="Ingresá tu nombre de usuario"
+                     pattern="^[A-Za-z0-9@\$\.\+-_]+" value="{{ data.username }}" required>
+              <div class="invalid-feedback">{{ errors.username }}</div>
+            </div>
+
+            <!-- Contraseñas -->
+            <div>
+              <label for="password" class="form-label">Contraseña</label>
+              <input id="password" name="password" type="password"
+                     class="form-control" minlength="8" required>
+            </div>
+
+            <div>
+              <label for="password-confirm" class="form-label">Confirmar contraseña</label>
+              <input id="password-confirm" name="password-confirm" type="password"
+                     class="form-control {{ errors|to_validity_class:'password' }}" required>
+              <div class="invalid-feedback">{{ errors.password }}</div>
+            </div>
+
+            <!-- Organizador -->
+            <div class="form-check">
+              <input id="is-organizer" name="is-organizer"
+                     type="checkbox" class="form-check-input" value="true">
+              <label class="form-check-label" for="is-organizer">¿Es organizador?</label>
+            </div>
+
+            <button class="btn btn-eventhub w-100 mt-2" type="submit">Registrate</button>
+          </form>
         </div>
+      </div>
     </div>
+  </div>
 </div>
 {% endblock %}
