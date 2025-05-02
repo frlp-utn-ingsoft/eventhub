@@ -135,7 +135,7 @@
             </div>
         {% endif %}
 	{%if user.is_organizer %}
-            <div class="row mt-4 ms-4 px-0">
+            <div class="row mt-4 ms-0 px-0">
                 {% include "app/tickets_table.html" with show_event=False show_user=True %}
             </div>
         {%else%}
