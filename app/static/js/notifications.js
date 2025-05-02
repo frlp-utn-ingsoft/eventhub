@@ -1,19 +1,45 @@
 // notifications.js
 // Manejo dinámico del dropdown de notificaciones
 
-document.addEventListener("DOMContentLoaded", function () {
+document.addEventListener("DOMContentLoaded", () => {
+  const button = document.getElementById("notifButton");
   const dropdown = document.getElementById("notifDropdown");
-  const url = dropdown?.dataset?.url;
-  if (!url) return;
+  const url = dropdown?.dataset?.url || "/notifications/dropdown/";
 
-  fetch(url)
-    .then(response => response.json())
-    .then(data => {
-      dropdown.innerHTML = data.html;
-    })
-    .catch(error => console.error("Error al cargar notificaciones:", error));
+  if (!button || !dropdown) return;
+
+  let visible = false;
+
+  const toggleDropdown = () => {
+    visible = !visible;
+    button.setAttribute("aria-expanded", visible);
+    dropdown.classList.toggle("show", visible);
+
+    if (visible && dropdown.innerHTML.trim() === "") {
+      fetch(url)
+        .then(res => res.json())
+        .then(data => {
+          dropdown.innerHTML = data.html;
+        })
+        .catch(err => console.error("Error al cargar notificaciones:", err));
+    }
+  };
+
+  button.addEventListener("click", e => {
+    e.stopPropagation();
+    toggleDropdown();
+  });
+
+  document.addEventListener("click", e => {
+    if (!dropdown.contains(e.target) && !button.contains(e.target)) {
+      dropdown.classList.remove("show");
+      button.setAttribute("aria-expanded", false);
+      visible = false;
+    }
+  });
 });
-  
+
+
 /* --- buscador de usuarios en el formulario de notificaciones --- */
 document.addEventListener("DOMContentLoaded", () => {
   const select = document.querySelector(".select-user");

@@ -17,7 +17,7 @@
 
 
     <!-- CSS por módulo (opcional si hay estilos específicos) -->
-    <link rel="stylesheet" href="{% static 'css/notifications.css' %}?v=20250505">
+    <link rel="stylesheet" href="{% static 'css/notifications.css' %}?v=20250506">
     <link rel="stylesheet" href="{% static 'css/events.css' %}?v=20250504">
     <link rel="stylesheet" href="{% static 'css/accounts.css' %}">
     <link rel="stylesheet" href="{% static 'css/home.css' %}?v=20250504">
@@ -89,31 +89,16 @@
             {% endif %}
 
             {# Notificaciones #}
-            <li class="nav-item dropdown position-relative">
-              <a
-                class="nav-link dropdown-toggle"
-                href="#"
-                id="notifMenu"
-                role="button"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
+            <li class="nav-item position-relative">
+              <button id="notifButton" class="btn notif-toggle" aria-expanded="false">
                 <i class="bi bi-bell fs-5"></i>
                 {% if unread_notifications %}
-                <span
-                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger iconoNotificacion"
-                  {% if unread_notifications == 0 %}style="display:none;"{% endif %}
-                >
-                  {{ unread_notifications }}
-                </span>
+                  <span class="badge bg-danger notif-badge">{{ unread_notifications }}</span>
                 {% endif %}
-              </a>
-              <ul
-                class="dropdown-menu dropdown-menu-end p-0"
-                id="notifDropdown"
-                data-url="{% url 'notifications_dropdown' %}"
-                style="min-width:260px"
-              ></ul>
+                <i class="bi bi-chevron-down arrow-icon"></i>
+              </button>
+            
+              <div id="notifDropdown" class="custom-dropdown"></div>
             </li>
           </ul>
 

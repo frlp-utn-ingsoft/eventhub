@@ -6,16 +6,16 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Count
 from django.views import generic, View
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.http import JsonResponse
 from django.template.loader import render_to_string
 from django.db import transaction
 from django.db.models import Q
 from .utils import format_datetime_es
-
+from .models import Rating
 
 from .models import Event, User, Ticket, Category, Notification, RefundRequest, Venue
-from .forms import TicketForm, CategoryForm, NotificationForm, RefundRequestForm, VenueForm
+from .forms import RatingForm, TicketForm, CategoryForm, NotificationForm, RefundRequestForm, VenueForm
 
 # ------------------- Registro y login -------------------
 def register(request):
