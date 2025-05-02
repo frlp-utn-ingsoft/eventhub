@@ -5,17 +5,13 @@
 {% block content %}
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        {% if user_is_organizer %}
-            <h1>Gestionar Notificaciones</h1>
-            <a href="{% url 'notification_form' %}" class="btn btn-primary">
-                <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
-                Crear Notificacion
-            </a>
-        {% else %}
-            <h1>Mis Notificaciones</h1>
-        {% endif %}
+        <h1>Gestionar Notificaciones</h1>
+        <a href="{% url 'notification_form' %}" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
+            Crear Notificacion
+        </a>
     </div>
-
+ffff
     <table class="table">
         <thead>
             <tr class="table-light">
@@ -24,9 +20,6 @@
                 <th>Destinatarios</th>
                 <th>Prioridad</th>
                 <th>Fecha de Envio</th>
-                {% if not user_is_organizer %}
-                    <th>Estado</th>
-                {% endif %}
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -36,16 +29,16 @@
                     <td>{{ notification.title }}</td>
                     <td class="text-primary">{{ notification.event.title }}</td>
                     <td>
-                        {% with users=notification.user.all %}
-                          {% if users|length == 1 %}
+                    {% with users=notification.user.all %}
+                        {% if users|length == 1 %}
                             <span class="badge bg-secondary">Usuario específico</span>
-                          {% elif users|length > 1 %}
+                        {% elif users|length > 1 %}
                             <span class="badge bg-info">Todos ({{ users|length }})</span>
-                          {% else %}
+                        {% else %}
                             <span class="badge bg-secondary">Sin destinatarios</span>
-                          {% endif %}
-                        {% endwith %}
-                      </td>
+                        {% endif %}
+                    {% endwith %}
+                    </td>
                     <td>
                         {% if notification.priority.description|lower == "alta" %}
                           <span class="badge bg-danger">Alta</span>
@@ -58,37 +51,26 @@
                         {% endif %}
                     </td>
                     <td>{{ notification.created_at }}</td>
-                    {% if not user_is_organizer %}
-                        <td>
-                            {% if not notification.is_read %}
-                                <span class="badge bg-warning">No leída</span>
-                            {% else %}
-                                <span class="badge bg-success">Leída</span>
-                            {% endif %}
-                        </td>
-                    {% endif %}
                     <td>
                         <div class="hstack gap-1">
-                            <a href=""
+                            <a href="{% url 'notification_detail' notification.id %}"
                             class="btn btn-sm btn-outline-primary"
                             title="Ver detalle">
                             <i class="bi bi-eye"></i>
                             </a>
-                            {% if user_is_organizer %}
-                                <a href="{% url 'notification_edit' notification.id %}"
-                                   class="btn btn-sm btn-outline-secondary"
-                                   title="Editar">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <form action="" method="POST">
-                                    {% csrf_token %}
-                                    <button class="btn btn-sm btn-outline-danger"
-                                            type="submit"
-                                            title="Eliminar">
-                                        <i class="bi bi-trash"></i>
-                                    </button>
-                                </form>
-                            {% endif %}
+                            <a href="{% url 'notification_edit' notification.id %}"
+                                class="btn btn-sm btn-outline-secondary"
+                                title="Editar">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <form action="{% url 'notification_delete' notification.id %}" method="POST">
+                                {% csrf_token %}
+                                <button class="btn btn-sm btn-outline-danger"
+                                        type="submit"
+                                        title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
                         </div>
                     </td>
                 </tr>

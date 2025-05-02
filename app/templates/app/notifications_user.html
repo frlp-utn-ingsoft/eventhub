@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load custom_tags %}
+
+{% block title %}Notificaciones{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-2">
+        <div class="d-flex justify-content-between align-items-center">
+            <h2>Notificaciones</h2>
+            {% if user_notifications_dict %}
+                <span class="badge bg-danger ms-2 fs-6">
+                    {{ user_notifications_dict|count_unread_notifications }} nuevas
+                </span>
+            {% endif %}
+        </div>
+        {% if user_notifications_dict|count_unread_notifications > 0 %}
+            <form method="post" action="{% url 'mark_all_read' %}">
+                {% csrf_token %}
+                <button class="btn btn-outline-primary btn-md">Marcar todas como leídas</button>
+            </form>
+        {% endif %}
+    </div>
+
+    {% if notifications %}
+        <ul class="list-group list-group-flush">
+            {% for notification in notifications %}
+                {% if notification.id in user_notifications_dict %}
+                    {% with user_notifications_dict|get_item:notification.id as user_notif %}
+                        <li class="list-group-item rounded-3 mb-2 border border-1 shadow-sm"
+                        style="background-color: {% if user_notif and not user_notif.is_read %} #e2e6ea; {% else %} #f8f9fa; {% endif %}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="me-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-bell-fill text-primary me-2"></i>
+                                        <h5 class="mb-1 text-primary">{{notification.title}}</h5>
+                                        {% if user_notif and not user_notif.is_read %}
+                                            <span class="badge bg-primary ms-2">Nueva</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mb-1">{{ notification.message }}</p>
+                                     <small class="text-muted">{{ notification.created_at|date:"j M Y, H:i" }}</small>
+                                </div>
+                                {% if user_notif and not user_notif.is_read %}
+                                    <form method="post" action="{% url 'mark_read' notification.id %}">
+                                        {% csrf_token %}
+                                        <button class="btn btn-outline-primary btn-sm">Marcar como leída</button>
+                                    </form>
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% endwith %}
+                {% endif %}
+            {% endfor %}
+        </ul>
+    {% else %}
+    <div class="d-flex justify-content-between align-items-center mt-3">
+        <p class="text-muted ms-2">No hay notificaciones.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
