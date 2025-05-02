@@ -90,16 +90,18 @@ def edit_notification(request, pk):
     })
 
 @login_required
-@transaction.atomic
 def delete_notification(request, pk):
     notification = get_object_or_404(Notification, pk=pk, creator=request.user)
+
     if request.method == 'POST':
         notification_title = notification.title
         notification.delete()
         messages.success(request, f'Notificación "{notification_title}" eliminada exitosamente.')
+        return redirect('notifications:notification_management')
     else:
-        messages.warning(request, 'Para eliminar una notificación, usa el botón correspondiente.')
-    return redirect('notifications:notification_management')
+        return render(request, 'notifications/delete_confirm.html', {
+            'notification': notification
+        })
 
 @login_required
 def view_notification(request, pk):
