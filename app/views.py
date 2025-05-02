@@ -2,9 +2,10 @@ import datetime
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Count
-from .models import Event, User, Location, Category, Notification, NotificationXUser
+from .models import Event, User, Location, Category, Notification, NotificationXUser, Comments
 
 
 def register(request):
@@ -71,7 +72,43 @@ def events(request):
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
-    return render(request, "app/event_detail.html", {"event": event})
+    comments = Comments.objects.filter(event=event).order_by('-created_at')
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        errors = {}
+
+        if not title:
+            errors['title'] = "El título no puede estar vacío."
+        if not description:
+            errors['description'] = "La descripción no puede estar vacía."
+
+        if not errors:
+            Comments.objects.create(
+                title=title,
+                description=description,
+                user=request.user,
+                event=event
+            )
+            return redirect('event_detail', id=event.id)
+
+        # Si hay errores, los devolvemos al template
+        return render(request, 'app/event_detail.html', {
+            'event': event,
+            'comments': comments,
+            'errors': errors,
+            'title': title,
+            'description': description,
+            'user_is_organizer': event.organizer == request.user
+        })
+
+    # GET request normal
+    return render(request, 'app/event_detail.html', {
+        'event': event,
+        'comments': comments,
+        'user_is_organizer': event.organizer == request.user
+    })
 
 
 @login_required
@@ -92,7 +129,7 @@ def event_delete(request, id):
 def event_form(request, id=None):
     user = request.user
 
-    if not user.is_superuser:
+    if not user.is_organizer:
         return redirect("events")
 
     if request.method == "POST":
@@ -135,7 +172,7 @@ def event_form(request, id=None):
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user_is_superuser": request.user.is_superuser, "locations": locations, "categories": categories},
+        {"event": event, "user.is_organizer": request.user.is_organizer, "locations": locations, "categories": categories},
     )
 
 
@@ -357,3 +394,36 @@ def read_notification(request, notification_user_id):
 def read_all_notifications(request):
     NotificationXUser.objects.filter(user=request.user, is_read=False).update(is_read=True)
     return redirect('list_notifications')
+def edit_comment(request, comment_id):
+    comment = get_object_or_404(Comments, pk=comment_id, user=request.user)
+
+    if request.method == "POST":
+        comment.title = request.POST.get('title', '')
+        comment.description = request.POST.get('description', '')
+        comment.save()
+        return redirect('event_detail', id=comment.event.id)
+
+    return render(request, 'comments/edit_comment.html', {'comment': comment})
+
+def delete_comment(request, comment_id):
+    try:
+        comment = Comments.objects.get(id=comment_id)
+    except Comments.DoesNotExist:
+        messages.error(request, "Comentario no encontrado.")
+        return redirect('event_list')
+    
+    if request.user != comment.user and not request.user.is_staff:
+        messages.error(request, "No tienes permiso para eliminar este comentario.")
+        return redirect('event_detail', id=comment.event.id)
+
+    if request.method == 'POST':
+        comment.delete()
+        messages.success(request, "Comentario eliminado exitosamente.")
+        return redirect('event_detail', id=comment.event.id)
+
+    return render(request, 'comments/delete_comment.html', {'comment': comment})
+
+
+def detail_comment(request, comment_id):
+    comment = get_object_or_404(Comments, pk=comment_id)
+    return render(request, 'comments/detail_comment.html', {'comment': comment})

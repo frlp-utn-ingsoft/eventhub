@@ -6,7 +6,7 @@
 <div class="container">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Eventos</h1>
-            {% if user_is_organizer %}
+            {% if user.is_organizer %}
                 <a
                     href="{% url 'event_form' %}"
                     class="btn btn-primary"

@@ -18,7 +18,6 @@ class User(AbstractUser):
             errors["username"] = "El username es requerido"
         elif User.objects.filter(username=username).exists():
             errors["username"] = "Ya existe un usuario con este nombre de usuario"
-
         if password is None or password_confirm is None:
             errors["password"] = "Las contraseñas son requeridas"
         elif password != password_confirm:
@@ -126,8 +125,6 @@ class Category(models.Model):
             self.is_active = is_active
 
         self.save()
-
-
 
 class Event(models.Model):
     title = models.CharField(max_length=200)
@@ -244,3 +241,40 @@ class NotificationXUser(models.Model):
             user=user,
         )
         return notification_user
+
+class Comments(models.Model):
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.title
+
+    @classmethod
+    def validate(cls, title, description):
+        errors = {}
+
+        if not title.strip():
+            errors["title"] = "Por favor ingrese un título"
+
+        if not description.strip():
+            errors["description"] = "Por favor ingrese una descripción"
+
+        return errors
+
+    @classmethod
+    def new(cls, title, description, user, event):
+        errors = cls.validate(title, description)
+
+        if errors:
+            return False, errors
+
+        comment = cls.objects.create(
+            title=title,
+            description=description,
+            user=user,
+            event=event
+        )
+        return True, comment
