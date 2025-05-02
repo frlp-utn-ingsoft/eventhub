@@ -8,34 +8,34 @@
         <table class="table">
             <thead>
                 <tr>
+                    <th>Cantidad</th>
                     {% if show_event %}
-                    <th>Evento</th>
+                    <th class="text-center">Evento</th>
                     {% endif %}
                     {% if show_user %}
-                    <th>Usuario</th>
+                    <th class="text-center">Usuario</th>
                     {% endif %}
-                    <th>Tipo de Ticket</th>
-                    <th>Cantidad</th>
-                    <th>Precio Total</th>
-                    <th>Fecha de Compra</th>
-                    <th>Acción</th>
+                    <th class="text-center">Tipo de Ticket</th>
+                    <th class="text-center">Precio Total</th>
+                    <th class="text-center">Fecha de Compra</th>
+                    <th class="text-end">Acción</th>
                 </tr>
             </thead>
             <tbody>
                 {% for ticket in tickets %}
                 <tr>
+                    <td>{{ ticket.quantity }}</td>
                     {% if show_event %}
-                    <td>{{ ticket.event.title }}</td>
+                    <td class="text-center">{{ ticket.event.title }}</td>
                     {% endif %}
                     {% if show_user %}
-                    <td>{{ ticket.user.username }}</td>
+                    <td class="text-center">{{ ticket.user.username }}</td>
                     {% endif %}
-                    <td>{{ ticket.ticket_type.name }}</td>
-                    <td>{{ ticket.quantity }}</td>
-                    <td>{{ ticket.total_price }}</td>
-                    <td>{{ ticket.buy_date|date:"d b Y, H:i" }}</td>
+                    <td class="text-center">{{ ticket.ticket_type.name }}</td>
+                    <td class="text-center">{{ ticket.total_price }}</td>
+                    <td class="text-center">{{ ticket.buy_date|date:"d b Y, H:i" }}</td>
                     <td>
-                        <div class="hstack gap-1">
+                        <div class="hstack gap-1 justify-content-end">
                             {% if user.is_organizer %}
                             <form action="{% url 'ticket_delete' ticket.ticket_code %}" method="POST">
                                 {% csrf_token %}
