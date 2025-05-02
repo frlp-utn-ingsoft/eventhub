@@ -3,13 +3,13 @@
 {% block title %}Eventos{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="containerEventos">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Eventos</h1>
         {% if user_is_organizer %}
             <a
                 href="{% url 'event_form' %}"
-                class="btn btn-primary"
+                class="btn btn-eventgub-green crearEvento"
             >
                 <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
                 Crear Evento
@@ -20,21 +20,31 @@
         <thead>
             <tr>
                 <th>Título</th>
-                <th>Descripción</th>
                 <th>Fecha</th>
+                <th>Categorías</th>
                 <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
-            {% for event in events%}
+            {% for event in events %}
                 <tr>
                     <td>{{ event.title }}</td>
-                    <td>{{ event.description }}</td>
                     <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
+                    <td>
+                        {% if event.categories.all %}
+                            <div class="d-flex flex-wrap">
+                                {% for category in event.categories.all %}
+                                    <span class="badge bg-light text-dark mb-1 me-2">{{ category.name }}</span>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <span class="text-muted">Sin categorías</span>
+                        {% endif %}
+                    </td>
                     <td>
                         <div class="hstack gap-1">
                             <a href="{% url 'event_detail' event.id %}"
-                               class="btn btn-sm btn-outline-primary"
+                               class="btn btn-sm btn-outline-eventhub"
                                aria-label="Ver detalle"
                                title="Ver detalle">
                                 <i class="bi bi-eye" aria-hidden="true"></i>

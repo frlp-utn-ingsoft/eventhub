@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container my-5">
+  <div class="form-notif">
+
+    <h2 class="mb-4 text-center">
+      {% if view.object %}Editar{% else %}Crear{% endif %} notificación
+    </h2>
+
+    <!-- layout responsivo con grid -->
+    <form method="post" class="row g-3">{% csrf_token %}
+      <div class="col-12 col-md-6">{{ form.user.label_tag }}{{ form.user }}</div>
+      <div class="col-12 col-md-6">{{ form.priority.label_tag }}{{ form.priority }}</div>
+      <div class="col-12">{{ form.title.label_tag }}{{ form.title }}</div>
+      <div class="col-12">{{ form.message.label_tag }}{{ form.message }}</div>
+
+      <div class="col-12 d-flex flex-column flex-md-row gap-2 justify-content-end">
+        <button class="btn btn-notif btn-eventgub-green" type="submit">Guardar</button>
+        <a href="{% url 'notifications_list' %}" class="btn btn-notif btn-outline-eventhub">Cancelar</a>
+      </div>
+    </form>
+
+  </div>
+</div>
+{% endblock %}

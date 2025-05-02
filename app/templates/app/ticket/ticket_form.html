@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card shadow-sm mb-4">
+        <div class="card-header">
+          <h5>Comprar Entrada</h5>
+        </div>
+        <div class="card-body">
+
+          <h4>{{ event.title }}</h4>
+          <p><i class="bi bi-calendar-event"></i> {{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
+          <p><i class="bi bi-geo-alt"></i> {{ event.venue.name }}</p>
+          <p><i class="bi bi-person"></i> {{ event.organizer.username }}</p>
+
+          {% if form.errors %}
+          <div class="alert alert-danger">
+            <ul>
+              {% for field in form %}
+                {% for error in field.errors %}
+                  <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                {% endfor %}
+              {% endfor %}
+            </ul>
+          </div>
+          {% endif %}
+
+          <form method="post" onsubmit="return validarPago()">
+            {% csrf_token %}
+
+            <div class="mb-3">
+              <label class="form-label">Cantidad de entradas</label>
+              <div class="input-group">
+                <button class="btn btn-outline-secondary" type="button" onclick="adjustQuantity(-1)">-</button>
+                {{ form.quantity }}
+                <button class="btn btn-outline-secondary" type="button" onclick="adjustQuantity(1)">+</button>
+              </div>
+              <div class="form-text">Disponibles: 120 entradas</div>
+            </div>
+
+
+            <div class="mb-3">
+              <label class="form-label">Tipo de entrada</label>
+              {{ form.type }}
+            </div>
+
+            <h6 class="mt-4">Método de pago</h6>
+            <div class="mb-2">
+              <label class="form-label">Número de tarjeta</label>
+              <input type="text" id="card_number" class="form-control" placeholder="1234 5678 9012 3456">
+            </div>
+
+            <div class="row mb-2">
+              <div class="col-md-6">
+                <label class="form-label">Fecha de expiración</label>
+                <input type="text" id="card_expiry" class="form-control" placeholder="MM/AA">
+              </div>
+              <div class="col-md-6">
+                <label class="form-label">CVV</label>
+                <input type="text" id="card_cvv" class="form-control" placeholder="123">
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Nombre en la tarjeta</label>
+              <input type="text" id="card_name" class="form-control" placeholder="Juan Pérez">
+            </div>
+
+            <div class="form-check mt-3">
+              <input class="form-check-input" type="checkbox" id="accept_terms">
+              <label class="form-check-label" for="accept_terms">
+                Acepto los <a href="#">términos y condiciones</a> y la <a href="#">política de privacidad</a>
+              </label>
+            </div>
+            
+
+            <button type="submit" class="btn btn-eventhub w-100 mt-3">Confirmar compra</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card mb-3">
+        <div class="card-header">
+          <strong>Resumen de compra</strong>
+        </div>
+        <div class="card-body">
+          <p>Precio por entrada: $<span id="precio_unitario">50</span></p>
+          <p>Cantidad: <span id="resumen_cantidad">1</span></p>
+          <p>Subtotal: $<span id="subtotal">50</span></p>
+          <p>Impuestos (10%): $<span id="impuestos">5</span></p>
+          <hr>
+          <p><strong>Total: $<span id="total">55</span></strong></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <strong>Información importante</strong>
+        </div>
+        <div class="card-body small">
+          <ul class="mb-0">
+            <li>Las entradas son personales e intransferibles.</li>
+            <li>Puedes solicitar un reembolso hasta 48 horas antes del evento.</li>
+            <li>Recibirás tu entrada en tu correo electrónico.</li>
+            <li>Presenta tu entrada digital o impresa el día del evento.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

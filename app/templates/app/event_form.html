@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="containerEventos mt-5">
     <div class="row">
         <div class="col-md-8 offset-md-2">
             <h1 class="mb-4">
@@ -12,17 +12,30 @@
                 {% endif %}
             </h1>
 
-            <div class="card">
+            <div class="card events">
                 <div class="card-body">
-                    <form action="{% url 'event_form' %}" method="POST">
+                    <form action="{% if event.id %}{% url 'event_edit' event.id %}{% else %}{% url 'event_form' %}{% endif %}" method="POST">
                         {% csrf_token %}
                         <div class="vstack gap-3">
                             <div>
-                                <label for="title" class="form-label">Título del Evento</label>
-                                <input class="form-control" id="title" required="" type="text" value="{{ event.title }}"
+                                <label for="title" class="form-label events">Título del Evento</label>
+                                <input class="form-control"
+                                    id="title"
+                                    required=""
+                                    type="text"
+                                    value="{{ event.title }}"
                                     name="title" />
                             </div>
-                            <!-- Acá se agrega el campo para la ubicación del evento -->
+
+                            <div>
+                                <label for="description" class="form-label events">Descripción</label>
+                                <textarea
+                                    class="form-control"
+                                    id="description"
+                                    name="description"
+                                    rows="4"
+                                    required="">{{ event.description }}</textarea>
+                            </div>
                             <div>
                                 <label for="venue" class="form-label">Ubicación</label>
                                 <div class="d-flex align-items-center">
@@ -39,26 +52,59 @@
                                     </button>
                                 </div>
                             </div>
-                            <div>
-                                <label for="description" class="form-label">Descripción</label>
-                                <textarea class="form-control" id="description" name="description" rows="4"
-                                    required="">{{ event.description }}</textarea>
-                            </div>
+
                             <div class="row">
                                 <div class="col-md-6">
-                                    <label for="date" class="form-label">Fecha</label>
-                                    <input class="form-control" id="date" required="" type="date"
-                                        value="{{ event.scheduled_at|date:'Y-m-d'}}" name="date" />
+                                    <label for="date" class="form-label events">Fecha</label>
+                                    <input
+                                        class="form-control"
+                                        id="date"
+                                        required=""
+                                        type="date"
+                                        value="{{ event.scheduled_at|date:'Y-m-d'}}"
+                                        name="date" />
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="time" class="form-label">Hora</label>
-                                    <input class="form-control" id="time" required="" type="time"
-                                        value="{{ event.scheduled_at|date:'g:i'}}" name="time" />
+                                    <label for="time" class="form-label events">Hora</label>
+                                    <input
+                                        class="form-control"
+                                        id="time"
+                                        required=""
+                                        type="time"
+                                        value="{{ event.scheduled_at|date:'H:i'}}"
+                                        name="time" />
                                 </div>
                             </div>
                             <div>
-                                <button type="submit" class="btn btn-primary">
-                                    {% if event %}Guardar Cambios{% else %}Crear Evento{% endif %}
+                                <label for="categories" class="form-label events">Categorías</label>
+                                <div class="row">
+                                    <div class="col-12">
+                                        <div class="d-flex flex-wrap gap-2">
+                                            {% for cat in categories %}
+                                                <div class="form-check">
+                                                    <input
+                                                        class="form-check-input"
+                                                        type="checkbox"
+                                                        name="categories"
+                                                        id="category_{{ cat.id }}"
+                                                        value="{{ cat.id }}"
+                                                        {% if cat.id in selected_categories %}checked{% endif %}>
+                                                    <label class="form-check-label ms-1" for="category_{{ cat.id }}">
+                                                        <span class="badge bg-light text-dark">{{ cat.name }}</span>
+                                                    </label>
+                                                </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-eventgub-green crearEvento">
+                                    {% if event.id %}
+                                        Editar Evento
+                                    {% else %}
+                                        Crear Evento
+                                    {% endif %}
                                 </button>
                             </div>
                         </div>

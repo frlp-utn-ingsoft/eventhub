@@ -4,6 +4,7 @@
 📌 Matias Rau Bekerman
 📌 Enzo Daniel Pinotti
 📌 Tomas Pipolo
+📌 Emiliano Nahuel Rios
 ---
 
 

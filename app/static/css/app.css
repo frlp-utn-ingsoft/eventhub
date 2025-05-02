@@ -1,0 +1,45 @@
+/* app.css: estilos generales de layout */
+
+.container {
+    padding: 0;
+    margin: 0;
+    width: 100% ;
+    max-width: 100%;
+    position: relative;
+    bottom: 1px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.containerReembolsos{
+  width: 90%;
+}
+.containerCategorias{
+  width: 80%;
+
+  margin-top: 2rem;
+}
+.containerNotificaciones{
+  width: 90%;
+  margin-top: 2rem;
+}
+.containerEventos{
+  width: 90%;
+  margin-top: 2rem;
+}
+.containerTickets{
+  width: 90%;
+  margin-top: 2rem;
+}
+.containerLogin{
+  width: 100%;
+}
+.containerRegistro{
+  width: 100%;
+}
+  body {
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+  }
+  

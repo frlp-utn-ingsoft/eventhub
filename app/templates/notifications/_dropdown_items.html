@@ -1,0 +1,24 @@
+{% load static %}
+{% for n in notifs %}
+  <li>
+    <form method="post" action="{% url 'notifications_read' n.pk %}">
+      {% csrf_token %}
+      <button type="submit"
+              class="notif-item dropdown-item {% if not n.is_read %}unread{% endif %}">
+        {{ n.title|truncatechars:40 }}
+      </button>
+    </form>
+  </li>
+{% empty %}
+  <li>
+    <span class="dropdown-item empty">Sin notificaciones</span>
+  </li>
+{% endfor %}
+
+<li><hr class="dropdown-divider"></li>
+<li>
+  <a class="dropdown-item footer-link"
+     href="{% url 'notifications_list' %}">
+     + Panel de notificaciones
+  </a>
+</li>
