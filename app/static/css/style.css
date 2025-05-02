@@ -40,8 +40,8 @@
     align-items: center;
   }
   /* Botones Login/Register */
-  .navbar .btn-outline-primary,
-  .navbar .btn-primary {
+  .navbar .btn-outline-eventhub,
+  .navbar .btn-eventhub {
     border-radius: 3px;
     padding: 0.4rem 1rem;
     font-weight: 500;

@@ -44,8 +44,8 @@
   
   /* input transparente */
   .form-control{
-    background:rgba(255,255,255,.08);
-    border:1px solid rgba(255,255,255,.25);
+    background:rgb(255, 255, 255);
+    border:1px solid rgb(112, 61, 61);
     color:#fff;
   }
   .form-control::placeholder{color:#ddd}

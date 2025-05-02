@@ -3,9 +3,9 @@
 
 {% block title %}Mis Reembolsos{% endblock %}
 {% block content %}
-<div class="container mt-4">
+<div class="containerReembolsos mt-4">
   <h2>Mis solicitudes de reembolso</h2>
-  <a href="{% url 'create_refund_request' %}" class="btn btn-primary mb-3">
+  <a href="{% url 'create_refund_request' %}" class="btn btn-eventgub-green crearReenbolso mb-3">
     Nueva solicitud
   </a>
 
@@ -38,7 +38,7 @@
           <td class="d-flex gap-1">
             {# Ver detalle siempre #}
             <a href="{% url 'refund_detail' refund.id %}"
-               class="btn btn-sm btn-outline-primary"
+               class="btn btn-sm btn-outline-eventhub"
                title="Ver">
               <i class="bi bi-eye"></i>
             </a>

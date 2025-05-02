@@ -3,7 +3,7 @@
 
 {% block title %}Gestionar Reembolsos{% endblock %}
 {% block content %}
-<div class="container mt-4">
+<div class="containerReembolsos mt-4">
   <h2>Solicitudes de Reembolso</h2>
   <table class="table table-striped">
     <thead>
@@ -35,7 +35,7 @@
           </td>
           <td class="d-flex gap-1">
             <a href="{% url 'refund_detail' refund.id %}"
-               class="btn btn-sm btn-outline-primary"
+               class="btn btn-sm btn-outline-eventhub"
                title="Ver">
               <i class="bi bi-eye"></i>
             </a>
