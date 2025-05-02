@@ -1,9 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
+<style>
+    ::placeholder {
+        color: #6c757d !important; /* Un gris más oscuro */
+        opacity: 1 !important; /* Asegura que el color sea visible */
+    }
+</style>
+<div class="containerEventos mt-5">
     <div class="row">
-        <div class="col-md-8 offset-md-2">
+        <div class="col-md-10 offset-md-1">
             <h1 class="mb-4">
                 {% if venue %}
                 Editar Ubicación
@@ -12,7 +18,7 @@
                 {% endif %}
             </h1>
 
-            <div class="card">
+            <div class="card events">
                 <div class="card-body">
                     <form method="POST">
                         {% csrf_token %}
@@ -47,7 +53,7 @@
                                     placeholder="Describe las características principales de la ubicación...">{{ form.contact.value|default_if_none:'' }}</textarea>
                             </div>
                             <div class="d-flex justify-content-end">
-                                <button type="submit" class="btn btn-primary">
+                                <button type="submit" class="btn btn-eventgub-green crearEvento">
                                     {% if venue %}Guardar Cambios{% else %}Crear Ubicación{% endif %}
                                 </button>
                             </div>
