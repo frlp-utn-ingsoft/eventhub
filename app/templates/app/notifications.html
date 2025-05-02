@@ -12,6 +12,7 @@
             <thead>
                 <tr>
                     <th>Título</th>
+                    <th>Evento</th>
                     <th>Destinatarios</th>
                     <th>Prioridad</th>
                     <th>Fecha de envío</th>
@@ -22,6 +23,13 @@
                 {% for notification in notifications %}
                     <tr>
                         <td>{{ notification.title }}</td>
+                        <td>
+                            {% if notification.event %}
+                                <span class="badge bg-info">Evento: {{ notification.event.title }}</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Usuario específico</span>
+                            {% endif %}
+                        </td>
                         <td>
                             <button type="button" class="btn btn-sm btn-outline-primary"
                                 onclick="view_user({{ notification.id }})">
@@ -37,7 +45,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="5">No hay notificaciones disponibles.</td>
+                        <td colspan="6">No hay notificaciones disponibles.</td>
                     </tr>
                 {% endfor %}
             </tbody>
