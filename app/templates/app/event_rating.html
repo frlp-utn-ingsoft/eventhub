@@ -1,67 +1,68 @@
-{% extends 'base.html' %}
+                <div class="card-body p-0">                    
 
-{% block content %}
-<div class="container">
-    <div class="row">
-        {% if messages %}
-            {% for message in messages%}
-                <div class="alert alert-success" role="alert">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-        
-        <div class="d-flex justify-content-between align-items-center">
-            <h1>{{ event.title }}</h1>
-            <div>
-            {% if user_is_organizer %}
-                <a
-                    href="{% url 'event_edit' event.id %}"
-                    class="btn btn-outline-primary me-2"
-                >
-                    <i class="bi bi-pencil me-1"></i>Editar
-                </a>
-            {% endif %}
-        </div>
-    </div>
-    <div class="row">
-        <div class="card mb-4 shadow-sm rounded-3">
-            <div class="card-body">
-                <h5 class="card-title">Detalles del Evento</h5>
-                <p class="card-text">{{ event.description }}</p>
-                <div class="mt-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-light rounded-circle p-3 me-3 d-flex align-items-center justify-content-center" style="width: 60px; height: 60px;">
-                            <i class="bi bi-calendar-event text-primary fs-4"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-0">Fecha y Hora</h6>
-                            <p class="mb-0">{{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
-                        </div>
+                    <div class="bg-body-tertiary w-100 p-2 mb-3">
+                        <h5 class="card-title m-0 ps-2">Calificaciones y Reseñas ({{ cantidad_resenas }})</h5>
                     </div>
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-light rounded-circle p-2 me-3">
-                            <i class="bi bi-person text-primary"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-0">Organizador</h6>
-                            <p class="mb-0">{{ event.organizer }}</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="card mb-4 shadow-sm rounded-3">
-                <div class="card-body">
-                    <h5 class="card-title">Calificaciones y Reseñas ({{ cantidad_resenas }})</h5>
+
+                    <div id="mensajeResena" class="mb-3">
+                        {% if messages %}
+                            {% for message in messages %}
+                                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    </div>   
                         
-                    {% for rating in ratings %}
+                    <div class="px-3">
+                        {% for rating in ratings %}
+
                             <div class="card mb-4 shadow-sm">
                                 <div class="card-body">
-                                    <h6 class="card-title">{{ rating.usuario.username }}</h6>
-                                    <h6 class="card-subtitle mb-2 text-muted">{{ rating.fecha_creacion|date:"d/m/Y H:i" }}</h6>
+                                    <div class="dropdown position-absolute top-0 end-0 m-2">
+                                        <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-three-dots-vertical fs-5"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                            {% if user.is_authenticated and user_is_organizer %}
+                                                <li>
+                                                    <form method="post" action="{% url 'event_eliminar_rating' event.id rating.id %}" onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta reseña?');">
+                                                        {% csrf_token %}
+                                                        <button type="submit" name="eliminar" class="dropdown-item text-danger">
+                                                            <i class="bi bi-trash3 me-2"></i> Eliminar
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                            {% endif %}
+                                        
+                                            {% if user.is_authenticated and user == rating.usuario %}
+                                                {% if not user_is_organizer %}
+                                                    <li>
+                                                        <form method="post" action="{% url 'event_eliminar_rating' event.id rating.id %}" onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta reseña?');">
+                                                            {% csrf_token %}
+                                                            <button type="submit" name="eliminar" class="dropdown-item text-danger">
+                                                                <i class="bi bi-trash3 me-2"></i> Eliminar
+                                                            </button>
+                                                        </form>
+                                                    </li>
+                                                {% endif %}
+                                                <li>
+                                                    <a href="{% url 'event_editar_rating' event.id rating.id %}?edit" class="dropdown-item">
+                                                        <i class="bi bi-pencil-square me-2"></i> Editar
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                        </ul>
+                                                                                
+                                    </div>
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-person-circle fs-3 me-2"></i>
+                                        <div>
+                                            <h6 class="card-title">{{ rating.usuario.username }}</h6>
+                                            <h6 class="card-subtitle mb-2 text-muted">{{ rating.fecha_creacion|date:"d/m/Y H:i" }}</h6>
+                                        </div>
+                                    </div>
                                     <p class="card-text"><strong>{{ rating.titulo }}</strong></p>
                                     <p class="card-text">
                                         {% for i in "12345" %}
@@ -73,32 +74,39 @@
                                         {% endfor %}
                                     </p>
                                     <p class="card-text">{{ rating.texto }}</p>
-
-                                    {% if user.is_authenticated and user == rating.usuario or user.is_staff %}
-                                        <form method="post" style="display: inline;">
-                                            {% csrf_token %}
-                                            <button type="submit" name="eliminar" class="btn btn-sm btn-danger">Eliminar</button>
-                                        </form>
-                                        <a href="{% url 'event_rating' id=evento.id %}" class="btn btn-sm btn-warning">Editar</a>
-                                    {% endif %}
-
-                                    <hr>
                                     
                                 </div>
                             </div>
                         {% empty %}
                             <p>Aún no hay reseñas para este evento. ¡Sé el primero en opinar!</p>
                         {% endfor %}
-                        
+
                         <hr>
 
                         {% if user.is_authenticated %}
-                        <h6>{% if editando %}Editar tu reseña{% else %}Crea una nueva reseña{% endif %}</h6>
-                        <form method="post">
+                            {% if not resena %}
+                                <button id="mostrarFormulario" class="btn btn-primary mb-3">Crear nueva reseña</button>
+                            {%endif%}
+
+                            {% if editando %}
+                                <form method="post" id="formularioResena"
+                                    action="{% url 'event_editar_rating' event.id resena.id %}"
+                                    onsubmit="return validarFormulario();">
+                                <input type="hidden" name="Modo" value="editar">
+                            {% elif not resena %}
+                                <form method="post" id="formularioResena" class="d-none"
+                                    action="{% url 'event_guardar_rating' event.id %}"
+                                    onsubmit="return validarFormulario();">
+                                <input type="hidden" name="Modo" value="crear">
+                            {% endif %}
+
+                            {% if editando or not resena %}
+                                <h6>{% if editando %}Editar tu reseña{% else %}Crear reseña{% endif %}</h6>
                             {% csrf_token %}
-                            <div class="card p-4 mb-4"> 
+                            <div class="card p-4 mb-4">
+
                                 <div class="mb-3">
-                                    <h6>Titulo de tu reseña *</h6>
+                                    <h6>Título de tu reseña *</h6>
                                     {{ form.titulo }}
                                 </div>
                         
@@ -110,37 +118,79 @@
                                         {% endfor %}
                                     </div>
                                     {{ form.calificacion }}
-                                    <p>Selecciona una calificacion</p>
                                 </div>
                         
                                 <div class="mb-3">
                                     <h6>Tu reseña (opcional)</h6>
                                     {{ form.texto }}
                                 </div>
-
-                                {% if editando %}
-                                    <button type="submit" name="guardar" class="btn btn-primary w-100">Actualizar reseña</button>
-                                    <button type="submit" name="cancelar" class="btn btn-outline-secondary w-100 mt-2">Cancelar edición</button>
-                                {% else %}
-                                    <button type="submit" name="guardar" class="btn btn-primary w-100">Enviar reseña</button>
-                                {% endif %}
+                        
                                 
+                                {% if editando %}
+                                    <button type="submit" class="btn btn-primary w-100">Actualizar reseña</button>
+                                    <button type="button" id="cancelarEdicion" class="btn btn-outline-secondary w-100 mt-2">Cancelar edición</button>
+                                {% else %}
+                                    <button type="submit" class="btn btn-primary w-100">Enviar reseña</button>
+                                {% endif %}
                             </div>
                         </form>
-
-                    {% else %}
-                        <p><a href="{% url 'login' %}">Iniciar sesion</a> para modificar este evento</p>
+                        {% endif %}
                     {% endif %}
-                </div>
+                </div>    
             </div>
     </div>
-</div>
+
+<!--Espacio JavaScript para controlar la visualizacion del formulario-->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const boton = document.getElementById("mostrarFormulario");
+        const formulario = document.getElementById("formularioResena");
+    
+        if (boton && formulario) {
+            boton.addEventListener("click", function () {
+                formulario.classList.remove("d-none");
+                boton.classList.add("d-none");
+            });
+        }
+    });
+    </script>
+
+
+<!--JavaScript para desarrollar actualizacion, creacion y eliminacion de Reseñas-->
+<script>
+    function mostrarMensaje(texto, tipo = "success") {
+        const contenedor = document.getElementById("mensajeResena");
+        if (!contenedor) return;
+    
+        contenedor.innerHTML = '';
+    
+        const alerta = document.createElement("div");
+        alerta.className = `alert alert-${tipo} alert-dismissible fade show`;
+        alerta.role = "alert";
+        alerta.innerHTML = `
+            ${texto}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        contenedor.appendChild(alerta);
+        contenedor.scrollIntoView({ behavior: "smooth", block: "center" });
+    
+        setTimeout(() => {
+            const bsAlert = bootstrap.Alert.getOrCreateInstance(alerta);
+            bsAlert.close();
+        }, 4000);
+    }
+</script>
+    
 
 <!--Espacio JavaScript para desarrollar interaccion con estrellas-->
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const stars = document.querySelectorAll('#starRating i');
         const ratingInput = document.querySelector('input[name="calificacion"]');
+
+        if (ratingInput && ratingInput.value) {
+            highlightStars(ratingInput.value);
+        }
     
         stars.forEach(star => {
             star.addEventListener('mouseover', () => {
@@ -170,7 +220,54 @@
                 }
             });
         }
-    });
-    </script>
+    });    
+</script>
 
-{% endblock %}
+<!--JavaScript para el control de validaciones para el formulario-->
+<script>
+    function validarFormulario() {
+        const tituloInput = document.querySelector('input[name="titulo"]');
+        const ratingInput = document.querySelector('input[name="calificacion"]');
+        
+        let mensaje = "";
+        
+            if (!tituloInput.value.trim()) {
+                mensaje += "El título no puede estar vacío.\n";
+            }
+        
+            if (!ratingInput.value || ratingInput.value === "0") {
+                mensaje += "Debes seleccionar una calificación en estrellas.\n";
+            }
+        
+            if (mensaje) {
+                alert(mensaje);
+                return false; 
+            }
+        
+        return true;
+    }
+</script>
+
+<!--Espacio JavaScript para desarrollar  el funcionamiento del boton de "cancelar edicion"-->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const cancelarBtn = document.getElementById("cancelarEdicion");
+        const formulario = document.getElementById("formularioResena");
+        const botonCrear = document.getElementById("mostrarFormulario");
+    
+        if (cancelarBtn) {
+            cancelarBtn.addEventListener("click", function () {
+                formulario.classList.add("d-none");
+    
+                if (botonCrear) {
+                    botonCrear.classList.remove("d-none");
+                }
+    
+                const url = new URL(window.location);
+                url.searchParams.delete("edit");
+                window.history.replaceState({}, document.title, url);
+            });
+        }
+    });
+</script>
+    

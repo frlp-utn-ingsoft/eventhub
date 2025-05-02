@@ -47,5 +47,8 @@ urlpatterns = [
     path("refound/", views.request_refound, name='refound'),
     path("refound/edit", views.update_refound, name="update_refound"),
     path("refound/delete", views.delete_refound, name="delete_refound"),
-    path("refound/approved_or_deny", views.approved_or_deny, name="approved_or_deny")
+    path("refound/approved_or_deny", views.approved_or_deny, name="approved_or_deny"),
+    path("events/<int:event_id>/rating/save", views.event_guardar_rating, name="event_guardar_rating"),
+    path("events/<int:event_id>/rating/<int:rating_id>/delete", views.event_eliminar_rating, name="event_eliminar_rating"),
+    path("events/<int:event_id>/rating/<int:rating_id>/edit", views.event_editar_rating, name="event_editar_rating"),
 ]

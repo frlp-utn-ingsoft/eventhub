@@ -276,7 +276,7 @@ CALIFICACIONES = [(i, f"{i} ⭐") for i in range(1,6)]
 
 class Rating(models.Model):
     usuario = models.ForeignKey(User, on_delete=models.CASCADE)
-    evento = models.ForeignKey(Event, on_delete=models.CASCADE)
+    evento = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="ratings")
     titulo = models.CharField(max_length=255)
     texto = models.TextField(blank=True)
     calificacion = models.IntegerField(choices=CALIFICACIONES) 
@@ -291,6 +291,12 @@ class Rating(models.Model):
     
     def __str__(self):
         return f'{self.usuario} - {self.evento} ({self.calificacion}⭐)'
+    
+    def update(self, titulo, calificacion, texto):
+        self.titulo = titulo
+        self.calificacion = calificacion
+        self.texto = texto
+        self.save()  
 
 class Rating_Form(forms.ModelForm):
     class Meta:

@@ -157,7 +157,7 @@ class Migration(migrations.Migration):
                 ('texto', models.TextField(blank=True)),
                 ('calificacion', models.IntegerField(choices=[(1, '1 ⭐'), (2, '2 ⭐'), (3, '3 ⭐'), (4, '4 ⭐'), (5, '5 ⭐')])),
                 ('fecha_creacion', models.DateTimeField(auto_now_add=True)),
-                ('evento', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='app.event')),
+                ('evento', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='ratings', to='app.event')),
                 ('usuario', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to=settings.AUTH_USER_MODEL)),
             ],
             options={
