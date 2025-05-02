@@ -38,10 +38,12 @@
           <td class="d-flex gap-1">
             {# Ver detalle siempre #}
             <a href="{% url 'refund_detail' refund.id %}"
-               class="btn btn-sm btn-outline-eventhub"
-               title="Ver">
+              class="btn btn-sm btn-outline-primary"
+              title="Ver">
               <i class="bi bi-eye"></i>
             </a>
+
+
 
             {# Solo si está pendiente, mostrar editar y eliminar #}
             {% if refund.approved is None %}
