@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "app",
     "comments",
     "notifications",
+    "rating",
     "category",
     "refunds",
     "django.contrib.admin",

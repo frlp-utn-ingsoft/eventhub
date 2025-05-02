@@ -21,6 +21,7 @@ urlpatterns = [
     path("", include("app.urls")),
     path("tickets/", include("tickets.urls", namespace="tickets")),
     path("comments/", include("comments.urls", namespace="comments")),
+    path("rating/", include("rating.urls", namespace="rating")),
     path("category/", include("category.urls", namespace="category")),
     path("refunds/", include("refunds.urls", namespace="refunds")),
     path("notifications/", include("notifications.urls", namespace="notifications")),

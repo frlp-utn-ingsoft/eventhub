@@ -1,0 +1,188 @@
+<style>
+    /* Estilos de la eleccion de puntuacion */
+    #star-rating .star {
+        cursor: pointer;
+    }
+</style>
+
+<div class="mt-4 mb-5 pl-0 pr-0">
+    <div class="card mt-4 pl-0 pr-0">
+        <div class="card-header fw-semibold">
+            Reseñas ({{ ratings|length }})
+        </div>
+
+        <ul class="list-group list-group-flush">
+            {% for rating in ratings %}
+            <li class="list-group-item">
+                <div class="d-flex">
+                    <!-- Logo de usuario -->
+                    <div class="me-3">
+                        <i class="bi bi-person-circle fs-3"></i>
+                    </div>
+
+                    <div class="flex-grow-1">
+                        <div class="d-flex justify-content-between">
+                            <!-- prettier-ignore -->
+                            <div>
+                                <span class="fw-semibold">{{ rating.user.username }}</span>
+                                <br />
+                                <small>{{ rating.created_at|date:"d b Y, H:i"}}</small>
+                            </div>
+
+                            <!-- prettier-ignore -->
+                            {% if user == rating.user or user.is_organizer and user == event.organizer %}
+                            <div class="dropdown">
+                                <button
+                                    class="btn btn-sm btn-light"
+                                    data-bs-toggle="dropdown"
+                                    aria-expanded="false"
+                                >
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </button>
+
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    {% if user == rating.user %}
+                                    <li>
+                                        <a
+                                            class="dropdown-item"
+                                            href="{% url 'rating:rating_update' rating.pk %}"
+                                        >
+                                            <i
+                                                class="bi bi-pencil-square me-2"
+                                            ></i
+                                            >Editar
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                    <li>
+                                        <a
+                                            class="dropdown-item text-danger"
+                                            href="{% url 'rating:rating_delete' rating.pk %}"
+                                        >
+                                            <i class="bi bi-trash me-2"></i
+                                            >Eliminar
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-2 mb-1">
+                    <h6>{{ rating.title }}</h6>
+
+                    <div id="star-rating" class="d-flex">
+                        {% for i in "12345" %}
+                        <i
+                            class="bi bi-star-fill fs-4 star-static {% if rating.rating >= forloop.counter %}text-warning{% else %}text-secondary{% endif %}"
+                            data-value="{{ forloop.counter }}"
+                        ></i>
+                        {% endfor %}
+                    </div>
+                </div>
+                <p class="mb-0">{{ rating.text }}</p>
+            </li>
+
+            {% empty %}
+            <li class="list-group-item text-muted">
+                Aun no hay reseñas. Se el primero en dejar una!
+            </li>
+            {% endfor %}
+        </ul>
+
+        {% if user.is_authenticated %}
+        <div class="card-body">
+            <form
+                class="post-form"
+                method="post"
+                action="{% url 'rating:rating_add' event.pk %}"
+            >
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="{{ form.title.id_for_label }}"
+                        >Título de la reseña
+                        <span style="color: red">*</span></label
+                    >
+                    <!-- prettier-ignore -->
+                    {{ form.title }}
+                    {{ form.title.errors }}
+                </div>
+
+                <div class="mb-3">
+                    <label for="{{ form.text.id_for_label }}"
+                        >Contenido de la reseña
+                        <span style="color: red">*</span></label
+                    >
+                    <!-- prettier-ignore -->
+                    {{ form.text }}
+                    {{ form.text.errors }}
+                </div>
+
+                <div class="mb-3">
+                    <!-- prettier-ignore -->
+                    <div class="md-3">
+                        <label for="rating">Puntuacion <span style="color: red">*</span></label>
+                        <div id="star-rating" class="d-flex">
+                            {% for i in "12345" %}
+                            <i class="bi bi-star-fill text-secondary fs-4 star" data-value="{{ i }}"></i>
+                            {% endfor %}
+                        </div>
+                        <input id="rating" type="hidden" name="rating" value="" />
+
+                        <!-- Mensaje de error en caso de no seleccionar la puntuacion -->
+                        <div id="error-message" class="text-danger mt-1" style="visibility: hidden;">
+                            <small>Se debe seleccionar una puntuacion.</small>
+                        </div>
+                    </div>
+
+                    <!-- {{ form.rating.errors }} -->
+                </div>
+                <div class="text-end">
+                    <button class="btn btn-primary">Publicar reseña</button>
+                </div>
+            </form>
+        </div>
+        {% else %}
+        <div class="card-body">
+            <p>
+                <a href="{% url 'login' %}?next={{ request.path }}">
+                    Inicia sesión
+                </a>
+                para dejar una reseña.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        /* Manejo de seleccion de puntuacion */
+        const stars = document.querySelectorAll("#star-rating .star");
+        const ratingInput = document.getElementById("rating");
+        const form = document.querySelector(".post-form");
+        const errorContainer = document.getElementById("error-message");
+
+        stars.forEach((star, index) => {
+            star.addEventListener("click", () => {
+                ratingInput.value = index + 1;
+
+                stars.forEach((s, i) => {
+                    s.classList.toggle("text-warning", i <= index);
+                    s.classList.toggle("text-secondary", i > index);
+                });
+
+                errorContainer.style.visibility = "hidden";
+            });
+        });
+
+        form.addEventListener("submit", (event) => {
+            /* Manejo de error de no seleccion de la puntuacion */
+            if (!ratingInput.value) {
+                event.preventDefault();
+                errorContainer.style.visibility = "visible";
+            }
+        });
+    });
+</script>
