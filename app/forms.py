@@ -217,7 +217,7 @@ class VenueForm(forms.ModelForm):
             fields = ['name', 'address', 'city', 'capacity', 'contact']
             # Ya no necesitamos definir widgets aquí porque los definimos arriba
 
-
+## agregre el Event_form
 class VenueChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, obj: Venue):
         return f"{obj.name} - {obj.city} - {obj.address}"

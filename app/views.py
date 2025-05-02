@@ -158,7 +158,7 @@ def event_delete(request, id):
 
     return redirect("events")
 
-
+#modifique event_form
 @login_required
 def event_form(request, id=None):
     user = request.user
