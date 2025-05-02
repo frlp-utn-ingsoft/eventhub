@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">Confirmar eliminación</h4>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">¿Estás seguro de que deseas eliminar la siguiente notificación?</p>
+                    
+                    <div class="alert alert-light">
+                        <h5 class="alert-heading">{{ notification.title }}</h5>
+                        <p>{{ notification.message }}</p>
+                        <hr>
+                        <div class="d-flex justify-content-between small text-muted">
+                            <span>
+                                {% if notification.event %}
+                                    <strong>Evento:</strong> {{ notification.event.name }}
+                                {% else %}
+                                    <strong>Evento:</strong> Sin evento
+                                {% endif %}
+                            </span>
+                            <span>
+                                <strong>Fecha:</strong> {{ notification.created_at|date:"d M Y, H:i" }}
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <p class="text-danger mb-4"><strong>Nota:</strong> Esta acción no se puede deshacer.</p>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'notifications:manage_notifications' %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Cancelar
+                        </a>
+                        <form action="{% url 'notifications:delete_notification' notification.pk %}" method="POST">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

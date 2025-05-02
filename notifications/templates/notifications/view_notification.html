@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Ver Notificación: {{ notification.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="mb-0">Detalles de Notificación</h1>
+        <div>
+            <a href="{% url 'notifications:notification_management' %}" class="btn btn-secondary me-2">
+                <i class="bi bi-arrow-left me-1"></i> Volver a la lista
+            </a>
+            <a href="{% url 'notifications:edit_notification' notification.pk %}" class="btn btn-outline-secondary me-2" title="Editar">
+                <i class="bi bi-pencil"></i> Editar
+            </a>
+            <form action="{% url 'notifications:delete_notification' notification.pk %}" method="POST" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger" title="Eliminar" onclick="return confirm('¿Estás seguro de que deseas eliminar la notificación \'{{ notification.title|escapejs }}\'? Esta acción no se puede deshacer.');">
+                    <i class="bi bi-trash"></i> Eliminar
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            Detalles
+        </div>
+        <div class="card-body">
+            <h5 class="card-title">{{ notification.title }}</h5>
+            <p class="card-text">{{ notification.message }}</p>
+            <hr>
+            <dl class="row">
+                <dt class="col-sm-3">Enviado por:</dt>
+                <dd class="col-sm-9">{{ notification.creator.get_full_name|default:notification.creator.username }}</dd>
+
+                <dt class="col-sm-3">Fecha de envío:</dt>
+                <dd class="col-sm-9">{{ notification.created_at|date:"d M Y, H:i" }}</dd>
+
+                <dt class="col-sm-3">Prioridad:</dt>
+                <dd class="col-sm-9">
+                    {% if notification.priority == 'HIGH' %}
+                        <span class="badge bg-danger">Alta</span>
+                    {% elif notification.priority == 'MEDIUM' %}
+                        <span class="badge bg-primary">Normal</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Baja</span>
+                    {% endif %}
+                </dd>
+
+                <dt class="col-sm-3">Destinatarios:</dt>
+                <dd class="col-sm-9">
+                    {% with recipients=notification.recipients.all %}
+                        {% if recipients %}
+                            {% for recipient in recipients %}
+                                <span class="badge bg-secondary text-white me-1">{{ recipient.get_full_name|default:recipient.username }}</span>
+                            {% endfor %}
+                        {% else %}
+                             <span class="badge bg-warning text-dark">Sin destinatarios</span>
+                        {% endif %}
+                    {% endwith %}
+                </dd>
+
+                {% if notification.event %}
+                    <dt class="col-sm-3">Evento:</dt>
+                    <dd class="col-sm-9"><a href="#">{{ notification.event.name }}</a></dd>
+                {% endif %}
+
+            </dl>
+        </div>
+    </div>
+</div>
+{% endblock %}
