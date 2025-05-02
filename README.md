@@ -20,23 +20,30 @@ Aplicaci√≥n web para venta de entradas utilizada en la cursada 2025 de Ingenier√
 
 ## Instalar dependencias
 
-`pip install -r requirements.txt`
+```
+pip install -r requirements.txt
+```
 
 ## Iniciar la Base de Datos
 
-`python manage.py migrate`
+```
+./start_db.sh
+```
 
-## Migraciones de Django cities
-
-`python manage.py migrate cities_light`
 ### Crear usuario admin
 
-`python manage.py createsuperuser`
+```
+python manage.py createsuperuser
+```
 
 ### Llenar la base de datos
 
-`python manage.py loaddata fixtures/events.json`
+```
+./load_data.sh
+```
 
 ## Iniciar app
 
-`python manage.py runserver`
+```
+python manage.py runserver
+```
