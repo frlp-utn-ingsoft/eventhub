@@ -101,8 +101,8 @@ class Ticket(models.Model):
         if ticket_type is None:
             errors["ticket_type"] = "El tipo de ticket es requerido"
 
-        if quantity is None or quantity <= 0:
-            errors["quantity"] = "La cantidad de tickets debe ser mayor a 0"
+        if quantity is None or not isinstance(quantity, int) or quantity <= 0:
+            errors["quantity"] = "La cantidad de tickets debe ser un número entero mayor a 0"
         
         return errors
     
@@ -120,19 +120,22 @@ class Ticket(models.Model):
             quantity=quantity,
             total_price=ticket_type.price * quantity
         )
-        ticket.ticket_code = str(ticket.id) #Figura como error, pero al crear ejectuar Ticket.create() se genera id, por lo que deberia poder copiarlo en ticket_code
+        ticket.ticket_code = ticket.id #Figura como error, pero al crear ejectuar Ticket.create() se genera id, por lo que deberia poder copiarlo en ticket_code
         ticket.save()
 
         return True, ticket.ticket_code
     
-    def update(self, event, ticket_type, quantity):
-        if quantity is None or quantity <= 0:
-            return False, {"quantity": "La cantidad de tickets debe ser mayor a 0"}
-        
-        self.modified_date = now()
+    def thirty_minutes_rule(self):
         if not self.user.is_organizer and now() > self.buy_date + timedelta(minutes=30):
+            return False
+        return True
+
+    def update(self, ticket_type, quantity):
+        if quantity is None or not isinstance(quantity, int) or quantity <= 0:
+            return False, {"quantity": "La cantidad de tickets debe ser mayor a 0"}
+        self.modified_date = now()
+        if not self.thirty_minutes_rule():
             return False, {"error": "El ticket solo se puede modificar en los 30 minutos posteriores a su creacion"}
-        self.event = event or self.event
         self.ticket_type = ticket_type or self.ticket_type
         self.quantity = quantity or self.quantity
         if quantity is not None or ticket_type is not None:
@@ -140,9 +143,14 @@ class Ticket(models.Model):
             self.total_price = ticket_type.price * self.quantity
         self.modified_date = now()
         self.save()
-
         return True, None
 
+    def delete(self):
+        if self.thirty_minutes_rule():
+            super().delete()
+            return True, None
+        else:
+            return False, {"error": "El ticket solo se puede eliminar en los 30 minutos posteriores a su creacion"}
 class TicketType(models.Model):
     name = models.CharField(max_length=25)
     price = models.DecimalField(max_digits=10, decimal_places=2)
