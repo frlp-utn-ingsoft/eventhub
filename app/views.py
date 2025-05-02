@@ -420,7 +420,9 @@ def notification_form(request, id=None):
 def notification_detail(request, id=None):
     notification = get_object_or_404(Notification, pk=id)
 
-
+    if not request.user.is_organizer:
+        return redirect("notifications")
+    
     return render(request, "app/notification_detail.html", {
         "notification": notification,
         "user_is_organizer": request.user.is_organizer,
