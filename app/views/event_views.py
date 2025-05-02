@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from app.models import Category, Event, Rating, Venue, Ticket
+from app.models import Category, Event, Rating, Ticket, Venue
 from app.views.rating_views import create_rating
 
 
@@ -63,7 +63,7 @@ def event_form(request, id=None):
 
     categories = Category.objects.all()
     venues = Venue.get_venues_by_user(user)
-    selected_categories = event.categories.all() if event else []
+    selected_categories = event.categories.all() if event else [] # type: ignore
     return render(
         request,
         "app/event/event_form.html",
