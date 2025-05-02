@@ -30,12 +30,22 @@ class User(AbstractUser):
 
         return errors
 
-# ------------------- Evento -------------------
+class Venue(models.Model):
+    name = models.TextField(max_length=200)
+    address = models.TextField()
+    city = models.TextField(max_length=100)
+    capacity = models.IntegerField()
+    contact = models.TextField(max_length=100)
+
+    def __str__(self):
+        return f"{self.name} - {self.city}"
+
 class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
+    venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name="events", null=True)  # Relación con Venue
     categories = models.ManyToManyField('Category', related_name='events')  # vinculado con Category
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -44,7 +54,7 @@ class Event(models.Model):
         return self.title
 
     @classmethod
-    def validate(cls, title, description, scheduled_at, categories):
+    def validate(cls, title, description, venue, scheduled_at, categories):
         errors = {}
 
         if not title:
@@ -59,8 +69,8 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, categories):
-        errors = Event.validate(title, description, scheduled_at, categories)
+    def new(cls, title, description, venue, scheduled_at, organizer, categories):
+        errors = Event.validate(title, description, venue, scheduled_at, categories)
 
         if len(errors.keys()) > 0:
             return False, errors
@@ -74,9 +84,10 @@ class Event(models.Model):
         event.categories.set(categories)
         return True, None
 
-    def update(self, title, description, scheduled_at, organizer, categories):
+    def update(self, title, description, venue, scheduled_at, organizer, categories):
         self.title = title or self.title
         self.description = description or self.description
+        self.venue = venue or self.venue
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
 
@@ -255,3 +266,18 @@ class Category(models.Model):
 
         return errors
 
+######### feature/rating #########    
+class Rating(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='ratings')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings')
+    title = models.CharField(max_length=100)
+    text = models.TextField(blank=True)
+    rating = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('event', 'user')  # Un usuario solo puede calificar una vez
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.rating}★ - {self.title} ({self.user.username})"

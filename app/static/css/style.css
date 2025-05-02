@@ -111,6 +111,24 @@
   color:#fff     !important;
 }
 
+.form-control {
+  color: #212529 !important; /* Asegura que el texto sea negro */
+  background-color: #ffffff !important; /* Fondo blanco */
+  border: 1px solid #ced4da; /* Borde estándar */
+}
+
+.form-control::placeholder {
+  color: #6c757d !important; /* Color del placeholder */
+}
+
+.form-control:focus {
+  color: #212529 !important; /* Asegura que el texto sigue siendo negro al hacer focus */
+  background-color: #ffffff !important; /* Fondo blanco */
+  border-color: #80bdff; /* Borde azul al hacer focus */
+  outline: 0;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25); /* Sombra azul */
+}
+
 /* Sólo borde */
 .btn-outline-eventhub{
   background:transparent;
@@ -133,6 +151,8 @@
       padding-right: 1rem;
     }
   }
+
+
   
 
   @media (max-width: 430px) {

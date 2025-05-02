@@ -1,8 +1,16 @@
 from django import forms
-from .models import RefundRequest, Ticket, Category, Notification, Event
+from .models import Venue
+
+class VenueForm(forms.ModelForm):
+    class Meta:
+        model = Venue
+        fields = ['name', 'address', 'city', 'capacity', 'contact']
+
+from .models import RefundRequest, Ticket, Category, Notification, Event, Rating
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from django.contrib.auth import get_user_model
+
 
 User = get_user_model()
 # --- Formulario de Refunds ---
@@ -216,3 +224,17 @@ class CategoryForm(forms.ModelForm):
             'is_active': 'Activo',
         }
 
+class RatingForm(forms.ModelForm):
+    class Meta:
+        model = Rating
+        fields = ['title', 'rating', 'text']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Gran experiencia'}),
+            'rating': forms.NumberInput(attrs={'class': 'form-control', 'min': 1, 'max': 5}),
+            'text': forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Comparte tu experiencia...', 'rows': 3}),
+        }
+        labels = {
+            'title': 'Título de tu reseña *',
+            'rating': 'Tu calificación *',
+            'text': 'Tu reseña (opcional)',
+        }
