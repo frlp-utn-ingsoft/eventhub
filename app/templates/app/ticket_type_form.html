@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{%block content%}
+<div class="col-12 mb-0 mt-2">
+    <a
+        class="btn btn-sm btn-outline-secondary mb-0 ms-4"
+        href="{% url 'ticket_types' %}"
+    >
+        Volver
+    </a>
+</div>
+<div class="container mt-5">
+    
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="mb-4">Crear tipo de ticket</h1>
+            {% if errors %}
+                <div class="alert alert-danger">
+                    <ul class="mb-0">
+                        {% for error in errors.values %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            <div class="card">
+                <div class="card-body">
+                    <form action="{% url 'ticket_type_form' %}" method="POST">
+                        {% csrf_token %}
+                        <div class="vstack gap-3">
+                            <div>
+                                <label for="name" class="form-label">Nombre del Ticket</label>
+                                <input class="form-control" id="name" name="name" type="text" required="" value="{{ ticket_type.name|default:'' }}">
+                            </div>
+                            <div>
+                                <label for="price" class="form-label">Precio del Ticket</label>
+                                <input class="form-control" id="price" name="price" type="number" step="0.01" required="" value="{{ ticket_type.price|default:'' }}">
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary">Crear tipo de ticket</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

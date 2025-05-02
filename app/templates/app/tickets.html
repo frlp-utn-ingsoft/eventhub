@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container mt-4">
+    {% include "app/tickets_table.html" with show_event=True show_user=False %}
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="col-12 mb-0 mt-2">
+    <a
+        class="btn btn-sm btn-outline-secondary mb-0 ms-4"
+        href="{% url 'tickets' %}"
+    >
+        Volver
+    </a>
+</div>
+<div class="container mt-1">
+    {% if errors %}
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                {% for error in errors.values %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    {% endif %}
+    <div class="row align-items-center">
+        <h1 class="mb-0">Detalle del ticket #{{ ticket.id }}</h1>
+        <p>Generación: {{ ticket.buy_date|date:"l, j \\d\\e F \\d\\e Y, H:i"}}</p>
+    </div>       
+    <div class="row">
+        <div class="card">
+            <div class="card-body">
+                <div class="row">
+                    <!-- Columna izquierda -->
+                    <div class="col-md-6">
+                        <h3 class="card-title mb-3">{{ ticket.event.title }}</h3>
+                        <div class="mb-3">
+                            <h6 class="mb-0">Fecha y hora</h6>
+                            <p><i class="bi bi-calendar-event text-primary"></i> {{ ticket.event.scheduled_at|date:"l j F Y, H:i" }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="mb-0">Ubicación</h6>
+                            <p><i class="bi bi-geo-alt text-primary"></i> {{ ticket.event.venue.name }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="mb-0">Organizador</h6>
+                            <p><i class="bi bi-person text-primary"></i> {{ ticket.event.organizer }}</p>
+                        </div>
+                        <div class="mb-3">
+                            <h6 class="mb-0">Categoria</h6>
+                            <p>
+                                <i class="bi bi-tags text-primary"></i>
+                                {% for category in event.categories.all %}
+                                    <span class="badge bg-light text-dark">{{ category.name }}</span>
+                                {% empty %}
+                                    <span class="text-muted">Sin categorías</span>
+                                {% endfor %}
+                            </p>
+                        </div>
+                    </div>
+                    <!-- Columna derecha -->
+                    <div class="col-md-6">
+                        <h3 class="card-title mb-3">Entradas</h3>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light rounded-circle p-2 me-3">
+                                <i class="bi bi-ticket text-primary"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">Tipo entrada</h6>
+                                <p class="mb-0">{{ ticket.ticket_type.name }} - ${{ ticket.ticket_type.price }}</p>
+                                <p class="mb-0">Cantidad: {{ticket.quantity}}</p>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-light rounded-circle p-2 me-3">
+                                <i class="bi bi-currency-dollar text-primary"></i>
+                            </div>
+                            <div>
+                                <h6 class="mb-0">Total</h6>
+                                <p class="mb-0">${{ ticket.total_price }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

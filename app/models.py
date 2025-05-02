@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
+from django.utils.timezone import now
+from datetime import timedelta
 from django.db.models.signals import m2m_changed
 from django.dispatch import receiver
 
@@ -86,6 +88,7 @@ class Event(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     venue= models.ForeignKey('Venue', on_delete=models.SET_NULL, related_name='events', null=True, blank=True)
     categories = models.ManyToManyField(Category, blank=True)
+    available_tickets = models.IntegerField(default=0)
 
 
     def __str__(self):
@@ -123,6 +126,7 @@ class Event(models.Model):
             description=description.strip(),
             scheduled_at=scheduled_at,
             organizer=organizer,
+            available_tickets=venue.capacity if venue else 0,
         )
 
         return True, None
@@ -135,6 +139,7 @@ class Event(models.Model):
 
         self.title = title.strip()
         self.venue=venue
+        self.available_tickets = venue.capacity if venue else self.available_tickets
         self.description = description.strip()
         self.scheduled_at = scheduled_at
         self.organizer = organizer
@@ -199,6 +204,140 @@ class Venue(models.Model):
 
         return True, None
 
+class Rating(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings')
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='ratings')
+    title = models.CharField(max_length=100)
+    text = models.TextField(blank=True)
+    rating = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.event.title} ({self.rating}⭐)"
+
+
+class Ticket(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="tickets")
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tickets")
+    ticket_type = models.ForeignKey("TicketType", on_delete=models.CASCADE, related_name="tickets")
+    ticket_code = models.CharField(max_length=50, unique=True, blank=True)
+    buy_date = models.DateTimeField(auto_now_add=True)
+    modified_date = models.DateTimeField(null=True, blank=True)
+    quantity = models.PositiveIntegerField(default=1)
+    total_price = models.DecimalField(max_digits=10, decimal_places=2)
+    old_total_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+
+    @classmethod
+    def validate(cls, event, user, ticket_type, quantity):
+        errors = {}
+
+        if event is None:
+            errors["event"] = "El evento es requerido"
+        
+        if user is None:
+            errors["user"] = "El usuario es requerido"
+        
+        if ticket_type is None:
+            errors["ticket_type"] = "El tipo de ticket es requerido"
+
+        if quantity is None or not isinstance(quantity, int) or quantity <= 0:
+            errors["quantity"] = "La cantidad de tickets debe ser un número entero mayor a 0"
+        
+        return errors
+    
+    @classmethod
+    def new(cls, event, user, ticket_type, quantity):
+        errors = Ticket.validate(event, user, ticket_type, quantity)
+        if len(errors.keys()) > 0:
+            return False, errors
+        if event.available_tickets < quantity:
+            return False, {"error": "No hay suficientes entradas disponibles"}
+        event.available_tickets -= quantity
+        event.save()
+
+        ticket = Ticket.objects.create(
+            event=event,
+            user=user,
+            ticket_type=ticket_type,
+            quantity=quantity,
+            total_price=ticket_type.price * quantity
+        )
+        ticket.ticket_code = ticket.id #Figura como error, pero al crear ejectuar Ticket.create() se genera id, por lo que deberia poder copiarlo en ticket_code
+        ticket.save()
+        return True, ticket.ticket_code
+    
+
+    def update(self, ticket_type, quantity):
+        self.event.available_tickets -= quantity - self.quantity
+        if self.event.available_tickets < 0:
+            return False, {"error": "No hay suficientes entradas disponibles"}
+        self.event.save()
+        if quantity is None or not isinstance(quantity, int) or quantity <= 0:
+            return False, {"quantity": "La cantidad de tickets debe ser mayor a 0"}
+        self.modified_date = now()
+        if not self.user.is_organizer and now() < self.buy_date + timedelta(minutes=30):
+            return False, {"error": "El ticket solo se puede modificar en los 30 minutos posteriores a su creacion"}
+        self.ticket_type = ticket_type or self.ticket_type
+        self.quantity = quantity or self.quantity
+        if quantity is not None or ticket_type is not None:
+            self.old_total_price = self.total_price
+            self.total_price = ticket_type.price * self.quantity
+        self.modified_date = now()
+        self.save()
+        self.event.available_tickets -= quantity - self.quantity
+        return True, None
+
+    def delete(self, user_is_organizer):
+        if user_is_organizer:
+            self.event.available_tickets += self.quantity
+            self.event.save()
+            super().delete()
+            return True, None
+        if not user_is_organizer and now() < self.buy_date + timedelta(minutes=30):
+            self.event.available_tickets += self.quantity
+            self.event.save()
+            super().delete()
+            return True, None
+        else:
+            return False, {"error": "El ticket solo se puede eliminar en los 30 minutos posteriores a su creacion"}
+        
+class TicketType(models.Model):
+    name = models.CharField(max_length=25)
+    price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    @classmethod
+    def validate(cls, name, price):
+        errors = {}
+        if cls.objects.filter(name=name).exists():
+            errors["name"] = "Ya existe un tipo de ticket con ese nombre"
+        if name == "":
+            errors["name"] = "El nombre es requerido"
+        if price is None or not isinstance(price, (int, float)) or price <= 0:
+            errors["price"] = "El precio debe ser un número mayor a 0"
+
+        return errors
+
+    @classmethod
+    def new(cls, name, price):
+        errors = TicketType.validate(name, price)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+
+        TicketType.objects.create(
+            name=name,
+            price=price,
+        )
+
+        return True, None
+
+    def update(self, price):
+        if price is None or not isinstance(price, (int, float)) or price <= 0:
+            return False, {"price": "El precio debe ser un número mayor a 0"}
+        self.price = price
+        self.save()
+
+        return True, None
 class Notification(models.Model):
     title=models.CharField(max_length=200)
     message=models.TextField()

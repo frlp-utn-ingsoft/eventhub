@@ -19,6 +19,8 @@
         content="width=device-width, initial-scale=1"
     />
 
+    {% block extra_head %}{% endblock %}
+
 </head>
 
 <body>
@@ -55,6 +57,16 @@
                             <li class="nav-item">
                                 {% navbar_link 'venues' 'Ubicaciones' %}
                             </li>
+                            {% if not user.is_organizer %}
+                            <li class="nav-item">
+                                {% navbar_link 'tickets' 'Mis Tickets' %}
+                            </li>
+                            {% endif %}
+                            {% if user.is_superuser %}
+                            <li class="nav item">
+                                {% navbar_link 'ticket_types' 'Tipos de tickets' %}
+                            </li>
+                            {% endif %}
                             <li class="nav-item">
                                 {% navbar_link 'notifications' 'Notificaciones' %}
                             </li>
