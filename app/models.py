@@ -200,7 +200,7 @@ class Venue(models.Model):
 class Notification(models.Model):
     title=models.CharField(max_length=200)
     message=models.TextField()
-    user=models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    user=models.ManyToManyField(User, related_name='notifications')
     created_at=models.DateTimeField(auto_now_add=True)
     priority=models.ForeignKey('NotificationPriority', on_delete=models.SET_NULL, null=True, blank=True)
     is_read=models.BooleanField(default=False)
