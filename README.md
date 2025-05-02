@@ -17,10 +17,10 @@ Aplicación web para venta de entradas utilizada en la cursada 2025 de Ingenier�
 
  2. En el caso de que la última dependencia no funcione, recomendamos instalar un entorno virtual:
     Procedimiento:
-    2.1: En la raíz del proyecto, escribir este comando: 'python -m venv venv'
-    2.2: Activar el entorno virtual: 'venv\Scripts\activate'
-    2.3: Instalar las dependencias dentro del venv con `pip install -r requirements.txt`
-    2.4: Ejecutar el siguiente script: 'python postinstall.py'. Este último fue de ayuda ya que tuvimos inconvenientes de compatibilidad entre dependencias
+    - En la raíz del proyecto, escribir este comando: 'python -m venv venv'
+    - Activar el entorno virtual: 'venv\Scripts\activate'
+    - Instalar las dependencias dentro del venv con `pip install -r requirements.txt`
+    - Ejecutar el siguiente script: 'python postinstall.py'. Este último fue de ayuda ya que tuvimos inconvenientes de compatibilidad entre dependencias
 
 3. Iniciar la app
 
