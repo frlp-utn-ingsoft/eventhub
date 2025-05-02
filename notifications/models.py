@@ -1,7 +1,7 @@
 from django.db import models
 from django.utils import timezone
 
-from app.models import User
+from app.models import User, Event
 
 
 class Notification(models.Model):
@@ -16,6 +16,14 @@ class Notification(models.Model):
         on_delete=models.CASCADE,
         related_name='created_notifications',
         verbose_name="Creador"
+    )
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='notifications',
+        verbose_name="Evento Asociado"
     )
     title = models.CharField(max_length=200, verbose_name="Título")
     message = models.TextField(verbose_name="Mensaje")
