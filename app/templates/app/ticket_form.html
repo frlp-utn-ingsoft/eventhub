@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="col-12 mb-0 mt-2">
-    <button
+    <a
         class="btn btn-sm btn-outline-secondary mb-0 ms-4"
-        type="button"
-        onclick="window.location.href='{% url 'events' %}'"
+        href="{% url 'events' %}"
     >
         Volver
-    </button>
+    </a>
+</div>
 </div>
 <div class="container mt-1">
     <div class="row">
