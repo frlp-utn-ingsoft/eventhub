@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="d-flex justify-content-between align-items-center">
+            <h1>{{ event.title }}</h1>
+            <div>
+            {% if user_is_organizer %}
+                <a
+                    href="{% url 'event_edit' event.id %}"
+                    class="btn btn-outline-primary me-2"
+                >
+                    <i class="bi bi-pencil me-1"></i>Editar
+                </a>
+            {% endif %}
+            <a 
+                        href="{% url 'buy_ticket' event.id %}" 
+                        class="btn btn-success me-2"
+                    >
+                        <i class="bi bi-ticket-perforated me-1"></i>Comprar Entrada
+                    </a>
+        </div>
+    </div>
+    <div class="row">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Detalles del Evento</h5>
+                <p class="card-text">{{ event.description }}</p>
+                <div class="mt-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-calendar-event text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Fecha y Hora</h6>
+                            <p class="mb-0">{{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-geo-alt text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Ubicación</h6>
+                            <p class="mb-0">
+                                {% if event.location %}
+                                    {{ event.location }}
+                                {% else %}
+                                    Sin ubicación asignada
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>                    
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-person text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Organizador</h6>
+                            <p class="mb-0">{{ event.organizer }}</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-tags text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Categorías</h6>
+                            <p class="mb-0">
+                                {% for category in event.categories.all %}
+                                    <span class="badge bg-light text-dark border me-1">{{ category.name }}</span>
+                                {% empty %}
+                                    <span class="text-muted">Sin categorías asignadas</span>
+                                {% endfor %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+        
+        {% if user_is_organizer %}
+        <div class="container mt-5">
+            <h2 class="mb-4">Comentarios del Evento</h2>
+        
+            <table class="table table-striped table-hover text-center">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Evento</th>
+                        <th>Usuario</th>
+                        <th>Comentario</th>
+                        <th>Fecha</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for comment in comments %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'event_detail' id=comment.event.id %}">
+                                    {{ comment.event.title }}
+                                </a>
+                            </td>
+                            <td>{{ comment.user.username }}</td>
+                            <td>{{ comment.description|truncatechars:40 }}</td>
+                            <td>{{ comment.created_at|date:"d M Y, H:i" }}</td>
+                            <td>
+                                <a href="{% url 'detail_comment' comment.id %}" class="btn btn-sm btn-outline-primary" title="Ver">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'delete_comment' comment.id %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5">No hay comentarios disponibles.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    <div class="row">
+        <div class="card">
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">Comentarios ({{ comments.count }})</h5>
+                    {% for comment in comments %}
+                    <div class="mb-3 border-bottom pb-2">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="d-flex align-items-center mb-1">
+                                <i class="bi bi-person-circle fs-4 me-2"></i>
+                                <div>
+                                    <strong>{{ comment.user.username }}</strong>
+                                    <div class="text-muted small">
+                                        {{ comment.created_at|date:"j M Y, H:i" }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% if comment.user == request.user %}
+                            <div class="dropdown">
+                                <a class="btn btn-sm" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-three-dots-vertical"></i>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li><a class="dropdown-item" href="{% url 'edit_comment' comment.id %}">Editar</a></li>
+                                    <li><a class="dropdown-item text-danger" href="{% url 'delete_comment' comment.id %}">Eliminar</a></li>
+                                </ul>
+                            </div>
+                            {% endif %}
+                        </div>
+                        <h6 class="fw-bold mt-2">{{ comment.title }}</h6>
+                        <p>{{ comment.description }}</p>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted">No hay comentarios aún.</p>
+                    {% endfor %}
+
+                    <form method="post" class="mt-4">{% csrf_token %}
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Título del comentario *</label>
+                            <input type="text" class="form-control" name="title" id="title" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Contenido del comentario *</label>
+                            <textarea class="form-control" name="description" id="description" rows="3" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Publicar comentario</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

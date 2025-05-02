@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card p-4 shadow-sm">
+        <h2 class="mb-4">Editar Ubicación</h2>
+
+        <form method="post">
+            {% csrf_token %}
+
+            {% if errors %}
+            <div class="alert alert-danger">
+                <ul>
+                    {% for field, error in errors.items %}
+                        <li><strong>{{ field }}:</strong> {{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="mb-3">
+                <label class="form-label">Nombre de la ubicación *</label>
+                <input type="text" name="name" class="form-control" value="{{ form_data.name|default:location.name }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Dirección *</label>
+                <input type="text" name="address" class="form-control" value="{{ form_data.address|default:location.address }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Ciudad *</label>
+                <input type="text" name="city" class="form-control" value="{{ form_data.city|default:location.city }}" required>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Capacidad (número de personas) *</label>
+                <input type="number" name="capacity" class="form-control" value="{{ form_data.capacity|default:location.capacity }}" required min="1">
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Contacto *</label>
+                <textarea name="contact" class="form-control" rows="3" required>{{ form_data.contact|default:location.contact }}</textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Actualizar Ubicación</button>
+            <a href="{% url 'locations_list' %}" class="btn btn-secondary">Cancelar</a>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card p-4 shadow-sm">
+                <h2 class="mb-4">
+                    {% if notification %}
+                    Editar Notificación
+                {% else %}
+                    Crear Notificación
+                {% endif %}
+                </h2>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Título de la notificación *</label>
+                        <input type="text" name="title" class="form-control"
+                            placeholder="Ej: Cambio de horario del evento" value="{{ notification.title|default:'' }}"
+                            required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mensaje *</label>
+                        <textarea name="message" class="form-control"
+                            placeholder="Escribe el contenido de la notificación..."
+                            required>{{ notification.message|default:'' }}</textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="event" class="form-label fw-bold">Evento relacionado *</label>
+                                <select name="event" id="event" class="form-control">
+                                    <option value="" disabled {% if not notification %}selected{% endif %}>Selecciona un evento</option>
+                                    {% for event in events %}
+                                    <option value="{{ event.id }}" {% if notification and notification.event.id == event.id %}selected{% endif %}>
+                                        {{ event.title }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Destinatarios *</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="recipients" id="all" value="all" required>
+                            <label class="form-check-label" for="all">Todos los asistentes del evento</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="recipients" id="specificUser" value="specific" required>
+                            <label class="form-check-label" for="specificUser">Usuario específico</label>
+                        </div>
+                        <div class="mb-3" id="userSelectContainer" style="display: none;">
+                            <select name="userSelect" class="form-control" id="specificUserSelect" disabled>
+                                <option value="" disabled selected>Selecciona un usuario</option>
+                                {% for user in users %}
+                                    <option value="{{ user.id }}">{{ user.username }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="priority" class="form-label fw-bold">Prioridad *</label>
+                                <select name="priority" id="priority" class="form-control">
+                                    <option value="low" {% if notification and notification.priority == 'low' %}selected{% endif %}>Baja</option>
+                                    <option value="medium" {% if notification and notification.priority == 'medium' %}selected{% endif %}>Media</option>
+                                    <option value="high" {% if notification and notification.priority == 'high' %}selected{% endif %}>Alta</option>
+                                </select>
+                    </div>
+                    <button type="submit" class="btn btn-primary">
+                        {% if notification %}Actualizar{% else %}Crear{% endif %} Notificación
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card p-4 shadow-sm">
+                <h5 class="mb-3">Consejos</h5>
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <span class="text-warning"><i class="bi bi-lightbulb"></i></span> Usa títulos claros y concisos para captar la atención.
+                    </li>
+                    <li class="mb-2">
+                        <span class="text-warning"><i class="bi bi-lightbulb"></i></span> Incluye toda la información relevante en el mensaje.
+                    </li>
+                    <li class="mb-2">
+                        <span class="text-warning"><i class="bi bi-lightbulb"></i></span> Usa la prioridad alta solo para notificaciones urgentes.
+                    </li>
+                    <li>
+                        <span class="text-warning"><i class="bi bi-lightbulb"></i></span> Considera enviar por correo electrónico las notificaciones
+                        importantes.
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const specificUserRadio = document.getElementById('specificUser');
+        const allAttendeesRadio = document.getElementById('all');
+        const userSelectContainer = document.getElementById('userSelectContainer');
+        const specificUserSelect = document.getElementById('specificUserSelect');
+
+        specificUserRadio.addEventListener('change', function () {
+            if (specificUserRadio.checked) {
+                userSelectContainer.style.display = 'block';
+                specificUserSelect.disabled = false;
+            }
+        });
+
+        allAttendeesRadio.addEventListener('change', function () {
+            if (allAttendeesRadio.checked) {
+                userSelectContainer.style.display = 'none';
+                specificUserSelect.disabled = true;
+            }
+        });
+    });
+</script>
+{% endblock %}
