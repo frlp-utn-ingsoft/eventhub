@@ -8,6 +8,11 @@ from django.http import HttpResponseForbidden
 from django.db.models import Count
 from .models import Event, User, Rating, Category, Venue
 from .forms import RatingForm, CategoryForm, VenueForm
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required
+
+from .forms import EventForm  
+
 
 def register(request):
     if request.method == "POST":
@@ -64,22 +69,92 @@ def events(request):
 
     fecha = request.GET.get("fecha")
     categoria_id = request.GET.get("categoria")
+    venue_id = request.GET.get("venue")
 
     if fecha:
         events = events.filter(scheduled_at__date=fecha)
     if categoria_id:
         events = events.filter(categories__id=categoria_id)
+    if venue_id:
+        events = events.filter(venue_id=venue_id)
 
     events = events.distinct()
 
     categorias = Category.objects.all()
+    venues = Venue.objects.all()  # 👈 agregamos las ubicaciones al contexto
+
     return render(
         request,
         "app/events.html",
         {
             "events": events,
-            "user_is_organizer": request.user.is_organizer, 
+            "user_is_organizer": request.user.is_organizer,
             "categorias": categorias,
+            "venues": venues,  # 👈 las pasamos al template
+        },
+    )
+
+   
+
+@login_required
+def event_detail(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    return render(
+        request,
+        "app/event_detail.html",
+        {
+            "event": event,
+            "user_is_organizer": request.user.is_organizer,
+        },
+    )
+
+@login_required
+def create_event(request):
+    if not request.user.is_organizer:
+        return redirect('events')
+        
+    if request.method == 'POST':
+        form = EventForm(request.POST, request.FILES)
+        if form.is_valid():
+            event = form.save(commit=False)
+            event.organizer = request.user
+            event.save()
+            form.save_m2m()  # Para guardar las relaciones many-to-many
+            return redirect('event_detail', event_id=event.id)
+    else:
+        form = EventForm()
+    
+    return render(
+        request,
+        "app/event_form.html",
+        {
+            "form": form,
+            "title": "Crear Evento",
+        },
+    )
+
+@login_required
+def edit_event(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    
+    if not request.user.is_organizer:
+        return redirect('events')
+        
+    if request.method == 'POST':
+        form = EventForm(request.POST, request.FILES, instance=event)
+        if form.is_valid():
+            form.save()
+            return redirect('event_detail', event_id=event.id)
+    else:
+        form = EventForm(instance=event)
+    
+    return render(
+        request,
+        "app/event_form.html",
+        {
+            "form": form,
+            "title": "Editar Evento",
+            "event": event,
         },
     )
 
@@ -170,6 +245,8 @@ def event_delete(request, id):
     return redirect("event_detail", id=id)
 
 
+
+
 @login_required
 def event_form(request, id=None):
     user = request.user
@@ -178,15 +255,15 @@ def event_form(request, id=None):
         return redirect("events")
 
     categories = Category.objects.all()
+    venues = Venue.objects.filter(organizer=user)
     selected_categories = []
-
     event = None
+    errors = {}
 
     if id is not None:
         event = get_object_or_404(Event, pk=id)
+        selected_categories = list(event.categories.values_list('id', flat=True))
 
-    
-    venues = Venue.objects.filter(organizer=request.user)
     today = timezone.localtime().date()
     min_date = today + datetime.timedelta(days=1)
 
@@ -195,71 +272,83 @@ def event_form(request, id=None):
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
-        selected_categories = [
-            int(cat_id) for cat_id in request.POST.getlist("categories") if cat_id.isdigit()
-        ]
         venue_id = request.POST.get("venue")
+        category_ids = request.POST.getlist("categories")
 
         
         if not venue_id:
-            return render(
-                request,
-                "app/event_form.html",
-                {
-                    "event": event,
-                    "user_is_organizer": user.is_organizer,
-                    "min_date": min_date,
-                    "venues": venues,
-                    "error": "Debe seleccionar un lugar para el evento.",
-                },
-            )
+            errors["venue"] = "Debe seleccionar un lugar para el evento."
 
-        [year, month, day] = map(int, date.split("-"))
-        [hour, minutes] = map(int, time.split(":"))
-        scheduled_at = timezone.make_aware(datetime.datetime(year, month, day, hour, minutes))
+        
+        try:
+            year, month, day = map(int, date.split("-"))
+            hour, minutes = map(int, time.split(":"))
+            scheduled_at = timezone.make_aware(datetime.datetime(year, month, day, hour, minutes))
+        except (ValueError, AttributeError):
+            errors["date"] = "Fecha u hora inválida."
+            scheduled_at = None
 
-        today = timezone.localtime().date()
-        if scheduled_at.date() <= today:
+        if scheduled_at and scheduled_at.date() <= today:
+            errors["date"] = "La fecha debe ser a partir de mañana."
+
+        
+        selected_categories = [int(cat_id) for cat_id in category_ids if cat_id.isdigit()]
+        selected_category_objects = Category.objects.filter(id__in=selected_categories)
+
+        
+        if scheduled_at:
+            validation_errors = Event.validate(title, description, scheduled_at)
+            errors.update(validation_errors)
+
+        
+        if errors:
             return render(
                 request,
                 "app/event_form.html",
                 {
                     "event": event,
                     "categories": categories,
-                    "user_is_organizer": request.user.is_organizer,
+                    "selected_categories": selected_categories,
+                    "venues": venues,
                     "user_is_organizer": user.is_organizer,
                     "min_date": min_date,
-                    "venues": venues,
-                    "error": "La fecha debe ser a partir de mañana.",
-                    "min_date": (today + datetime.timedelta(days=1)),
+                    "errors": errors
                 },
             )
 
         venue = get_object_or_404(Venue, pk=venue_id, organizer=user)
 
+        
         if id is None:
-            Event.new(title, description, scheduled_at, user, venue)
+            event = Event.objects.create(
+                title=title,
+                description=description,
+                scheduled_at=scheduled_at,
+                organizer=user,
+                venue=venue,
+            )
         else:
-            event.update(title, description, scheduled_at, user, venue)
+            event.title = title
+            event.description = description
+            event.scheduled_at = scheduled_at
+            event.venue = venue
+            event.save()
 
+        event.categories.set(selected_category_objects)
         return redirect("events")
-        if id is not None:
-            event = get_object_or_404(Event, pk=id)
 
-            today = timezone.localtime().date()
-            min_date = today + datetime.timedelta(days=1)
-
-        return render(
-            request,
-            "app/event_form.html",
-        {   
+    return render(
+        request,
+        "app/event_form.html",
+        {
             "event": event,
             "categories": categories,
             "selected_categories": selected_categories,
-            "user_is_organizer": request.user.is_organizer,
-            "min_date": min_date, 
             "venues": venues,
-            "no_venues": not venues.exists(), 
+            "user_is_organizer": user.is_organizer,
+            "min_date": min_date,
+            "errors": errors,
+            "no_venues": not venues.exists(),
         },
     )
 
@@ -380,5 +469,4 @@ def delete_venue(request, venue_id):
 def venue_detail(request, venue_id):
     venue = get_object_or_404(Venue, id=venue_id)
     return render(request, 'venues/venue_detail.html', {'venue': venue})
-
 

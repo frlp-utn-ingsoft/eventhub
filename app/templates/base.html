@@ -2,7 +2,6 @@
 
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <title>{% block title %}EventHub{% endblock %}</title>
@@ -10,9 +9,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
-
 <body>
-    
+
     <nav class="navbar navbar-expand-md bg-body-tertiary">
         <div class="container-fluid">
             <a class="navbar-brand" href="/">EventHub</a>
@@ -25,25 +23,9 @@
 
                     <div class="collapse navbar-collapse" id="navbar-content">
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            <li class="nav-item">
-                                {% navbar_link 'events' 'Eventos' %}
-                            </li>
-                            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                                <li class="nav-item">
-                                    {% navbar_link 'events' 'Eventos' %}
-                                </li>
-                            
-                                <li class="nav-item">
-                                    {% navbar_link 'venue_list' 'Ubicación' %}
-                                </li>
-                            
-                                {% if user.is_authenticated %}
-                                    <li class="nav-item">
-                                        <a class="nav-link" href="{% url 'category_list' %}">Categorías</a>
-                                    </li>
-                                {% endif %}
-                            </ul>
-                            
+                            <li class="nav-item">{% navbar_link 'events' 'Eventos' %}</li>
+                            <li class="nav-item">{% navbar_link 'venue_list' 'Ubicación' %}</li>
+                            <li class="nav-item"><a class="nav-link" href="{% url 'category_list' %}">Categorías</a></li>
                         </ul>
                     </div>
 
@@ -59,7 +41,6 @@
         </div>
     </nav>
 
-    
     <div class="container mt-3">
         {% if messages %}
             {% for message in messages %}
@@ -69,26 +50,26 @@
                 </div>
             {% endfor %}
         {% endif %}
+
+        {% block content %}
+        {% endblock %}
     </div>
 
-    {% block content %}
-    {% endblock %}
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq"
+        crossorigin="anonymous"></script>
 
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/js/bootstrap.bundle.min.js"
-    integrity="sha384-k6d4wzSIapyDyv1kpU366/PK5hCdSbCRGRCMv+eplOQJWyd1fbcAu9OCUj5zNLiq"
-    crossorigin="anonymous"></script>
-<script>
-    setTimeout(() => {
-        document.querySelectorAll('.alert').forEach((alertEl) => {
-            alertEl.classList.remove('show');
-            alertEl.addEventListener('transitionend', () => {
-                const bsAlert = bootstrap.Alert.getOrCreateInstance(alertEl);
-                bsAlert.close();
+    <script>
+        setTimeout(() => {
+            document.querySelectorAll('.alert').forEach((alertEl) => {
+                alertEl.classList.remove('show');
+                alertEl.addEventListener('transitionend', () => {
+                    const bsAlert = bootstrap.Alert.getOrCreateInstance(alertEl);
+                    bsAlert.close();
+                });
             });
-        });
-    }, 3000);
-</script>
+        }, 3000);
+    </script>
 
+</body>
 </html>

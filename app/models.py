@@ -73,21 +73,22 @@ class Event(models.Model):
     
     @classmethod
     def new(cls, title, description, scheduled_at, organizer, venue=None, categories=None):
-        errors = Event.validate(title, description, scheduled_at)
+        errors = cls.validate(title, description, scheduled_at)
 
-        if len(errors.keys()) > 0:
-            return False, errors
+        if errors:
+            return None, errors
 
-        event = Event.objects.create(
-        title=title,
-        description=description,
-        scheduled_at=scheduled_at,
-        organizer=organizer,
-        venue=venue,  
-        )   
+        event = cls.objects.create(
+            title=title,
+            description=description,
+            scheduled_at=scheduled_at,
+            organizer=organizer,
+            venue=venue,
+        )
         if categories:
-            event.categories.set(categories) 
-        return event
+            event.categories.set(categories)
+        return event, {}
+
 
 def update(self, title, description, scheduled_at, organizer, venue=None, categories=None):
     self.title = title or self.title
