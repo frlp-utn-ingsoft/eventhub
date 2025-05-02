@@ -19,6 +19,8 @@
         content="width=device-width, initial-scale=1"
     />
 
+    {% block extra_head %}{% endblock %}
+
 </head>
 
 <body>
@@ -48,6 +50,12 @@
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                             <li class="nav-item">
                                 {% navbar_link 'events' 'Eventos' %}
+                            </li>
+                            <li class="nav-item">
+                                {% navbar_link 'categories' 'Categorias' %}
+                            </li>
+                            <li class="nav-item">
+                                {% navbar_link 'venues' 'Ubicaciones' %}
                             </li>
                             {% if not user.is_organizer %}
                             <li class="nav-item">

@@ -11,14 +11,22 @@
                     Crear evento
                 {% endif %}
             </h1>
-
             <div class="card">
                 <div class="card-body">
-                    <form action="{% url 'event_form' %}" method="POST">
+                    {% if errors %}
+                        <div class="alert alert-danger">
+                            <ul>
+                                {% for err in errors.values %}
+                                    <li>{{ err }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                    <form action="{% if event.id %}{% url 'event_edit' event.id %}{% else %}{% url 'event_form' %}{% endif %}" method="POST">
                         {% csrf_token %}
                         <div class="vstack gap-3">
                             <div>
-                                <label for="title" class="form-label">Título del Evento</label>
+                                <label for="title" class="form-label">Título del Evento <span class="text-danger">*</span></label>
                                 <input class="form-control"
                                     id="title"
                                     required=""
@@ -27,7 +35,7 @@
                                     name="title" />
                             </div>
                             <div>
-                                <label for="description" class="form-label">Descripción</label>
+                                <label for="description" class="form-label">Descripción <span class="text-danger">*</span></label>
                                 <textarea
                                     class="form-control"
                                     id="description"
@@ -35,9 +43,24 @@
                                     rows="4"
                                     required="">{{ event.description }}</textarea>
                             </div>
+                            <div>
+                                <label for="venue" class="form-label">Ubicación <span class="text-danger">*</span></label>
+                                <select
+                                    class="form-control"
+                                    id="venue"
+                                    name="venue"
+                                    required=""
+                                    >
+                                        <option value="">Seleccione una ubicación</option>
+                                        {% for venue in venues %}
+                                            <option value="{{ venue.id }}"{% if event.venue == venue %} selected{% endif %}>{{ venue.name }}</option>
+                                        {% endfor %}
+                                    
+                                    </select>
+                            </div>
                             <div class="row">
                                 <div class="col-md-6">
-                                    <label for="date" class="form-label">Fecha</label>
+                                    <label for="date" class="form-label">Fecha <span class="text-danger">*</span></label>
                                     <input
                                         class="form-control"
                                         id="date"
@@ -47,18 +70,42 @@
                                         name="date" />
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="time" class="form-label">Hora</label>
+                                    <label for="time" class="form-label">Hora <span class="text-danger">*</span></label>
                                     <input
                                         class="form-control"
                                         id="time"
                                         required=""
                                         type="time"
-                                        value="{{ event.scheduled_at|date:'g:i'}}"
+                                        value="{{ event.scheduled_at|date:'H:i'}}"
                                         name="time" />
                                 </div>
                             </div>
                             <div>
-                                <button type="submit" class="btn btn-primary">Crear Evento</button>
+                                <label class="form-label">Categorías</label>
+                                <div class="row">
+                                    {% for category in categories %}
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input
+                                                    class="form-check-input"
+                                                    type="checkbox"
+                                                    name="categories"
+                                                    id="cat-{{ category.id }}"
+                                                    value="{{ category.id }}"
+                                                    {% if category in event.categories.all %}checked{% endif %}>
+                                                <label class="form-check-label" for="cat-{{ category.id }}">
+                                                    {{ category.name }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if event.id %}Guardar Cambios{% else %}Crear Evento{% endif %}
+                                </button>
+                                <a href="{% url 'events' %}" class="btn btn-secondary">Cancelar</a>                                
                             </div>
                         </div>
                     </form>
