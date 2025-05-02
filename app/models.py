@@ -409,11 +409,16 @@ class Notification(models.Model):
             priority=priority,
             event=event
         )
-
+        # Asociar usuarios directamente (ManyToMany)
+        notification.users.set(users)
         # Asociamos los usuarios
-        notification.users.add(*users)
+        #notification.users.add(*users)
+        for user in users:
+            
+            NotificationUser.objects.create(user=user, notification=notification)
 
         return True, None
+
 
     def update(self, title=None, message=None, priority=None, read=None, users=None, event=None):
         self.title = title or self.title
@@ -427,6 +432,21 @@ class Notification(models.Model):
 
         self.save()
 
-        # si recibo usuarios nuevos, actualizamos la relación
         if users is not None:
-            self.users.set(users)  # Reemplaza los usuarios asociados por estos nuevos
+            # Actualizar la relación directa
+            self.users.set(users)
+            # Eliminar relaciones anteriores
+            NotificationUser.objects.filter(notification=self).delete()
+
+            # Crear nuevas relaciones
+            for user in users:
+                NotificationUser.objects.create(user=user, notification=self)
+
+class NotificationUser(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    notification = models.ForeignKey('Notification', on_delete=models.CASCADE)
+    read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('user', 'notification')

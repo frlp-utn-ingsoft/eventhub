@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from django.db.models import Count
 from django.http import HttpResponseForbidden
-from .models import Event, User, Category, Comment, Venue, Ticket, Rating, RefoundRequest, RefoundReason, RefoundStatus,Notification
+from .models import Event, User, Category, Comment, Venue, Ticket, Rating, RefoundRequest, RefoundReason, RefoundStatus,Notification, NotificationUser
 from django.contrib import messages
 import re
 import random
@@ -809,9 +809,9 @@ def approve_or_reject_refound(request, refound_id):
     return redirect('refound_admin')
 
 # notificacion
-User = get_user_model()
 
 def notification_form(request, id=None):
+    User = get_user_model()
     if not request.user.is_organizer:
         return redirect("notification")
 
@@ -954,31 +954,38 @@ def notification_delete(request,id):
 
 @login_required
 def user_notifications(request):
-    # Obtener solo las notificaciones del usuario actual
-    notifications = Notification.objects.filter(users=request.user).order_by("-created_at")
-
+# Obtener relaciones usuario-notificación (NotificationUser) del usuario actual,
+# incluyendo los datos de la notificación asociada
+    notification_users = NotificationUser.objects.filter(
+        user=request.user
+    ).select_related('notification').order_by("-notification__created_at")
     # Contar notificaciones no leídas
-    unread_count = notifications.filter(read=False).count()
-
+    unread_count = notification_users.filter(read=False).count()
+    
     return render(
         request,
         "app/user_notifications.html",
         {
-            "notifications": notifications,
+            "notifications": notification_users,
             "unread_count": unread_count,
-            "has_notifications": notifications.exists(),
+            "has_notifications": notification_users.exists(),
         },
     )
 
 def mark_notification_read(request, id=None):
     if request.method == "POST":
-        if id:
-            # Marcar una notificación específica como leída
-            notification = get_object_or_404(Notification, pk=id, users=request.user)
-            notification.read = True
-            notification.save()
-        else:
-            # Marcar todas las notificaciones como leídas
-            Notification.objects.filter(users=request.user, read=False).update(read=True)
+        try:
+            # Buscar la relación NotificationUser por notification_id, no por id
+            notif_user = NotificationUser.objects.get(id=id)
+            notif_user.read = True
+            notif_user.read_at = timezone.now()
+            notif_user.save()
+        except NotificationUser.DoesNotExist:
+            messages.error(request, "No se encontró la notificación o no te pertenece.")
+    return redirect("user_notifications")
 
+# Marca todas las notificaciones del usuario como leídas
+def mark_all_notifications_read(request):
+    if request.method == "POST":
+        NotificationUser.objects.filter(user=request.user, read=False).update(read=True, read_at=timezone.now())
     return redirect("user_notifications")

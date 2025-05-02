@@ -27,14 +27,14 @@
                     <div class="d-flex align-items-center">
                         <i class="bi bi-circle-fill text-primary me-2 small"></i>
                         <div class="fw-bold text-primary">
-                            {{ notification.title }}
+                            {{ notification.notification.title }}
                             {% if not notification.read %}
                             <span class="badge bg-primary ms-2 small">Nuevo</span>
                             {% endif %}
                         </div>
                     </div>
-                    <div class="ms-4 mt-1">{{ notification.message }}</div>
-                    <div class="ms-4 mt-1 text-muted small">{{ notification.created_at|date:"d M Y, H:i" }}</div>
+                    <div class="ms-4 mt-1">{{ notification.notification.message }}</div>
+                    <div class="ms-4 mt-1 text-muted small">{{ notification.notification.created_at|date:"d M Y, H:i" }}</div>
                     
                     {% if not notification.read %}
                     <form action="{% url 'mark_notification_read' notification.id %}" method="POST" class="position-absolute top-0 end-0 mt-3 me-3">
