@@ -201,7 +201,8 @@ def refund_form(request, id):
             additional_details=additional_details,
             user=request.user,
             accepted_policy=accepted_policy,
-            approval=None  # Estado pendiente
+            approval=None,  # Estado pendiente
+            event_name=ticket.event.title
         )
 
         # Crear una notificación para el usuario que solicitó el reembolso
