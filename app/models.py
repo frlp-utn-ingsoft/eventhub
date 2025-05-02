@@ -1,6 +1,8 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
+from django.db.models.signals import m2m_changed
+from django.dispatch import receiver
 
 
 class User(AbstractUser):
@@ -201,10 +203,9 @@ class Notification(models.Model):
     title=models.CharField(max_length=200)
     message=models.TextField()
     event=models.ForeignKey(Event, on_delete=models.CASCADE, related_name='notifications', null=True, blank=True)
-    user=models.ManyToManyField(User, related_name='notifications')
+    user=models.ManyToManyField(User,through='UserNotification', related_name='notifications')
     created_at=models.DateTimeField(auto_now_add=True)
     priority=models.ForeignKey('NotificationPriority', on_delete=models.SET_NULL, null=True, blank=True)
-    is_read=models.BooleanField(default=False)
     
     def __str__(self):
         return self.title
@@ -283,3 +284,21 @@ class NotificationPriority(models.Model):
         if description:
             self.description = description.strip()
         self.save()
+
+class UserNotification(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    notification = models.ForeignKey('Notification', on_delete=models.CASCADE)
+    is_read = models.BooleanField(default=False)
+    read_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        unique_together = ('user', 'notification')
+
+
+#Señal para crear notificaciones de usuario al agregar un evento
+@receiver(m2m_changed, sender=Notification.user.through)
+def create_user_notifications(sender, instance, action, pk_set, **kwargs):
+    if action == "post_add":
+        for user_id in pk_set:
+            user = User.objects.get(pk=user_id)
+            UserNotification.objects.get_or_create(user=user, notification=instance)
