@@ -1,10 +1,14 @@
 import datetime
+
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from app.models import Rating, Venue, Category, Event
+
+from app.models import Category, Event, Rating, Venue
 from app.views.rating_views import create_rating
-from django.db.models import Q
+
 
 @login_required
 def event_form(request, id=None):
@@ -12,6 +16,13 @@ def event_form(request, id=None):
 
     if not user.is_organizer:
         return redirect("events")
+    
+    # Si es edición, verificar que sea el dueño del evento
+    if id is not None:
+        event = get_object_or_404(Event, pk=id)
+        if user != event.organizer:
+            messages.error(request, 'No tienes permiso para editar este evento.')
+            return redirect("events")
     
     if request.method == "POST":
         event_id = request.POST.get("id")
@@ -38,6 +49,10 @@ def event_form(request, id=None):
             Event.new(title, categories, venue, description, scheduled_at, request.user)
         else:
             event = get_object_or_404(Event, pk=event_id)
+            # Verificar permisos antes de actualizar
+            if user != event.organizer:
+                messages.error(request, 'No tienes permiso para editar este evento.')
+                return redirect("events")
             event.update(title, categories, venue, description, scheduled_at, request.user)
 
         return redirect("events")
@@ -67,7 +82,11 @@ def events(request):
     return render(
         request,
         "app/event/events.html",
-        {"events": events, "user_is_organizer": request.user.is_organizer},
+        {
+            "events": events, 
+            "user_is_organizer": request.user.is_organizer,
+            "user": request.user
+        },
     )
 
 
@@ -98,7 +117,15 @@ def event_detail(request, id):
 @login_required
 def event_delete(request, id):
     user = request.user
+    event = Event.objects.get(id=id)
+    
     if not user.is_organizer:
+        return redirect("events")
+    
+    # Aca ponemos una restriccion que prohiba a un usuario 
+    # borrar los eventos de otros usuarios organizadores
+    if user != event.organizer:
+        messages.error(request, 'No tienes permiso para eliminar este evento.')
         return redirect("events")
 
     if request.method == "POST":
@@ -139,5 +166,10 @@ def event_filter(request):
     return render(
         request,
         "app/event/events.html",
-        {"events": events, "user_is_organizer": request.user.is_organizer, "my_events": my_events},
+        {
+            "events": events, 
+            "user_is_organizer": request.user.is_organizer, 
+            "my_events": my_events,
+            "user": request.user
+        },
     )

@@ -73,7 +73,7 @@
                                title="Ver detalle">
                                 <i class="bi bi-eye" aria-hidden="true"></i>
                             </a>
-                            {% if user_is_organizer %}
+                            {% if user_is_organizer and event.organizer == user %}
                                 <a href="{% url 'event_edit' event.id %}"
                                     class="btn btn-sm btn-outline-secondary"
                                     aria-label="Editar"
