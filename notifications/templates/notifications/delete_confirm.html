@@ -1,47 +1,54 @@
 {% extends "base.html" %}
-{% block content %}
+{% load static %}
 
-<div class="container mt-5">
+{% block title %}Confirmar Eliminación{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card border-danger">
                 <div class="card-header bg-danger text-white">
-                    <h4 class="mb-0">Confirmar eliminación</h4>
+                    <h4 class="mb-0"><i class="bi bi-trash me-2"></i> Confirmar eliminación</h4>
                 </div>
                 <div class="card-body">
-                    <p class="mb-3">¿Estás seguro de que deseas eliminar la siguiente notificación?</p>
-                    
-                    <div class="alert alert-light">
-                        <h5 class="alert-heading">{{ notification.title }}</h5>
-                        <p>{{ notification.message }}</p>
-                        <hr>
-                        <div class="d-flex justify-content-between small text-muted">
-                            <span>
-                                {% if notification.event %}
-                                    <strong>Evento:</strong> {{ notification.event.name }}
-                                {% else %}
-                                    <strong>Evento:</strong> Sin evento
-                                {% endif %}
-                            </span>
-                            <span>
-                                <strong>Fecha:</strong> {{ notification.created_at|date:"d M Y, H:i" }}
-                            </span>
-                        </div>
-                    </div>
-                    
-                    <p class="text-danger mb-4"><strong>Nota:</strong> Esta acción no se puede deshacer.</p>
-                    
-                    <div class="d-flex justify-content-between">
-                        <a href="{% url 'notifications:manage_notifications' %}" class="btn btn-secondary">
-                            <i class="bi bi-arrow-left"></i> Cancelar
-                        </a>
-                        <form action="{% url 'notifications:delete_notification' notification.pk %}" method="POST">
-                            {% csrf_token %}
+                    <p class="mb-3">¿Estás seguro de que deseas eliminar la siguiente notificación? Esta acción no se puede deshacer.</p> {# Mensaje de advertencia más claro #}
+
+                    <div class="card mb-4">
+                        <div class="card-body bg-light">
+                             <h5 class="card-title">{{ notification.title }}</h5>
+                             {# Mostrar el mensaje completo o truncado, dependiendo de tu preferencia #}
+                             <p class="card-text mb-2">{{ notification.message }}</p>
+                             <hr class="my-2">
+                             <div class="d-flex justify-content-between small text-muted">
+                                 <span>
+                                     {% if notification.event %}
+                                         <strong>Evento:</strong> {{ notification.event.name }}
+                                     {% else %}
+                                         <strong>Evento:</strong> Sin evento
+                                     {% endif %}
+                                 </span>
+                                 <span>
+                                     <strong>Fecha:</strong> {{ notification.created_at|date:"d M Y, H:i" }}
+                                 </span>
+                             </div>
+                         </div>
+                     </div>
+
+                    {# Este formulario enviará la solicitud POST para eliminar #}
+                    <form action="{% url 'notifications:delete_notification' notification.pk %}" method="POST">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-end gap-2">
+                            {# Botón para cancelar - regresa a la página de gestión #}
+                            <a href="{% url 'notifications:notification_management' %}" class="btn btn-secondary">
+                                <i class="bi bi-x-lg me-1"></i> Cancelar
+                            </a>
+                            {# Botón para confirmar la eliminación #}
                             <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-trash"></i> Eliminar
+                                <i class="bi bi-trash me-1"></i> Eliminar
                             </button>
-                        </form>
-                    </div>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>
