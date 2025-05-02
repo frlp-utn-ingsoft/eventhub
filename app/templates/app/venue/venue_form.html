@@ -8,7 +8,7 @@
                 {% if venue %}
                 Editar Ubicación
                 {% else %}
-                Crear Ubicación
+                Crear Nueva Ubicación
                 {% endif %}
             </h1>
 
@@ -18,31 +18,35 @@
                         {% csrf_token %}
                         <div class="vstack gap-3">
                             <div>
-                                <label for="name" class="form-label">Nombre</label>
+                                <label for="name" class="form-label">Nombre de la ubicación *</label>
                                 <input class="form-control" id="name" required type="text" name="name"
+                                    placeholder="Ej: Estadio Nacional"
                                     value="{{ form.name.value|default_if_none:'' }}" />
                             </div>
                             <div>
-                                <label for="address" class="form-label">Dirección</label>
+                                <label for="address" class="form-label">Dirección *</label>
                                 <input class="form-control" id="address" required type="text" name="address"
+                                    placeholder="Ej: Av. Grecia 2001"
                                     value="{{ form.address.value|default_if_none:'' }}" />
                             </div>
                             <div>
-                                <label for="city" class="form-label">Ciudad</label>
+                                <label for="city" class="form-label">Ciudad *</label>
                                 <input class="form-control" id="city" required type="text" name="city"
+                                    placeholder="Chile"
                                     value="{{ form.city.value|default_if_none:'' }}" />
                             </div>
                             <div>
-                                <label for="capacity" class="form-label">Capacidad</label>
+                                <label for="capacity" class="form-label">Capacidad (número de personas) *</label>
                                 <input class="form-control" id="capacity" required type="number" name="capacity"
+                                    placeholder="Ej: 1000"
                                     value="{{ form.capacity.value|default_if_none:'' }}" />
                             </div>
                             <div>
-                                <label for="contact" class="form-label">Contacto</label>
-                                <input class="form-control" id="contact" required type="text" name="contact"
-                                    value="{{ form.contact.value|default_if_none:'' }}" />
+                                <label for="contact" class="form-label">Contacto *</label>
+                                <textarea class="form-control" id="contact" required name="contact" rows="3"
+                                    placeholder="Describe las características principales de la ubicación...">{{ form.contact.value|default_if_none:'' }}</textarea>
                             </div>
-                            <div>
+                            <div class="d-flex justify-content-end">
                                 <button type="submit" class="btn btn-primary">
                                     {% if venue %}Guardar Cambios{% else %}Crear Ubicación{% endif %}
                                 </button>
