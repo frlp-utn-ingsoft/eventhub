@@ -195,6 +195,10 @@ def delete_location(request, location_id):
 
 @login_required
 def create_notification(request, notification_id=None):
+    user = request.user
+    if not user.is_superuser:
+        return redirect("list_notifications")
+    
     events = Event.objects.all()
     users = User.objects.all()
 
@@ -278,7 +282,7 @@ def list_notifications(request):
         })
     else:  # user normal
         notifications = NotificationXUser.objects.filter(user=request.user).select_related('notification')
-        unread_count = notifications.filter(is_read=False).count()  # Contar solo las no leídas
+        unread_count = notifications.filter(is_read=False).count()
         return render(request, 'notifications/notifications_user.html', {
             'notifications': notifications,
             'unread_count': unread_count,
@@ -286,6 +290,10 @@ def list_notifications(request):
 
 @login_required
 def delete_notification(request, notification_id):
+    user = request.user
+    if not user.is_superuser:
+        return redirect("list_notifications")
+    
     notification = get_object_or_404(Notification, id=notification_id)
     notification.delete()
     return redirect('list_notifications')
