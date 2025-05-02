@@ -20,7 +20,7 @@
                              {% if form.title.errors %}<div class="invalid-feedback d-block">{{ form.title.errors|join:", " }}</div>{% endif %}
                          </div>
 
-                          <div class="mb-3">
+                         <div class="mb-3">
                              <label for="{{ form.message.id_for_label }}" class="form-label">{{ form.message.label }} *</label>
                              {{ form.message }}
                              {% if form.message.errors %}<div class="invalid-feedback d-block">{{ form.message.errors|join:", " }}</div>{% endif %}
@@ -31,6 +31,12 @@
                                  <label for="{{ form.priority.id_for_label }}" class="form-label">{{ form.priority.label }}</label>
                                  {{ form.priority }}
                                  {% if form.priority.errors %}<div class="invalid-feedback d-block">{{ form.priority.errors|join:", " }}</div>{% endif %}
+                             </div>
+                             <div class="col-md-6">
+                                 <label for="{{ form.event.id_for_label }}" class="form-label">{{ form.event.label }}</label>
+                                 {{ form.event }}
+                                 {% if form.event.errors %}<div class="invalid-feedback d-block">{{ form.event.errors|join:", " }}</div>{% endif %}
+                                 {% if form.event.help_text %}<div class="form-text">{{ form.event.help_text }}</div>{% endif %}
                              </div>
                          </div>
 
@@ -57,23 +63,24 @@
                          </div>
                      </form>
                  </div>
-             </div>
-         </div>
+            </div>
+        </div>
          <div class="col-lg-4">
               <div class="card border-info">
-                  <div class="card-header bg-info text-white">
-                      <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información</h5>
-                  </div>
-                  <div class="card-body">
+                   <div class="card-header bg-info text-white">
+                       <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Información</h5>
+                   </div>
+                   <div class="card-body">
                        <ul class="list-unstyled mb-0">
-                           <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Usa títulos claros y concisos.</li>
-                           <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Selecciona cuidadosamente los destinatarios.</li>
-                           <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>No incluyas información sensible.</li>
-                           <li><i class="bi bi-check-circle text-success me-2"></i>Recuerda que no puedes editar los destinatarios una vez enviada (en esta versión, sí se puede).</li>
+                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Usa títulos claros y concisos.</li>
+                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Asocia un evento si la notificación es específica para él.</li>
+                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>Selecciona cuidadosamente los destinatarios.</li>
+                            <li class="mb-2"><i class="bi bi-check-circle text-success me-2"></i>No incluyas información sensible.</li>
+                            <li><i class="bi bi-check-circle text-success me-2"></i>Recuerda que no puedes editar los destinatarios una vez enviada (en esta versión, sí se puede).</li>
                        </ul>
                    </div>
-               </div>
-           </div>
-       </div>
-   </div>
+              </div>
+         </div>
+    </div>
+</div>
 {% endblock %}

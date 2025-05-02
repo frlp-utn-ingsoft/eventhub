@@ -1,6 +1,9 @@
 {% extends "base.html" %}
-{% block content %}
+{% load static %}
 
+{% block title %}Editar Notificación: {{ notification.title }}{% endblock %}
+
+{% block content %}
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Editar Notificación</h1>
@@ -10,11 +13,12 @@
     </div>
 
     {% if messages %}
-        <div class="alert alert-info">
-            {% for message in messages %}
-                <div{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</div>
-            {% endfor %}
-        </div>
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
     {% endif %}
 
     <div class="row">
@@ -23,91 +27,52 @@
                 <div class="card-body">
                     <form method="POST" action="{% url 'notifications:edit_notification' notification.pk %}">
                         {% csrf_token %}
-                        
+
                         <div class="mb-3">
-                            <label for="title" class="form-label">Título de la notificación *</label>
-                            <input type="text" class="form-control {% if form.title.errors %}is-invalid{% endif %}" id="title" name="title" value="{{ form.title.value|default:'' }}" placeholder="Ej: Cambio de horario del evento" required>
-                            {% if form.title.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.title.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
+                            <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }} *</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}<div class="invalid-feedback d-block">{{ form.title.errors|join:", " }}</div>{% endif %}
                         </div>
-                        
+
                         <div class="mb-3">
-                            <label for="message" class="form-label">Mensaje *</label>
-                            <textarea class="form-control {% if form.message.errors %}is-invalid{% endif %}" id="message" name="message" rows="5" placeholder="Escribe el contenido de la notificación..." required>{{ form.message.value|default:'' }}</textarea>
-                            {% if form.message.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.message.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
+                            <label for="{{ form.message.id_for_label }}" class="form-label">{{ form.message.label }} *</label>
+                            {{ form.message }}
+                            {% if form.message.errors %}<div class="invalid-feedback d-block">{{ form.message.errors|join:", " }}</div>{% endif %}
                         </div>
-                        
+
+                        <div class="mb-3 row">
+                             <div class="col-md-6">
+                                 <label for="{{ form.priority.id_for_label }}" class="form-label">{{ form.priority.label }}</label>
+                                 {{ form.priority }}
+                                 {% if form.priority.errors %}<div class="invalid-feedback d-block">{{ form.priority.errors|join:", " }}</div>{% endif %}
+                             </div>
+                             <div class="col-md-6">
+                                 <label for="{{ form.event.id_for_label }}" class="form-label">{{ form.event.label }}</label>
+                                 {{ form.event }}
+                                 {% if form.event.errors %}<div class="invalid-feedback d-block">{{ form.event.errors|join:", " }}</div>{% endif %}
+                                 {% if form.event.help_text %}<div class="form-text">{{ form.event.help_text }}</div>{% endif %}
+                             </div>
+                         </div>
+
                         <div class="mb-3">
-                            <label class="form-label">Destinatarios *</label>
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="radio" name="destination_type" id="dest_all" value="ALL" {% if form.destination_type.value == 'ALL' %}checked{% endif %}>
-                                <label class="form-check-label" for="dest_all">
-                                    Todos los asistentes del evento
-                                </label>
-                            </div>
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="destination_type" id="dest_specific" value="SPECIFIC" {% if form.destination_type.value == 'SPECIFIC' or not form.destination_type.value %}checked{% endif %}>
-                                <label class="form-check-label" for="dest_specific">
-                                    Usuario específico
-                                </label>
-                            </div>
+                             <label class="form-label">{{ form.recipients.label }} *</label>
+                             <div class="border p-2 rounded" style="max-height: 250px; overflow-y: auto;">
+                                 {{ form.recipients }}
+                             </div>
+                              <div class="form-text">{{ form.recipients.help_text }}</div>
+                             {% if form.recipients.errors %}<div class="invalid-feedback d-block">{{ form.recipients.errors|join:", " }}</div>{% endif %}
+                         </div>
+
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors|join:", " }}
                         </div>
-                        
-                        <div class="mb-3 event-section" {% if form.destination_type.value != 'ALL' %}style="display: none;"{% endif %}>
-                            <label for="event" class="form-label">Evento relacionado *</label>
-                            {{ form.event }}
-                            {% if form.event.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.event.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                            {% if form.event.help_text %}
-                                <div class="form-text">{{ form.event.help_text }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3 user-section" {% if form.destination_type.value == 'ALL' %}style="display: none;"{% endif %}>
-                            <label for="recipient_user" class="form-label">Usuario Específico *</label>
-                            {{ form.recipient_user }}
-                            {% if form.recipient_user.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.recipient_user.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                            {% if form.recipient_user.help_text %}
-                                <div class="form-text">{{ form.recipient_user.help_text }}</div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="priority" class="form-label">Prioridad</label>
-                            {{ form.priority }}
-                            {% if form.priority.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.priority.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Actualizar Notificación</button>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                             <a href="{% url 'notifications:notification_management' %}" class="btn btn-secondary">Cancelar</a>
+                             <button type="submit" class="btn btn-primary">Actualizar Notificación</button>
                         </div>
                     </form>
                 </div>
@@ -117,74 +82,46 @@
         <div class="col-lg-4">
             <div class="card">
                 <div class="card-header">
-                    <h5 class="mb-0">Información de la Notificación</h5>
+                    <h5 class="mb-0">Información Adicional</h5>
                 </div>
                 <div class="card-body">
-                    <ul class="list-group list-group-flush">
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Creado por:
-                            <span class="text-muted">{{ notification.user.username }}</span>
+                     <ul class="list-group list-group-flush">
+                         <li class="list-group-item d-flex justify-content-between align-items-center">
+                             Creado por:
+                             <span class="text-muted">{{ notification.creator.username }}</span>
+                         </li>
+                         <li class="list-group-item d-flex justify-content-between align-items-center">
+                             Fecha de creación:
+                             <span class="text-muted">{{ notification.created_at|date:"d/m/Y H:i" }}</span>
+                         </li>
+                          <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Última actualización:
+                            <span class="text-muted">{{ notification.updated_at|date:"d/m/Y H:i" }}</span>
                         </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Fecha de creación:
-                            <span class="text-muted">{{ notification.created_at|date:"d/m/Y H:i" }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Estado:
-                            {% if notification.is_read %}
-                                <span class="badge bg-success">Leída</span>
-                            {% else %}
-                                <span class="badge bg-warning text-dark">No leída</span>
-                            {% endif %}
-                        </li>
-                    </ul>
+                     </ul>
                 </div>
             </div>
-            
+
             <div class="card mt-3">
-                <div class="card-header">
-                    <h5 class="mb-0">Consejos</h5>
-                </div>
-                <div class="card-body">
-                    <ul class="list-unstyled mb-0">
-                        <li class="mb-3">
-                            <i class="bi bi-lightbulb text-warning me-2"></i> 
-                            Para cambiar el tipo de destinatario, selecciona la opción correspondiente.
-                        </li>
-                        <li class="mb-3">
-                            <i class="bi bi-lightbulb text-warning me-2"></i> 
-                            Si cambias de "Usuario específico" a "Todos los asistentes", deberás seleccionar un evento.
-                        </li>
-                    </ul>
-                </div>
-            </div>
+                 <div class="card-header">
+                     <h5 class="mb-0">Consejos</h5>
+                 </div>
+                 <div class="card-body">
+                     <ul class="list-unstyled mb-0">
+                         <li class="mb-3">
+                             <i class="bi bi-lightbulb text-warning me-2"></i>
+                             Modifica los campos necesarios y revisa los destinatarios antes de guardar.
+                         </li>
+                         <li class="mb-3">
+                            <i class="bi bi-lightbulb text-warning me-2"></i>
+                             Puedes asociar o desasociar un evento a esta notificación.
+                         </li>
+                     </ul>
+                 </div>
+             </div>
+
         </div>
     </div>
 </div>
-
-<script>
-    //mostrar-ocultar campos segun tipo de destinatario
-    document.addEventListener('DOMContentLoaded', function() {
-        const destAllRadio = document.getElementById('dest_all');
-        const destSpecificRadio = document.getElementById('dest_specific');
-        const eventSection = document.querySelector('.event-section');
-        const userSection = document.querySelector('.user-section');
-        
-        function updateSections() {
-            if (destAllRadio.checked) {
-                eventSection.style.display = 'block';
-                userSection.style.display = 'none';
-            } else {
-                eventSection.style.display = 'none';
-                userSection.style.display = 'block';
-            }
-        }
-        
-        destAllRadio.addEventListener('change', updateSections);
-        destSpecificRadio.addEventListener('change', updateSections);
-   
-        updateSections();
-    });
-</script>
 
 {% endblock %}

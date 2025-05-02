@@ -28,48 +28,44 @@
         {% for status in user_statuses %}
             <a href="{% url 'notifications:notification_detail' status.pk %}" class="list-group-item list-group-item-action {% if not status.is_read %}list-group-item-light fw-bold{% endif %}">
                 <div class="d-flex w-100 justify-content-between align-items-center mb-1">
-                    <h5 class="mb-0 d-flex align-items-center"> 
+                    <h5 class="mb-0 d-flex align-items-center">
                         <i class="bi bi-bell-fill me-2 {% if not status.is_read %}text-primary{% else %}text-muted{% endif %}"></i>
                          {{ status.notification.title }}
-        
+
                         {% if not status.is_read %}
                             <span class="badge bg-success ms-2">Nueva</span>
                         {% endif %}
-                
+
                         {% if status.notification.priority == 'HIGH' %}
                             <span class="badge bg-danger ms-2 rounded-pill">Urgente</span>
                         {% elif status.notification.priority == 'MEDIUM' %}
                              <span class="badge bg-warning text-dark ms-2 rounded-pill">Media</span>
                         {% endif %}
                     </h5>
-                
+
                     <small class="text-muted text-nowrap">{{ status.notification.created_at|date:"d M Y, H:i" }}</small>
                 </div>
-             
-                <p class="mb-1 {% if not status.is_read %}text-dark{% else %}text-muted{% endif %}">
-                    {{ status.notification.message|striptags|truncatechars:150 }} 
-                </p>
-                <div class="d-flex justify-content-between align-items-center">
-                    
+
+                 <p class="mb-1 {% if not status.is_read %}text-dark{% else %}text-muted{% endif %}">
+                     {{ status.notification.message|striptags|truncatechars:150 }}
+                 </p>
+                 <div class="d-flex justify-content-between align-items-center">
+
                     <small class="text-muted">
                         De: {{ status.notification.creator.username }}
+                        {% if status.notification.event %}
+                            | Evento: {{ status.notification.event.title }}
+                        {% endif %}
                     </small>
-                  
-                    {% if not status.is_read %}
-                      
-                        <form action="{% url 'notifications:mark_read' status.pk %}" method="post" style="display: inline;">
-                            {% csrf_token %}
-                            <button type="submit" class="btn btn-sm btn-outline-secondary">
-                                Marcar como leída
-                            </button>
-                        </form>
-                    {% endif %}
-                </div>
-            </a> 
+
+                     {% if not status.is_read %}
+                         {% endif %}
+                 </div>
+            </a>
         {% endfor %}
     </div>
     {% else %}
-    
+
         <div class="alert alert-info text-center" role="alert">
            <i class="bi bi-bell-slash fs-4 me-2 align-middle"></i> No tienes notificaciones en este momento.
         </div>

@@ -19,16 +19,16 @@
                     <label for="search-input" class="visually-hidden">Buscar</label>
                     <div class="input-group">
                         <span class="input-group-text"><i class="bi bi-search"></i></span>
-                        <input type="text" class="form-control" id="search-input" name="q" value="{{ request.GET.q }}" placeholder="Buscar notificaciones...">
+                        <input type="text" class="form-control" id="search-input" name="q" value="{{ request.GET.q|default:'' }}" placeholder="Buscar por título...">
                     </div>
                 </div>
                 <div class="col-md-3">
                     <label for="event-filter" class="visually-hidden">Evento</label>
                     <select class="form-select" id="event-filter" name="event">
                         <option value="">Todos los eventos</option>
-                        <option value="placeholder1" {% if request.GET.event == 'placeholder1' %}selected{% endif %}>Concierto de Rock (Ejemplo)</option>
-                        <option value="placeholder2" {% if request.GET.event == 'placeholder2' %}selected{% endif %}>Festival de Gastronomía (Ejemplo)</option>
-                        <option value="placeholder3" {% if request.GET.event == 'placeholder3' %}selected{% endif %}>Conferencia de Tecnología (Ejemplo)</option>
+                        {% for event in user_events %}
+                        <option value="{{ event.pk }}" {% if request.GET.event == event.pk|stringformat:"s" %}selected{% endif %}>{{ event.title }}</option>
+                        {% endfor %}
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -67,23 +67,23 @@
                             <td>{{ notification.title }}</td>
                             <td>
                                 {% if notification.event %}
-                                    <a href="#">{{ notification.event.name }}</a>
+                                    {# <a href="{% url 'event_detail_view_name' notification.event.pk %}">{{ notification.event.title }}</a> #}
+                                    {{ notification.event.title }}
                                 {% else %}
-                                    N/A
+                                    <span class="text-muted">N/A</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% with recipients=notification.recipients.all %}
                                     {% if recipients %}
-                                        {% if recipients|length == total_users_count %}
-                                            <span class="badge bg-info text-dark">Todos ({{ recipients|length }})</span>
-                                        {% elif recipients|length > 0 %}
-                                             <span class="badge bg-info text-dark">Usuarios específicos ({{ recipients|length }})</span>
+                                        
+                                        {% if recipients|length|add:"1" >= total_users_count %}
+                                             <span class="badge bg-primary text-dark">Todos ({{ recipients|length }})</span>
                                         {% else %}
-                                             <span class="badge bg-warning text-dark">Sin destinatarios</span>
+                                             <span class="badge bg-info text-dark">Usuarios específicos ({{ recipients|length }})</span>
                                         {% endif %}
                                     {% else %}
-                                        <span class="badge bg-warning text-dark">Sin destinatarios</span>
+                                         <span class="badge bg-warning text-dark">Sin destinatarios</span>
                                     {% endif %}
                                 {% endwith %}
                             </td>
@@ -91,7 +91,7 @@
                                 {% if notification.priority == 'HIGH' %}
                                     <span class="badge bg-danger">Alta</span>
                                 {% elif notification.priority == 'MEDIUM' %}
-                                    <span class="badge bg-primary">Normal</span>
+                                    <span class="badge bg-warning text-dark">Media</span>
                                 {% else %}
                                     <span class="badge bg-secondary">Baja</span>
                                 {% endif %}
@@ -99,15 +99,15 @@
                             <td>{{ notification.created_at|date:"d M Y, H:i" }}</td>
                             <td>
                                 <div class="d-flex justify-content-center gap-1">
-                                    <a href="{% url 'notifications:view_notification' notification.pk %}" class="btn btn-sm btn-outline-info" title="Ver">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    <a href="{% url 'notifications:edit_notification' notification.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <a href="{% url 'notifications:delete_notification' notification.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
-                                        <i class="bi bi-trash"></i>
-                                    </a>
+                                     <a href="{% url 'notifications:view_notification' notification.pk %}" class="btn btn-sm btn-outline-info" title="Ver Detalles">
+                                         <i class="bi bi-eye"></i>
+                                     </a>
+                                     <a href="{% url 'notifications:edit_notification' notification.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar">
+                                         <i class="bi bi-pencil"></i>
+                                     </a>
+                                     <a href="{% url 'notifications:delete_notification' notification.pk %}" class="btn btn-sm btn-outline-danger" title="Eliminar">
+                                         <i class="bi bi-trash"></i>
+                                     </a>
                                 </div>
                             </td>
                         </tr>
@@ -118,11 +118,11 @@
         {% else %}
             <div class="card-body text-center">
                  {% if request.GET.q or request.GET.event or request.GET.priority %}
-                    <p class="text-muted">No se encontraron notificaciones que coincidan con los filtros aplicados.</p>
-                    <a href="{% url 'notifications:notification_management' %}" class="btn btn-secondary btn-sm">Limpiar filtros</a>
+                     <p class="text-muted">No se encontraron notificaciones que coincidan con los filtros aplicados.</p>
+                     <a href="{% url 'notifications:notification_management' %}" class="btn btn-secondary btn-sm">Limpiar filtros</a>
                  {% else %}
-                    <p class="text-muted">No has creado ninguna notificación aún.</p>
-                    <a href="{% url 'notifications:create_notification' %}" class="btn btn-primary btn-sm">Crear la primera</a>
+                     <p class="text-muted">No has creado ninguna notificación aún.</p>
+                     <a href="{% url 'notifications:create_notification' %}" class="btn btn-primary btn-sm">Crear la primera</a>
                  {% endif %}
             </div>
         {% endif %}

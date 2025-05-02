@@ -29,7 +29,7 @@
         </div>
         <div class="card-body">
             <h5 class="card-title">{{ notification.title }}</h5>
-            <p class="card-text">{{ notification.message }}</p>
+            <p class="card-text">{{ notification.message|linebreaksbr }}</p>
             <hr>
             <dl class="row">
                 <dt class="col-sm-3">Enviado por:</dt>
@@ -43,7 +43,7 @@
                     {% if notification.priority == 'HIGH' %}
                         <span class="badge bg-danger">Alta</span>
                     {% elif notification.priority == 'MEDIUM' %}
-                        <span class="badge bg-primary">Normal</span>
+                        <span class="badge bg-warning text-dark">Media</span>
                     {% else %}
                         <span class="badge bg-secondary">Baja</span>
                     {% endif %}
@@ -51,20 +51,27 @@
 
                 <dt class="col-sm-3">Destinatarios:</dt>
                 <dd class="col-sm-9">
-                    {% with recipients=notification.recipients.all %}
+                     {% with recipients=recipient_statuses %}
                         {% if recipients %}
-                            {% for recipient in recipients %}
-                                <span class="badge bg-secondary text-white me-1">{{ recipient.get_full_name|default:recipient.username }}</span>
-                            {% endfor %}
+                             {% for status in recipients %}
+                                 <span class="badge bg-light text-dark me-1 border">
+                                     {{ status.user.get_full_name|default:status.user.username }}
+                                     {% if status.is_read %}
+                                         <i class="bi bi-check-circle-fill text-success ms-1" title="Leído {{ status.read_at|date:'d/m/y H:i' }}"></i>
+                                     {% else %}
+                                         <i class="bi bi-circle text-muted ms-1" title="No leído"></i>
+                                     {% endif %}
+                                 </span>
+                             {% endfor %}
                         {% else %}
-                             <span class="badge bg-warning text-dark">Sin destinatarios</span>
+                             <span class="badge bg-warning text-dark">Sin destinatarios definidos</span>
                         {% endif %}
-                    {% endwith %}
+                     {% endwith %}
                 </dd>
 
                 {% if notification.event %}
-                    <dt class="col-sm-3">Evento:</dt>
-                    <dd class="col-sm-9"><a href="#">{{ notification.event.name }}</a></dd>
+                    <dt class="col-sm-3">Evento Asociado:</dt>
+                    <dd class="col-sm-9"><a href="#">{{ notification.event.title }}</a></dd>
                 {% endif %}
 
             </dl>
