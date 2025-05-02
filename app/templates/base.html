@@ -102,6 +102,12 @@
                             <li class="nav-item">
                                 {% navbar_link 'notifications' 'Notificaciones' %}
                             </li>
+                            {% if user.is_organizer %}
+                                {% navbar_link 'refund_list' 'Mis reembolsos' %}
+                            {% else %}
+                                {% navbar_link 'user_refund_list' 'Mis reembolsos' %}
+                            {% endif %}
+
                         </ul>
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                             <li class="nav-item">
