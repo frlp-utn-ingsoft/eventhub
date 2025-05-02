@@ -62,10 +62,22 @@ class NotificationForm(forms.ModelForm):
         if priority not in ["High", "Medium", "Low"]:
             self.add_error("priority", "Prioridad inválida.")
 
-        if tipo_usuario == "all" and not event:
-            self.add_error("event", "Debes seleccionar un evento.")
+        
+        if tipo_usuario == "all":
+            if not event:
+                self.add_error("event", "Debes seleccionar un evento.")
+            else:
+                user_ids = (
+                    Ticket.objects.filter(event=event)
+                    .values_list("user_id", flat=True)
+                    .distinct()
+                )
+                if user_ids.count() < 2:
+                    self.add_error("event", "El evento debe tener al menos 2 asistentes para enviar una notificación a todos.")
+                    
         if tipo_usuario == "specific" and not user:
             self.add_error("user", "Debes seleccionar un usuario.")
+            
 
 class TicketForm(forms.ModelForm):
     # Campos de la tarjeta, validaciones específicas en los métodos clean_* correspondientes
