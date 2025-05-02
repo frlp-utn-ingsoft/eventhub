@@ -13,6 +13,8 @@ from django.db import transaction
 from django.db.models import Q
 from .utils import format_datetime_es
 from .models import Rating
+from django.shortcuts import resolve_url
+from django.conf import settings
 
 from .models import Event, User, Ticket, Category, Notification, RefundRequest, Venue
 from .forms import RatingForm, TicketForm, CategoryForm, NotificationForm, RefundRequestForm, VenueForm
@@ -60,18 +62,25 @@ def login_view(request):
             )
 
         login(request, user)
-        return redirect("events")
+        return redirect(resolve_url(settings.LOGIN_REDIRECT_URL))  # 👈 Esto usa el valor de settings.py
 
     return render(request, "accounts/login.html")
 
 
 def home(request):
-    # Usuario autenticado → redirigimos a su página principal (events)
     if request.user.is_authenticated:
-        return redirect("events")          # o "home_organizer" / "home_user" más adelante
-
-    # Visitante → página pública
+        if request.user.is_organizer:
+            return render(request, "home_organizer.html")
+        return render(request, "home_user.html")
     return render(request, "home_guest.html")
+
+@login_required
+def home_user(request):
+    return render(request, "home_user.html")
+
+@login_required
+def home_organizer(request):
+    return render(request, "home_organizer.html")
 
 # ------------------- Eventos -------------------
 @login_required

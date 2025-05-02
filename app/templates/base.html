@@ -65,6 +65,17 @@
         <div class="collapse navbar-collapse" id="navbar-content">
           <ul class="navbar-nav ms-auto mb-lg-0">
             <li class="nav-item">
+              {% if user.is_authenticated %}
+                {% if user.is_organizer %}
+                  {% navbar_link 'home_organizer' 'Inicio' %}
+                {% else %}
+                  {% navbar_link 'home_user' 'Inicio' %}
+                {% endif %}
+              {% else %}
+                {% navbar_link 'home' 'Inicio' %}
+              {% endif %}
+            </li>
+            <li class="nav-item">
               {% navbar_link 'events' 'Eventos' %}
             </li>
             <li class="nav-item">

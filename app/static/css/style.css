@@ -51,14 +51,11 @@
     -o-border-radius: 3px;
     }
   
-  /* Notificaciones - bell icon */
   .navbar .bi-bell {
     position: relative;
     top: 2px;
   }
-  .contenedorNavbar{
-  }
-  /* Badge de notificaciones */
+
   .navbar .badge {
     font-size: 0.65rem;
     padding: 4px 6px;
