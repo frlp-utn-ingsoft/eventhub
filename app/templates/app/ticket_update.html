@@ -21,8 +21,9 @@
                         </ul>
                     </div>
                 {% endif %}
-                <div class="card-header">
-                    <h5 class="card-title">Actualizar ticket</h5>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{{ event.title }}</h5>
+                    <p class="card-title mb-0">Actualizar ticket</p>
                 </div>
                 <div class="card-body">
                     <form id="ticketForm" action="{% url 'ticket_update' ticket.ticket_code %}" method="POST">
@@ -34,6 +35,7 @@
                                 <input type="number" name="quantity" id="quantity" class="form-control text-center" value="{{ ticket.quantity }}" min="1">
                                 <button class="btn btn-outline-secondary" type="button" onclick="increaseQuantity()">+</button>
                             </div>
+                            <small class="text-muted">Entradas disponibles: {{ event.available_tickets }}</small>
                         </div>
                         <div class="mb-3">
                             <label for="ticket_type" class="form-label"><strong>Tipo de entrada</strong></label>

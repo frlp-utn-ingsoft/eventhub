@@ -86,6 +86,7 @@ class Event(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     venue= models.ForeignKey('Venue', on_delete=models.SET_NULL, related_name='events', null=True, blank=True)
     categories = models.ManyToManyField(Category, blank=True)
+    available_tickets = models.IntegerField(default=0)
 
 
     def __str__(self):
@@ -123,6 +124,7 @@ class Event(models.Model):
             description=description.strip(),
             scheduled_at=scheduled_at,
             organizer=organizer,
+            available_tickets=venue.capacity if venue else 0,
         )
 
         return True, None
@@ -135,6 +137,7 @@ class Event(models.Model):
 
         self.title = title.strip()
         self.venue=venue
+        self.available_tickets = venue.capacity if venue else self.available_tickets
         self.description = description.strip()
         self.scheduled_at = scheduled_at
         self.organizer = organizer
@@ -243,9 +246,12 @@ class Ticket(models.Model):
     @classmethod
     def new(cls, event, user, ticket_type, quantity):
         errors = Ticket.validate(event, user, ticket_type, quantity)
-
         if len(errors.keys()) > 0:
             return False, errors
+        if event.available_tickets < quantity:
+            return False, {"error": "No hay suficientes entradas disponibles"}
+        event.available_tickets -= quantity
+        event.save()
 
         ticket = Ticket.objects.create(
             event=event,
@@ -256,19 +262,18 @@ class Ticket(models.Model):
         )
         ticket.ticket_code = ticket.id #Figura como error, pero al crear ejectuar Ticket.create() se genera id, por lo que deberia poder copiarlo en ticket_code
         ticket.save()
-
         return True, ticket.ticket_code
     
-    def thirty_minutes_rule(self):
-        if not self.user.is_organizer and now() > self.buy_date + timedelta(minutes=30):
-            return False
-        return True
 
     def update(self, ticket_type, quantity):
+        self.event.available_tickets -= quantity - self.quantity
+        if self.event.available_tickets < 0:
+            return False, {"error": "No hay suficientes entradas disponibles"}
+        self.event.save()
         if quantity is None or not isinstance(quantity, int) or quantity <= 0:
             return False, {"quantity": "La cantidad de tickets debe ser mayor a 0"}
         self.modified_date = now()
-        if not self.thirty_minutes_rule():
+        if not self.user.is_organizer and now() < self.buy_date + timedelta(minutes=30):
             return False, {"error": "El ticket solo se puede modificar en los 30 minutos posteriores a su creacion"}
         self.ticket_type = ticket_type or self.ticket_type
         self.quantity = quantity or self.quantity
@@ -277,14 +282,23 @@ class Ticket(models.Model):
             self.total_price = ticket_type.price * self.quantity
         self.modified_date = now()
         self.save()
+        self.event.available_tickets -= quantity - self.quantity
         return True, None
 
-    def delete(self):
-        if self.thirty_minutes_rule():
+    def delete(self, user_is_organizer):
+        if user_is_organizer:
+            self.event.available_tickets += self.quantity
+            self.event.save()
+            super().delete()
+            return True, None
+        if not user_is_organizer and now() < self.buy_date + timedelta(minutes=30):
+            self.event.available_tickets += self.quantity
+            self.event.save()
             super().delete()
             return True, None
         else:
             return False, {"error": "El ticket solo se puede eliminar en los 30 minutos posteriores a su creacion"}
+        
 class TicketType(models.Model):
     name = models.CharField(max_length=25)
     price = models.DecimalField(max_digits=10, decimal_places=2)

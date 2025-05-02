@@ -22,12 +22,12 @@
                         </ul>
                     </div>
                 {% endif %}
-                <div class="card-header">
-                    <h5 class="card-title">Comprar entrada</h5>
-                    <h5 class="card-title">{{ event.id }}</h5>
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">{{ event.title }}</h5>
+                    <p class="card-title mb-0">Comprar entrada</p>
                 </div>
                 <div class="card-body">
-                    <form id="ticketForm" action="{% url 'ticket_form' event_id %}" method="POST">
+                    <form id="ticketForm" action="{% url 'ticket_form' event.id %}" method="POST">
                         {% csrf_token %}
                         <div class="mb-3">
                             <label for="ticketQuantity" class="form-label"><strong>Cantidad de entrada</strong></label>
@@ -36,6 +36,7 @@
                                 <input type="number" name="ticketQuantity" id="ticketQuantity" class="form-control text-center" value="1" min="1">
                                 <button class="btn btn-outline-secondary" type="button" onclick="increaseQuantity()">+</button>
                             </div>
+                            <small class="text-muted">Entradas disponibles: {{ event.available_tickets }}</small>
                         </div>
                         <div class="mb-3">
                             <label for="ticketType" class="form-label"><strong>Tipo de entrada</strong></label>

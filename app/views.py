@@ -411,6 +411,7 @@ def tickets(request, event_id=None):
 
 @login_required
 def ticket_form(request, event_id=None):
+    event=get_object_or_404(Event, pk=event_id) if event_id else None
     if event_id is None:
         return HttpResponseBadRequest("Falta el parámetro event_id")
     
@@ -433,10 +434,10 @@ def ticket_form(request, event_id=None):
                     "errors": errors,
                     "data": request.POST,
                     "ticket_types": ticket_types,
-                    "event_id":event_id
+                    "event": event,
                 },
             )
-    else: return render(request, "app/ticket_form.html", {"ticket_types":ticket_types, "event_id":event_id})
+    else: return render(request, "app/ticket_form.html", {"ticket_types":ticket_types, "event":event})
 
 @login_required
 def ticket_detail(request, id):
@@ -445,11 +446,12 @@ def ticket_detail(request, id):
 
 @login_required
 def ticket_delete(request, id):
+    user_is_organizer = request.user. is_organizer
     if request.method == "POST":
         ticket = get_object_or_404(Ticket, ticket_code=id)
-        success, result=ticket.delete()
+        success, result=ticket.delete(user_is_organizer)
         if success:
-            return redirect(tickets)
+            return redirect("tickets")
         else:
             return render( request, "app/ticket_detail.html", {"ticket": ticket, "errors": result})
     else:
@@ -459,8 +461,7 @@ def ticket_delete(request, id):
 def ticket_update(request, id):
     ticket = get_object_or_404(Ticket, ticket_code=id)
     ticket_types = TicketType.objects.all()
-    if not ticket.thirty_minutes_rule():
-        return render(request, "app/ticket_detail.html", {"ticket": ticket, "errors": {"error": "El ticket solo se puede modificar en los 30 minutos posteriores a su creación"}})
+    event= get_object_or_404(Event, pk=ticket.event.id)
     if request.method == "POST":
         ticket_type_id = request.POST.get("ticket_type")
         quantity = int(request.POST.get("quantity"))
@@ -470,7 +471,7 @@ def ticket_update(request, id):
             return render(request, "app/ticket_detail.html", {"ticket": ticket})
         else:
             return render(request,"app/ticket_update.html",{"errors": result,"data": request.POST, "ticket": ticket,},)
-    return render(request, "app/ticket_update.html", {"ticket_types":ticket_types,"ticket": ticket})
+    return render(request, "app/ticket_update.html", {"ticket_types":ticket_types,"ticket": ticket, "event":event,})
 
 @login_required
 def ticket_types(request):
