@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block content %}
+{% load static %}
+{% load form_tags %}
+{% load custom_filters %}
+
+<div class="containerNotificaciones my-5">
+  <h2 class="mb-4">📥 Gestión de Notificaciones</h2>
+
+  <!-- Filtros -->
+  <form method="get" class="row gy-2 gx-3 align-items-center justify-content-between mb-3">
+    <div class="col-sm-4">
+      <input type="text" name="q" class="form-control busquedaNotificaciones" placeholder="Buscar notificaciones…" value="{{ request.GET.q }}">
+    </div>
+    <div class="col-sm-3">
+      <select name="event" class="form-select">
+        <option value="">Todos los eventos</option>
+        {% for event in all_events %}
+        <option value="{{ event.id }}" {% if request.GET.event == event.id|stringformat:"s" %}selected{% endif %}>
+          {{ event.title }}
+        </option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-sm-3">
+      <select name="priority" class="form-select">
+        <option value="">Todas las prioridades</option>
+        <option value="low" {% if request.GET.priority == 'low' %}selected{% endif %}>Baja</option>
+        <option value="normal" {% if request.GET.priority == 'normal' %}selected{% endif %}>Normal</option>
+        <option value="high" {% if request.GET.priority == 'high' %}selected{% endif %}>Alta</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary">Filtrar</button>
+    </div>
+  </form>
+
+  <!-- Burbujas con filtros activos -->
+  <div class="mb-3">
+    {% if request.GET.q %}
+      <span class="badge rounded-pill bg-secondary text-white me-2 text-decoration-none filter-bubble" data-param="q" style="cursor:pointer;">
+        🔍 {{ request.GET.q }} ×
+      </span>
+    {% endif %}
+    {% if request.GET.event %}
+      {% for event in all_events %}
+        {% if event.id|stringformat:"s" == request.GET.event %}
+          <span class="badge rounded-pill bg-secondary text-white me-2 text-decoration-none filter-bubble" data-param="event" style="cursor:pointer;">
+            🎫 {{ event.title }} ×
+          </span>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    {% if request.GET.priority %}
+      <span class="badge rounded-pill bg-secondary text-white me-2 text-decoration-none filter-bubble" data-param="priority" style="cursor:pointer;">
+        ⚠️ {{ request.GET.priority|capfirst }} ×
+      </span>
+    {% endif %}
+  </div>
+
+  <!-- Tabla de notificaciones -->
+  <div class="table-wrapper-notifs">
+    <div class="draggable-scroll" id="notifTableScroll">
+        <table class="table table-hover table-notifs">
+        <thead class="table-light">
+            <tr>
+            <th>Título</th>
+            <th>Evento</th>
+            <th>Destinatarios</th>
+            <th>Prioridad</th>
+            <th>Fecha de Envío</th>
+            <th class="text-end">Acciones</th>
+            </tr>
+        </thead>
+            <tbody>
+                {% if sent_notifications %}
+                {% for n in sent_notifications %}
+                <tr>
+                    <td class="align-middle">{{ n.title }}</td>
+                    <td class="align-middle">{{ n.event.title|default:"—" }}</td>
+                    <td class="align-middle">
+                    {% if n.to_all_event_attendees %}
+                        <span class="badge bg-info text-dark">
+                        Todos ({{ event_counts|get_item:n.event.id|stringformat:"s"|default:"1" }})
+                        </span>
+                    {% else %}
+                        <span class="badge bg-secondary">Usuario único</span>
+                    {% endif %}
+                    </td>
+                    <td class="align-middle">
+                    <span class="badge {% if n.priority == 'high' %}bg-danger{% elif n.priority == 'normal' %}bg-primary{% else %}bg-secondary{% endif %}">
+                        {{ n.get_priority_display }}
+                    </span>
+                    </td>
+                    <td class="align-middle">{{ n.formatted_date }}</td>
+                    <td class="text-end align-middle">
+                    <a href="{% url 'notifications_delete' n.pk %}" class="btn btn-sm btn-outline-danger">🗑</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-3">No se encontraron notificaciones.</td></tr>
+                {% endfor %}
+                {% else %}
+                {% for n in received_notifications %}
+                <tr class="{% if not n.is_read %}table-warning{% endif %}">
+                    <td class="align-middle">{{ n.title }}</td>
+                    <td class="align-middle">{{ n.event.title|default:"—" }}</td>
+                    <td class="align-middle">
+                    {% if n.to_all_event_attendees %}
+                        <span class="badge bg-info text-dark">Todos</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Usuario único</span>
+                    {% endif %}
+                    </td>
+                    <td class="align-middle">
+                    <span class="badge {% if n.priority == 'high' %}bg-danger{% elif n.priority == 'normal' %}bg-primary{% else %}bg-secondary{% endif %}">
+                        {{ n.get_priority_display }}
+                    </span>
+                    </td>
+                    <td class="align-middle">{{ n.formatted_date }}</td>
+                    <td class="text-end align-middle">
+                    <form method="post" action="{% url 'notifications_read' n.pk %}" style="display:inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-outline-success" title="Marcar como leída">✔</button>
+                    </form>
+                    <a href="{% url 'notifications_detail' n.pk %}" class="btn btn-sm btn-outline-primary" title="Ver detalle">👁️</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="text-center text-muted py-3">No tenés notificaciones aún.</td></tr>
+                {% endfor %}
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+  </div>
+
+  {% if request.user.is_authenticated and request.user.is_organizer %}
+    <a href="{% url 'create_notification' %}" class="btn btn-success mt-3">+ Crear Notificación</a>
+  {% endif %}
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    // Manejador para quitar filtros desde burbujas
+    document.querySelectorAll(".filter-bubble").forEach(bubble => {
+      bubble.addEventListener("click", function () {
+        const param = this.dataset.param;
+        const url = new URL(window.location.href);
+        url.searchParams.delete(param);
+        window.location.href = url.toString();
+      });
+    });
+  });
+</script>
+</div>
+{% endblock %}

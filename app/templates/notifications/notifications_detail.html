@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% load static %}
+{% block content %}
+
+<div class="containerNotificaciones my-5">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="form-notif">
+        <!-- Volver -->
+        <button type="button" class="btn btn-outline-secondary mb-3" onclick="history.back()">← Volver</button>
+
+        <h2 class="mb-4">{{ notification.title }}</h2>
+
+        <!-- Fecha y prioridad -->
+        <p class="text-muted">
+          <i class="bi bi-calendar-event"></i>
+          {{ notification.formatted_date }}
+          &nbsp;•&nbsp;
+          <i class="bi bi-star-fill text-warning"></i>
+          Prioridad: <strong>{{ notification.get_priority_display }}</strong>
+        </p>
+
+        <!-- Evento -->
+        {% if notification.event %}
+        <p>
+          <i class="bi bi-easel2"></i>
+          Evento: <strong>{{ notification.event.title }}</strong>
+        </p>
+        {% endif %}
+
+        <!-- Destinatario -->
+        <p>
+          <i class="bi bi-person-circle"></i>
+          Destinatario:
+          {% if notification.to_all_event_attendees %}
+            <span class="badge bg-info text-dark">Todos los asistentes</span>
+          {% else %}
+            <span class="badge bg-secondary">Usuario único</span>
+          {% endif %}
+        </p>
+
+        <!-- Contenido -->
+        <hr>
+        <p class="mt-4" style="white-space: pre-line;">{{ notification.message }}</p>
+
+        <!-- Marcar como leída -->
+        {% if notification.is_read %}
+          <div class="alert alert-success mt-4 d-flex align-items-center gap-2">
+            <i class="bi bi-check-circle-fill"></i> Esta notificación ya fue marcada como <strong>leída</strong>.
+          </div>
+        {% else %}
+          <form method="post" action="{% url 'notifications_read' notification.pk %}" class="mt-4">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">Marcar como leída</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

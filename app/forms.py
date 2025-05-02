@@ -141,34 +141,66 @@ class TicketForm(forms.ModelForm):
 
 # --- Formulario de Notificaciones ---
 class NotificationForm(forms.ModelForm):
+    TARGET_CHOICES = [
+        ('event', 'Todos los asistentes de un evento'),
+        ('user', 'Un usuario específico')
+    ]
+    # Campo auxiliar para el tipo de destinatario (radio buttons)
+    target = forms.ChoiceField(choices=TARGET_CHOICES, widget=forms.RadioSelect, label='Destino')
+    # Campos de destino condicionales
+    event = forms.ModelChoiceField(queryset=Event.objects.none(), required=False, label='Evento')
+    user = forms.ModelChoiceField(queryset=User.objects.none(), required=False, label='Usuario')
+    
     class Meta:
-        model  = Notification
-        fields = ["user", "priority", "title", "message"]
+        model = Notification
+        fields = ['target', 'event', 'user', 'title', 'message', 'priority', 'to_all_event_attendees']
         widgets = {
-            "user":     forms.Select(attrs={
-                "class": "form-select select-user",      
-                "size": 8                                
-            }),
-            "priority": forms.Select(attrs={"class": "form-select"}),
-            "title":    forms.TextInput(attrs={"class": "form-control"}),
-            "message":  forms.Textarea(attrs={"class": "form-control", "rows": 4}),
+            'to_all_event_attendees': forms.HiddenInput()  # ocultamos el checkbox real
         }
         labels = {
-            "user":     "Destinatario",
-            "priority": "Prioridad",
-            "title":    "Título",
-            "message":  "Mensaje",
+            'title': 'Título',
+            'message': 'Mensaje',
+            'priority': 'Prioridad',
         }
-
+    
     def __init__(self, *args, **kwargs):
+        # Recibimos el usuario actual para filtrar opciones
+        user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
-        # solo usuarios NO organizadores
-        qs = User.objects.filter(is_organizer=False).order_by("first_name", "last_name")
-        self.fields["user"].queryset = qs
-        # cómo se muestra cada opción
-        self.fields["user"].label_from_instance = (
-            lambda u: f"{(u.get_full_name() or u.username).title()} ({u.email})"
-        )
+        # Ajustar el queryset de eventos y usuarios según el usuario logueado
+        if user:
+            # Mostrar solo eventos organizados por el usuario (asumiendo Event.organizer relaciona al organizador)
+            self.fields['event'].queryset = Event.objects.filter(organizer=user)
+            # Mostrar solo usuarios que tengan tickets en eventos del organizador (asistentes de cualquiera de sus eventos)
+            self.fields['user'].queryset = User.objects.filter(tickets__event__organizer=user).distinct()
+        # Inicializar selección por defecto: ninguno (se fuerza al usuario a elegir)
+        self.fields['target'].initial = None
+        # Ocultar el campo booleano en el formulario (lo controlaremos manualmente)
+        self.fields['to_all_event_attendees'].initial = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        target_choice = cleaned_data.get('target')
+        event = cleaned_data.get('event')
+        user = cleaned_data.get('user')
+        # Validar según la opción de destino elegida
+        if target_choice == 'event':
+            # Debe haber un evento y marcar checkbox de "todos asistentes"
+            if not event:
+                raise forms.ValidationError("Por favor, seleccioná un evento para enviar la notificación.")
+            # Forzamos to_all_event_attendees a True porque el usuario eligió evento
+            cleaned_data['to_all_event_attendees'] = True
+            cleaned_data['user'] = None  # Asegurarse de no usar campo de usuario
+        elif target_choice == 'user':
+            # Debe haber un usuario
+            if not user:
+                raise forms.ValidationError("Por favor, seleccioná un usuario específico para enviar la notificación.")
+            cleaned_data['to_all_event_attendees'] = False
+            cleaned_data['event'] = None  # No debe usarse el evento en este caso
+        else:
+            # Si no se eligió ninguna opción (no debería ocurrir si el campo es requerido)
+            raise forms.ValidationError("Debés elegir un tipo de destino (evento o usuario).")
+        return cleaned_data
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category

@@ -4,7 +4,7 @@ from django.db import models
 from django.utils import timezone
 from django.conf import settings
 import uuid
-
+from django.contrib.auth.models import User
 # ------------------- Usuario -------------------
 class User(AbstractUser):
     is_organizer = models.BooleanField("¿Es organizador?", default=False)
@@ -186,34 +186,54 @@ class Ticket(models.Model):
 
 # ------------------- Notificación -------------------
 class Notification(models.Model):
+    # Destinatario específico (opcional)
+    user = models.ForeignKey(User, null=True, blank=True, on_delete=models.CASCADE, related_name='notifications_received')
+    # Evento para notificación masiva (opcional)
+    event = models.ForeignKey('Event', null=True, blank=True, on_delete=models.CASCADE, related_name='notifications_event')
+    # Indicador de notificación a todos los asistentes del evento
+    to_all_event_attendees = models.BooleanField(default=False)
+    # Contenido de la notificación
+    title = models.CharField(max_length=100)
+    message = models.TextField()
+    # Prioridad de la notificación (por simplicidad, como texto o entero con choices)
     PRIORITY_CHOICES = [
-        ("HIGH", "Alta"),
-        ("MEDIUM", "Media"),
-        ("LOW", "Baja"),
+        ('low', 'Baja'),
+        ('normal', 'Normal'),
+        ('high', 'Alta'),
     ]
-
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        verbose_name="Destinatario",
-        on_delete=models.CASCADE,
-        related_name="notifications",
-    )
-    title = models.CharField("Título", max_length=60)
-    message = models.TextField("Mensaje", max_length=280)
-    created_at = models.DateTimeField("Creado", auto_now_add=True)
-    priority = models.CharField(
-        "Prioridad", max_length=6, choices=PRIORITY_CHOICES, default="LOW"
-    )
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='normal')
+    # Fecha de creación (para registro)
+    created_at = models.DateTimeField(auto_now_add=True)
+    # (Opcional) campo para rastrear el creador de la notificación
+    created_by = models.ForeignKey(User, null=True, blank=True, on_delete=models.SET_NULL, related_name='notifications_created')
     is_read = models.BooleanField("Leída", default=False)
+    def clean(self):
+        """Validación para asegurar que solo un tipo de destino esté seleccionado."""
+        super().clean()  # Llama a validaciones básicas primero
+        # Caso 1: Notificación masiva a evento
+        if self.to_all_event_attendees:
+            if not self.event:
+                raise ValidationError({'event': "Debe seleccionar un evento cuando 'a todos los asistentes' está marcado."})
+            if self.user:
+                raise ValidationError({'user': "No seleccione un usuario específico cuando la notificación es para todos los asistentes de un evento."})
+        # Caso 2: Notificación a usuario específico
+        else:
+            if not self.user:
+                raise ValidationError({'user': "Debe seleccionar un usuario destinatario o marcar la opción de notificar a todos los asistentes de un evento."})
+            if self.event:
+                # Opcional: impedir que se asocie un evento si no es notificación masiva
+                raise ValidationError({'event': "No seleccione un evento al enviar una notificación a un usuario específico."})
 
     class Meta:
-        ordering = ["-created_at"]
-        verbose_name = "Notificación"
-        verbose_name_plural = "Notificaciones"
-
-    def __str__(self):
-        return f"{self.title} → {self.user.username}"
-
+        constraints = [
+            models.CheckConstraint(
+                name="notification_valid_target",
+                check=(
+                    models.Q(to_all_event_attendees=True, event__isnull=False, user__isnull=True) | 
+                    models.Q(to_all_event_attendees=False, user__isnull=False, event__isnull=True)
+                )
+            )
+        ]
 # ------------------- Categoría -------------------
 class Category(models.Model):
     name = models.CharField(max_length=100)

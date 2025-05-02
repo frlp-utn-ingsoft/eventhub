@@ -131,8 +131,6 @@
 }
 @keyframes scaleIn{from{opacity:0; transform:scale(.95)}to{opacity:1; transform:scale(1)}}
 
-.form-notif label{font-weight:500;}
-
 /* select con scroll fino */
 .select-user {
   scrollbar-width: thin;
@@ -150,4 +148,76 @@
   .table-notifs{font-size:.8rem;}
   #notifDropdown{min-width:220px;}
   .form-notif{padding:1.25rem;}
+}
+
+.form-notif {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  border-radius: 14px;
+  padding: 2rem;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+  animation: scaleIn 0.3s ease-in-out both;
+  -webkit-animation: scaleIn 0.3s ease-in-out both;
+}
+.form-notif label{
+  color: #1f2021;
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+.containerNotificaciones .crearNotificacion:hover{
+  background: #43b982  !important;
+  color: #fff !important;
+}
+
+.form-notif input{
+  color: #1f2021;
+  background: rgba(255, 255, 255, 0.85);
+}
+.containerNotificaciones .btn-outline-success:hover{
+  background: #0fdd54 !important;
+  color: #fff !important;
+}
+.containerNotificaciones select{
+  user-select: none;
+  cursor: pointer;
+}
+
+.form-notif textarea{
+  color: #1f2021;
+}
+
+.table-wrapper-notifs {
+  overflow: hidden;
+  width: 100%;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+
+.draggable-scroll {
+  overflow-x: auto;
+  cursor: grab;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.draggable-scroll:active {
+  cursor: grabbing;
+}
+
+.draggable-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.draggable-scroll::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
+@media (max-width: 768px) {
+  .table-notifs {
+    min-width: 680px;
+  }
 }

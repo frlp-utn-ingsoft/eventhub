@@ -9,6 +9,10 @@ from django.views import generic, View
 from django.urls import reverse_lazy
 from django.http import JsonResponse
 from django.template.loader import render_to_string
+from django.db import transaction
+from django.db.models import Q
+from .utils import format_datetime_es
+
 
 from .models import Event, User, Ticket, Category, Notification, RefundRequest
 from .forms import TicketForm, CategoryForm, NotificationForm, RefundRequestForm
@@ -394,20 +398,124 @@ class OrganizerRequiredMixin(UserPassesTestMixin):
         return self.request.user.is_authenticated and self.request.user.is_organizer # type: ignore
 
 
-class NotificationList(LoginRequiredMixin, generic.ListView):
-    template_name = "notifications/list.html"
-    paginate_by = 10
+@login_required
+def notifications_list(request):
+    query = request.GET.get("q", "")
+    filter_event = request.GET.get("event")
+    filter_priority = request.GET.get("priority")
 
-    def get_queryset(self):
-        return self.request.user.notifications.all() # type: ignore
+    tickets_user_events = Event.objects.filter(tickets__user=request.user).distinct()
 
+    received_notifications = Notification.objects.filter(
+        Q(user=request.user) |
+        Q(to_all_event_attendees=True, event__in=tickets_user_events)
+    ).distinct()
 
-class NotificationCreate(OrganizerRequiredMixin, generic.CreateView):
-    model = Notification
-    form_class = NotificationForm
-    template_name = "notifications/form.html"
-    success_url = reverse_lazy("notifications_list")
+    if query:
+        received_notifications = received_notifications.filter(title__icontains=query)
+    if filter_event:
+        received_notifications = received_notifications.filter(event__id=filter_event)
+    if filter_priority:
+        received_notifications = received_notifications.filter(priority=filter_priority)
 
+    # Agregar fecha formateada
+    for notif in received_notifications:
+        notif.formatted_date = format_datetime_es(notif.created_at)
+
+    sent_notifications = None
+    if hasattr(request.user, 'is_organizer') and request.user.is_organizer:
+        sent_notifications = Notification.objects.filter(created_by=request.user)
+        if query:
+            sent_notifications = sent_notifications.filter(title__icontains=query)
+        if filter_event:
+            sent_notifications = sent_notifications.filter(event__id=filter_event)
+        if filter_priority:
+            sent_notifications = sent_notifications.filter(priority=filter_priority)
+
+        for notif in sent_notifications:
+            notif.formatted_date = format_datetime_es(notif.created_at)
+
+    all_events = tickets_user_events
+
+    return render(request, "notifications/notifications_list.html", {
+        "received_notifications": received_notifications,
+        "sent_notifications": sent_notifications,
+        "all_events": all_events,
+        "filter_event": filter_event,
+        "filter_priority": filter_priority,
+        "query": query,
+    })
+@login_required
+def create_notification(request):
+    if not request.user.is_organizer:
+        return redirect('home')
+
+    if request.method == 'POST':
+        form = NotificationForm(request.POST, user=request.user)
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    target = form.cleaned_data['target']
+                    title = form.cleaned_data['title']
+                    message = form.cleaned_data['message']
+                    priority = form.cleaned_data['priority']
+                    to_all = form.cleaned_data['to_all_event_attendees']
+                    event = form.cleaned_data.get('event')
+                    user = form.cleaned_data.get('user')
+
+                    if target == 'event' and event:
+                        Notification.objects.create(
+                            event=event,
+                            to_all_event_attendees=True,
+                            title=title,
+                            message=message,
+                            priority=priority,
+                            created_by=request.user
+                        )
+                    elif target == 'user' and user:
+                        Notification.objects.create(
+                            user=user,
+                            to_all_event_attendees=False,
+                            title=title,
+                            message=message,
+                            priority=priority,
+                            created_by=request.user
+                        )
+                    else:
+                        raise Exception("Destino no válido en el formulario.")
+            except Exception as e:
+                form.add_error(None, f"Ocurrió un error al crear notificaciones: {e}")
+            else:
+                return redirect('notifications_list')
+    else:
+        form = NotificationForm(user=request.user)
+
+    return render(request, 'notifications/create_notification.html', {'form': form})
+
+@login_required
+def notification_detail(request, pk):
+    notification = get_object_or_404(Notification, pk=pk)
+
+    # El usuario tiene acceso si:
+    # - es el destinatario directo
+    # - o es el creador (organizador)
+    # - o es destinatario masivo y tiene ticket para ese evento
+    user = request.user
+    tiene_ticket = notification.event and notification.event.tickets.filter(user=user).exists()
+
+    if not (
+        notification.user == user or
+        notification.created_by == user or
+        (notification.to_all_event_attendees and tiene_ticket)
+    ):
+        return redirect("notifications_list")
+
+    # Formatear fecha en español
+    notification.formatted_date = format_datetime_es(notification.created_at)
+
+    return render(request, "notifications/notifications_detail.html", {
+        "notification": notification
+    })
 
 class NotificationUpdate(OrganizerRequiredMixin, generic.UpdateView):
     model = Notification
@@ -424,7 +532,14 @@ class NotificationDelete(OrganizerRequiredMixin, generic.DeleteView):
 
 class NotificationMarkRead(LoginRequiredMixin, View):
     def post(self, request, pk):
-        notif = get_object_or_404(Notification, pk=pk, user=request.user)
+        # Obtener eventos del usuario
+        user_events = Event.objects.filter(tickets__user=request.user)
+
+        notif = get_object_or_404(
+            Notification,
+            Q(user=request.user) | Q(to_all_event_attendees=True, event__in=user_events),
+            pk=pk
+        )
         notif.is_read = True
         notif.save(update_fields=["is_read"])
         return redirect("notifications_list")
@@ -432,7 +547,14 @@ class NotificationMarkRead(LoginRequiredMixin, View):
 
 class NotificationDropdown(LoginRequiredMixin, View):
     def get(self, request):
-        notifs = request.user.notifications.order_by("-created_at")[:5]
+        user = request.user
+        events = Event.objects.filter(tickets__user=user).distinct()
+
+        notifs = Notification.objects.filter(
+            Q(user=user) |
+            Q(to_all_event_attendees=True, event__in=events)
+        ).order_by("-created_at").distinct()[:5]
+
         html = render_to_string(
             "notifications/_dropdown_items.html",
             {"notifs": notifs},

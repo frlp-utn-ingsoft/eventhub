@@ -14,22 +14,25 @@
 
 
     <!-- CSS por módulo (opcional si hay estilos específicos) -->
-    <link rel="stylesheet" href="{% static 'css/notifications.css' %}?v=20250504">
+    <link rel="stylesheet" href="{% static 'css/notifications.css' %}?v=20250505">
     <link rel="stylesheet" href="{% static 'css/events.css' %}?v=20250504">
     <link rel="stylesheet" href="{% static 'css/accounts.css' %}">
-    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=20250503">
+    <link rel="stylesheet" href="{% static 'css/home.css' %}?v=20250504">
     <link rel="stylesheet" href="{% static 'css/login.css' %}?v=20250505">
     <link rel="stylesheet" href="{% static 'css/register.css' %}?v=20250503">
     <link rel="stylesheet" href="{% static 'css/app.css' %}?v=20250504">
     <link rel="stylesheet" href="{% static 'css/categories.css' %}?v=20250505">
     <link rel="stylesheet" href="{% static 'css/refunds.css' %}?v=20250506">
+    <link rel="stylesheet" href="{% static 'css/ticket.css' %}?v=20250508">
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
 </head>
 
 <body>
   <nav class="navbar navbar-expand-md bg-body-tertiary shadow-sm py-3 px-4">
-    <div class="container-fluid align-items-center justify-content-between">
+    <div class="container-fluid align-items-center justify-content-between contenedorNavbar">
+
+      {# Logo y nombre de la app #}
       <!-- Logo -->
       <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'home' %}">
         <img
@@ -88,16 +91,18 @@
               >
                 <i class="bi bi-bell fs-5"></i>
                 {% if unread_notifications %}
-                  <span
-                    class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger"
-                  >
-                    {{ unread_notifications }}
-                  </span>
+                <span
+                  class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger iconoNotificacion"
+                  {% if unread_notifications == 0 %}style="display:none;"{% endif %}
+                >
+                  {{ unread_notifications }}
+                </span>
                 {% endif %}
               </a>
               <ul
                 class="dropdown-menu dropdown-menu-end p-0"
                 id="notifDropdown"
+                data-url="{% url 'notifications_dropdown' %}"
                 style="min-width:260px"
               ></ul>
             </li>

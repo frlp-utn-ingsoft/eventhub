@@ -9,7 +9,7 @@
         <div class="card-header">
           <h5>Comprar Entrada</h5>
         </div>
-        <div class="card-body">
+        <div class="card-body ticket">
 
           <h4>{{ event.title }}</h4>
           <p><i class="bi bi-calendar-event"></i> {{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
@@ -47,7 +47,7 @@
               {{ form.type }}
             </div>
 
-            <h6 class="mt-4">Método de pago</h6>
+            <h4 class="mt-4">Método de pago</h5>
             <div class="mb-2">
               <label class="form-label">Número de tarjeta</label>
               <input type="text" id="card_number" class="form-control" placeholder="1234 5678 9012 3456">
@@ -98,7 +98,7 @@
         </div>
       </div>
 
-      <div class="card">
+      <div class="card ticket">
         <div class="card-header">
           <strong>Información importante</strong>
         </div>

@@ -22,12 +22,14 @@ urlpatterns = [
     path("categories/<int:id>/edit/", views.category_form, name="category_edit"),
     path("categories/<int:id>/", views.category_detail, name="category_detail"),
     path("categories/<int:id>/delete/", views.category_delete, name="category_delete"),
-    path("notifications/", views.NotificationList.as_view(),            name="notifications_list"),
-    path("notifications/new/", views.NotificationCreate.as_view(),      name="notifications_create"),
+    path("notifications/", views.notifications_list, name="notifications_list"),
+    path("notifications/new/", views.create_notification, name="create_notification"),
     path("notifications/<int:pk>/edit/", views.NotificationUpdate.as_view(), name="notifications_edit"),
     path("notifications/<int:pk>/delete/", views.NotificationDelete.as_view(), name="notifications_delete"),
     path("notifications/<int:pk>/read/", views.NotificationMarkRead.as_view(), name="notifications_read"),
+    path("notifications/<int:pk>/", views.notification_detail, name="notifications_detail"),
     path("notifications/dropdown/", views.NotificationDropdown.as_view(), name="notifications_dropdown"),
+    
     ## Refunds
     path("refunds/", views.my_refund_requests, name="my_refund_requests"),
     path("refunds/new/", views.new_refund_request, name="create_refund_request"),

@@ -1,19 +1,18 @@
 // notifications.js
 // Manejo dinámico del dropdown de notificaciones
 
-document.addEventListener("DOMContentLoaded", () => {
-    const dropdown = document.getElementById("notifMenu");
-    dropdown?.addEventListener("show.bs.dropdown", () => {
-      fetch("/notifications/dropdown/")
-        .then(response => response.json())
-        .then(data => {
-          const container = document.getElementById("notifDropdown");
-          container.innerHTML = data.html || "<li class='dropdown-item text-muted'>Sin notificaciones</li>";
-        })
-        .catch(err => console.error("Error al cargar notificaciones:", err));
-    });
-  });
-  
+document.addEventListener("DOMContentLoaded", function () {
+  const dropdown = document.getElementById("notifDropdown");
+  const url = dropdown?.dataset?.url;
+  if (!url) return;
+
+  fetch(url)
+    .then(response => response.json())
+    .then(data => {
+      dropdown.innerHTML = data.html;
+    })
+    .catch(error => console.error("Error al cargar notificaciones:", error));
+});
   
 /* --- buscador de usuarios en el formulario de notificaciones --- */
 document.addEventListener("DOMContentLoaded", () => {
@@ -46,5 +45,53 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     [...pri, ...sec].forEach(o => select.append(o));
+  });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const filterBubbles = document.querySelectorAll(".filter-bubble");
+  if (filterBubbles.length === 0) return;
+
+  filterBubbles.forEach(bubble => {
+    bubble.addEventListener("click", function (e) {
+      e.preventDefault();
+      const param = this.dataset.param;
+      const url = new URL(window.location.href);
+      url.searchParams.delete(param);
+      window.location.href = url.toString();
+    });
+  });
+});
+
+document.addEventListener("DOMContentLoaded", () => {
+  const container = document.getElementById("notifTableScroll");
+  let isDown = false;
+  let startX, scrollLeft;
+
+  if (!container) return;
+
+  container.addEventListener("mousedown", (e) => {
+    isDown = true;
+    container.classList.add("active");
+    startX = e.pageX - container.offsetLeft;
+    scrollLeft = container.scrollLeft;
+  });
+
+  container.addEventListener("mouseleave", () => {
+    isDown = false;
+    container.classList.remove("active");
+  });
+
+  container.addEventListener("mouseup", () => {
+    isDown = false;
+    container.classList.remove("active");
+  });
+
+  container.addEventListener("mousemove", (e) => {
+    if (!isDown) return;
+    e.preventDefault();
+    const x = e.pageX - container.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    container.scrollLeft = scrollLeft - walk;
   });
 });
