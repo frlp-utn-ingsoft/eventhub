@@ -117,10 +117,10 @@
 
                                     {% if request.user == r.user %}
                                         <a href="?edit_rating=1" class="btn btn-sm btn-outline-primary">Editar</a>
-                                        <a href="{% url 'rating_delete' r.id %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                                        <button class="delete-rating-btn btn btn-danger" data-url="{% url 'rating_delete' r.id %}">Eliminar</button>      
                                     {% elif user_is_organizer %}
                                         <!-- El organizador puede eliminar cualquier calificación -->
-                                        <a href="{% url 'rating_delete' r.id %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                                        <button class="btn btn-sm btn-outline-danger delete-rating-btn" data-url="{% url 'rating_delete' r.id %}">Eliminar</button>                                
                                     {% endif %}
                                 {% endif %}
                             </div>
@@ -134,7 +134,7 @@
                         <hr class="mt-5">
                         <div class="mt-4">
                             <h4>Agregar Calificación</h4>
-                            <form method="POST" id="rating-form">
+                            <form method="POST" id="rating-form" data-first-rating="true">
                                 {% csrf_token %}
                                 <div class="vstack gap-3">
                                     <div>

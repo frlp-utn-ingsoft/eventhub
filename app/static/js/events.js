@@ -1,20 +1,18 @@
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.getElementById("eventForm");
 
-    // Lógica de validación del formulario
+    // Validación de formulario de evento
     if (form) {
         const titleField = form.querySelector("[name='title']");
         const dateField = form.querySelector("[name='date']");
         const submitButton = form.querySelector("[type='submit']");
 
-        // Función para verificar si los campos son válidos
         const validateForm = () => {
             const title = titleField.value.trim();
             const date = dateField.value;
 
             let isValid = true;
 
-            // Validar título
             if (!title) {
                 showError(titleField, "Por favor ingrese un título.");
                 isValid = false;
@@ -22,7 +20,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 clearError(titleField);
             }
 
-            // Validar fecha
             if (!date) {
                 showError(dateField, "Por favor ingrese una fecha.");
                 isValid = false;
@@ -30,13 +27,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 clearError(dateField);
             }
 
-            // Activar o desactivar el botón de envío según la validez del formulario
             submitButton.disabled = !isValid;
-
             return isValid;
         };
 
-        // Mostrar el mensaje de error debajo de un campo
         const showError = (field, message) => {
             let error = field.nextElementSibling;
             if (!error || !error.classList.contains("error-message")) {
@@ -46,9 +40,15 @@ document.addEventListener("DOMContentLoaded", () => {
             }
             error.textContent = message;
             field.classList.add("is-invalid");
+
+            // Mostrar SweetAlert cuando hay error
+            Swal.fire({
+                icon: 'error',
+                title: 'Oops...',
+                text: message,
+            });
         };
 
-        // Limpiar el mensaje de error y el estado de error de un campo
         const clearError = (field) => {
             let error = field.nextElementSibling;
             if (error && error.classList.contains("error-message")) {
@@ -57,56 +57,109 @@ document.addEventListener("DOMContentLoaded", () => {
             field.classList.remove("is-invalid");
         };
 
-        // Validar al enviar el formulario
         form.addEventListener("submit", (e) => {
             if (!validateForm()) {
-                e.preventDefault(); // Prevenir el envío si no es válido
+                e.preventDefault();
             }
         });
 
-        // Validar en tiempo real al cambiar los campos
         titleField.addEventListener("input", validateForm);
         dateField.addEventListener("input", validateForm);
 
-        // Deshabilitar el botón de envío si el formulario es inválido
-        validateForm(); // Verificar el estado inicial del formulario
+        validateForm();
     }
 
     // ############################ Lógica de calificación con estrellas ############################
     const starContainer = document.getElementById('star-rating');
-    const stars = starContainer.querySelectorAll('.star');
-    let currentRating = parseInt(starContainer.dataset.ratingCurrent) || 0;
-    paintStars(currentRating); // <- Esto pinta las estrellas al cargar la página
-    
-    function paintStars(rating) {
+    if (starContainer) {
+        const stars = starContainer.querySelectorAll('.star');
+        let currentRating = parseInt(starContainer.dataset.ratingCurrent) || 0;
+        paintStars(currentRating);
+
+        function paintStars(rating) {
+            stars.forEach(star => {
+                const starValue = parseInt(star.dataset.value);
+                const icon = star.querySelector('i');
+                if (starValue <= rating) {
+                    icon.classList.remove('bi-star');
+                    icon.classList.add('bi-star-fill');
+                } else {
+                    icon.classList.remove('bi-star-fill');
+                    icon.classList.add('bi-star');
+                }
+            });
+        }
+
         stars.forEach(star => {
-            const starValue = parseInt(star.dataset.value);
-            const icon = star.querySelector('i');
-            if (starValue <= rating) {
-                icon.classList.remove('bi-star');
-                icon.classList.add('bi-star-fill');
-            } else {
-                icon.classList.remove('bi-star-fill');
-                icon.classList.add('bi-star');
-            }
+            star.addEventListener('mouseenter', () => {
+                const hoverValue = parseInt(star.dataset.value);
+                paintStars(hoverValue);
+            });
+
+            star.addEventListener('click', () => {
+                const selectedValue = parseInt(star.dataset.value);
+                currentRating = selectedValue;
+                starContainer.dataset.ratingCurrent = selectedValue;
+                document.getElementById(`star${selectedValue}`).checked = true;
+            });
+        });
+
+        starContainer.addEventListener('mouseleave', () => {
+            paintStars(currentRating);
         });
     }
 
-    stars.forEach(star => {
-        star.addEventListener('mouseenter', () => {
-            const hoverValue = parseInt(star.dataset.value);
-            paintStars(hoverValue);
-        });
+    // Mostrar alerta de éxito tras enviar el formulario de calificación
+    const ratingForms = document.querySelectorAll("#rating-form");
+    ratingForms.forEach(form => {
+        form.addEventListener("submit", (event) => {
+            // Verifica si el usuario es su primera calificación
+            const isFirstRating = form.dataset.firstRating === "true";
 
-        star.addEventListener('click', () => {
-            const selectedValue = parseInt(star.dataset.value);
-            currentRating = selectedValue;
-            starContainer.dataset.ratingCurrent = selectedValue;
-            document.getElementById(`star${selectedValue}`).checked = true;
+            // Si es la primera calificación, mostrar la alerta
+            if (isFirstRating) {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Gracias por tu calificación!',
+                    showConfirmButton: false, // No se muestra el botón de confirmación
+                    timer: 1000 // La alerta se cerrará automáticamente después de 3 segundos
+                }).then(() => {
+                    // Después de que la alerta se cierre, enviar el formulario
+                    form.submit();
+                });
+            } else {
+                // Si no es la primera calificación, simplemente envía el formulario sin alerta
+                form.submit();
+            }
+
+            // Prevenir el envío del formulario hasta que se cierre la alerta
+            event.preventDefault();
         });
     });
 
-    starContainer.addEventListener('mouseleave', () => {
-        paintStars(currentRating);
+    // Confirmación con SweetAlert al eliminar calificación
+    const deleteButtons = document.querySelectorAll(".delete-rating-btn");
+
+    deleteButtons.forEach(button => {
+        button.addEventListener("click", (e) => {
+            e.preventDefault();
+            const url = button.dataset.url;
+
+            Swal.fire({
+                title: '¿Estás seguro?',
+                text: "Esta acción eliminará la calificación.",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Sí, eliminar',
+                cancelButtonText: 'Cancelar'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Redirige a la URL de eliminación
+                    window.location.href = url;
+                }
+            });
+        });
     });
 });
