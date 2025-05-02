@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="containerComentario mt-5">
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h4 class="card-title mb-3">Editar comentario</h4>
+      <p class="text-muted">
+        Estás editando tu comentario para el evento: <strong>{{ event.title }}</strong>
+      </p>
+
+      <form method="post">
+        {% csrf_token %}
+        
+        <!-- Campo título -->
+        <div class="mb-3">
+          <label for="{{ form.title.id_for_label }}" class="form-label">Título del comentario *</label>
+          <input type="text"
+                 name="{{ form.title.name }}"
+                 value="{{ form.title.value|default_if_none:'' }}"
+                 required
+                 maxlength="100"
+                 class="form-control"
+                 id="{{ form.title.id_for_label }}"
+                 placeholder="Edita el título...">
+        </div>
+
+        <!-- Campo contenido -->
+        <div class="mb-3">
+          <label for="{{ form.content.id_for_label }}" class="form-label">Contenido del comentario *</label>
+          <textarea name="{{ form.content.name }}"
+                    id="{{ form.content.id_for_label }}"
+                    rows="4"
+                    class="form-control"
+                    required
+                    placeholder="Edita el contenido...">{{ form.content.value|default_if_none:'' }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-eventgub-green">Guardar cambios</button>
+        <a href="{% url 'event_detail' event.id %}" class="btn btn-secondary ms-2">Cancelar</a>
+      </form>
+    </div>
+  </div>
+
+  <div class="card border-info">
+    <div class="card-header bg-info text-white">
+      Contenido original
+    </div>
+    <div class="card-body">
+      <h5 class="card-title">{{ original_comment.title }}</h5>
+      <p class="card-text">{{ original_comment.content }}</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

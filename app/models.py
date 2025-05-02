@@ -1,10 +1,12 @@
-from django.contrib.auth.models import AbstractUser
+import uuid
+
+from django.conf import settings
+from django.contrib.auth.models import AbstractUser, User  # type: ignore
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
-from django.conf import settings
-import uuid
-from django.contrib.auth.models import User
+
+
 # ------------------- Usuario -------------------
 class User(AbstractUser):
     is_organizer = models.BooleanField("¿Es organizador?", default=False)
@@ -96,6 +98,16 @@ class Event(models.Model):
 
         self.save()
 
+class Comment(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    title = models.CharField(max_length=100)
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_deleted = models.BooleanField(default=False)  # ← CAMPO NUEVO
+
+    def __str__(self):
+        return f"{self.title} - {self.user.username}"
 # ------------------- Refund -------------------
 class RefundRequest(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refund_requests")

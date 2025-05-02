@@ -1,15 +1,27 @@
 from django import forms
-from .models import Venue
+from django.contrib.auth import get_user_model
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+
+from .models import Category, Comment, Event, Notification, Rating, RefundRequest, Ticket, Venue
+
+
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ['title', 'content']  # Incluye 'title'
+        widgets = {
+            'title': forms.TextInput(attrs={'placeholder': 'Escribe un título para tu comentario...'}),
+            'content': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Escribe tu comentario aquí...'}),
+        }
+
 
 class VenueForm(forms.ModelForm):
     class Meta:
         model = Venue
         fields = ['name', 'address', 'city', 'capacity', 'contact']
 
-from .models import RefundRequest, Ticket, Category, Notification, Event, Rating
-from django.core.exceptions import ValidationError
-from django.utils import timezone
-from django.contrib.auth import get_user_model
+
 
 
 User = get_user_model()
@@ -178,9 +190,9 @@ class NotificationForm(forms.ModelForm):
         # Ajustar el queryset de eventos y usuarios según el usuario logueado
         if user:
             # Mostrar solo eventos organizados por el usuario (asumiendo Event.organizer relaciona al organizador)
-            self.fields['event'].queryset = Event.objects.filter(organizer=user)
+            self.fields['event'].queryset = Event.objects.filter(organizer=user) # type: ignore
             # Mostrar solo usuarios que tengan tickets en eventos del organizador (asistentes de cualquiera de sus eventos)
-            self.fields['user'].queryset = User.objects.filter(tickets__event__organizer=user).distinct()
+            self.fields['user'].queryset = User.objects.filter(tickets__event__organizer=user).distinct() # type: ignore
         # Inicializar selección por defecto: ninguno (se fuerza al usuario a elegir)
         self.fields['target'].initial = None
         # Ocultar el campo booleano en el formulario (lo controlaremos manualmente)

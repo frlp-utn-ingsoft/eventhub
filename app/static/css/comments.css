@@ -1,0 +1,22 @@
+.containerComentario{
+    width: 85%;
+    margin-top: 2rem;
+
+}
+.containerComentario .card-title{
+    
+    color: #000;
+
+}
+
+.containerComentario .form-label{
+    
+    color: #2b2a2a;
+
+}
+
+.containerComentario .btn-link{
+    text-decoration: none;
+    color: #2b2a2a;
+
+}
