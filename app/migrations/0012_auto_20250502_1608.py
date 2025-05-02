@@ -11,7 +11,6 @@ def crear_prioridades(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        # Agregá acá la migración anterior
         ('app', '0011_usernotification_notification_user'),
     ]
 
