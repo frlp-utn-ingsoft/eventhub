@@ -41,6 +41,154 @@
                     </div>
                 {%endif%}
             </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h3>Comentarios ({{ comments|length }})</h3>
+                </div>
+                <div class="card-body">
+                    {% if user.is_organizer %}
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Evento</th>
+                                <th>Usuario</th>
+                                <th>Comentario</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for comment in comments %}
+                            <tr>
+                                <td>{{ event.title }}</td>
+                                <td>{{ comment.user.username }}</td>
+                                <td>
+                                    <strong>{{ comment.title }}</strong><br>
+                                    <span class="text-muted">{{ comment.text|truncatechars:50 }}</span>
+                                </td>
+                                <td>{{ comment.created_at|date:"d M Y, H:i" }}</td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="#" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#viewCommentModal{{ comment.id }}">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteCommentModal{{ comment.id }}">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+
+                                    <!-- Modal for viewing full comment -->
+                                    <div class="modal fade" id="viewCommentModal{{ comment.id }}" tabindex="-1" aria-labelledby="viewCommentModalLabel{{ comment.id }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="viewCommentModalLabel{{ comment.id }}">{{ comment.title }}</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p><strong>Usuario:</strong> {{ comment.user.username }}</p>
+                                                    <p><strong>Fecha:</strong> {{ comment.created_at|date:"d M Y, H:i" }}</p>
+                                                    <hr>
+                                                    <p>{{ comment.text }}</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                                                    <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteCommentModal{{ comment.id }}" data-bs-dismiss="modal">Eliminar</button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Modal for confirming deletion -->
+                                    <div class="modal fade" id="deleteCommentModal{{ comment.id }}" tabindex="-1" aria-labelledby="deleteCommentModalLabel{{ comment.id }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="deleteCommentModalLabel{{ comment.id }}">Confirmar eliminación</h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    <p>¿Estás seguro de que deseas eliminar este comentario?</p>
+                                                    <p><strong>Título:</strong> {{ comment.title }}</p>
+                                                    <p><strong>Usuario:</strong> {{ comment.user.username }}</p>
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                    <form method="post" action="{% url 'comment_delete' comment.id %}" class="d-inline">
+                                                        {% csrf_token %}
+                                                        <button type="submit" class="btn btn-danger">Eliminar</button>
+                                                    </form>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center">No hay comentarios para este evento.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <!-- Regular user view - card format -->
+                    <div id="comments-list">
+                        {% for comment in comments %}
+                        <div class="comment-item mb-3 p-3 border-bottom">
+                            <div class="d-flex justify-content-between">
+                                <h5>{{ comment.title }}</h5>
+                                {% if user.is_authenticated and comment.user == user %}
+                                <div>
+                                    <a href="{% url 'comment_edit' comment.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil"></i> Editar
+                                    </a>
+                                    <a href="{% url 'comment_delete' comment.id %}" class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i> Eliminar
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                            <p>{{ comment.text }}</p>
+                            <div class="text-muted small">
+                                <span>{{ comment.user.username }}</span> -
+                                <span>{{ comment.created_at|date:"d M Y, H:i" }}</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="alert alert-info">No hay comentarios para este evento.</div>
+                        {% endfor %}
+                    </div>
+
+                    <!-- Formulario para añadir comentarios -->
+                    <div class="mt-4">
+                        <h4>Añadir un comentario</h4>
+                        <form action="{% url 'comment_create' event.id %}" method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="comment-title" class="form-label">Título del comentario *</label>
+                                <input type="text" class="form-control {% if comment_errors.title %}is-invalid{% endif %}"
+                                       id="comment-title" name="title"
+                                       value="{{ comment_data.title|default:'' }}" required>
+                                {% if comment_errors.title %}
+                                <div class="invalid-feedback">{{ comment_errors.title }}</div>
+                                {% endif %}
+                            </div>
+                            <div class="mb-3">
+                                <label for="comment-text" class="form-label">Contenido del comentario *</label>
+                                <textarea class="form-control {% if comment_errors.text %}is-invalid{% endif %}"
+                                          id="comment-text" name="text" rows="3" required>{{ comment_data.text|default:'' }}</textarea>
+                                {% if comment_errors.text %}
+                                <div class="invalid-feedback">{{ comment_errors.text }}</div>
+                                {% endif %}
+                            </div>
+                            <button type="submit" class="btn btn-primary">Publicar comentario</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
 
         {% if event.scheduled_at < now %}
@@ -176,70 +324,4 @@
     </style>
 {% endblock %}
 
-<!-- Add this section after the event details and before the tickets section -->
-<div class="card mt-4">
-    <div class="card-header">
-        <h3>Comentarios ({{ comments|length }})</h3>
-    </div>
-    <div class="card-body">
-        <!-- Lista de comentarios existentes -->
-        <div id="comments-list">
-            {% for comment in comments %}
-            <div class="comment-item mb-3 p-3 border-bottom">
-                <div class="d-flex justify-content-between">
-                    <h5>{{ comment.title }}</h5>
-                    {% if user.is_authenticated and comment.user == user %}
-                    <div>
-                        <a href="{% url 'comment_edit' comment.id %}" class="btn btn-sm btn-outline-primary">
-                            <i class="bi bi-pencil"></i> Editar
-                        </a>
-                        <a href="{% url 'comment_delete' comment.id %}" class="btn btn-sm btn-outline-danger">
-                            <i class="bi bi-trash"></i> Eliminar
-                        </a>
-                    </div>
-                    {% endif %}
-                </div>
-                <p>{{ comment.text }}</p>
-                <div class="text-muted small">
-                    <span>{{ comment.user.username }}</span> -
-                    <span>{{ comment.created_at|date:"d M Y, H:i" }}</span>
-                </div>
-            </div>
-            {% empty %}
-            <div class="alert alert-info">No hay comentarios para este evento.</div>
-            {% endfor %}
-        </div>
 
-        <!-- Formulario para añadir comentarios -->
-        {% if user.is_authenticated %}
-        <div class="mt-4">
-            <h4>Añadir un comentario</h4>
-            <form action="{% url 'comment_create' event.id %}" method="post">
-                {% csrf_token %}
-                <div class="mb-3">
-                    <label for="comment-title" class="form-label">Título del comentario *</label>
-                    <input type="text" class="form-control {% if comment_errors.title %}is-invalid{% endif %}"
-                           id="comment-title" name="title"
-                           value="{{ comment_data.title|default:'' }}" required>
-                    {% if comment_errors.title %}
-                    <div class="invalid-feedback">{{ comment_errors.title }}</div>
-                    {% endif %}
-                </div>
-                <div class="mb-3">
-                    <label for="comment-text" class="form-label">Contenido del comentario *</label>
-                    <textarea class="form-control {% if comment_errors.text %}is-invalid{% endif %}"
-                              id="comment-text" name="text" rows="3" required>{{ comment_data.text|default:'' }}</textarea>
-                    {% if comment_errors.text %}
-                    <div class="invalid-feedback">{{ comment_errors.text }}</div>
-                    {% endif %}
-                </div>
-                <button type="submit" class="btn btn-primary">Publicar comentario</button>
-            </form>
-        </div>
-        {% else %}
-        <div class="alert alert-warning mt-4">
-            <a href="{% url 'login' %}">Inicia sesión</a> para dejar un comentario.
-        </div>
-        {% endif %}
-    </div>
-</div>

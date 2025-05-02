@@ -765,18 +765,15 @@ def comment_delete(request, comment_id):
     comment = get_object_or_404(Comment, pk=comment_id)
     event_id = comment.event.id
 
-    # Verificar que el usuario sea el propietario del comentario
-    if comment.user != request.user:
+    # Verificar que el usuario sea el propietario del comentario o un organizador
+    if comment.user != request.user and not request.user.is_organizer:
         return redirect("event_detail", event_id)
 
     if request.method == "POST":
         comment.delete()
         return redirect("event_detail", event_id)
 
-    return render(request, "app/comment_confirm_delete.html", {
-        "comment": comment,
-        "user_is_organizer": request.user.is_organizer,
-    })
+    return redirect("event_detail", event_id)
 from .models import (
     Event, Category, Venue, Rating, Ticket, TicketType,
     Notification, NotificationPriority, UserNotification, Comment
