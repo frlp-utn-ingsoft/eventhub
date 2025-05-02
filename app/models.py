@@ -462,13 +462,14 @@ class Notification(models.Model):
         return self.title
     
 class RefundRequest(models.Model):
-    approval = models.BooleanField(default=False)
+    approval = models.BooleanField(null=True, blank=True)
     approval_date = models.DateField(null=True, blank=True)
     ticket_code = models.CharField(max_length=255)
     reason = models.CharField(max_length=255)
     additional_details = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     accepted_policy = models.BooleanField(default=False)
+    event_name = models.CharField(max_length=255, blank=True, null=True)
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refund_requests")
 
