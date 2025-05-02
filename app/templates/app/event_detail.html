@@ -20,7 +20,14 @@
             <div class="card-body">
                 <h5 class="card-title text-dark">Detalles del Evento</h5>
                 <p class="card-text">{{ event.description }}</p>
-
+                <div class="d-flex justify-content-end mt-4">
+                    {% if user.is_authenticated and not user.is_organizer %}
+                      <a href="{% url 'ticket_create' event.id %}" class="btn btn-eventhub">
+                        Comprar Ticket
+                      </a>
+                    {% endif %}
+                  </div>
+                </div>
                 <!-- Información del evento -->
                 <div class="mt-4">
                     <!-- Fecha -->
@@ -180,15 +187,6 @@
                         </div>
                     {% endif %}
                 </div>
-                <div class="d-flex justify-content-end mt-4">
-                    {% if user.is_authenticated and not user.is_organizer %}
-                      <a href="{% url 'ticket_create' event.id %}" class="btn btn-eventhub">
-
-                        Comprar Ticket
-                      </a>
-                    {% endif %}
-                  </div>
-            </div>
         </div>
     </div>
 </div>
