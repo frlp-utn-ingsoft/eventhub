@@ -1,0 +1,75 @@
+<div class="card">
+    <div class="card-body">
+        {% if show_user %}
+        <h5 class="card-title">Tickets</h5>
+        {% else %}
+        <h5 class="card-title">Mis Tickets</h5>
+        {% endif %}
+        <table class="table">
+            <thead>
+                <tr>
+                    {% if show_event %}
+                    <th>Evento</th>
+                    {% endif %}
+                    {% if show_user %}
+                    <th>Usuario</th>
+                    {% endif %}
+                    <th>Tipo de Ticket</th>
+                    <th>Cantidad</th>
+                    <th>Precio Total</th>
+                    <th>Fecha de Compra</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr>
+                    {% if show_event %}
+                    <td>{{ ticket.event.title }}</td>
+                    {% endif %}
+                    {% if show_user %}
+                    <td>{{ ticket.user.username }}</td>
+                    {% endif %}
+                    <td>{{ ticket.ticket_type.name }}</td>
+                    <td>{{ ticket.quantity }}</td>
+                    <td>{{ ticket.total_price }}</td>
+                    <td>{{ ticket.buy_date|date:"d b Y, H:i" }}</td>
+                    <td>
+                        <div class="hstack gap-1">
+                            {% if user.is_organizer %}
+                            <form action="{% url 'ticket_delete' ticket.ticket_code %}" method="POST">
+                                {% csrf_token %}
+                                <button class="btn btn-sm btn-outline-danger" title="Eliminar" type="submit"
+                                    aria-label="Eliminar">
+                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                </button>
+                            </form>
+                            {% else %}
+                            <a href="{% url 'ticket_detail' ticket.id %}" class="btn btn-sm btn-outline-primary"
+                                aria-label="Ver detalle" title="Ver detalle">
+                                <i class="bi bi-eye" aria-hidden="true"></i>
+                            </a>
+                            <a href="{% url 'ticket_update' ticket.ticket_code %}"
+                                class="btn btn-sm btn-outline-secondary" aria-label="Modificar" title="Modificar">
+                                <i class="bi bi-pencil" aria-hidden="true"></i>
+                            </a>
+                            <form action="{% url 'ticket_delete' ticket.ticket_code %}" method="POST">
+                                {% csrf_token %}
+                                <button class="btn btn-sm btn-outline-danger" title="Eliminar" type="submit"
+                                    aria-label="Eliminar">
+                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                                </button>
+                            </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">No tienes tickets</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
