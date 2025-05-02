@@ -54,7 +54,7 @@ class Event(models.Model):
         return self.title
 
     @classmethod
-    def validate(cls, title, description, scheduled_at, categories):
+    def validate(cls, title, description, venue, scheduled_at, categories):
         errors = {}
 
         if not title:
@@ -69,8 +69,8 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, categories):
-        errors = Event.validate(title, description, scheduled_at, categories)
+    def new(cls, title, description, venue, scheduled_at, organizer, categories):
+        errors = Event.validate(title, description, venue, scheduled_at, categories)
 
         if len(errors.keys()) > 0:
             return False, errors
@@ -84,9 +84,10 @@ class Event(models.Model):
         event.categories.set(categories)
         return True, None
 
-    def update(self, title, description, scheduled_at, organizer, categories):
+    def update(self, title, description, venue, scheduled_at, organizer, categories):
         self.title = title or self.title
         self.description = description or self.description
+        self.venue = venue or self.venue
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
 
