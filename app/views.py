@@ -249,4 +249,17 @@ def organizer_comments(request):
         "comentarios": comentarios
     })
 
+@login_required
+def comment_hard_delete(request, pk):
+    comment = get_object_or_404(Comment, pk=pk)
+
+    # Solo el organizador del evento puede eliminar completamente
+    if request.user != comment.event.organizer:
+        return redirect('events')
+
+    if request.method == 'POST':
+        comment.delete()  # Borrado total
+        return redirect('organizer_comments')
+
+    return redirect('organizer_comments')
 
