@@ -13,8 +13,9 @@ from io import BytesIO
 import qrcode.constants
 from django.db import transaction
 
-from .models import Event, Ticket, User, PaymentInfo, Rating, Category, Venue
-from .forms import EventForm, TicketForm, PaymentForm, TicketFilterForm, RatingForm, CategoryForm, VenueForm
+from .models import Event, Ticket, User, PaymentInfo, Rating, Category, Venue, RefundRequest
+from .forms import EventForm, TicketForm, PaymentForm, TicketFilterForm, RatingForm, CategoryForm, VenueForm, RefundRequestForm, RefundApprovalForm
+
 
 def register(request):
     if request.method == "POST":
@@ -59,7 +60,7 @@ def login_view(request):
     return render(request, "accounts/login.html")
 
 def home(request):
-    return render(request, "home.html")
+    return render(request, 'home.html')
 
 @login_required
 def events(request):
@@ -737,3 +738,92 @@ def rating_create(request, id):
         )
 
     return redirect("event_detail", id=id)
+
+def my_refunds(request):
+    refunds = RefundRequest.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'app/my_refunds.html', {'reembolsos': refunds})
+
+def refund_request(request):
+    if request.method == 'POST':
+        form = RefundRequestForm(request.POST)
+        if form.is_valid():
+            reembolso = form.save(commit=False)
+            reembolso.user = request.user
+            reembolso.save()
+            messages.success(request, "¡Reembolso creado con éxito!")
+            return redirect('my_refunds') 
+    else:
+        form = RefundRequestForm()
+
+    return render(request, 'app/refund_request.html', {'form': form})
+
+@login_required
+def manage_refunds(request):
+    if not request.user.is_organizer:
+        return redirect('my_refunds')
+
+    if request.method == "POST":
+        refund_id = request.POST.get("refund_id")
+        refund = RefundRequest.objects.get(id=refund_id)
+        form = RefundApprovalForm(request.POST, instance=refund)
+        if form.is_valid():
+            if form.cleaned_data["approve"]:
+                refund.approved = True
+                refund.approval_date = timezone.now()
+            elif form.cleaned_data["reject"]:
+                refund.approved = False
+                refund.approval_date = timezone.now()
+            refund.save()
+        return redirect('manage_refunds')
+
+    refunds = RefundRequest.objects.all().order_by("-created_at")
+    forms_dict = {r.id: RefundApprovalForm(instance=r) for r in refunds}
+    return render(request, 'app/manage_refund.html', {
+        'refunds': refunds,
+        'forms_dict': forms_dict
+    })
+
+def refund_detail(request, id):
+    refund = get_object_or_404(RefundRequest, id=id)
+    try:
+        ticket = Ticket.objects.get(ticket_code=refund.ticket_code)
+        event = ticket.event
+    except Ticket.DoesNotExist:
+        ticket = None
+        event = None
+
+    return render(request, 'app/refund_detail.html', {
+        'refund': refund,
+        'event': event,
+        'ticket': ticket,
+    })
+
+@login_required
+def edit_refund(request, id):
+    refund_request = get_object_or_404(RefundRequest, id=id)
+    
+    if request.method == 'POST':
+        form = RefundRequestForm(request.POST, instance=refund_request)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "¡Reembolso editado con éxito!")
+            return redirect('my_refunds') 
+    else:
+        form = RefundRequestForm(instance=refund_request)
+    
+    return render(request, 'app/refund_request.html', {'form': form})
+
+@login_required
+def delete_refund(request, id):
+    refund = get_object_or_404(RefundRequest, pk=id)
+
+    if refund.user != request.user and not request.user.is_organizer:
+        return redirect("my_refunds")
+
+    if request.method == "POST":
+        refund.delete()
+        messages.success(request, "¡Reembolso eliminado con éxito!") 
+        return redirect("my_refunds")
+
+    return redirect("my_refunds")
+

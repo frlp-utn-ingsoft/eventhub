@@ -1,6 +1,5 @@
 from django.contrib.auth.views import LogoutView
 from django.urls import path
-
 from . import views
 
 urlpatterns = [
@@ -14,6 +13,7 @@ urlpatterns = [
     path("events/<int:id>/edit/", views.event_form, name="event_edit"),
     path("events/<int:id>/", views.event_detail, name="event_detail"),
     path("events/<int:id>/delete/", views.event_delete, name="event_delete"),
+
     path("events/<int:id>/ratings/create/", views.rating_create, name="rating_create"),
     path("events/<int:id>/ratings/<int:rating_id>/delete/", views.rating_delete, name="rating_delete"),
 
@@ -37,4 +37,12 @@ urlpatterns = [
     path("tickets/<int:ticket_id>/use/", views.ticket_use, name="ticket_use"),
     path('organizer/tickets/', views.organizer_tickets, name='organizer_tickets'),
     path('organizer/tickets/<int:event_id>/', views.organizer_tickets, name='organizer_tickets_event'),
+
+    path('refund_request/', views.refund_request, name='refund_request'),
+    path('my_refunds/', views.my_refunds, name='my_refunds'),
+    path('manage_refunds/', views.manage_refunds, name='manage_refunds'),
+    path('refund_detail/<int:id>/', views.refund_detail, name='refund_detail'),
+    path('edit_refund/<int:id>/', views.edit_refund, name='edit_refund'),  
+    path('delete_refund/<int:id>/', views.delete_refund, name='delete_refund'),  
+
 ]

@@ -1,12 +1,86 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="p-5 bg-light rounded-3">
-        <h1 class="display-5 fw-bold">Eventos y Entradas</h1>
-        <p class="fs-4">Descubre, organiza y participa en los mejores eventos. Compra entradas, deja
-            comentarios y califica tus experiencias.</p>
-        <div>
+    <style>
+  html, body {
+    margin: 0;
+    padding: 0;
+
+    height: 100%;
+  }
+
+  #imageCarousel {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100vh;
+  }
+
+  .carousel-item {
+    height: 100vh;
+  }
+
+  .carousel-item img {
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+  }
+  nav.navbar {
+    z-index: 2;
+  }
+  .blur-caption {
+    background-color: rgba(0, 0, 0, 0.4); 
+    backdrop-filter: blur(10px); 
+    -webkit-backdrop-filter: blur(10px);
+    padding: 1rem; 
+    border-radius: 10px;
+  }
+</style>
+
+
+</div>
+
+<div id="imageCarousel" class="carousel slide" data-bs-ride="carousel">
+  <div class="carousel-indicators">
+    <button type="button" data-bs-target="#imageCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+    <button type="button" data-bs-target="#imageCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+    <button type="button" data-bs-target="#imageCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+  </div>
+
+  <div class="carousel-inner">
+    <div class="carousel-item active">
+      <img src="{% static 'img/slides1.jpeg' %}" class="d-block w-100" alt="...">
+      <div class="carousel-caption d-none d-md-block blur-caption">
+        <h5>Bienvenidos a EventHub</h5>
+        <p>Descubrí los mejores eventos cerca tuyo.</p>
+      </div>
     </div>
+    <div class="carousel-item">
+      <img src="{% static 'img/slides2.jpeg' %}" class="d-block w-100" alt="...">
+      <div class="carousel-caption d-none d-md-block blur-caption">
+        <h5>Viví la experiencia</h5>
+        <p>Comprá tus entradas y participá sin complicaciones.</p>
+      </div>
+    </div>
+    <div class="carousel-item">
+      <img src="{% static 'img/slides3.jpg' %}" class="d-block w-100" alt="...">
+      <div class="carousel-caption d-none d-md-block blur-caption">
+        <h5>Dejá tu huella</h5>
+        <p>Compartí tus calificaciones y ayudá a otros a elegir los mejores eventos.</p>
+      </div>
+    </div>
+  </div>
+
+  <button class="carousel-control-prev" type="button" data-bs-target="#imageCarousel" data-bs-slide="prev">
+    <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Anterior</span>
+  </button>
+  <button class="carousel-control-next" type="button" data-bs-target="#imageCarousel" data-bs-slide="next">
+    <span class="carousel-control-next-icon" aria-hidden="true"></span>
+    <span class="visually-hidden">Siguiente</span>
+  </button>
 </div>
 {% endblock content %}
