@@ -25,7 +25,7 @@
                     <h5 class="card-title">Actualizar ticket</h5>
                 </div>
                 <div class="card-body">
-                    <form action="{% url 'ticket_update' ticket.ticket_code %}" method="POST">
+                    <form id="ticketForm" action="{% url 'ticket_update' ticket.ticket_code %}" method="POST">
                         {% csrf_token %}
                         <div class="mb-3">
                             <label for="quantity" class="form-label"><strong>Cantidad de entrada</strong></label>
@@ -79,7 +79,7 @@
                             <div class="row">
                                 <div class="col-6">
                                     <p class="card-text">Nuevo total:</p>
-                                    <p class="card-text">Total original:</p>
+                                    <p class="card-text">Total original (pagado):</p>
                                 </div>
                                 <div class="col-6 text-end">
                                     <p class="card-text" id="totalPrice">$0.00</p>
@@ -149,5 +149,41 @@
         document.getElementById('ticket_type').addEventListener('change', updateSummary);
         updateSummary();
     });
+    const form = document.getElementById('ticketForm');
+        form.addEventListener('submit', function (e) {
+            const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+            const expirationDate = document.getElementById('expirationDate').value;
+            const cvv = document.getElementById('cvv').value;
+            const cardHolderName = document.getElementById('cardHolderName').value.trim();
+
+            let errors = [];
+
+            if (!/^\d{16}$/.test(cardNumber)) {
+                errors.push("El número de tarjeta debe tener exactamente 16 dígitos.");
+            }
+            if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(expirationDate)) {
+                errors.push("La fecha de expiración debe tener el formato MM/AA.");
+            }
+            if (!/^\d{3}$/.test(cvv)) {
+                errors.push("El CVV debe tener exactamente 3 dígitos.");
+            }
+            if (cardHolderName.length === 0) {
+                errors.push("Debe ingresar el nombre del titular de la tarjeta.");
+            }
+
+            if (errors.length > 0) {
+                e.preventDefault();
+                const errorContainer = document.createElement('div');
+                errorContainer.className = 'alert alert-danger';
+                errorContainer.innerHTML = `<ul>${errors.map(error => `<li>${error}</li>`).join('')}</ul>`;
+                const formParent = form.parentElement;
+                const existingAlert = formParent.querySelector('.alert-danger');
+                if (existingAlert) {
+                    existingAlert.remove();
+                }
+                const submitButton = form.querySelector('button[type="submit"]');
+                form.insertBefore(errorContainer, submitButton);
+            }
+        });
 </script>
 {% endblock %}
