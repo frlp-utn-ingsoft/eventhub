@@ -20,5 +20,6 @@ urlpatterns = [
     path('locations/<int:location_id>/edit/', views.update_location, name='update_location'),
     path('locations/<int:location_id>/delete/', views.delete_location, name='delete_location'),
     path('comment/<int:comment_id>/edit/', views.edit_comment, name='edit_comment'),
-    path('comment/<int:comment_id>/delete/', views.delete_comment, name='delete_comment')
+    path('comment/<int:comment_id>/delete/', views.delete_comment, name='delete_comment'),
+    path('comment/<int:comment_id>/detail/', views.detail_comment, name='detail_comment')
 ]

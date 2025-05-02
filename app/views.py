@@ -246,18 +246,20 @@ def delete_comment(request, comment_id):
         comment = Comments.objects.get(id=comment_id)
     except Comments.DoesNotExist:
         messages.error(request, "Comentario no encontrado.")
-        return redirect('event_list')  # O redirige a donde quieras
-
-    # Verifica si el usuario actual es el autor del comentario o un administrador
+        return redirect('event_list')
+    
     if request.user != comment.user and not request.user.is_staff:
         messages.error(request, "No tienes permiso para eliminar este comentario.")
         return redirect('event_detail', id=comment.event.id)
 
-    # Si el método de solicitud es POST, procedemos a eliminar el comentario
     if request.method == 'POST':
         comment.delete()
         messages.success(request, "Comentario eliminado exitosamente.")
         return redirect('event_detail', id=comment.event.id)
 
-    # Si no es POST, mostramos una confirmación de eliminación
     return render(request, 'comments/delete_comment.html', {'comment': comment})
+
+
+def detail_comment(request, comment_id):
+    comment = get_object_or_404(Comments, pk=comment_id)
+    return render(request, 'comments/detail_comment.html', {'comment': comment})

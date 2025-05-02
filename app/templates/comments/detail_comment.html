@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4>Detalle del Comentario</h4>
+        </div>
+        <div class="card-body">
+            <p><strong>Evento:</strong> 
+                <a href="{% url 'event_detail' id=comment.event.id %}">
+                    {{ comment.event.title }}
+                </a>
+            </p>
+            <p><strong>Usuario:</strong> {{ comment.user.username }}</p>
+            <p><strong>Fecha:</strong> {{ comment.created_at|date:"d M Y, H:i" }}</p>
+            <hr>
+            <p><strong>Comentario:</strong></p>
+            <p class="border rounded p-3 bg-light">{{ comment.description }}</p>
+        </div>
+        <div class="card-footer text-end">
+            <a href="{% url 'delete_comment' comment.id %}" class="btn btn-danger me-2">
+                <i class="bi bi-trash"></i> Eliminar
+            </a>
+            <a href="javascript:history.back()" class="btn btn-secondary">
+                Volver
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
