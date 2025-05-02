@@ -3,10 +3,21 @@
 {% load static %}
 {% block content %}
 
+<style>
+    /* Estilos de la eleccion de puntuacion */
+    #star-rating .star {
+        cursor: pointer;
+    }
+</style>
+
 <div class="container my-4" style="max-width: 600px">
     <h5>Reseña</h5>
     <div class="card mt-3 py-2 px-3">
-        <form method="post" action="{% url 'rating:rating_update' rating.pk %}">
+        <form
+            class="post-form"
+            method="post"
+            action="{% url 'rating:rating_update' rating.pk %}"
+        >
             {% csrf_token %}
             <div class="mb-3">
                 <label for="{{ form.title.id_for_label }}"
@@ -29,12 +40,22 @@
             </div>
 
             <div class="mb-3">
-                <label for="{{ form.rating.id_for_label }}"
-                    >Puntuación de la reseña (1-5)
-                    <span style="color: red">*</span></label
-                >
                 <!-- prettier-ignore -->
-                {{ form.rating }}
+                <div class="md-3">
+                    <label for="rating">Puntuacion<span style="color: red">*</span></label>
+                    <div id="star-rating" class="d-flex">
+                        {% for i in "12345" %}
+                        <i class="bi bi-star-fill text-secondary fs-4 star" data-value="{{ forloop.counter }}"></i>
+                        {% endfor %}
+                    </div>
+                    <input id="rating" type="hidden" name="rating" value="{{ rating.rating }}" />
+
+                    <!-- Mensaje de error en caso de no seleccionar la puntuacion -->
+                    <div id="error-message" class="text-danger mt-1" style="visibility: hidden;">
+                        <small>Se debe seleccionar una puntuacion.</small>
+                    </div>
+                </div>
+
                 {{ form.rating.errors }}
             </div>
             <div class="text-end">
@@ -52,4 +73,41 @@
         </form>
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        /* Manejo de seleccion de puntuacion */
+        const stars = document.querySelectorAll("#star-rating .star");
+        const ratingInput = document.getElementById("rating");
+        const form = document.querySelector(".post-form");
+        const errorContainer = document.getElementById("error-message");
+
+        stars.forEach((s, i) => {
+            s.classList.toggle("text-warning", i <= ratingInput.value - 1);
+            s.classList.toggle("text-secondary", i > ratingInput.value - 1);
+        });
+
+        stars.forEach((star, index) => {
+            star.addEventListener("click", () => {
+                ratingInput.value = index + 1;
+
+                stars.forEach((s, i) => {
+                    s.classList.toggle("text-warning", i <= index);
+                    s.classList.toggle("text-secondary", i > index);
+                });
+
+                errorContainer.style.visibility = "hidden";
+            });
+        });
+
+        form.addEventListener("submit", (event) => {
+            /* Manejo de error de no seleccion de la puntuacion */
+            if (!ratingInput.value) {
+                event.preventDefault();
+                errorContainer.style.visibility = "visible";
+            }
+        });
+    });
+</script>
+
 {% endblock %}

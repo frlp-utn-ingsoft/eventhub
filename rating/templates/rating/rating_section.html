@@ -1,3 +1,10 @@
+<style>
+    /* Estilos de la eleccion de puntuacion */
+    #star-rating .star {
+        cursor: pointer;
+    }
+</style>
+
 <div class="mt-4 mb-5 pl-0 pr-0">
     <div class="card mt-4 pl-0 pr-0">
         <div class="card-header fw-semibold">
@@ -64,12 +71,19 @@
                 </div>
                 <div class="mt-2 mb-1">
                     <h6>{{ rating.title }}</h6>
-                    <h6>
-                        <span style="color: blue">{{ rating.rating }}</span>/5
-                    </h6>
+
+                    <div id="star-rating" class="d-flex">
+                        {% for i in "12345" %}
+                        <i
+                            class="bi bi-star-fill fs-4 star-static {% if rating.rating >= forloop.counter %}text-warning{% else %}text-secondary{% endif %}"
+                            data-value="{{ forloop.counter }}"
+                        ></i>
+                        {% endfor %}
+                    </div>
                 </div>
                 <p class="mb-0">{{ rating.text }}</p>
             </li>
+
             {% empty %}
             <li class="list-group-item text-muted">
                 Aun no hay reseñas. Se el primero en dejar una!
@@ -79,7 +93,11 @@
 
         {% if user.is_authenticated %}
         <div class="card-body">
-            <form method="post" action="{% url 'rating:rating_add' event.pk %}">
+            <form
+                class="post-form"
+                method="post"
+                action="{% url 'rating:rating_add' event.pk %}"
+            >
                 {% csrf_token %}
                 <div class="mb-3">
                     <label for="{{ form.title.id_for_label }}"
@@ -102,13 +120,23 @@
                 </div>
 
                 <div class="mb-3">
-                    <label for="{{ form.rating.id_for_label }}"
-                        >Puntuación de la reseña (1-5)
-                        <span style="color: red">*</span></label
-                    >
                     <!-- prettier-ignore -->
-                    {{ form.rating }}
-                    {{ form.rating.errors }}
+                    <div class="md-3">
+                        <label for="rating">Puntuacion <span style="color: red">*</span></label>
+                        <div id="star-rating" class="d-flex">
+                            {% for i in "12345" %}
+                            <i class="bi bi-star-fill text-secondary fs-4 star" data-value="{{ i }}"></i>
+                            {% endfor %}
+                        </div>
+                        <input id="rating" type="hidden" name="rating" value="" />
+
+                        <!-- Mensaje de error en caso de no seleccionar la puntuacion -->
+                        <div id="error-message" class="text-danger mt-1" style="visibility: hidden;">
+                            <small>Se debe seleccionar una puntuacion.</small>
+                        </div>
+                    </div>
+
+                    <!-- {{ form.rating.errors }} -->
                 </div>
                 <div class="text-end">
                     <button class="btn btn-primary">Publicar reseña</button>
@@ -127,3 +155,34 @@
         {% endif %}
     </div>
 </div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        /* Manejo de seleccion de puntuacion */
+        const stars = document.querySelectorAll("#star-rating .star");
+        const ratingInput = document.getElementById("rating");
+        const form = document.querySelector(".post-form");
+        const errorContainer = document.getElementById("error-message");
+
+        stars.forEach((star, index) => {
+            star.addEventListener("click", () => {
+                ratingInput.value = index + 1;
+
+                stars.forEach((s, i) => {
+                    s.classList.toggle("text-warning", i <= index);
+                    s.classList.toggle("text-secondary", i > index);
+                });
+
+                errorContainer.style.visibility = "hidden";
+            });
+        });
+
+        form.addEventListener("submit", (event) => {
+            /* Manejo de error de no seleccion de la puntuacion */
+            if (!ratingInput.value) {
+                event.preventDefault();
+                errorContainer.style.visibility = "visible";
+            }
+        });
+    });
+</script>

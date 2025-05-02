@@ -23,7 +23,7 @@ class RatingForm(forms.ModelForm):
         widgets = {
             "title": forms.TextInput(attrs={
                 "class": "form-control",
-                "placeholder": "Titulo de la reseña",
+                "placeholder": "Escribe un título para tu reseña...",
                 "maxlength": 120,
             }),
             "text": forms.Textarea(attrs={
