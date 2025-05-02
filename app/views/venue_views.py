@@ -12,6 +12,9 @@ def venue_form(request, id=None):
     if not user.is_organizer:
         return redirect("events")
 
+    venues = Venue.get_venues_by_user(user)
+    venue = {}
+
     if request.method == "POST":
         venue_id = request.POST.get("id")
         name = request.POST.get("name")

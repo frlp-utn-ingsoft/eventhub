@@ -4,25 +4,36 @@ from django.urls import path
 from app import views
 
 urlpatterns = [
+    # Home
     path("", views.home, name="home"),
+    
+    # Accounts
     path("accounts/register/", views.register, name="register"),
     path("accounts/logout/", LogoutView.as_view(), name="logout"),
     path("accounts/login/", views.login_view, name="login"),
+    
+    # Events
     path("events/", views.events, name="events"),
     path("events/filter", views.event_filter, name="event_filter"),
+    path("events/create/", views.event_form, name="event_form"),
+    path("events/<int:id>/edit/", views.event_form, name="event_edit"),
+    path("events/<int:id>/", views.event_detail, name="event_detail"),
+    path("events/<int:id>/delete/", views.event_delete, name="event_delete"),
+    
+    # Venues
     path("venues/", views.venues, name="venues"),
     path("venues/create/", views.venue_form, name="venue_form"),
     path("venues/<int:id>/edit/", views.venue_form, name="venue_edit"),
     path("venues/<int:id>/", views.venue_detail, name="venue_detail"),
     path("venues/<int:id>/delete/", views.venue_delete, name="venue_delete"),
+    
+    # Categories
     path("categories/", views.categories, name="categories"),
     path("categories/create/", views.category_form, name="category_form"),
     path("categories/<int:id>/edit/", views.category_form, name="category_edit"),
     path("categories/<int:id>/delete/", views.category_delete, name="category_delete"),
-    path("events/create/", views.event_form, name="event_form"),
-    path("events/<int:id>/edit/", views.event_form, name="event_edit"),
-    path("events/<int:id>/", views.event_detail, name="event_detail"),
-    path("events/<int:id>/delete/", views.event_delete, name="event_delete"),
+    
+    # Refunds    
     path("refunds/", views.my_refunds, name="my_refunds"),
     path("refunds/new/", views.refund_create, name="refund_create"),
     path("refunds/<int:id>/edit/", views.refund_edit, name="refund_edit"),
@@ -31,19 +42,19 @@ urlpatterns = [
     path("organizer/refund/aprobar/<int:pk>/", views.approve_refund_request, name="refund_approve"),
     path("organizer/refund/rechazar/<int:pk>/", views.reject_refund_request, name="refund_reject"),
     
-    #tickets
+    # Tickets
     path("my-tickets/", views.my_tickets, name="my_tickets"),
     path("ticket/new/<int:event_id>/", views.purchase_ticket, name="ticket_create"),
     path("ticket/edit/<int:ticket_id>/", views.edit_ticket, name="ticket_edit"),
     path("ticket/delete/<int:ticket_id>/", views.ticket_delete, name="ticket_delete"),
     path("events/<int:event_id>/tickets/", views.event_tickets, name="event_tickets"),
     
-    
+    # Ratings
     path('events/<int:event_id>/rate/', views.create_rating, name='create_rating'),
     path('editar_rating/<int:rating_id>/', views.editar_rating, name='editar_rating'),
     path('eliminar_rating/<int:rating_id>/', views.eliminar_rating, name='eliminar_rating'),
     
-    # Comentarios
+    # Comments
     path('event/<int:id>/add_comment/', views.add_comment, name='add_comment'),
     path('comments/', views.view_comments, name='view_comments'),
     path('event/<int:event_id>/comments/', views.view_comments, name='view_event_comments'),

@@ -1,41 +1,41 @@
+{# templates/refund/refund_form.html #}
 {% extends "base.html" %}
 {% block title %}Solicitar Reembolso{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>{% if refund %}Editar{% else %}Nueva{% endif %} Solicitud de Reembolso</h2>
-    <form method="POST">
-        {% csrf_token %}
+  <h2>Nueva Solicitud de Reembolso</h2>
+  <form method="POST">
+    {% csrf_token %}
 
-        <div class="mb-3">
-            <label for="ticket_code" class="form-label">Código del ticket</label>
-            <input
-                type="text"
-                name="ticket_code"
-                id="ticket_code"
-                class="form-control"
-                value="{{ refund.ticket_code|default:'' }}"
-                required
-            >
-        </div>
+    <div class="mb-3">
+      <label for="ticket_code" class="form-label">Código del ticket</label>
+      <select name="ticket_code" id="ticket_code" class="form-select" required>
+        <option value="" disabled {% if not selected_code %}selected{% endif %}>Selecciona tu ticket…</option>
+        {% for ticket in user_tickets %}
+          <option value="{{ ticket.ticket_code }}"
+                  {% if ticket.ticket_code == selected_code %}selected{% endif %}>
+            {{ ticket.ticket_code }} — {{ ticket.event.title }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
 
-        <div class="mb-3">
-            <label for="reason" class="form-label">Motivo del reembolso</label>
-            <textarea
-                name="reason"
+    <div class="mb-3">
+      <label for="reason" class="form-label">Motivo del reembolso</label>
+      <textarea name="reason"
                 id="reason"
                 class="form-control"
                 rows="3"
-                required
-            >{{ refund.reason|default:'' }}</textarea>
-        </div>
+                required>{{ reason|default_if_none:'' }}</textarea>
+    </div>
 
-        {% if error %}
-            <div class="alert alert-danger">{{ error }}</div>
-        {% endif %}
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
 
-        <button type="submit" class="btn btn-primary">Guardar</button>
-        <a href="{% url 'my_refunds' %}" class="btn btn-secondary">Cancelar</a>
-    </form>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a href="{% url 'my_refunds' %}" class="btn btn-secondary ms-2">Cancelar</a>
+  </form>
 </div>
 {% endblock %}

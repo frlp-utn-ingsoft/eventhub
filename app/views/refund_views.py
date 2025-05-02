@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
-from app.models import Refund
+from app.models import Refund, Ticket
 from django.utils import timezone
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
@@ -9,26 +9,43 @@ from django.views.decorators.http import require_POST
 
 @login_required
 def refund_create(request):
+    user = request.user
+    # Solo los tickets propios pueden solicitar reembolso
+    user_tickets = Ticket.objects.filter(user=user)
+
     if request.method == "POST":
         ticket_code = request.POST.get("ticket_code")
-        reason = request.POST.get("reason")
-        
-        """
-        DESCOMENTAR CUANDO SE IMPLEMENTE LA PARTE DE TICKETS
+        reason      = request.POST.get("reason", "").strip()
 
-        if ticket.was_used or (timezone.now() - ticket.purchase_date).days > 30:
-            return render(
-                request,
-                "app/refund_form.html",
-                {"error": "El ticket ya fue usado o han pasado más de 30 días desde su compra."}
-            )
-            """
-        Refund.objects.create(ticket_code=ticket_code,
-                              reason=reason,
-                              user=request.user)
+        # Validar ticket existente y perteneciente al usuario
+        ticket = Ticket.objects.filter(user=user, ticket_code=ticket_code).first()
+        if not ticket:
+            error = "Código de ticket inválido."
+        else:
+            # Validar antigüedad
+            días_transcurridos = (timezone.now().date() - ticket.buy_date).days
+            if días_transcurridos > 30:
+                error = "No puedes solicitar reembolso de un ticket con más de 30 días de antigüedad."
+            else:
+                # Crear Refund
+                Refund.objects.create(
+                    ticket_code = ticket.ticket_code,
+                    reason      = reason,
+                    user        = user,
+                    event       = ticket.event
+                )
+                return redirect("my_refunds")
 
-        return redirect("my_refunds")
-    return render(request, "refund/refund_form.html")
+        return render(request, "refund/refund_form.html", {
+            "user_tickets": user_tickets,
+            "error": error,
+            "selected_code": ticket_code,
+            "reason": reason,
+        })
+
+    return render(request, "refund/refund_form.html", {
+        "user_tickets": user_tickets
+    })
 
 @login_required
 def my_refunds(request):
@@ -104,7 +121,7 @@ class RefundRequestsAdminView(LoginRequiredMixin, UserPassesTestMixin, ListView)
     context_object_name = "refund_requests"
 
     def test_func(self):
-        return self.request.user.is_authenticated and self.request.user.is_organizer
+        return is_organizer(self.request.user)
 
     def handle_no_permission(self):
         return redirect("events")
