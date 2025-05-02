@@ -111,19 +111,33 @@ def event_delete(request, id):
 @login_required
 def event_filter(request):
     query = request.GET.get('search', '')
+    filter_type = request.GET.get('filter', 'all')
     events = []
-    print("query")
-    print(query)
-    if query:
-        events = Event.objects.filter(
-            Q(title__icontains=query) |
-            Q(description__icontains=query) |
-            Q(venue__name__icontains=query)  # Ajustá si 'venue' tiene otro campo
-        ).order_by("scheduled_at")
-    else:
-        events = Event.objects.all().order_by("scheduled_at")
+    my_events = False
+
+    if (filter_type == "my_events"):
+        my_events = True
+        events = Event.objects.filter(organizer=request.user)
+        if query:
+            events.filter(
+                Q(title__icontains=query) |
+                Q(description__icontains=query) |
+                Q(venue__name__icontains=query)
+            )
+        events.order_by("scheduled_at")
+    
+    if (filter_type == "all"):
+        if query:
+            events = Event.objects.filter(
+                Q(title__icontains=query) |
+                Q(description__icontains=query) |
+                Q(venue__name__icontains=query)
+            )
+        else:
+            events = Event.objects.all()
+
     return render(
         request,
         "app/event/events.html",
-        {"events": events, "user_is_organizer": request.user.is_organizer},
+        {"events": events, "user_is_organizer": request.user.is_organizer, "my_events": my_events},
     )

@@ -18,10 +18,15 @@
     </div>
     
     <nav class="navbar navbar-light bg-light">
-        <form class="form-inline d-flex gap-2" action="{% url 'event_filter' %}" method="GET" >
-                {% csrf_token %}
-            <input class="form-control mr-sm-2" name="search" type="text" placeholder="Busca un evento..." aria-label="Search">
-            <button class="btn btn-outline-primary my-2 my-sm-0" type="submit">Buscar</button>
+        <form class="d-flex align-items-center gap-2" action="{% url 'event_filter' %}" method="GET">
+            {% csrf_token %}
+            <input class="form-control" name="search" type="text" placeholder="Busca un evento..." aria-label="Search" >
+            <button class="btn btn-outline-primary" type="submit" name="filter" value="all" >
+                Buscar
+            </button>
+            <button class="btn {% if my_events %}btn-primary{% else %}btn-outline-primary{% endif %} flex-shrink-0" type="submit" name="filter" value="my_events">
+                Mis eventos
+            </button>
         </form>
     </nav>
 
