@@ -196,4 +196,84 @@ class Venue(models.Model):
         self.save()
 
         return True, None
-        
+
+class Notification(models.Model):
+    title=models.CharField(max_length=200)
+    message=models.TextField()
+    user=models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    created_at=models.DateTimeField(auto_now_add=True)
+    priority=models.ForeignKey('NotificationPriority', on_delete=models.SET_NULL, null=True, blank=True)
+    is_read=models.BooleanField(default=False)
+    
+    def __str__(self):
+        return self.title
+    
+    @classmethod
+    def validate(cls, title, message, user_id):
+        errors = {}
+        if not title.strip():
+            errors["title"] = "El título no puede estar vacío"
+        elif cls.objects.filter(title__iexact=title).exists():
+            errors["title"] = "Ya existe una notificación con ese título"
+
+        if not message.strip():
+            errors["message"] = "El mensaje no puede estar vacío"
+
+        if user_id is None:
+            errors["user"] = "El usuario es requerido"
+
+        return errors
+    
+    def new(cls, title, message, user, priority=1):
+        errors = cls.validate(title, message, user.id)
+
+        if errors:
+            return False, errors
+
+        Notification.objects.create(
+            title=title.strip(),
+            message=message.strip(),
+            user=user,
+            priority=priority,
+        )
+
+        return True, None
+    
+    def update(self, title, message, user, priority=1):
+        errors = self.validate(title, message, user.id)
+
+        if errors:
+            return False, errors
+
+        self.title = title.strip()
+        self.message = message.strip()
+        self.user = user
+        self.priority = priority
+        self.save()
+
+        return True, None
+    
+
+class NotificationPriority(models.Model):
+    description=models.CharField(max_length=200, unique=True)
+    def __str__(self):
+        return self.description
+
+    @classmethod
+    def new(cls, description):
+        description = description.strip()
+        errors = {}
+
+        if errors:
+            return False, errors
+
+        cls.objects.create(
+            description=description.strip(),
+        )
+
+        return True, None
+
+    def update(self, description):
+        if description:
+            self.description = description.strip()
+        self.save()
