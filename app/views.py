@@ -5,7 +5,7 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from .models import Category, Event, User, Venue
+from .models import Category, Event, Rating, User, Venue
 
 
 def register(request):
@@ -94,7 +94,15 @@ def events(request):
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
-    return render(request, "app/event_detail.html", {"event": event})
+    user_rating = Rating.objects.filter(user=request.user, event=event).first()
+
+    return render(request, "app/event_detail.html", {
+        "event": event,
+        "user_is_organizer": request.user.is_organizer,
+        "user_rating": user_rating,
+        "is_edit": user_rating is not None,
+        "now": timezone.now(),
+    })
 
 
 @login_required
@@ -329,3 +337,58 @@ def venue_form(request, id):
         "app/venue_form.html",
         {"venue": venue, "user_is_organizer": request.user.is_organizer,},
     )
+
+@login_required
+def rating_create_or_update(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+    rating = Rating.objects.filter(user=request.user, event=event).first()
+
+    if request.method == "POST":
+        title = request.POST.get("title", "").strip()
+        rating_value = request.POST.get("rating")
+        text = request.POST.get("text", "").strip()
+
+        errors = {}
+
+        if not title:
+            errors["title"] = "El título es requerido"
+        if not rating_value or not rating_value.isdigit() or not (1 <= int(rating_value) <= 5):
+            errors["rating"] = "Debes seleccionar una calificación"
+
+        if errors:
+            return render(request, "app/event_detail.html", {
+                "event": event,
+                "errors": errors,
+                "user_rating": rating,
+                "ratings": event.ratings.all() # type: ignore
+            })
+
+        if rating:
+            rating.title = title
+            rating.text = text
+            rating.rating = int(rating_value)
+            rating.save()
+        else:
+            Rating.objects.create(
+                user=request.user,
+                event=event,
+                title=title,
+                text=text,
+                rating=int(rating_value)
+            )
+
+        return redirect("event_detail", event_id)
+
+    return redirect("event_detail", event_id)
+
+
+@login_required
+def rating_delete(request, id):
+    rating = get_object_or_404(Rating, pk=id)
+
+    if request.user == rating.user or request.user.is_organizer:
+        event_id = rating.event.id # type: ignore
+        rating.delete()
+        return redirect("event_detail", event_id)
+
+    return redirect("events")

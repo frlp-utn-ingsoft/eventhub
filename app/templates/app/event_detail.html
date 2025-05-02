@@ -3,75 +3,157 @@
 {% block content %}
 <div class="container">
     <div class="row">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between align-items-center mb-3">
             <h1>{{ event.title }}</h1>
-            <div>
             {% if user_is_organizer %}
-                <a
-                    href="{% url 'event_edit' event.id %}"
-                    class="btn btn-outline-primary me-2"
-                >
+                <a href="{% url 'event_edit' event.id %}" class="btn btn-outline-primary">
                     <i class="bi bi-pencil me-1"></i>Editar
                 </a>
             {% endif %}
         </div>
-    </div>
-    <div class="row">
         <div class="card">
             <div class="card-body">
                 <h5 class="card-title">Detalles del Evento</h5>
                 <p class="card-text">{{ event.description }}</p>
-                <div class="mt-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-light rounded-circle p-2 me-3">
-                            <i class="bi bi-calendar-event text-primary"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-0">Fecha y Hora</h6>
-                            <p class="mb-0">{{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-light rounded-circle p-2 me-3">
-                            <i class="bi bi-geo-alt text-primary"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-0">Ubicación</h6>
-                            <p class="mb-0">{{ event.venue.name }}</p>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-light rounded-circle p-2 me-3">
-                            <i class="bi bi-person text-primary"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-0">Organizador</h6>
-                            <p class="mb-0">{{ event.organizer }}</p>
-                        </div>
-                    </div>
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-light rounded-circle p-2 me-3">
-                            <i class="bi bi-tags text-primary"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-0">Categorías</h6>
-                            {% if event.categories.all %}
-                                <p class="mb-0">
-                                    {% for category in event.categories.all %}
-                                        <span class="badge bg-light text-dark">{{ category.name }}</span>
-                                    {% endfor %}
-                                </p>
-                            {% else %}
-                                <p class="text-muted mb-0">Sin categorías</p>
-                            {% endif %}
-                        </div>
-                    </div>                    
+                <div class="mt-3">
+                    <p><i class="bi bi-calendar-event text-primary"></i> {{ event.scheduled_at|date:"l j F Y, H:i" }}</p>
+                    <p><i class="bi bi-geo-alt text-primary"></i> {{ event.venue.name }}</p>
+                    <p><i class="bi bi-person text-primary"></i> {{ event.organizer }}</p>
+                    <p>
+                        <i class="bi bi-tags text-primary"></i>
+                        {% for category in event.categories.all %}
+                            <span class="badge bg-light text-dark">{{ category.name }}</span>
+                        {% empty %}
+                            <span class="text-muted">Sin categorías</span>
+                        {% endfor %}
+                    </p>
                 </div>
             </div>
         </div>
-        <div class="mt-3">
+
+        {% if event.scheduled_at < now %}
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title d-flex justify-content-between align-items-center">
+                        <span>
+                            <i class="bi bi-star-fill text-warning me-2"></i>
+                            <a href="#ratingsCollapse" class="text-decoration-none text-dark" data-bs-toggle="collapse" aria-expanded="true" aria-controls="ratingsCollapse">
+                                Calificaciones y Reseñas ({{ event.ratings.count }})
+                            </a>
+                        </span>
+                    </h5>
+            
+                    <div class="collapse" id="ratingsCollapse">
+                        {% for rating in event.ratings.all %}
+                            <div class="border rounded p-3 mb-3">
+                                <div class="d-flex align-items-start justify-content-between">
+                                    <div class="d-flex">
+                                        <div class="flex-grow-1">
+                                            <div class="me-3 d-flex">
+                                                <i class="bi bi-person-circle fs-3 text-secondary"></i>
+                                                <div class="ms-2">
+                                                    <strong>{{ rating.user.username }}</strong><br>
+                                                    <small class="text-muted">{{ rating.created_at|date:"j F Y, H:i" }}</small>
+                                                </div>
+                                            </div>
+                                            <div class="fw-semibold mt-2">{{ rating.title }}</div>
+                                            <div class="text-warning mb-1" style="font-size: 1rem;">
+                                                {% for i in "12345" %}
+                                                    {% if forloop.counter <= rating.rating %}
+                                                        <i class="bi bi-star-fill"></i>
+                                                    {% else %}
+                                                        <i class="bi bi-star text-secondary"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </div>
+                                            <div>{{ rating.text }}</div>
+                                        </div>
+                                    </div>
+                                    {% if user == rating.user or user.is_organizer %}
+                                        <form method="post" action="{% url 'rating_delete' rating.id %}">
+                                            {% csrf_token %}
+                                            <button class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        {% empty %}
+                            <p class="text-muted">Este evento no tiene calificaciones aún.</p>
+                        {% endfor %}
+                        <hr class="my-4">
+                        <h6 class="mt-4">Tu calificación</h6>
+                        <form method="post" action="{% url 'rating_create_or_update' event.id %}">
+                            {% csrf_token %}
+                            {% if errors %}
+                                <div class="alert alert-danger">
+                                    <ul class="mb-0">
+                                        {% for err in errors.values %}
+                                            <li>{{ err }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+                            <div class="mb-3">
+                                <label for="title" class="form-label">Título <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="title" id="title" required placeholder="Ej: Gran experiencia" value="{{ user_rating.title|default:'' }}">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label d-block">Tu calificación <span class="text-danger">*</span></label>
+                                {% with user_rating.rating|default:0 as current_rating %}
+                                    <div class="rating-stars text-warning mb-2" style="font-size: 1.5rem;">
+                                        {% for i in "54321" %}
+                                            {% with i_int=i|add:"0" %}
+                                                <input type="radio" name="rating" id="star{{ i_int }}" value="{{ i_int }}" {% if current_rating == i_int %}checked{% endif %}>
+                                                <label for="star{{ i_int }}"><i class="bi bi-star-fill"></i></label>
+                                            {% endwith %}
+                                        {% endfor %}
+                                    </div>
+                                {% endwith %}
+                                <div><small class="text-muted">Selecciona una calificación</small></div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="text" class="form-label">Tu reseña (opcional)</label>
+                                <textarea name="text" id="text" class="form-control" placeholder="Comparte tu experiencia...">{{ user_rating.text|default:'' }}</textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary">
+                                {% if is_edit %}Actualizar{% else %}Enviar calificación{% endif %}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+        <div class="mt-4 mb-4">
             <a href="{% url 'events' %}" class="btn btn-secondary">Volver</a>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .rating-stars {
+            direction: rtl;
+            display: inline-flex;
+        }
+        
+        .rating-stars input[type="radio"] {
+            display: none;
+        }
+        
+        .rating-stars label {
+            font-size: 1.6rem;
+            color: #ccc;
+            cursor: pointer;
+        }
+        
+        .rating-stars label:hover,
+        .rating-stars label:hover ~ label {
+            color: #ffc107;
+        }
+        
+        .rating-stars input[type="radio"]:checked ~ label {
+            color: #ffc107;
+        }
+    </style>
 {% endblock %}
