@@ -43,7 +43,6 @@ urlpatterns = [
     path('venues/create/', views.crearVenues, name='venue_create'),
     path('venues/<int:pk>/edit/', views.editarVenues, name='venue_edit'),
     path('venues/<int:pk>/delete/', views.eliminarVenue, name='venue_delete'),
-    path("events/<int:id>/rating", views.event_rating, name ="event_rating"),
     path("refound/", views.request_refound, name='refound'),
     path("refound/edit", views.update_refound, name="update_refound"),
     path("refound/delete", views.delete_refound, name="delete_refound"),
