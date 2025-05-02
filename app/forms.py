@@ -206,9 +206,9 @@ class RefundRequestForm(forms.ModelForm):
 
 
 class VenueForm(forms.ModelForm):
-        name = forms.CharField(label='Nombre de la ubicación', max_length=255, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Estadio Nacional'}))
-        address = forms.CharField(label='Dirección', max_length=255, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Av. Grecia 2001'}))
-        city = forms.CharField(label='Ciudad', max_length=100, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Buenos Aires'}))
+        name = forms.CharField(label='Nombre de la ubicación', max_length=30, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Estadio Nacional'}))
+        address = forms.CharField(label='Dirección', max_length=40, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Av. Grecia 2001'}))
+        city = forms.CharField(label='Ciudad', max_length=40, widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Buenos Aires'}))
         capacity = forms.IntegerField(label='Capacidad (Número de Personas)', widget=forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Ej: 1000'}))
         contact = forms.CharField(label='Contacto', widget=forms.Textarea(attrs={'class': 'form-control', 'placeholder': 'Describe las características principales de la ubicación...', 'rows': 5}))
 

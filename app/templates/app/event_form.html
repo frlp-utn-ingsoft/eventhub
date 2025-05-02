@@ -12,6 +12,17 @@
                 {% endif %}
             </h1>
 
+            {% if messages %}
+                <div class="mb-3">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show alert alert-danger" role="alert">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+
             <div class="card">
                 <div class="card-body">
                     <form action="{% url 'event_form' %}" method="POST">
@@ -74,7 +85,19 @@
                                         </div>
                                     {% endfor %}
                                 </div>
+                            
+                                <!-- Div de error debajo de categorías -->
+                                {% for message in messages %}
+                                    {% if 'categoria' in message.tags %}
+                                        <div class="text-danger mt-1" id="category-error">
+                                            {{ message }}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+
                             </div>
+                            
+                            <div class="mb-3">
                                 <label for="venue" class="form-label">Ubicación del Evento</label>
                                 <select class="form-control" id="venue" name="venue">
                                     <option value="" {% if not event.venue %}selected{% endif %}>---------</option>
@@ -84,6 +107,16 @@
                                         </option>
                                     {% endfor %}
                                 </select>
+
+                                {% for message in messages %}
+                                    {% if 'ubicacion' in message.tags %}
+                                        <div class="text-danger mt-1" id="venue-error">
+                                            {{ message }}
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+
+
                             </div>
                             <div>
                                 <button type="submit" class="btn btn-primary">Crear Evento</button>

@@ -166,7 +166,7 @@ def event_form(request, id=None):
     if not user.is_organizer:
         return redirect("events")
 
-   
+    venues = Venue.objects.all()
     categories = Category.objects.all()
 
     if request.method == "POST":
@@ -176,6 +176,26 @@ def event_form(request, id=None):
         time = request.POST.get("time")
         category_ids = request.POST.getlist("categories")  
         venue_id = request.POST.get("venue")  # <-- lo agg para la relacion events/ venue
+
+        # VALIDACIONES
+        if not category_ids:
+            messages.error(request, "Debes seleccionar al menos una categoría.", extra_tags='categoria')
+            return render(request, "app/event_form.html", {
+                "event": request.POST,  # podés usar un diccionario si necesitás repoblar datos
+                "user_is_organizer": request.user.is_organizer,
+                "categories": categories,
+                "venues": venues,
+            })
+
+        if not venue_id:
+            messages.error(request, "Debes seleccionar una ubicación.", extra_tags='ubicacion')
+            return render(request, "app/event_form.html", {
+                "event": request.POST,
+                "user_is_organizer": request.user.is_organizer,
+                "categories": categories,
+                "venues": venues,
+            })
+
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
@@ -446,7 +466,7 @@ def rating_edit(request, rating_id):
     # Solo el autor puede editar — organizadores no pueden editar
     if rating.user != request.user:
         messages.error(request, "No tienes permiso para editar esta reseña.")
-        return redirect('event_detail', event_id=rating.event.id)
+        return redirect('event_detail', event_id=rating.event.id) # type: ignore
 
 
     if request.method == 'POST':
@@ -457,12 +477,12 @@ def rating_edit(request, rating_id):
         # Validación del rating
         if not rating_value or not rating_value.isdigit():
             messages.error(request, "Debes seleccionar una calificación válida.")
-            return redirect("rating_edit", rating_id=rating.id)
+            return redirect("rating_edit", rating_id=rating.id) # type: ignore
 
         rating_int = int(rating_value)
         if rating_int < 1 or rating_int > 5:
             messages.error(request, "La calificación debe estar entre 1 y 5.")
-            return redirect("rating_edit", rating_id=rating.id)
+            return redirect("rating_edit", rating_id=rating.id) # type: ignore
 
         # Guardar cambios
         rating.title = title
@@ -471,7 +491,7 @@ def rating_edit(request, rating_id):
         rating.save()
 
         messages.success(request, "Reseña actualizada exitosamente.")
-        return redirect('event_detail', event_id=rating.event.id)
+        return redirect('event_detail', event_id=rating.event.id) # type: ignore
 
 
     return render(request, "app/rating_form.html", {"rating": rating})
@@ -488,7 +508,7 @@ def rating_delete(request, rating_id):
     else:
         messages.error(request, "No tienes permiso para eliminar esta reseña.")
 
-    return redirect('event_detail', event_id=rating.event.id)
+    return redirect('event_detail', event_id=rating.event.id) # type: ignore
 
 #Mostrar Todos los comentarios de los eventos de un organizador
 @login_required
@@ -516,10 +536,10 @@ def delete_comment(request, comment_id):
     elif comentario.user == request.user:
         comentario.delete()
         messages.success(request, "Comentario eliminado con éxito.")
-        return redirect('event_detail',event_id=comentario.event.id)
+        return redirect('event_detail',event_id=comentario.event.id) # type: ignore
     else:
         messages.error(request, "No tienes permiso para eliminar este comentario, solo el organizador del evento puede hacerlo.")
-        return redirect('event_detail',event_id=comentario.event.id)
+        return redirect('event_detail',event_id=comentario.event.id) # type: ignore
 
 @login_required
 def edit_comment(request, comment_id):
@@ -527,7 +547,7 @@ def edit_comment(request, comment_id):
 
     if comment.user != request.user:
         messages.error(request, "No tienes permiso para editar este comentario.")
-        return redirect('event_detail', event_id=comment.event.id)
+        return redirect('event_detail', event_id=comment.event.id) # type: ignore
 
     if request.method == 'POST':
         title = request.POST.get("title", "").strip()
@@ -549,7 +569,7 @@ def edit_comment(request, comment_id):
         comment.save()
 
         messages.success(request, "Comentario actualizado exitosamente.")
-        return redirect('event_detail', event_id=comment.event.id)
+        return redirect('event_detail', event_id=comment.event.id) # type: ignore
 
     return render(request, "app/comment_edit.html", {"comment": comment})
 
