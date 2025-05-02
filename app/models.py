@@ -457,7 +457,7 @@ class Notification(models.Model):
         return self.title
     
 class RefundRequest(models.Model):
-    approval = models.BooleanField(default=False)
+    approval = models.BooleanField(null=True, blank=True)
     approval_date = models.DateField(null=True, blank=True)
     ticket_code = models.CharField(max_length=255)
     reason = models.CharField(max_length=255)

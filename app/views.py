@@ -177,70 +177,93 @@ def event_form(request, event_id=None):
 
 
 @login_required
-def refund_form(request):
+def refund_form(request, id):
+    ticket = get_object_or_404(Ticket, pk=id)
+
     if request.method == "POST":
         ticket_code = request.POST.get("ticket_code")
         reason = request.POST.get("reason")
         additional_details = request.POST.get("additional_details")
         accepted_policy = request.POST.get("accepted_policy") == "on"
 
-        #validaciones basicas
+        # Validaciones básicas
         if not ticket_code or not reason or not accepted_policy:
-            return render(request, "app/refund_form.html", {"error": "Todos los campos son obligatorios.", "data": request.POST})
+            return render(request, "app/refund_form.html", {
+                "error": "Todos los campos son obligatorios.",
+                "data": request.POST
+            })
 
+        # Crear la solicitud de reembolso con estado pendiente
         RefundRequest.objects.create(
             ticket_code=ticket_code,
             reason=reason,
             additional_details=additional_details,
             user=request.user,
             accepted_policy=accepted_policy,
+            approval=None  # Estado pendiente
         )
         return redirect("events")
-    return render(request, "app/refund_form.html")
+
+    return render(request, "app/refund_form.html", {"ticket": ticket})
 
 @login_required
-#funcion para ver las solicitudes de reembolso de los eventos que organiza el usuario
 def organizer_refund_requests(request):
-    # si no es organizador, redirigir a eventos
+    # Si no es organizador, redirigir a eventos
     if not request.user.is_organizer:
         return redirect("events")
     
-    #obtener todos los eventos del organizador loggeado
+    # Obtener todos los eventos organizados por el usuario
     organizer_events = Event.objects.filter(organizer=request.user)
 
-    #obetener todos los tickets de esos eventos
-    tickets = Ticket.objects.filter(event__in=organizer_events)
+    # Obtener todos los refund requests cuyos usuarios compraron tickets para esos eventos
+    refund_requests = RefundRequest.objects.filter(
+        user__tickets__event__in=organizer_events
+    ).distinct().select_related("user")
 
-    #obtener los codigos de los tickets
-    ticket_codes = [str(ticket.id) for ticket in tickets]  # Convertir IDs a string
+    return render(request, "app/organizer_refund_requests.html", {
+        "refund_requests": refund_requests,
+    })
 
-    #obtener todas las solicitudes de reembolso de esos tickets
-    refund_requests = RefundRequest.objects.filter(ticket_code__in=ticket_codes).select_related("user")
-
-    #se crea un diccionario con los eventos y sus solicitudes de reembolso
-    tickets_dict = {str(ticket.id): ticket for ticket in tickets}
-
-    return render(request, "app/organizer_refund_requests.html", {"refund_requests": refund_requests, "tickets_dict": tickets_dict})
 
 @login_required
 def approve_refund_request(request, id):
-    # si no es organizador, redirigir a eventos
     if not request.user.is_organizer:
         return redirect("events")
+
     refund = get_object_or_404(RefundRequest, pk=id)
-    #verificar si la solicitud de reembolso ya fue aprobada o rechazada
+
+    # Aseguramos que la solicitud aún no fue procesada
+    if refund.approval is not None:
+        messages.info(request, "La solicitud ya fue procesada.")
+        return redirect("organizer_refund")
+
+    # Buscar el ticket relacionado
+    ticket = Ticket.objects.filter(
+        ticket_code=refund.ticket_code,
+        event__organizer=request.user
+    ).first()
+
+    if ticket:
+        # Eliminar solo el ticket
+        ticket.delete()
+
+    # NO eliminar la refund request, solo actualizarla
     refund.approval = True
     refund.approval_date = timezone.now()
     refund.save()
+
+    messages.success(request, "Reembolso aprobado exitosamente.")
     return redirect("organizer_refund")
+
 
 @login_required
 def reject_refund_request(request, id):
-    # si no es organizador, redirigir a eventos
+    # Si no es organizador, redirigir a eventos
     if not request.user.is_organizer:
         return redirect("events")
+    
     refund = get_object_or_404(RefundRequest, pk=id)
-    #verificar si la solicitud de reembolso ya fue aprobada o rechazada
+    # Cambiar el estado a rechazado
     refund.approval = False
     refund.approval_date = timezone.now()
     refund.save()
@@ -254,6 +277,7 @@ def view_refund_request(request, id):
     refund = get_object_or_404(RefundRequest, pk=id)
     #verificar si la solicitud de reembolso ya fue aprobada o rechazada
     return render(request, "app/view_refund_request.html", {"refund": refund})
+
 @login_required
 def buy_ticket(request, id):
     event = get_object_or_404(Event, pk=id)
