@@ -202,6 +202,17 @@ def refund_form(request, id):
             accepted_policy=accepted_policy,
             approval=None  # Estado pendiente
         )
+
+        # Crear una notificación para el usuario que solicitó el reembolso
+        notification = Notification.objects.create(
+            title="Solicitud de Reembolso Enviada",
+            message=f"Tu solicitud de reembolso para el evento: '{ticket.event.title}' ha sido enviada y está en proceso de revisión.",
+            priority="MEDIUM",
+            event=ticket.event
+        )
+        notification.users.add(request.user)
+        notification.save()
+
         return redirect("events")
 
     return render(request, "app/refund_form.html", {"ticket": ticket})
