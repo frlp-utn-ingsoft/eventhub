@@ -18,8 +18,31 @@
                         
                     <div class="px-3">
                         {% for rating in ratings %}
+
                             <div class="card mb-4 shadow-sm">
                                 <div class="card-body">
+                                    <div class="dropdown position-absolute top-0 end-0 m-2">
+                                        <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-three-dots-vertical fs-5"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+                                            {% if user.is_authenticated and user == rating.usuario or user.is_staff %}
+                                                <li>
+                                                    <form method="post" action="{% url 'event_eliminar_rating' event.id rating.id %}" onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta reseña?');">
+                                                        {% csrf_token %}
+                                                        <button type="submit" name="eliminar" class="dropdown-item text-danger">
+                                                            <i class="bi bi-trash3 me-2"></i> Eliminar
+                                                        </button>
+                                                    </form>
+                                                </li>
+                                                <li>
+                                                    <a href="{% url 'event_editar_rating' event.id rating.id %}?edit" class="dropdown-item">
+                                                        <i class="bi bi-pencil-square me-2"></i> Editar
+                                                    </a>
+                                                </li>
+                                            {% endif %}
+                                        </ul>
+                                    </div>
                                     <div class="d-flex align-items-center">
                                         <i class="bi bi-person-circle fs-3 me-2"></i>
                                         <div>
@@ -38,15 +61,7 @@
                                         {% endfor %}
                                     </p>
                                     <p class="card-text">{{ rating.texto }}</p>
-
-                                    {% if user.is_authenticated and user == rating.usuario or user.is_staff %}
-                                        <form method="post" style="display: inline;" action="{% url 'event_eliminar_rating' event.id rating.id %}" onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta reseña?');">
-                                            {% csrf_token %}
-                                            <input type="hidden" name="rating_id" value="{{ rating.id }}">
-                                            <button type="submit" name="eliminar" class="btn btn-sm btn-danger">Eliminar</button>
-                                        </form>
-                                        <a href="{% url 'event_editar_rating' event.id rating.id %}?edit" class="btn btn-sm btn-success">Editar</a>
-                                    {% endif %}
+                                    
                                 </div>
                             </div>
                         {% empty %}
