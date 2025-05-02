@@ -90,3 +90,17 @@ def event_tickets(request, event_id):
         "event": event,
         "tickets": tickets
     })
+
+@login_required
+def ticket_detail(request, ticket_id):
+    ticket = get_object_or_404(Ticket, pk=ticket_id)
+    user = request.user
+
+    # Sólo el dueño o el organizador del evento pueden verlo
+    if ticket.user != user and not (user.is_organizer and ticket.event.organizer == user):
+        return redirect("my_tickets")
+
+    return render(request, "app/ticket/ticket_detail.html", {
+        "ticket": ticket,
+        "user_is_organizer": user.is_organizer,
+    })

@@ -208,6 +208,9 @@ class Refund(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refunded_tickets")
     event = models.ForeignKey(Event, on_delete=models.CASCADE, null=True, blank=True, related_name="refunded_tickets")
+    
+    class Meta:
+        unique_together = ("ticket_code", "user")
 
     def __str__(self): return self.ticket_code
     
