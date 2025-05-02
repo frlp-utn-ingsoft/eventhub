@@ -17,6 +17,8 @@
                 title="Editar">
                 <i class="bi bi-pencil" aria-hidden="true"></i>
                 </a>
+            {% endif %}
+            {% if rating.user == user or user.is_organizer %}
                 <a href="{% url 'rating_delete' rating.id %}"
                     class="btn btn-sm btn-outline-danger"
                     aria-label="Eliminar"
