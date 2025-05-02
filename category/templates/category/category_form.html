@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container p-4">
+    <h2>{{ view.object.pk|yesno:"Editar categoría,Nueva categoría" }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <div class="text-end">
+            <button class="btn btn-primary" type="submit">Guardar</button>
+            <a class="btn btn-secondary" href="{% url 'category:list' %}">Cancelar</a>
+        </div>
+        
+    </form>
+</div>
+{% endblock %}

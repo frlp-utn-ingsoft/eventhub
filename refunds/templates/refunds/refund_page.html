@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Solicitar Reembolso</h1>
+
+    <div class="row">
+        <div class="col-md-8">
+            {% include 'refunds/refund_form.html' with form=form refund=refund%}
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    Política de Reembolsos
+                </div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i>Reembolso del 100% hasta 7 días antes del evento.</li>
+                    <li class="list-group-item"><i class="bi bi-check-circle-fill text-success me-2"></i>Reembolso del 50% entre 2 y 7 días antes del evento.</li>
+                    <li class="list-group-item"><i class="bi bi-x-circle-fill text-danger me-2"></i>Sin reembolso a menos de 48 horas del evento.</li>
+                    <li class="list-group-item"><i class="bi bi-info-circle-fill text-info me-2"></i>El reembolso se realizará al mismo método de pago utilizado en la compra.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

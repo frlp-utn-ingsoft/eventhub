@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% load ticket_tags %}
+
+{% block title %}Comprar Entrada - {{ event.title }}{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="row">
+        <!-- Formulario de compra -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Comprar Entrada</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Información del evento -->
+                    <h3>{{ event.title }}</h3>
+                    <div class="mb-3">
+                        <i class="bi bi-calendar me-2"></i> {{ event.scheduled_at|date:"l, j \d\e F \d\e Y, H:i" }}
+                    </div>
+                    <div class="mb-3">
+                        <i class="bi bi-geo-alt me-2"></i> {{ "aca iria el venue" }}
+                    </div>
+                    <div class="mb-3">
+                        <i class="bi bi-people me-2"></i> {{ event.organizer }}
+                    </div>
+
+                    <form method="POST" action="{% url 'tickets:compra' event.id %}">
+                        {% csrf_token %}
+                        <!--id del usuario -->
+                        <input type="hidden" name="user_id" value="{{ user.id }}">
+                        <!-- Componente: Formulario de compra -->
+                        {% include "tickets/componentes/compra_form.html" %}
+                        
+                        <!-- Componente: Método de pago -->
+                        {% include "tickets/componentes/metodo_pago.html" %}
+
+                        <!-- Términos y condiciones -->
+                        <div class="mb-4 form-check">
+                            <input type="checkbox" class="form-check-input" id="terms" name="terms" required>
+                            <label class="form-check-label" for="terms">
+                                Acepto los <a href="" target="_blank">términos y condiciones</a> y la 
+                                <a href="" target="_blank">política de privacidad</a>
+                            </label>
+                        </div>
+
+                        <!-- Botón de confirmación -->
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-primary btn-lg">Confirmar compra</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Componente: Resumen de compra -->
+            {% include "tickets/componentes/resumen.html" %}
+            
+            <!-- Componente: Información importante -->
+            {% include "tickets/componentes/informacion.html" %}
+        </div>
+    </div>
+</div>
+    
+
+<!-- Script para actualizar el resumen de compra -->
+<script>
+    const inputCantidad = document.getElementById("cantidad");
+    const spanResumen = document.getElementById("resumen-cantidad");
+  
+    inputCantidad.addEventListener("input", () => {
+      spanResumen.textContent = inputCantidad.value;
+    });
+
+    const precios = { GENERAL: 50, VIP: 100 };
+    const precioEntrada = document.getElementById("precio"); // precio base del ticket
+    const tipo = document.getElementById("tipoEntrada");
+    const cantidad = document.getElementById("cantidad");
+    const subtotal = document.getElementById("subtotal");
+    const impuestos = document.getElementById("impuestos");
+    const total = document.getElementById("total");
+  
+    function actualizarResumen() {
+      const precio = tipo.value === "GENERAL" ? 50 : 100;
+      const cant = parseInt(cantidad.value) || 0;
+      const sub = precio * cant;
+      const tax = sub * 0.10; // 10% de impuestos
+      subtotal.textContent = '$'+sub;
+      total.textContent = '$'+(sub+tax);
+      impuestos.textContent = '$'+tax;
+      if (tipo.value == "VIP") {
+        precioEntrada.textContent = '$'+precios.VIP + " (VIP)";
+      } else {
+        precioEntrada.textContent = '$'+precios.GENERAL + " (GENERAL)";
+      } 
+    }
+  
+    tipo.addEventListener("change", actualizarResumen);
+    cantidad.addEventListener("input", actualizarResumen);
+
+    const actualizarCantidad = (delta) => {
+        let nuevaCantidad = parseInt(cantidad.value) + delta;
+        if (nuevaCantidad < 1) return;
+        cantidad.value = nuevaCantidad;
+        spanResumen.textContent = nuevaCantidad;
+        actualizarResumen();
+      };
+      
+      document.getElementById("masCantidad").addEventListener("click", () => actualizarCantidad(1));
+      document.getElementById("menosCantidad").addEventListener("click", () => actualizarCantidad(-1));
+      
+      
+
+</script>
+{% endblock %}
