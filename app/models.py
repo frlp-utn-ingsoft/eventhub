@@ -275,7 +275,7 @@ class Ticket(models.Model):
         if quantity is None or not isinstance(quantity, int) or quantity <= 0:
             return False, {"quantity": "La cantidad de tickets debe ser mayor a 0"}
         self.modified_date = now()
-        if not self.user.is_organizer and now() < self.buy_date + timedelta(minutes=30):
+        if not self.user.is_organizer and now() > self.buy_date + timedelta(minutes=30):
             return False, {"error": "El ticket solo se puede modificar en los 30 minutos posteriores a su creacion"}
         self.ticket_type = ticket_type or self.ticket_type
         self.quantity = quantity or self.quantity
