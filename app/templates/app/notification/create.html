@@ -4,6 +4,11 @@
 <div class="container mt-4">
     <h1 class="mb-4">Crear Notificación</h1>
     <div class="row">
+        {% if error %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+        {% endif %}
         <!-- Formulario -->
         <div class="col-md-8">
             <div class="card shadow-sm p-4 mb-4">

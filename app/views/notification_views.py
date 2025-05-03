@@ -61,13 +61,20 @@ def notification_create(request):
             event=event,
         )
 
+
         if recipient == 'all':
-            addressee_users = User.objects.all()
+            addressee_users = User.objects.filter(Ticket__event=event).distinct()
             notification.addressee.set(addressee_users)  
         elif recipient == 'specific':
             try:
                 specific_user = User.objects.get(id=specific_user)
-                notification.addressee.set([specific_user]) 
+                if specific_user.is_organizer:
+                     # Manejar el caso en que el usuario específico es admin (no se envian notificaciones a admins)
+                    eventos = Event.objects.all()
+                    users = User.objects.all()
+                    return render(request, 'app/notification/create.html', {'eventos': eventos, 'users': users, 'error': 'El usuario específico es administrador.'})
+                else:
+                    notification.addressee.set([specific_user]) 
             except User.DoesNotExist:
                 # Manejar el caso en que el usuario específico no existe
                 eventos = Event.objects.all()
