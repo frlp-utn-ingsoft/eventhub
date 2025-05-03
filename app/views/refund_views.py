@@ -50,7 +50,10 @@ def refund_create(request):
 @login_required
 def my_refunds(request):
     refunds = Refund.objects.filter(user=request.user).order_by("-created_at")
-    return render(request, "refund/my_refunds.html", {"refunds": refunds})
+    codes = {r.ticket_code for r in refunds}
+    tickets = Ticket.objects.filter(ticket_code__in=codes)
+    tickets_map = {t.ticket_code: t for t in tickets}
+    return render(request, "refund/my_refunds.html", {"refunds": refunds, "tickets_map": tickets_map})
 
 @login_required
 def refund_edit(request, id):
@@ -111,22 +114,26 @@ def reject_refund_request(request, pk):
         refund_obj.save()
         messages.success(request, "Reembolso rechazado exitosamente.")
     return redirect('refunds_admin')
-
+# views.py
 @login_required
 def refund_requests_admin(request):
     user = request.user
     if not is_organizer(user):
         return redirect("events")
-
-    # Mostrar solo las solicitudes de reembolso de los eventos organizados por el usuario actual
-    refund_requests = Refund.objects.filter(event__organizer=user).order_by("-created_at")
+    refunds = Refund.objects.filter(event__organizer=user).order_by("-created_at")
+    codes = {r.ticket_code for r in refunds}
+    tickets = Ticket.objects.filter(ticket_code__in=codes)
+    tickets_map = {t.ticket_code: t for t in tickets}
 
     # Agregar información adicional para el template
     context = {
-        "refund_requests": refund_requests,
-        "pending_count": refund_requests.filter(approved__isnull=True).count(),
-        "approved_count": refund_requests.filter(approved=True).count(),
-        "rejected_count": refund_requests.filter(approved=False).count(),
+        "refund_requests": refunds,
+        "pending_count": refunds.filter(approved__isnull=True).count(),
+        "approved_count": refunds.filter(approved=True).count(),
+        "rejected_count": refundsfilter(approved=False).count(),
+        "tickets_map": tickets_map,
     }
 
-    return render(request, "refund/refund_request_admin.html", context)
+    return render(request, "refund/refund_request_admin.html", 
+        context
+    )

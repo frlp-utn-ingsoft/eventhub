@@ -24,9 +24,11 @@
             <button class="btn btn-outline-primary" type="submit" name="filter" value="all" >
                 Buscar
             </button>
-            <button class="btn {% if my_events %}btn-primary{% else %}btn-outline-primary{% endif %} flex-shrink-0" type="submit" name="filter" value="my_events">
-                Mis eventos
-            </button>
+            {% if user_is_organizer %}
+                <button class="btn {% if my_events %}btn-primary{% else %}btn-outline-primary{% endif %} flex-shrink-0" type="submit" name="filter" value="my_events">
+                    Mis eventos
+                </button>
+            {% endif %}
         </form>
     </nav>
 

@@ -78,14 +78,11 @@
                                 {% navbar_link 'view_comments' 'Comentarios' %}
                             </li>
                         {% else %}
-                            <li class="nav-item">
-                                {% navbar_link 'my_refunds' 'Mis Reembolsos' %}
+                            <li class="navbar-nav me-auto mb-2 mb-lg-0">
+                                {% navbar_link 'my_refunds' 'Reembolsos' %}
                             </li>
-                            <li class="nav-item">
-                                {% navbar_link 'refund_create' 'Solicitar Reembolso' %}
-                            </li>
-                            <li class="nav-item">
-                                {% navbar_link 'my_tickets' 'Mis entradas' %}
+                            <li class="navbar-nav me-auto mb-2 mb-lg-0">
+                                {% navbar_link 'my_tickets' 'Entradas' %}
                             </li>
                         {% endif %}
                         </ul>

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load dict_extras %}
 {% block title %}Mis Reembolsos{% endblock %}
 
 {% block content %}
@@ -22,8 +23,17 @@
         </thead>
         <tbody>
           {% for refund in refunds %}
+          {% with ticket=tickets_map|dict_get:refund.ticket_code %}
           <tr>
-            <td>{{ refund.ticket_code }}</td>
+            <td>
+              {% if ticket %}
+                <a href="{% url 'ticket_detail' ticket.id %}" class="text-primary">
+                  {{ refund.ticket_code }}
+                </a>
+              {% else %}
+                {{ refund.ticket_code }}
+              {% endif %}
+            </td>
             <td>{{ refund.reason }}</td>
             <td>
               {% if refund.approved is None %}
@@ -37,20 +47,26 @@
             <td>{{ refund.created_at|date:"d/m/Y H:i" }}</td>
             <td>
               {% if refund.approved is None %}
-                <a href="{% url 'refund_edit' refund.id %}" class="btn btn-sm btn-primary">Editar</a>
-                <form method="POST" action="{% url 'refund_delete' refund.id %}" class="d-inline">
-                  {% csrf_token %}
-                  <button type="submit"
-                          class="btn btn-sm btn-danger"
-                          onclick="return confirm('¿Estás seguro?')">
-                    Eliminar
-                  </button>
-                </form>
+              <div class="hstack gap-1">
+                  <a href="{% url 'refund_edit' refund.id %}"
+                      class="btn btn-sm btn-outline-secondary"
+                      aria-label="Editar"
+                      title="Editar">
+                      <i class="bi bi-pencil" aria-hidden="true"></i>
+                  </a>
+                  <form method="post" action="{% url 'refund_delete' refund.id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Eliminar este ticket?');">
+                      <i class="bi bi-trash" aria-hidden="true"></i>
+                    </button>
+                  </form>
+              </div>
               {% else %}
                 <span class="text-muted">No editable</span>
               {% endif %}
             </td>
           </tr>
+          {% endwith %}
           {% endfor %}
         </tbody>
       </table>
