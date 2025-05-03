@@ -50,7 +50,10 @@ def refund_create(request):
 @login_required
 def my_refunds(request):
     refunds = Refund.objects.filter(user=request.user).order_by("-created_at")
-    return render(request, "refund/my_refunds.html", {"refunds": refunds})
+    codes = {r.ticket_code for r in refunds}
+    tickets = Ticket.objects.filter(ticket_code__in=codes)
+    tickets_map = {t.ticket_code: t for t in tickets}
+    return render(request, "refund/my_refunds.html", {"refunds": refunds, "tickets_map": tickets_map})
 
 @login_required
 def refund_edit(request, id):
@@ -114,15 +117,18 @@ def reject_refund_request(request, pk):
         refund_obj.save()
         messages.success(request, "✅ Reembolso rechazado exitosamente.")
     return redirect('refunds_admin')
-
+# views.py
 @login_required
 def refund_requests_admin(request):
     user = request.user
     if not is_organizer(user):
         return redirect("events")
-
-    refund_requests = Refund.objects.filter(event__organizer=user).order_by("-created_at")
+    refunds = Refund.objects.filter(event__organizer=user).order_by("-created_at")
+    codes = {r.ticket_code for r in refunds}
+    tickets = Ticket.objects.filter(ticket_code__in=codes)
+    tickets_map = {t.ticket_code: t for t in tickets}
 
     return render(request, "refund/refund_request_admin.html", {
-        "refund_requests": refund_requests
+        "refund_requests": refunds,
+        "tickets_map": tickets_map,
     })

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load dict_extras %}
 {% block title %}Solicitudes de Reembolso{% endblock %}
 
 {% block content %}
@@ -20,11 +21,20 @@
         </thead>
         <tbody>
           {% for refund in refund_requests %}
-          <tr>
-            <td>{{ refund.ticket_code }}</td>
+          {% with ticket=tickets_map|dict_get:refund.ticket_code %}
+            <tr>
             <td>
-              <a href="{% url 'event_detail' refund.event.id %}" class="text-primary">
-                {{ refund.event.title }}
+              {% if ticket %}
+                <a href="{% url 'ticket_detail' ticket.id %}" class="text-primary">
+                  {{ refund.ticket_code }}
+                </a>
+              {% else %}
+                {{ refund.ticket_code }}
+              {% endif %}
+            </td>
+            <td>
+              <a href="{% url 'event_detail' ticket.event.id %}" class="text-primary text-decoration-none">
+                  {{ ticket.event.title }}
               </a>
             </td>
             <td>{{ refund.user.username }}</td>
@@ -61,6 +71,7 @@
               {% endif %}
             </td>
           </tr>
+          {% endwith  %}
           {% endfor %}
         </tbody>
       </table>
