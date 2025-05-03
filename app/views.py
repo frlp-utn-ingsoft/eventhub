@@ -733,9 +733,7 @@ def venue_list(request):
         messages.error(request, "Los usuarios no pueden visualizar ubicaciones.")
         return redirect("events")  # Redirige a la lista de eventos si no es organizador
     venues = Venue.objects.all()
-    print(venues) 
-    if not venues:
-        messages.info(request, "No tienes ubicaciones registradas.", extra_tags='ubicacion')  
+    print(venues)   
     return render(request, "app/venue_list.html", {"venues": venues})
 
 
