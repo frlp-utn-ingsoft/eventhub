@@ -103,6 +103,12 @@ class TicketForm(forms.ModelForm):
     widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
     )
 
+    quantity = forms.IntegerField(
+    label="Cantidad de entradas",
+    min_value=1,
+    max_value=120,
+    widget=forms.TextInput(attrs={'class': 'form-control text-center', 'placeholder': '0'})
+    )
 
     def clean_quantity(self):
         quantity = self.cleaned_data.get('quantity')
@@ -116,6 +122,16 @@ class TicketForm(forms.ModelForm):
             raise forms.ValidationError("La cantidad no puede ser mayor a 120.")
 
         return quantity
+    
+    def clean_card_name(self):
+        name = self.cleaned_data.get('card_name')
+        if not name or name.strip() == "":
+            raise forms.ValidationError("El nombre en la tarjeta es obligatorio.")
+
+        if not all(c.isalpha() or c.isspace() for c in name):
+            raise forms.ValidationError("El nombre en la tarjeta solo debe contener letras y espacios.")
+
+        return name
 
     def clean_card_number(self):
         number = self.cleaned_data.get('card_number')
@@ -173,6 +189,8 @@ class TicketForm(forms.ModelForm):
             raise forms.ValidationError("La fecha de expiración no es válida.")
 
         return expiration_date
+    
+    
     
 class RatingForm(forms.ModelForm):
     class Meta:

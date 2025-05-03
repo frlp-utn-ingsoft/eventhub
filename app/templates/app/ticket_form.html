@@ -12,13 +12,17 @@
                         </div>
                         <div class="card-body">
                             <h5 class="mb-3">{{ event.title }}</h5>
-                            <p class="text-muted"><i class="bi bi-calendar-event"></i> {{ event.scheduled_at }}</p>
-                            <p class="text-muted"><i class="bi bi-geo-alt"></i> Estadio Nacional</p>
-                            <p class="text-muted"><i class="bi bi-person"></i> Producciones XYZ</p>
+                            <p class="text-muted">
+                                <p class="text-muted">
+                                    <i class="bi bi-calendar-event"></i> {{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}
+                                </p>                                  
+                            </p>
+                            <p class="text-muted"><i class="bi bi-geo-alt"></i> {{ event.venue.name }}</p>
+                            <p class="text-muted"><i class="bi bi-person"></i> {{ event.organizer }}</p>
 
                             <hr class="my-3">
 
-                            <form method="post">
+                            <form method="post" novalidate>
                                 {% csrf_token %}
                                 {% if form.errors %}
                                     <div class="alert alert-danger">
@@ -42,7 +46,7 @@
                                     <label for="{{ form.quantity.id_for_label }}" class="form-label">Cantidad de entradas</label>
                                     <div class="input-group">
                                         <button class="btn btn-outline-secondary" type="button" id="button-minus">-</button>
-                                        <input type="number" class="form-control text-center" id="{{ form.quantity.id_for_label }}" name="{{ form.quantity.name }}" value="{{ form.quantity.value|default:'1' }}" min="1" max="120">
+                                            {{ form.quantity }}
                                         <button class="btn btn-outline-secondary" type="button" id="button-plus">+</button>
                                     </div>
                                     {% if form.quantity.errors %}
