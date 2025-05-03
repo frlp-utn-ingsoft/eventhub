@@ -297,3 +297,19 @@ class Ticket(models.Model):
         self.type     = new_type
         self.save()
         return True, None
+    
+class Notification(models.Model):
+    title=models.CharField(max_length=200)
+    massage=models.TextField()
+    created_at=models.DateTimeField(auto_now_add=True)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='notifications')
+    addressee=models.ManyToManyField(User)
+
+    prioridadOpciones=[    
+        ('High', 'HIGH'),
+        ('Medium', 'MEDIUM'),
+        ('Low', 'LOW'),
+        ]
+    
+    Priority=models.CharField(choices=prioridadOpciones, default='Medium')
+    is_read=models.BooleanField(default=False)

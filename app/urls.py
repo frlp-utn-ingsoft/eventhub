@@ -26,11 +26,6 @@ urlpatterns = [
     path('notification/mark-as-read/<int:pk>/', views.notification_mark_as_read, name='notification_mark_as_read'),
     path('notification/mark-all-as-read/', views.notification_mark_all_as_read, name='notification_mark_all_as_read'),
     path("notification/create", views.notification_create, name="notification_create"),
-    path("refunds/", views.My_refunds, name="my_refunds"),
-    path("refunds/new/", views.Refund_create, name="refund_create"),
-    path("refunds/<int:id>/edit/", views.Refund_edit, name="refund_edit"),
-    path("refunds/<int:id>/delete/", views.Refund_delete, name="refund_delete"),
-    path("organizer/refund/", views.RefundRequestsAdminView.as_view(), name="refunds_admin"),
     
     # Venues
     path("venues/", views.venues, name="venues"),
