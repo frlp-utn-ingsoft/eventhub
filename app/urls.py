@@ -48,7 +48,7 @@ urlpatterns = [
     
     path('categories/', views.list_categories, name='list_categories'),
     path('categories/create/', views.category_form, name='category_form'),
-    path('categories/<int:id>/update/', views.category_form, name='update_category'),
+    path('categories/<int:id>/update/', views.update_category, name='update_category'),
     path('categories/<int:id>/delete/', views.delete_category, name='delete_category'),
     #Venue
     path('venues/', views.venue_list, name='venue_list'),

@@ -5,7 +5,7 @@
     <div class="row">
         <div class="col-md-8 offset-md-2">
             <h1 class="mb-4">
-                {% if category.id %}
+                {% if update %}
                     Editar categoría
                 {% else %}
                     Crear categoría
@@ -14,7 +14,7 @@
 
             <div class="card">
                 <div class="card-body">
-                    <form action="{% url 'category_form' %}" method="POST">
+                    <form {% if update %} action="{% url 'update_category' category.id %}" method="POST" {% else %} action="{% url 'category_form' %}" method="POST" {% endif %}>
                         {% csrf_token %}
                         <div class="vstack gap-3">
                             <div>
@@ -46,7 +46,7 @@
                             </div>
                             <div>
                                 <button type="submit" class="btn btn-primary">
-                                    {% if category.id %}
+                                    {% if update %}
                                         Guardar Cambios
                                     {% else %}
                                         Crear Categoría
@@ -54,7 +54,7 @@
                                 </button>
                             </div>
                         </div>
-                    </form>
+                    </form> 
                 </div>
             </div>
         </div>

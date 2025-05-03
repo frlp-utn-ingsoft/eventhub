@@ -66,12 +66,13 @@ class Category(models.Model):
         category.save()
         return category
     
-    @classmethod
+    
     def update(self , name=None, description=None, active=None, event=None): # type: ignore
         
         self.name = name or self.name
         self.description = description or self.description
         self.active = active or self.active
+        self.event = event or self.event
         self.save() # type: ignore
 
 class Event(models.Model):
