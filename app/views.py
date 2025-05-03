@@ -408,6 +408,8 @@ def ticket_update(request, ticket_id):
         messages.error(request, "No tienes permisos para editar este ticket.")
         return redirect("ticket_list")
 
+    event = ticket.event 
+
     if request.method == "POST":
         form = TicketForm(request.POST, instance=ticket)
         if form.is_valid():
@@ -417,7 +419,7 @@ def ticket_update(request, ticket_id):
     else:
         form = TicketForm(instance=ticket)
 
-    return render(request, "app/ticket_form.html", {"form": form})
+    return render(request, "app/ticket_form.html", {"form": form,  'event': event})
 
 
 # Eliminar Ticket
