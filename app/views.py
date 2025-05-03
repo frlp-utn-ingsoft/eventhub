@@ -14,6 +14,8 @@ from django.utils import timezone
 from django.views import View, generic
 from django.db import transaction
 from django.db.models import Q
+from collections import defaultdict
+from django.contrib import messages
 
 from .forms import (
     CategoryForm,
@@ -526,6 +528,27 @@ def ticket_list(request):
     tickets = Ticket.objects.filter(user=request.user)
     return render(request, 'app/ticket/ticket_list.html', {'tickets': tickets})
 
+@login_required
+def ticket_list_organizer(request):
+    events = Event.objects.filter(organizer=request.user)
+    tickets = Ticket.objects.filter(event__in=events).select_related('event', 'user')
+
+    # Agrupar tickets por evento
+    grouped = defaultdict(list)
+    for ticket in tickets:
+        grouped[ticket.event].append(ticket)
+
+    # Convertir a lista de tuplas para usar en el template
+    grouped_tickets = list(grouped.items())
+
+    # Agregar la variable `is_organizer` al contexto
+    is_organizer = request.path.startswith('/organizer')
+
+    return render(request, 'app/ticket/ticket_list_organizer.html', {
+        'grouped_tickets': grouped_tickets,
+        'is_organizer': is_organizer,  # Pasa la variable `is_organizer`
+    })
+
 
 @login_required
 def ticket_create(request, event_id):
@@ -568,12 +591,17 @@ def ticket_update(request, pk):
 @login_required
 def ticket_delete(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
+
+    # Verifica si el usuario es organizador o un usuario normal
     if request.method == 'POST':
         ticket.delete()
-        return redirect('ticket_list')
+
+        # Redirige según el contexto
+        if '/organizer/ticket' in request.path:
+            return redirect('ticket_list_organizer')  # Lista de tickets del organizador
+        return redirect('ticket_list')  # Lista de tickets del usuario normal
+
     return render(request, 'app/ticket/ticket_confirm_delete.html', {'ticket': ticket})
-
-
 # ------------------- Categorías -------------------
 @login_required
 def categories(request):
