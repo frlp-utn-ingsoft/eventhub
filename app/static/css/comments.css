@@ -20,3 +20,22 @@
     color: #2b2a2a;
 
 }
+
+.containerComentario .comment-card{
+    padding: 0.8rem;
+    border-radius: 10px;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    -ms-border-radius: 10px;
+    -o-border-radius: 10px;
+}
+.containerComentario .comment-card small {
+    position: relative;
+    right: 30px
+
+
+}
+.containerComentario .btn-eventgub-green:hover{
+    background: #198754 !important;
+    color: #fff !important;
+}

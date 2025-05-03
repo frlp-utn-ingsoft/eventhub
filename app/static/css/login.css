@@ -41,6 +41,10 @@
     color: #ffffff;
 
   }
+  .btn-eventgub-green:hover {
+    background: #6db493 !important;
+    color: #fff !important;
+  }
   .btn-eventhub:hover{background:#ff4753;border-color:#ff4753}
   
   /* input transparente */

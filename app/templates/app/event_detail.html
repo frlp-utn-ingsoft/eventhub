@@ -17,21 +17,6 @@
   </div>
 
   <div class="row mb-4">
-    <div class="card">
-      <div class="card-body">
-        <h5 class="card-title">Detalles del Evento</h5>
-        <p class="card-text">{{ event.description }}</p>
-        <div class="mt-4">
-          <div class="d-flex align-items-center mb-3">
-            <div class="bg-light rounded-circle p-2 me-3">
-              <i class="bi bi-calendar-event text-primary"></i>
-            </div>
-            <div>
-              <h6 class="mb-0">Fecha y Hora</h6>
-              <p class="mb-0">{{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
-            </div>
-        </div>
-    </div>
     <div class="row">
         <div class="card">
             <div class="card-body">
@@ -108,118 +93,27 @@
                     </div>
 
                     <!-- Calificaciones -->
-                    <div class="row mt-5">
-                        <h3>Calificaciones</h3>
-                        {% for r in ratings %}
-                            <div class="mb-3 p-3 bg-light border rounded {% if r.user == request.user %}border-primary bg-info bg-opacity-25{% endif %}">
-                                {% if r.user == request.user %}
-                                    <p class="text-primary font-weight-bold">Tu calificación</p>
-                                {% endif %}
+                    {% include 'app/ratings.html' %}
 
-                                <div class="d-flex justify-content-between">
-                                    <strong>{{ r.user.username }}</strong>
-                                    <small class="text-muted">{{ r.created_at|date:"d/m/Y H:i" }}</small>
-                                </div>
-
-                                {% if r.user == request.user and edit_mode %}
-                                    <!-- Formulario para editar -->
-                                    <form method="POST" id="rating-form">
-                                        {% csrf_token %}
-                                        <div class="vstack gap-3">
-                                            <div>
-                                                <label class="form-label">Puntaje</label>
-                                                <div id="star-rating" class="mb-2" data-rating-current="{{ form.rating.value|default:"0" }}">
-                                                    {% with form.rating.value|default:"0"|add:"0" as rating_val %}
-                                                        {% for i in "12345" %}
-                                                            <input type="radio" name="rating" value="{{ forloop.counter }}" id="star{{ forloop.counter }}"
-                                                                class="d-none"
-                                                                {% if form.rating.value|stringformat:"s" == forloop.counter|stringformat:"s" %}checked{% endif %}>
-                                                            <label for="star{{ forloop.counter }}" class="star fs-3 text-warning" role="button" data-value="{{ forloop.counter }}">
-                                                                <i class="bi {% if forloop.counter <= rating_val %}bi-star-fill{% else %}bi-star{% endif %}"></i>
-                                                            </label>
-                                                        {% endfor %}
-                                                    {% endwith %}
-                                                </div>
-                                            </div>
-
-                                            <div>{{ form.title.label_tag }} {{ form.title }}</div>
-                                            <div>{{ form.text.label_tag }} {{ form.text }}</div>
-
-                                            <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-                                        </div>
-                                    </form>
-                                {% else %}
-                                    <!-- Modo visual -->
-                                    {% for i in "12345" %}
-                                        {% with i|add:"0" as i_int %}
-                                            <i class="bi {% if i_int <= r.rating %}bi-star-fill{% else %}bi-star{% endif %} text-warning"></i>
-                                        {% endwith %}
-                                    {% endfor %}
-                                    <h5>{{ r.title }}</h5>
-                                    <p>{{ r.text }}</p>
-
-                                    {% if request.user == r.user %}
-                                        <a href="?edit_rating=1" class="btn btn-sm btn-outline-primary">Editar</a>
-                                        <button class="delete-rating-btn btn btn-danger" data-url="{% url 'rating_delete' r.id %}">Eliminar</button>      
-                                    {% elif user_is_organizer %}
-                                        <!-- El organizador puede eliminar cualquier calificación -->
-                                        <button class="btn btn-sm btn-outline-danger delete-rating-btn" data-url="{% url 'rating_delete' r.id %}">Eliminar</button>                                
-                                    {% endif %}
-                                {% endif %}
-                            </div>
-                        {% empty %}
-                            <p class="text-muted">Aún no hay calificaciones para este evento.</p>
-                        {% endfor %}
-                    </div>
-                    <!-- Formulario inferior solo si no hay rating y no es el organizador -->
-                    {% if not user_is_organizer and not rating %}
-                        <hr class="mt-5">
-                        <div class="mt-4">
-                            <h4>Agregar Calificación</h4>
-                            <form method="POST" id="rating-form" data-first-rating="true">
-                                {% csrf_token %}
-                                <div class="vstack gap-3">
-                                    <div>
-                                        <label class="form-label">Puntaje</label>
-                                        <div id="star-rating" class="mb-2" data-rating-current="{{ form.rating.value|default:"0" }}">
-                                            {% with form.rating.value|default:"0"|add:"0" as rating_val %}
-                                                {% for i in "12345" %}
-                                                    <input type="radio" name="rating" value="{{ forloop.counter }}" id="star{{ forloop.counter }}"
-                                                        class="d-none"
-                                                        {% if form.rating.value|stringformat:"s" == forloop.counter|stringformat:"s" %}checked{% endif %}>
-                                                    <label for="star{{ forloop.counter }}" class="star fs-3 text-warning" role="button" data-value="{{ forloop.counter }}">
-                                                        <i class="bi {% if forloop.counter <= rating_val %}bi-star-fill{% else %}bi-star{% endif %}"></i>
-                                                    </label>
-                                                {% endfor %}
-                                            {% endwith %}
-                                        </div>
-                                    </div>
-
-                                    <div>{{ form.title.label_tag }} {{ form.title }}</div>
-                                    <div>{{ form.text.label_tag }} {{ form.text }}</div>
-
-                                    <button type="submit" class="btn btn-primary">Enviar Calificación</button>
-                                </div>
-                            </form>
-                        </div>
-                    {% endif %}
                 </div>
+                <!-- Comentarios -->
+                <h3 class="mt-4">Agregar comentario</h3>
+                {% include 'comments/comment_form.html' %}
+                <div class="card mt-5">
+                    <div class="card-header">
+                    Comentarios ({{ comments.count }})
+                    </div>
+                    <div class="card-body">
+                    {% include 'comments/comment_list.html' %}
+                    </div>
+                </div>
+
+                
         </div>
       </div>
     </div>
   </div>
-  <!-- Comentarios -->
-  <div class="card mt-5">
-    <div class="card-header">
-      Comentarios ({{ comments.count }})
-    </div>
-    <div class="card-body">
-      {% include 'comments/comment_list.html' %}
-    </div>
-  </div>
-
-  <h3 class="mt-4">Agregar comentario</h3>
-  {% include 'comments/comment_form.html' %}
+  
 
 </div>
 {% endblock %}

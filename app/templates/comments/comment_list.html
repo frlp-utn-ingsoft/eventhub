@@ -1,45 +1,48 @@
-{% for comment in comments %}
-  <div class="border rounded p-3 mb-3 position-relative">
-    <div class="d-flex justify-content-between">
-      <div>
-        <strong>{{ comment.user.username }}</strong><br>
-        <small class="text-muted">{{ comment.created_at|date:"d M Y, H:i" }}</small>
-      </div>
+{# templates/comments/comment_list.html #}
+{% for c in comments %}
+  <div class="comment-card animate mb-3 position-relative
+              {% if c.user == request.user %} bg-info bg-opacity-10{% else %}bg-light{% endif %}">
 
-      {% if request.user == comment.user or request.user == event.organizer %}
-        <div class="dropdown">
-          <button class="btn btn-link dropdown-toggle" type="button"
-                  id="dropdownMenu{{ comment.pk }}"
-                  data-bs-toggle="dropdown"
-                  aria-expanded="false">
-            ⋮
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end"
-              aria-labelledby="dropdownMenu{{ comment.pk }}">
-              {% if request.user == comment.user %}
-              <li>
-                <a class="dropdown-item" href="{% url 'comment_edit' comment.pk %}">Editar</a>
-              </li>
-            {% endif %}
-            
+    {# --- Dropdown acciones --- #}
+    {% if request.user == c.user or request.user == event.organizer %}
+      <div class="dropdown position-absolute top-0 end-0 m-2">
+        <button class="btn btn-link dropdown-toggle p-0"
+                id="dropdownComment{{ c.id }}"
+                data-bs-toggle="dropdown"
+                aria-expanded="false">⋮</button>
+
+        <ul class="dropdown-menu dropdown-menu-end"
+            aria-labelledby="dropdownComment{{ c.id }}">
+          {% if request.user == c.user %}
             <li>
-              <form action="{% url 'comment_delete' comment.pk %}"
-                    method="post"
-                    onsubmit="return confirm('¿Seguro que quieres eliminar?');">
-                {% csrf_token %}
-                <button type="submit" class="dropdown-item text-danger">
-                  Eliminar
-                </button>
-              </form>
+              <a class="dropdown-item"
+                 href="{% url 'comment_edit' c.id %}">Editar</a>
             </li>
-          </ul>
-        </div>
-      {% endif %}
+          {% endif %}
+
+          <li>
+            <form action="{% url 'comment_delete' c.id %}"
+                  method="post"
+                  class="comment-delete-form">
+              {% csrf_token %}
+              <button type="submit" class="dropdown-item text-danger">
+                Eliminar
+              </button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    {% endif %}
+
+    {# --- Contenido comentario --- #}
+    <div class="d-flex justify-content-between">
+      <strong>{{ c.user.username }}</strong>
+      <small class="text-muted">{{ c.created_at|date:"d/m/Y H:i" }}</small>
     </div>
 
-    <h6 class="mt-2 mb-1">{{ comment.title }}</h6>
-    <p class="mb-0">{{ comment.content }}</p>
+    <h6 class="mt-2 mb-1">{{ c.title }}</h6>
+    <p class="mb-0">{{ c.content }}</p>
   </div>
 {% empty %}
-  <p>No hay comentarios aún.</p>
+  <p class="text-muted">No hay comentarios aún.</p>
 {% endfor %}

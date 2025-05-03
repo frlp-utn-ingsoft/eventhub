@@ -118,50 +118,57 @@ def events(request):
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
-    edit_mode = request.GET.get("edit_rating") == "1"
-    comments = Comment.objects.filter(event=event, is_deleted=False).order_by('-created_at')
-    form = CommentForm()
-    try:
-        rating = Rating.objects.get(event=event, user=request.user)
-    except Rating.DoesNotExist:
-        rating = None
 
+    # ---------- Flags de edición ----------
+    edit_id   = request.GET.get("edit_rating")       # p.e. "17" ó None
+    edit_mode = bool(edit_id)
+
+    # ---------- Rating del usuario ----------
+    my_rating = Rating.objects.filter(
+        event=event, user=request.user
+    ).first()
+
+    # ---------- POST: crear o actualizar ----------
     if request.method == "POST":
-        if rating:
-            # Verificamos que solo el usuario que creó la calificación o el organizador del evento pueda editarla
-            if rating.user != request.user and not request.user.is_organizer:
-                return redirect("event_detail", id=event.id)  # type: ignore # Bloquear edición ajena
-
-            form = RatingForm(request.POST, instance=rating)
-        else:
+        # Si existe y estamos editando  ➜  instancia
+        if my_rating and edit_mode:
+            form = RatingForm(request.POST, instance=my_rating)
+        else:  # crear nuevo
             form = RatingForm(request.POST)
-        
+
         if form.is_valid():
-            new_rating = form.save(commit=False)
-            new_rating.user = request.user
-            new_rating.event = event
-            new_rating.save()
-            return redirect("event_detail", id=event.id) # type: ignore
+            r = form.save(commit=False)
+            r.user, r.event = request.user, event
+            r.save()
+            return redirect("event_detail", id=event.id)
+
+    # ---------- GET: preparar formulario ----------
     else:
-        if rating:
-            form = RatingForm(instance=rating)
+        if edit_mode and my_rating:
+            form = RatingForm(instance=my_rating)
         else:
             form = RatingForm()
 
-    # Calificaciones: mostrar la del usuario actual primero
-    ratings = list(event.ratings.all()) # type: ignore
-    if rating in ratings:
-        ratings.remove(rating)
-        ratings.insert(0, rating)
+    # ---------- Lista de calificaciones ----------
+    ratings = list(event.ratings.all().order_by("-created_at"))
+    if my_rating in ratings:
+        ratings.remove(my_rating)
+        ratings.insert(0, my_rating)
+
+    # ---------- Comentarios ----------
+    comments = Comment.objects.filter(
+        event=event, is_deleted=False
+    ).order_by("-created_at")
 
     return render(request, "app/event_detail.html", {
-        "event": event,
-        'comments': comments,
-        "form": form,
-        "rating": rating,
-        "edit_mode": edit_mode,
-        "ratings": ratings,
-        "user_is_organizer": request.user.is_organizer,  # ← Agregar esta línea
+        "event":            event,
+        "ratings":          ratings,
+        "edit_mode":        edit_mode,
+        "edit_rating_id":   int(edit_id) if edit_id else 0,
+        "rating":           my_rating,
+        "form":             form,
+        "comments":         comments,
+        "user_is_organizer":request.user.is_organizer,
     })
 
 @login_required
