@@ -30,12 +30,6 @@ pip install -r requirements.txt
 ./start_db.sh
 ```
 
-### Crear usuario admin
-
-```
-python manage.py createsuperuser
-```
-
 ### Llenar la base de datos
 
 ```
@@ -47,3 +41,13 @@ python manage.py createsuperuser
 ```
 python manage.py runserver
 ```
+
+## Usuarios de prueba
+
+### Usuario organizador
+- Usuario: admin
+- Contraseña: p
+
+### Usuario no organizador
+- Usuario: matias.rios
+- Contraseña: p

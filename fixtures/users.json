@@ -6,14 +6,14 @@
             "password": "pbkdf2_sha256$1000000$OZ34xdDeOS599cOdajWBiq$3/gA/Dl9ySmbHkfLAZYpCur3QvfB2WIt3ba8CTxl6DE=",
             "last_login": null,
             "is_superuser": false,
-            "username": "fpetosa99",
+            "username": "admin",
             "first_name": "",
             "last_name": "",
-            "email": "",
+            "email": "admin@admin.com",
             "is_staff": false,
             "is_active": true,
             "date_joined": "2025-04-24T15:54:15.736Z",
-            "is_organizer": false,
+            "is_organizer": true,
             "groups": [],
             "user_permissions": []
         }

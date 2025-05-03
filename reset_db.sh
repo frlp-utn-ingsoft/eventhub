@@ -26,11 +26,6 @@ echo "==> Creando migraciones..."
 $python_interpreter manage.py makemigrations
 $python_interpreter manage.py migrate
 
-#4. crear superusuario
-read -p "¿Desea crear un superusuario? (y/n): " create_superuser
-if [ "$create_superuser" == "y" ]; then
-    $python_interpreter manage.py createsuperuser
-fi
 
 if [ -d "$dir_data" ]; then
     echo "==> Cargando datos de prueba desde $dir_data..."

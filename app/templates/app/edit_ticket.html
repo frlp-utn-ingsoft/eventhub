@@ -94,7 +94,7 @@
     var remainingTime = limitTime - now;
     
     if (remainingTime <= 0) {
-        document.getElementById("time-remaining").innerHTML = 'El tiempo ha expirado. <a href="{% url "home" %}" class="btn btn-link">¿Necesitás ayuda? <i class="bi bi-headset"></i></a>';
+        document.getElementById("time-remaining").innerHTML = 'El tiempo ha expirado. <a href="{% url "refound" %}" class="btn btn-link">¿Necesitás ayuda? <i class="bi bi-headset"></i></a>';
 
         document.getElementById("edit-form").style.display = "none";
         document.getElementById("refund-section").style.display = "block";
