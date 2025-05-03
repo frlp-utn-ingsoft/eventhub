@@ -14,21 +14,20 @@
         </a>
       {% endif %}
     </div>
-  </div>
-
-  <div class="row mb-4">
-    <div class="row">
-        <div class="card">
+    </div>
+        <div class="row mb-4">
+            <div class="card">
             <div class="card-body">
-                <h5 class="card-title text-dark">Detalles del Evento</h5>
-                <p class="card-text">{{ event.description }}</p>
-                <div class="d-flex justify-content-end mt-4">
-                    {% if user.is_authenticated and not user.is_organizer %}
-                      <a href="{% url 'ticket_create' event.id %}" class="btn btn-eventhub">
-                        Comprar Ticket
-                      </a>
-                    {% endif %}
-                  </div>
+                <!-- Estructura flexible para alinear el título y el botón -->
+                <div class="d-flex justify-content-between align-items-center">
+                <h5 class="card-title text-dark mb-2">Detalles del Evento</h5>
+                <!-- Botón a la derecha -->
+                {% if user.is_authenticated and not user.is_organizer %}
+                    <a href="{% url 'ticket_create' event.id %}" class="btn btn-eventhub">
+                    Comprar Ticket
+                    </a>
+                {% endif %}
+                </div>
                 </div>
                 <!-- Información del evento -->
                 <div class="mt-4">
@@ -106,9 +105,7 @@
                     <div class="card-body">
                     {% include 'comments/comment_list.html' %}
                     </div>
-                </div>
-
-                
+                </div>    
         </div>
       </div>
     </div>
