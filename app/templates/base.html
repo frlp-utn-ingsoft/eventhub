@@ -43,10 +43,23 @@
                         <span class="navbar-toggler-icon"></span>
                     </button>
 
-                    <div
-                        class="collapse navbar-collapse"
-                        id="navbar-content"
-                    >
+                    <div class="collapse navbar-collapse" id="navbar-content">
+
+                        <li class="nav-item d-flex align-items-center">
+                            <a class="nav-link d-flex align-items-center" href="{% url 'notification' %}">
+                              <div class="d-flex align-items-center">
+                                <i class="bi bi-bell{% if unread_count > 0 %}-fill text-danger{% endif %}" style="font-size: 1.2rem;"></i>
+                                {% if unread_count > 0 %}
+                                  <span class="badge bg-danger text-white ms-1" style="font-size: 0.65rem; height: 1rem; line-height: 1rem; padding: 0 0.4rem;">
+                                    {{ unread_count }}
+                                  </span>
+                                {% endif %}
+                              </div>
+                            </a>
+                          </li>
+                          
+                          
+                    
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                             <li class="nav-item">
                                 {% navbar_link 'events' 'Eventos' %}
@@ -73,8 +86,15 @@
                             </li>
                         {% endif %}
                         </ul>
+                        {% if request.user.is_authenticated and not request.user.is_organizer %}
+                            <li class="navbar-nav me-auto mb-2 mb-lg-0">
+                                {% navbar_link 'my_refunds' 'Reembolsos' %}
+                            </li>{% else %}
+                                <li class="navbar-nav me-auto mb-2 mb-lg-0">
+                                    {% navbar_link 'refunds_admin' 'Reembolsos' %}
+                                </li>
+                        {% endif %}
                     </div>
-
                     <form
                         class="d-flex"
                         action={% url 'logout' %}

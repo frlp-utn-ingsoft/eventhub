@@ -18,7 +18,7 @@
       {% for ticket in tickets %}
         <tr>
           <td>{{ ticket.ticket_code }}</td>
-          <td>{{ ticket.event.title }}</td>
+          <td><a href="{% url 'event_detail' ticket.event.id %}" class="text-decoration-none">{{ ticket.event.title }}</a></td>
           <td>{{ ticket.quantity }}</td>
           <td>{{ ticket.type }}</td>
           <td>{{ ticket.buy_date }}</td>

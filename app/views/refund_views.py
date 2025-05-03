@@ -1,11 +1,11 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
-from app.models import Refund, Ticket
 from django.utils import timezone
-from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.generic import ListView
 from django.views.decorators.http import require_POST
+
+from app.models import Refund, Ticket
+
 
 @login_required
 def refund_create(request):
@@ -85,9 +85,6 @@ def refund_delete(request, id):
 def is_organizer(user):
     return user.is_authenticated and user.is_organizer
 
-
-from django.utils import timezone
-
 @login_required
 @require_POST
 def approve_refund_request(request, pk):
@@ -115,7 +112,7 @@ def reject_refund_request(request, pk):
         refund_obj.approved = False
         refund_obj.aproval_date = timezone.now()
         refund_obj.save()
-        messages.success(request, "✅ Reembolso rechazado exitosamente.")
+        messages.success(request, "Reembolso rechazado exitosamente.")
     return redirect('refunds_admin')
 # views.py
 @login_required
@@ -128,7 +125,15 @@ def refund_requests_admin(request):
     tickets = Ticket.objects.filter(ticket_code__in=codes)
     tickets_map = {t.ticket_code: t for t in tickets}
 
-    return render(request, "refund/refund_request_admin.html", {
+    # Agregar información adicional para el template
+    context = {
         "refund_requests": refunds,
+        "pending_count": refunds.filter(approved__isnull=True).count(),
+        "approved_count": refunds.filter(approved=True).count(),
+        "rejected_count": refundsfilter(approved=False).count(),
         "tickets_map": tickets_map,
-    })
+    }
+
+    return render(request, "refund/refund_request_admin.html", 
+        context
+    )
