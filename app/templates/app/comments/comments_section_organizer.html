@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-4">Comentarios del Evento</h5>
+            
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Evento</th>
+                            <th>Usuario</th>
+                            <th>Comentario</th>
+                            <th>Fecha</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for comment in comments %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'event_detail' comment.event.id %}" class="text-primary text-decoration-none">
+                                    {{ comment.event.title }}
+                                </a>
+                            </td>
+                            <td>{{ comment.user.username }}</td>
+                            <td>{{ comment.text }}</td>
+                            <td>{{ comment.created_at|date:"d M Y, H:i" }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'event_detail' comment.event.id %}#comment-{{ comment.id }}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       title="Ver comentario">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger" 
+                                            title="Eliminar"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal{{ comment.id }}">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+
+                                <!-- Modal para este comentario -->
+                                {% with object=comment delete_url_name='delete_comment' title="Eliminar Comentario" message="¿Estás seguro de que deseas eliminar este comentario?" %}
+                                    {% include 'app/common/delete_modal.html' %}
+                                {% endwith %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">No hay comentarios para mostrar</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

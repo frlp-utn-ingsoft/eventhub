@@ -3,62 +3,70 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Solicitudes de Reembolso</h2>
+  <h2>Solicitudes de Reembolso</h2>
 
-    {% if refund_requests %}
-        <div class="table-responsive mt-4">
-            <table class="table table-bordered align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>Código de Entrada</th>
-                        <th>Evento</th>
-                        <th>Solicitante</th>
-                        <th>Fecha de Solicitud</th>
-                        <th>Estado</th>
-                        <th>Acciones</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for refund in refund_requests %}
-                        <tr>
-                            <td>{{ refund.ticket_code }}</td>
-                            <td>{{ refund.event.name }}</td>
-                            <td>{{ refund.user.get_full_name }}</td>
-                            <td>{{ refund.created_at|date:"d M Y, H:i" }}</td>
-                            <td>
-                                {% if refund.aproved == True %}
-                                    <span class="badge bg-success">Aprobado</span>
-                                {% elif refund.aproved == False %}
-                                    <span class="badge bg-danger">Rechazado</span>
-                                {% else %}
-                                    <span class="badge bg-warning text-dark">Pendiente</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if refund.aproved is None %}
-                                    <form method="POST" action="{% url 'refund_approve' refund.id %}" class="d-inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-success" title="Aprobar">
-                                            ✓
-                                        </button>
-                                    </form>
-                                    <form method="POST" action="{% url 'refund_reject' refund.id %}" class="d-inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-danger" title="Rechazar">
-                                            ✘
-                                        </button>
-                                    </form>
-                                {% else %}
-                                    <span class="text-muted">Procesado</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    {% else %}
-        <p>No hay solicitudes de reembolso pendientes.</p>
-    {% endif %}
+  {% if refund_requests %}
+    <div class="table-responsive mt-4">
+      <table class="table table-bordered align-middle">
+        <thead class="table-light">
+          <tr>
+            <th>Código de Entrada</th>
+            <th>Evento</th>
+            <th>Solicitante</th>
+            <th>Fecha de Solicitud</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for refund in refund_requests %}
+          <tr>
+            <td>{{ refund.ticket_code }}</td>
+            <td>
+              <a href="{% url 'event_detail' refund.event.id %}" class="text-primary">
+                {{ refund.event.title }}
+              </a>
+            </td>
+            <td>{{ refund.user.username }}</td>
+            <td>{{ refund.created_at|date:"d M Y, H:i" }}</td>
+            <td>
+              {% if refund.approved is None %}
+                <span class="badge bg-warning text-dark">Pendiente</span>
+              {% elif refund.approved %}
+                <span class="badge bg-success">Aprobado</span>
+              {% else %}
+                <span class="badge bg-danger">Rechazado</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if refund.approved is None %}
+                <form method="post" action="{% url 'refund_approve' refund.id %}" class="d-inline">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-success" title="Aprobar">
+                    <i class="bi bi-check-lg"></i>
+                  </button>
+                </form>
+                <form method="post" action="{% url 'refund_reject' refund.id %}" class="d-inline ms-1">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-danger" title="Rechazar">
+                    <i class="bi bi-x-lg"></i>
+                  </button>
+                </form>
+              {% else %}
+                {% if refund.approved %}
+                  <i class="bi bi-check-circle-fill text-success" title="Aprobado"></i>
+                {% else %}
+                  <i class="bi bi-x-circle-fill text-danger" title="Rechazado"></i>
+                {% endif %}
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p>No hay solicitudes de reembolso.</p>
+  {% endif %}
 </div>
 {% endblock %}

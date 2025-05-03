@@ -1,9 +1,16 @@
-
-<div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+<div class="modal fade" id="categoryModal{{category.id}}" tabindex="-1" aria-labelledby="categoryModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h1 class="modal-title fs-5" id="exampleModalLabel">Crear categoría</h1>
+                <h1 class="modal-title fs-5" id="categoryModalLabel">
+                    
+                    {% if category.id %}
+                    Editar categoría
+                    {% else %}
+                    Crear categoría
+                    {% endif %}
+
+                </h1>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form action="{% url 'category_form' %}" method="POST">
@@ -11,12 +18,20 @@
                 <div class="modal-body">
                         <div class="vstack gap-3">
                             <div>
+                                {% if category.id %}
+                                    <input class="form-control"
+                                        type="hidden"
+                                        id="id"
+                                        type="text"
+                                        value="{{ category.id }}"
+                                        name="id" />
+                                {% endif %}
                                 <label for="name" class="form-label">Nombre de la Categoría</label>
                                 <input class="form-control"
                                     id="name"
                                     required=""
                                     type="text"
-                                    value="{{ category.name }}"
+                                    value="{{ category.name|default:'' }}"
                                     name="name" />
                             </div>
                             <div>
@@ -26,13 +41,19 @@
                                     id="description"
                                     name="description"
                                     rows="4"
-                                    required="">{{ category.description }}</textarea>
+                                    required="">{{ category.description|default:'' }}</textarea>
                             </div>
                         </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                    <button type="submit" class="btn btn-primary">Guardar</button>
+                    <button type="submit" class="btn btn-primary">
+                        {% if category.id %}
+                            Guardar
+                        {% else %}
+                            Crear
+                        {% endif %}
+                    </button>
                 </div>
             </form>
         </div>
