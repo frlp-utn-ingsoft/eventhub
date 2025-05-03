@@ -69,45 +69,7 @@ document.addEventListener("DOMContentLoaded", () => {
         validateForm();
     }
 
-    // ############################ Lógica de calificación con estrellas ############################
-    const starContainer = document.getElementById('star-rating');
-    if (starContainer) {
-        const stars = starContainer.querySelectorAll('.star');
-        let currentRating = parseInt(starContainer.dataset.ratingCurrent) || 0;
-        paintStars(currentRating);
-
-        function paintStars(rating) {
-            stars.forEach(star => {
-                const starValue = parseInt(star.dataset.value);
-                const icon = star.querySelector('i');
-                if (starValue <= rating) {
-                    icon.classList.remove('bi-star');
-                    icon.classList.add('bi-star-fill');
-                } else {
-                    icon.classList.remove('bi-star-fill');
-                    icon.classList.add('bi-star');
-                }
-            });
-        }
-
-        stars.forEach(star => {
-            star.addEventListener('mouseenter', () => {
-                const hoverValue = parseInt(star.dataset.value);
-                paintStars(hoverValue);
-            });
-
-            star.addEventListener('click', () => {
-                const selectedValue = parseInt(star.dataset.value);
-                currentRating = selectedValue;
-                starContainer.dataset.ratingCurrent = selectedValue;
-                document.getElementById(`star${selectedValue}`).checked = true;
-            });
-        });
-
-        starContainer.addEventListener('mouseleave', () => {
-            paintStars(currentRating);
-        });
-    }
+    
 
     // Mostrar alerta de éxito tras enviar el formulario de calificación
     const ratingForms = document.querySelectorAll("#rating-form");
@@ -163,3 +125,94 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 });
+
+
+
+
+document.addEventListener('click', e => {
+    if (e.target.closest('.delete-rating-btn')) {
+      e.preventDefault();
+      const btn = e.target.closest('.delete-rating-btn');
+      Swal.fire({
+        title: '¿Eliminar calificación?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, borrar',
+      }).then(result => {
+        if (result.isConfirmed) {
+          fetch(btn.dataset.url, { method: 'POST', headers: { 'X-CSRFToken': getCsrfToken() } })
+            .then(() => location.reload());
+        }
+      });
+    }
+  });
+
+/* ⭐ STAR RATING COMPONENT – una sola implementación global */
+document.querySelectorAll('.star-rating').forEach(wrapper => {
+  const radios  = wrapper.querySelectorAll('input[type="radio"]');
+  const labels  = wrapper.querySelectorAll('label.star');
+  let current   = +wrapper.dataset.ratingCurrent || 0;
+
+  const paint = val => {
+    labels.forEach((lab, idx) => {
+      const icon = lab.firstElementChild;
+      const on   = idx < val;
+      icon.classList.toggle('bi-star-fill', on);
+      icon.classList.toggle('bi-star',      !on);
+      icon.classList.toggle('text-gold',    on);
+    });
+  };
+
+  paint(current);
+
+  labels.forEach((lab, idx) => {
+    const val = idx + 1;
+
+    lab.addEventListener('mouseenter', () => paint(val));
+    lab.addEventListener('mouseleave', () => paint(current));
+    lab.addEventListener('click', () => {
+      current = val;
+      wrapper.dataset.ratingCurrent = val;
+      radios[idx].checked = true;
+      paint(current);
+    });
+  });
+});
+
+/* ───────── SweetAlert2 para eliminar calificación ───────── */
+document.querySelectorAll('.rating-delete-form').forEach(form => {
+    form.addEventListener('submit', e => {
+      e.preventDefault();                                // cancela envío
+      Swal.fire({
+        title: '¿Eliminar calificación?',
+        text: 'Esta acción no se puede deshacer',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, borrar',
+        cancelButtonText: 'Cancelar'
+      }).then(result => {
+        if (result.isConfirmed) {
+          form.submit();                                 // ahora sí POST
+        }
+      });
+    });
+  });
+
+  /* ───────── SweetAlert2: eliminar COMENTARIO ───────── */
+document.querySelectorAll('.comment-delete-form').forEach(form => {
+    form.addEventListener('submit', e => {
+      e.preventDefault();
+      Swal.fire({
+        title: '¿Eliminar comentario?',
+        text: 'Esta acción no se puede deshacer',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Sí, borrar',
+        cancelButtonText: 'Cancelar'
+      }).then(r => { if (r.isConfirmed) form.submit(); });
+    });
+  });

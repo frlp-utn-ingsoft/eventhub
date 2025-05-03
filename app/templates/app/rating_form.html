@@ -1,0 +1,34 @@
+{# templates/events/rating_form.html #}
+<form method="POST" id="rating-form">
+  {% csrf_token %}
+  <div class="vstack gap-3">
+    <div>
+      <label class="form-label">Puntaje</label>
+      <div class="star-rating"
+           data-rating-current="{{ form.rating.value|default:'0' }}">
+        {% with form.rating.value|default:"0"|add:"0" as rating_val %}
+          {% for i in "12345" %}
+            <input type="radio"
+                   class="d-none"
+                   name="rating"
+                   value="{{ forloop.counter }}"
+                   id="star{{ forloop.counter }}"
+                   {% if rating_val|stringformat:"s" == forloop.counter|stringformat:"s" %}checked{% endif %}>
+            <label for="star{{ forloop.counter }}"
+                   class="star fs-3"
+                   role="button">
+              <i class="bi {% if forloop.counter <= rating_val %}bi-star-fill{% else %}bi-star{% endif %}"></i>
+            </label>
+          {% endfor %}
+        {% endwith %}
+      </div>
+    </div>
+
+    <div>{{ form.title.label_tag }} {{ form.title }}</div>
+    <div>{{ form.text.label_tag }}  {{ form.text  }}</div>
+
+    <button type="submit" class="btn btn-eventgub-green" style="width: 30%;">
+      {{ form.instance.pk|yesno:"Guardar Cambios,Enviar Calificación" }}
+    </button>
+  </div>
+</form>

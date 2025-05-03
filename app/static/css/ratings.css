@@ -1,0 +1,54 @@
+:root {
+  --eh-gold: #ffbf00;
+  --eh-gold-glow: #ffd24d;
+  --eh-card-bg: #f8f9fa;
+}
+
+/* ---------- Tarjeta ---------- */
+.rating-card {
+  background: var(--eh-card-bg);
+  border: 1px solid #dee2e6;
+  border-radius: 0.5rem;
+  position: relative;
+  box-shadow: 0 2px 4px rgba(0,0,0,.06);
+  transition: transform .2s ease, box-shadow .2s ease;
+}
+.rating-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0,0,0,.12);
+}
+
+/* ---------- Dropdown ---------- */
+.rating-card .dropdown-toggle {
+  color: #a2aeb9;
+  font-size: 1.25rem;
+}
+.rating-card .dropdown-toggle:hover { color:#000; }
+
+/* ---------- Estrellas ---------- */
+.star-rating{
+  user-select: none !important;
+}
+.star-rating .star {
+  cursor: pointer;
+  transition: transform .15s cubic-bezier(.34,1.56,.64,1); /* rebote suave */
+}
+.star-rating .star:hover { transform: scale(1.25); }
+
+/* color por defecto */
+.text-gold { color: var(--eh-gold); }
+
+/* Glow al hacer hover O cuando está activa */
+.star-rating .star i.text-gold,
+.star-rating .star:hover i {
+  filter: drop-shadow(0 0 3px var(--eh-gold-glow));
+}
+
+/* ---------- Fecha ---------- */
+.FechaRating {
+  right: 40px;            /* ya no necesitamos -40 px hard‑code */
+  bottom: 2px;
+  font-size: .875rem;
+  color: #6c757d;
+  position: relative;
+}

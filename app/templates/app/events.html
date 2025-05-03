@@ -8,7 +8,7 @@
         <h1>Eventos</h1>
         {% if user_is_organizer %}
             <div class="btn-group">
-              <a href="{% url 'event_form' %}" class="btn btn-primary">
+              <a href="{% url 'event_form' %}" class="btn btn-eventgub-green">
                 <i class="bi bi-plus-circle me-2"></i>Crear Evento
               </a>
               <a href="{% url 'organizer_comments' %}" class="btn btn-outline-secondary">

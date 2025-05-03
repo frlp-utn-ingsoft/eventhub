@@ -1,0 +1,72 @@
+{# templates/events/ratings.html #}
+<div class="row mt-5">
+  <h3>Calificaciones</h3>
+
+  {% for r in ratings %}
+    <div class="rating-card p-3 mb-3 position-relative
+                {% if r.user == request.user %} bg-info bg-opacity-10{% else %}bg-light{% endif %}">
+      {# --- Dropdown acciones --- #}
+      {% if request.user == r.user or user_is_organizer %}
+        <div class="dropdown position-absolute top-0 end-0 m-2">
+          <button class="btn btn-link dropdown-toggle p-0"
+                  id="dropdownRating{{ r.id }}"
+                  data-bs-toggle="dropdown" aria-expanded="false">⋮</button>
+
+          <ul class="dropdown-menu dropdown-menu-end"
+              aria-labelledby="dropdownRating{{ r.id }}">
+            {% if request.user == r.user %}
+              <li>
+                <a class="dropdown-item" href="?edit_rating={{ r.id }}">Editar</a>
+              </li>
+            {% endif %}
+            <li>
+              <form action="{% url 'rating_delete' r.id %}"
+                    method="post"
+                    class="rating-delete-form"
+                    >
+                {% csrf_token %}
+                <button type="submit" class="dropdown-item text-danger">
+                  Eliminar
+                </button>
+              </form>
+            </li>
+          </ul>
+        </div>
+      {% endif %}
+
+      {# --- Contenido rating --- #}
+      <div class="d-flex justify-content-between">
+        <strong>{{ r.user.username }}</strong>
+        <small class="text-muted FechaRating">
+          {{ r.created_at|date:"d/m/Y H:i" }}
+        </small>
+      </div>
+
+      <div class="mb-1">
+        {% for i in "12345" %}
+          {% with i|add:"0" as i_int %}
+            <i class="bi {% if i_int <= r.rating %}bi-star-fill text-gold{% else %}bi-star{% endif %}"></i>
+          {% endwith %}
+        {% endfor %}
+      </div>
+
+      <h5 class="mb-1">{{ r.title }}</h5>
+      <p class="mb-0">{{ r.text }}</p>
+
+      {# --- Formulario edición inline --- #}
+      {% if edit_mode and edit_rating_id == r.id %}
+        <hr>
+        {% include 'app/rating_form.html' with form=form %}
+      {% endif %}
+    </div>
+  {% empty %}
+    <p class="text-muted">Aún no hay calificaciones para este evento.</p>
+  {% endfor %}
+
+  {# Form para NUEVA calificación (solo si no tiene una) #}
+  {% if not user_is_organizer and not rating %}
+    <hr class="mt-4">
+    <h4>Agregar Calificación</h4>
+    {% include 'app/rating_form.html' with form=form %}
+  {% endif %}
+</div>
