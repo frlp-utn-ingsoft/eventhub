@@ -38,7 +38,7 @@ def seed():
     print("Datos de 'Usuario Organizador' sembrados exitosamente")
 
     # User
-    User.objects.create_user(
+    newNormieUser = User.objects.create_user(
         email="normie@example.com",
         username="normie",
         password="normie",
@@ -77,7 +77,7 @@ def seed():
         quantity=1,
         type="VIP",
         event=newEvent,
-        user=newUser
+        user=newNormieUser
     )
     print("Datos de 'Ticket' sembrados exitosamente")
 
@@ -99,12 +99,12 @@ def seed():
     # RefundRequest
     RefundRequest.objects.create(
         ticket_code=newTicket.ticket_code,
-        reason="No puedo asistir por el cumpleaños de mi primito.",
+        reason="unable_to_attend",
         additional_details="Lamento faltar al concierto. Es el cumple de mi primito y prometí ayudarle. Sé que el show será increíble.",
         accepted_policy=True,
-        approval=True,
+        approval=False,
         approval_date=timezone.now(),
-        user=newUser
+        user=newNormieUser
     )
 
 
