@@ -6,9 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render, redirect
 from django.http import HttpResponseBadRequest
 from django.utils import timezone
 
-from .models import Category, Event, Rating, User, Venue, Notification, NotificationPriority, UserNotification
-
-from .models import Event, User, Ticket, TicketType
+from .models import Category, Comment,Event, Rating, User, Venue, Notification, NotificationPriority, UserNotification, Ticket, TicketType
 
 
 def register(request):
@@ -727,7 +725,6 @@ def comment_edit(request, comment_id):
     """Vista para editar un comentario existente"""
     comment = get_object_or_404(Comment, pk=comment_id)
 
-    # Verificar que el usuario sea el propietario del comentario
     if comment.user != request.user:
         return redirect("event_detail", comment.event.id)
 
@@ -765,7 +762,6 @@ def comment_delete(request, comment_id):
     comment = get_object_or_404(Comment, pk=comment_id)
     event_id = comment.event.id
 
-    # Verificar que el usuario sea el propietario del comentario o un organizador
     if comment.user != request.user and not request.user.is_organizer:
         return redirect("event_detail", event_id)
 
@@ -774,7 +770,3 @@ def comment_delete(request, comment_id):
         return redirect("event_detail", event_id)
 
     return redirect("event_detail", event_id)
-from .models import (
-    Event, Category, Venue, Rating, Ticket, TicketType,
-    Notification, NotificationPriority, UserNotification, Comment
-)
