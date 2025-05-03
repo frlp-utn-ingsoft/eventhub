@@ -39,7 +39,9 @@ urlpatterns = [
     path("categories/<int:category_id>/delete/", views.category_delete, name="category_delete"),
     path("tickets/<int:id>/refund/", views.refund_form, name="refund_form"),
     path("refund/organizer/", views.organizer_refund_requests, name="organizer_refund"),
+    path("refund/organizer/<int:id>/edit/", views.refund_edit_form, name="refund_edit_form"),
     path("refund/approve/<int:id>/", views.approve_refund_request, name="refund_approve"),
     path("refund/reject/<int:id>/", views.reject_refund_request, name="refund_reject"),
+    path("refund/<int:id>/delete", views.refund_delete, name="refund_delete"),
     path("refund/view/<int:id>/", views.view_refund_request, name="refund_view"),
 ]

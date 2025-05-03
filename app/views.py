@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Event, User, Ticket, Comment, Notification
+from .models import Event, User, Ticket, Comment, Notification, Venue
 from django.contrib import messages
 from django.db.models import Q
 import uuid
@@ -224,32 +224,96 @@ def refund_form(request, id):
 
     return render(request, "app/refund_form.html", {"ticket": ticket})
 
+
+@login_required
+def refund_edit_form(request, id):
+    refund_request = get_object_or_404(RefundRequest, pk=id)
+
+    
+    if request.method == "POST":
+        ticket_code_uuid = uuid.UUID(refund_request.ticket_code)
+        ticket = Ticket.objects.get(ticket_code=ticket_code_uuid, user=refund_request.user)
+
+        ticket_code = request.POST.get("ticket_code")
+        reason = request.POST.get("reason")
+        additional_details = request.POST.get("additional_details")
+        accepted_policy = request.POST.get("accepted_policy") == "on"
+
+        # Validaciones básicas
+        if not ticket_code or not reason or not accepted_policy:
+            return render(request, "app/refund_form.html", {
+                "error": "Todos los campos son obligatorios.",
+                "data": request.POST
+            })
+
+        # Crear la solicitud de reembolso con estado pendiente
+        RefundRequest.objects.update(
+            ticket_code=ticket_code,
+            reason=reason,
+            additional_details=additional_details,
+            user=request.user,
+            accepted_policy=accepted_policy,
+            approval=None,  # Estado pendiente
+            event_name=ticket.event.title
+        )
+
+        # Crear una notificación para el usuario que solicitó el reembolso
+        notification = Notification.objects.create(
+            title="Solicitud de Reembolso Enviada",
+            message=f"Tu solicitud de reembolso para el evento: '{ticket.event.title}' ha sido enviada y está en proceso de revisión.",
+            priority="MEDIUM",
+            event=ticket.event
+        )
+        notification.users.add(request.user)
+        notification.save()
+
+        return redirect("events")
+
+    return render(request, "app/refund_edit_form.html", {"refund_request": refund_request})
+
 @login_required
 def organizer_refund_requests(request):
     # Si no es organizador, redirigir a eventos
     if not request.user.is_organizer:
-        return redirect("events")
-    
-    # Obtener todos los eventos organizados por el usuario
-    organizer_events = Event.objects.filter(organizer=request.user)
+        # Obtener todos los eventos organizados por el usuario
+        refund_requests = RefundRequest.objects.filter(user=request.user)
 
-    # Obtener todos los refund requests cuyos usuarios compraron tickets para esos eventos
-    refund_requests = RefundRequest.objects.filter(
-        Q(event_name__in=organizer_events.values_list("title", flat=True))
-        ).select_related("user")
+        # Asignar el evento relacionado a cada refund request
+        for r in refund_requests:
+            try:
+                ticket_code_uuid = uuid.UUID(r.ticket_code)
+                ticket = Ticket.objects.get(ticket_code=ticket_code_uuid, user=r.user)
+                r.event = ticket.event
+            except (Ticket.DoesNotExist, ValueError, TypeError):
+                r.event = None
 
-    # Asignar el evento relacionado a cada refund request
-    for r in refund_requests:
-        try:
-            ticket_code_uuid = uuid.UUID(r.ticket_code)
-            ticket = Ticket.objects.get(ticket_code=ticket_code_uuid, user=r.user)
-            r.event = ticket.event
-        except (Ticket.DoesNotExist, ValueError, TypeError):
-            r.event = None
+        return render(
+            request,
+            "app/organizer_refund_requests.html", 
+            {
+                "refund_requests": refund_requests,
+            })
+    else:
+        # Obtener todos los eventos organizados por el usuario
+        organizer_events = Event.objects.filter(organizer=request.user)
 
-    return render(request, "app/organizer_refund_requests.html", {
-        "refund_requests": refund_requests,
-    })
+        # Obtener todos los refund requests cuyos usuarios compraron tickets para esos eventos
+        refund_requests = RefundRequest.objects.filter(
+            Q(event_name__in=organizer_events.values_list("title", flat=True))
+            ).select_related("user")
+
+        # Asignar el evento relacionado a cada refund request
+        for r in refund_requests:
+            try:
+                ticket_code_uuid = uuid.UUID(r.ticket_code)
+                ticket = Ticket.objects.get(ticket_code=ticket_code_uuid, user=r.user)
+                r.event = ticket.event
+            except (Ticket.DoesNotExist, ValueError, TypeError):
+                r.event = None
+
+        return render(request, "app/organizer_refund_requests.html", {
+            "refund_requests": refund_requests,
+        })
 
 
 @login_required
@@ -293,6 +357,15 @@ def reject_refund_request(request, id):
     refund.approval = False
     refund.approval_date = timezone.now()
     refund.save()
+    return redirect("organizer_refund")
+
+@login_required
+def refund_delete(request, id):
+    
+    refund = get_object_or_404(RefundRequest, pk=id)
+    # Cambiar el estado a rechazado
+    refund.delete()
+    
     return redirect("organizer_refund")
 
 @login_required
