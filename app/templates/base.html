@@ -89,14 +89,6 @@
                             </li>
                         {% endif %}
                         </ul>
-                        {% if request.user.is_authenticated and not request.user.is_organizer %}
-                            <li class="navbar-nav me-auto mb-2 mb-lg-0">
-                                {% navbar_link 'my_refunds' 'Reembolsos' %}
-                            </li>{% else %}
-                                <li class="navbar-nav me-auto mb-2 mb-lg-0">
-                                    {% navbar_link 'refunds_admin' 'Reembolsos' %}
-                                </li>
-                        {% endif %}
                     </div>
                     <form
                         class="d-flex"
