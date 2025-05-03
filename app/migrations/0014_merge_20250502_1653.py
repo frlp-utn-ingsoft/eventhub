@@ -7,7 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('app', '0009_event_available_tickets'),
-        ('app', '0013_load_notification_data'),
+        ('app', '0013_load_entities'),
     ]
 
     operations = [
