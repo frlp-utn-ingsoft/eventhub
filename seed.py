@@ -54,7 +54,7 @@ def seed():
 
     newEvent=Event.objects.create(
         title="Reik",
-        description="La banda mexicana formada por Jesús Navarro, Julio Ramírez y Bibi Marín regresa al país en el marco de su gira mundial “Panorama Tour",
+        description="La banda mexicana formada por Jesús Navarro, Julio Ramírez y Bibi Marín regresa al país en el marco de su gira mundial 'Panorama Tour'",
         scheduled_at=event_date,
         organizer=newUser,
         venue=newVenue
