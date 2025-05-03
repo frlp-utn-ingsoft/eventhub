@@ -829,3 +829,27 @@ def notification_mark_read(request, notification_id):
 def mark_all_notifications_read(request):
     request.user.notifications.update(is_read=True)
     return redirect('notification_list')
+
+
+@login_required
+def venue_form(request):
+    if request.method == 'POST':
+        name=request.POST.get("name")
+        adress=request.POST.get("adress")
+        city=request.POST.get("city")
+        capacity=int(request.POST.get("capacity"))
+        contact=request.POST.get("contact")
+
+
+        success, venue=Venue.new(
+            name=name,
+            adress=adress,
+            city=city,
+            capacity=capacity,
+            contact=contact
+        )
+
+        if success:
+            return redirect('event_form')
+
+    return render(request, "app/venue_form.html")
