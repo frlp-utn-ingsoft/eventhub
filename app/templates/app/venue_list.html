@@ -28,7 +28,7 @@
 
     {% if venues %}
     <div class="table-responsive">
-        <table class="table"> <!- REMOVED table-striped -->
+        <table class="table"> 
             <thead class="thead-light">
                 <tr>
                     <th class="border-bottom">Nombre</th>
@@ -52,12 +52,12 @@
                     {% if request.user.is_organizer %}
                     <td>
                         <a href="{% url 'venue_edit' venue.id %}" class="btn btn-sm btn-outline-primary me-2" title="Editar">
-                            <i class="bi bi-pencil"></i> <!- KEEPING bi-pencil, it might be outline by default in your setup -->
+                            <i class="bi bi-pencil"></i> 
                         </a>
                         <form method="post" action="{% url 'venue_delete' venue.id %}" class="d-inline">
                             {% csrf_token %}
                             <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Estás seguro de eliminar esta ubicación?')" title="Eliminar">
-                                <i class="bi bi-trash"></i> <!- KEEPING bi-trash, it might be outline by default -->
+                                <i class="bi bi-trash"></i> 
                             </button>
                         </form>
                     </td>
