@@ -679,7 +679,7 @@ def list_categories(request):
     return render(request, 'app/category_list.html', {'categories': categories})
 
 
-def category_form(request, id=None):
+def category_form(request):
     user = request.user
     if not user.is_organizer:
         return redirect("events")
@@ -688,34 +688,35 @@ def category_form(request, id=None):
         name = request.POST.get("name")
         description = request.POST.get("description")
         active = request.POST.get("active") == "on"  # Checkbox para permitir el activo o no
-
-        if id is None:
-            Category.objects.create(name=name, description=description, active=active)
-        else:
-            category = get_object_or_404(Category, pk=id)
-            category.update(name, description, active, request.user)
+        Category.objects.create(name=name, description=description, active=active)
+        
+        
+        
 
         return redirect("list_categories")  # Retorno devuelta al listado de categorias
 
     category = {}
-    if id is not None:
-        category = get_object_or_404(Category, pk=id)
 
     return render(request, "app/category_form.html", {"category": category})
 
 
 
 
-def update_category(request, category_id):
-    category = get_object_or_404(Category, id=category_id)
+def update_category(request,id):
+    user = request.user
+    if not user.is_organizer:
+        return redirect("events")
+    category = get_object_or_404(Category, id=id)
     if request.method == 'POST':
-        form = CategoryForm(request.POST, instance=category) # type: ignore  # noqa: F821
-        if form.is_valid():
-            form.save()
-            return redirect('list_categories')
-    else:
-        form = CategoryForm(instance=category) # type: ignore  # noqa: F821
-    return render(request, 'app/category_form.html', {'form': form})
+            name=request.POST.get("name")
+            description=request.POST.get("description")
+            active=request.POST.get("active") == "on"
+            category.name=name
+            category.description=description
+            category.active=active
+            category.save()
+            return redirect("list_categories") 
+    return render(request, "app/category_form.html", {"category": category, "update":True})
 
 
 def delete_category(request, id):
