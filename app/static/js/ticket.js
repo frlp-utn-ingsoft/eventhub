@@ -50,3 +50,12 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 });
+
+function validarPago() {
+  const termsAccepted = document.getElementById('accept_terms').checked;
+  if (!termsAccepted) {
+    alert("Debes aceptar los términos y condiciones antes de continuar.");
+    return false; // Evita que se envíe el formulario
+  }
+  return true;
+}
