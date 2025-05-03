@@ -130,7 +130,7 @@ def refund_requests_admin(request):
         "refund_requests": refunds,
         "pending_count": refunds.filter(approved__isnull=True).count(),
         "approved_count": refunds.filter(approved=True).count(),
-        "rejected_count": refundsfilter(approved=False).count(),
+        "rejected_count": refunds.filter(approved=False).count(),
         "tickets_map": tickets_map,
     }
 
