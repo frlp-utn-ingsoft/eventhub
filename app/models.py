@@ -79,7 +79,7 @@ class Venue(models.Model):
             self.contact = contact
         
         self.save()
-        return self
+        return True, self
     
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)

@@ -33,10 +33,14 @@ urlpatterns = [
     path("notifications/<int:notification_id>/delete/", views.notification_delete, name="notification_delete"),
     path("notifications/<int:notification_id>/read/", views.notification_mark_read, name="notification_mark_read"),
     path('notifications/mark_all_read/', views.mark_all_notifications_read, name='notification_mark_all_read'),
+
+    # Categories
     path("categories/", views.categories, name="categories"),
     path("categories/create/", views.category_form, name="category_form"),
     path("categories/<int:category_id>/edit/", views.category_edit, name="category_edit"),
     path("categories/<int:category_id>/delete/", views.category_delete, name="category_delete"),
+
+    # Refund Requests
     path("tickets/<int:id>/refund/", views.refund_form, name="refund_form"),
     path("refund/organizer/", views.organizer_refund_requests, name="organizer_refund"),
     path("refund/organizer/<int:id>/edit/", views.refund_edit_form, name="refund_edit_form"),
@@ -44,4 +48,10 @@ urlpatterns = [
     path("refund/reject/<int:id>/", views.reject_refund_request, name="refund_reject"),
     path("refund/<int:id>/delete", views.refund_delete, name="refund_delete"),
     path("refund/view/<int:id>/", views.view_refund_request, name="refund_view"),
+
+    # Venues
+    path("venues/", views.venues, name="venues"),
+    path("venues/create/", views.venue_form, name="venue_form"),
+    path("venues/<int:id>/delete/", views.venue_delete, name="venue_delete"),
+    path("venues/<int:id>/edit/", views.venue_edit, name="venue_edit"),
 ]

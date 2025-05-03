@@ -829,3 +829,78 @@ def notification_mark_read(request, notification_id):
 def mark_all_notifications_read(request):
     request.user.notifications.update(is_read=True)
     return redirect('notification_list')
+
+
+@login_required
+def venue_form(request):
+    if request.method == 'POST':
+        name=request.POST.get("name")
+        adress=request.POST.get("adress")
+        city=request.POST.get("city")
+        capacity=int(request.POST.get("capacity"))
+        contact=request.POST.get("contact")
+
+
+        success, venue=Venue.new(
+            name=name,
+            adress=adress,
+            city=city,
+            capacity=capacity,
+            contact=contact
+        )
+
+        if success:
+            return redirect('venues')
+
+    return render(request, "app/venue_form.html")
+
+@login_required
+def venues(request):
+    venues = Venue.objects.all()
+
+    return render(
+        request,
+        "app/venues.html",
+        {"venues": venues, "user_is_organizer": request.user.is_organizer},
+    )
+
+@login_required
+def venue_delete(request, id):
+    if request.user.is_organizer:     
+        venue = get_object_or_404(Venue, pk=id)
+
+        venue.delete()
+
+        return redirect("venues")
+
+@login_required
+def venue_edit(request, id):
+    venue = get_object_or_404(Venue, pk=id)
+
+
+    if request.method == "POST":
+        name=request.POST.get("name")
+        adress=request.POST.get("adress")
+        city=request.POST.get("city")
+        capacity=int(request.POST.get("capacity"))
+        contact=request.POST.get("contact")
+
+
+        success, updatedVenue=venue.update(
+            name=name,
+            adress=adress,
+            city=city,
+            capacity=capacity,
+            contact=contact
+        )
+
+        # Validaciones básicas
+        if not success:
+            return render(request, "app/venue_edit_form.html", {
+                "error": "Todos los campos son obligatorios.",
+                "data": request.POST
+            })
+        else:
+            return redirect('venues')
+
+    return render(request, "app/venue_edit_form.html", {"venue": venue})
