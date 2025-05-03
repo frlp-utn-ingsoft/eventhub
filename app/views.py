@@ -850,7 +850,7 @@ def venue_form(request):
         )
 
         if success:
-            return redirect('event_form')
+            return redirect('venues')
 
     return render(request, "app/venue_form.html")
 
