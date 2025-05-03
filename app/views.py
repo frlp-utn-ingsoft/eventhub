@@ -104,6 +104,14 @@ def home_user(request):
 def home_organizer(request):
     return render(request, "home_organizer.html")
 
+# ------------------- Terminos y condiciones -------------------
+def terms_and_conditions(request):
+    return render(request, "accounts/terms_and_conditions.html")
+
+def privacy_policy(request):
+    return render(request, "accounts/privacy_policy.html")
+
+
 # ------------------- Eventos -------------------
 @login_required
 def events(request):

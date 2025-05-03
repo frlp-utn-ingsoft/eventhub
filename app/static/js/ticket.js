@@ -24,17 +24,37 @@ function actualizarResumen() {
 
 function validarPago() {
   const campos = ['card_number', 'card_expiry', 'card_cvv', 'card_name'];
+  
+  // Validar campos del formulario de pago
   for (const id of campos) {
     const campo = document.getElementById(id);
     if (!campo || !campo.value.trim()) {
-      alert("Por favor completa todos los campos del método de pago.");
+      // Usar SweetAlert para mostrar el mensaje
+      Swal.fire({
+        title: 'Error',
+        text: 'Por favor completa todos los campos del método de pago.',
+        icon: 'error',
+        confirmButtonText: 'Aceptar'
+      });
       campo?.focus();
       return false;
     }
   }
-  return true;
-}
 
+  // Verificar aceptación de términos
+  const termsAccepted = document.getElementById('accept_terms').checked;
+  if (!termsAccepted) {
+    Swal.fire({
+      title: 'Error',
+      text: 'Debes aceptar los términos y condiciones antes de continuar.',
+      icon: 'error',
+      confirmButtonText: 'Aceptar'
+    });
+    return false; // Evita que se envíe el formulario
+  }
+
+  return true;  // Si todo está bien, se envía el formulario
+}
 
 window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("id_quantity").addEventListener("input", actualizarResumen);
@@ -45,17 +65,8 @@ window.addEventListener("DOMContentLoaded", () => {
   if (form) {
     form.addEventListener("submit", (e) => {
       if (!validarPago()) {
-        e.preventDefault();
+        e.preventDefault();  // Evita que el formulario se envíe si hay error
       }
     });
   }
 });
-
-function validarPago() {
-  const termsAccepted = document.getElementById('accept_terms').checked;
-  if (!termsAccepted) {
-    alert("Debes aceptar los términos y condiciones antes de continuar.");
-    return false; // Evita que se envíe el formulario
-  }
-  return true;
-}
