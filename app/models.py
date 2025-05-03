@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-
+import uuid
+from django.conf import settings
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -278,3 +279,46 @@ class Comments(models.Model):
             event=event
         )
         return True, comment
+
+
+
+class Ticket(models.Model):
+    TICKET_TYPES = [
+        ('GENERAL', 'Entrada General'),
+        ('VIP', 'Entrada VIP'),
+    ]
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='tickets'
+    )
+    event = models.ForeignKey(
+        'Event',
+        on_delete=models.CASCADE,
+        related_name='tickets'
+    )
+    buy_date = models.DateField(auto_now_add=True)
+    ticket_code = models.CharField(
+        max_length=12,
+        unique=True,
+        editable=False
+    )
+    quantity = models.PositiveIntegerField(default=1)
+    type = models.CharField(
+        max_length=7,
+        choices=TICKET_TYPES,
+        default='GENERAL'
+    )
+
+    def __str__(self):
+        return f"{self.type} - {self.event.title} ({self.ticket_code})"
+
+    def save(self, *args, **kwargs):
+        if not self.ticket_code:
+            self.ticket_code = str(uuid.uuid4())[:12].upper()
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'Ticket'
+        verbose_name_plural = 'Tickets'

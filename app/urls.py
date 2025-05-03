@@ -31,5 +31,7 @@ urlpatterns = [
     path('notifications/<int:notification_id>/delete/', views.delete_notification, name='delete_notification'),
     path('comment/<int:comment_id>/edit/', views.edit_comment, name='edit_comment'),
     path('comment/<int:comment_id>/delete/', views.delete_comment, name='delete_comment'),
-    path('comment/<int:comment_id>/detail/', views.detail_comment, name='detail_comment')
+    path('comment/<int:comment_id>/detail/', views.detail_comment, name='detail_comment'),
+    path("eventos/<int:event_id>/comprar-entrada", views.buy_ticket, name='buy_ticket'),
+    path("mis-entradas/", views.tickets_list, name="tickets_list")
 ]
