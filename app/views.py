@@ -362,9 +362,7 @@ def all_is_read(request):
 def ticket_list(request):
     print(request.user)
     tickets = Ticket.objects.filter(user=request.user)
-    print(tickets) 
-    if not tickets:
-        messages.info(request, "No tienes tickets registrados.")  
+    print(tickets)  
     return render(request, "app/ticket_list.html", {"tickets": tickets})
 
 
@@ -383,7 +381,7 @@ def ticket_create(request, event_id):
             ticket.user = request.user
             ticket.event = event
             ticket.save()
-            messages.success(request, "Ticket creado exitosamente.")
+            messages.success(request, "Ticket creado exitosamente.", extra_tags='ticket')
             return redirect("ticket_list")
     else:
         form = TicketForm()
@@ -404,16 +402,18 @@ def ticket_update(request, ticket_id):
         messages.error(request, "No tienes permisos para editar este ticket.")
         return redirect("ticket_list")
 
+    event = ticket.event 
+
     if request.method == "POST":
         form = TicketForm(request.POST, instance=ticket)
         if form.is_valid():
             form.save()
-            messages.success(request, "Ticket actualizado exitosamente.")
+            messages.success(request, "Ticket actualizado exitosamente.", extra_tags='ticket')
             return redirect("ticket_list")
     else:
         form = TicketForm(instance=ticket)
 
-    return render(request, "app/ticket_form.html", {"form": form})
+    return render(request, "app/ticket_form.html", {"form": form,  'event': event})
 
 
 # Eliminar Ticket
@@ -424,11 +424,11 @@ def ticket_delete(request, ticket_id):
     # Caso 1: Usuario regular puede eliminar su propio ticket
     if ticket.user == request.user:
         ticket.delete()
-        messages.success(request, "Ticket eliminado exitosamente.")
+        messages.success(request, "Ticket eliminado exitosamente.", extra_tags='ticket')
     # Caso 2: Organizador puede eliminar tickets de sus eventos
     elif request.user.is_organizer and ticket.event.organizer == request.user:
         ticket.delete()
-        messages.success(request, "Ticket eliminado exitosamente.")
+        messages.success(request, "Ticket eliminado exitosamente.", extra_tags='ticket')
     else:
         messages.error(request, "No tienes permisos para eliminar este ticket.")
 
@@ -733,9 +733,7 @@ def venue_list(request):
         messages.error(request, "Los usuarios no pueden visualizar ubicaciones.")
         return redirect("events")  # Redirige a la lista de eventos si no es organizador
     venues = Venue.objects.all()
-    print(venues) 
-    if not venues:
-        messages.info(request, "No tienes ubicaciones registradas.", extra_tags='ubicacion')  
+    print(venues)   
     return render(request, "app/venue_list.html", {"venues": venues})
 
 

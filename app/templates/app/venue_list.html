@@ -2,9 +2,17 @@
 
 {% block content %}
 <div class="container mt-5">
-    <h1 class="mb-4 text-center">Mis Ubicaciones</h1>
+    <div class="row align-items-center mb-4">
+        <div class="col text-start">
+            <h1>Ubicaciones</h1>
+        </div>
+        {% if request.user.is_organizer %}
+        <div class="col-auto">
+            <a href="{% url 'venue_create' %}" class="btn btn-primary"> <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>Crear Ubicación</a>
+        </div>
+        {% endif %}
+    </div>
 
-   
     {% if messages %}
     <div class="messages">
         {% for message in messages %}
@@ -18,58 +26,74 @@
     </div>
     {% endif %}
 
-    {% if request.user.is_organizer %}
-    <div class="text-center mb-3">
-        <a href="{% url 'venue_create' %}" class="btn btn-success">Crear Nueva Ubicación</a>
-    </div>
-    {% endif %}
-
-
     {% if venues %}
-        <div class="row justify-content-center">
-            {% for venue in venues %}
-                <div class="col-md-8 mb-4">
-                    <div class="card shadow-sm">
-                        <div class="card-body">
-                            <h5 class="card-title">{{ venue.name }}</h5>
-                            <p class="card-text mb-2">
-                                <strong>Dirección:</strong> {{ venue.address }}<br>
-                                <strong>Ciudad:</strong> {{ venue.city }}<br>
-                                <strong>Capacidad:</strong> {{ venue.capacity }} personas<br>
-                                <strong>Contacto:</strong> {{ venue.contact }}
-                            </p>
-                            <div class="d-flex justify-content-end">
-                                {% if request.user.is_organizer %}
-                                    <a href="{% url 'venue_edit' venue.id %}" class="btn btn-sm btn-primary me-2">Editar</a>
-                                    <form method="post" action="{% url 'venue_delete' venue.id %}" class="d-inline">
-                                        {% csrf_token %}
-                                        <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar esta ubicación?')">Eliminar</button>
-                                    </form>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
+    <div class="table-responsive">
+        <table class="table"> 
+            <thead class="thead-light">
+                <tr>
+                    <th class="border-bottom">Nombre</th>
+                    <th class="border-bottom">Dirección</th>
+                    <th class="border-bottom">Ciudad</th>
+                    <th class="border-bottom">Capacidad</th>
+                    <th class="border-bottom">Contacto</th>
+                    {% if request.user.is_organizer %}
+                    <th class="border-bottom">Acciones</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for venue in venues %}
+                <tr>
+                    <td>{{ venue.name }}</td>
+                    <td>{{ venue.address }}</td>
+                    <td>{{ venue.city }}</td>
+                    <td>{{ venue.capacity }}</td>
+                    <td>{{ venue.contact }}</td>
+                    {% if request.user.is_organizer %}
+                    <td>
+                        <a href="{% url 'venue_edit' venue.id %}" class="btn btn-sm btn-outline-primary me-2" title="Editar">
+                            <i class="bi bi-pencil"></i> 
+                        </a>
+                        <form method="post" action="{% url 'venue_delete' venue.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Estás seguro de eliminar esta ubicación?')" title="Eliminar">
+                                <i class="bi bi-trash"></i> 
+                            </button>
+                        </form>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
     {% else %}
-        <div class="alert alert-info" role="alert">
-            No tienes ubicaciones registradas.
-        </div>
+    <div class="alert alert-info" role="alert">
+        No tienes ubicaciones registradas.
+    </div>
     {% endif %}
 </div>
 {% endblock %}
 
 {% block styles %}
 <style>
-    .card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); /* sombra leve inicial */
+    /* Estilos adicionales que puedas tener */
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        border-radius: 0.2rem;
     }
 
-    .card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* sombra más intensa en hover */
+    .me-2 {
+        margin-right: 0.5rem;
     }
+
+    .table td,
+    .table th {
+        border-top: 0 !important; /* Elimina los bordes superiores */
+    }
+
+    /* El borde inferior ya está aplicado por la clase 'border-bottom' en thead */
 </style>
 {% endblock %}
