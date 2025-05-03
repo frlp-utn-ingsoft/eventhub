@@ -49,6 +49,9 @@ urlpatterns = [
     path("refund/<int:id>/delete", views.refund_delete, name="refund_delete"),
     path("refund/view/<int:id>/", views.view_refund_request, name="refund_view"),
 
-
+    # Venues
+    path("venues/", views.venues, name="venues"),
     path("venues/create/", views.venue_form, name="venue_form"),
+    path("venues/<int:id>/delete/", views.venue_delete, name="venue_delete"),
+    path("venues/<int:id>/edit/", views.venue_edit, name="venue_edit"),
 ]
