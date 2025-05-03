@@ -7,13 +7,26 @@ input[type=number]::-webkit-outer-spin-button {
 .card-body.ticket .form-label {
   font-weight: 600;
   color: #333;
-
 }
 
-.card-body.ticket input{
+.card-body.ticket input[type="text"],
+.card-body.ticket input[type="number"],
+.card-body.ticket input[type="email"],
+.card-body.ticket input[type="password"] {
   color: #333;
   font-weight: 600;
   background-color: #fff !important;
   border-radius: 0.5rem !important;
   border: 1px solid #ccc !important;
+}
+
+.containerTicket .form-check-input {
+  position: relative;
+  z-index: 10;
+  opacity: 1;
+  pointer-events: auto;
+}
+.containerTicket .form-check-label {
+  color: #333;
+  font-style: italic !important; /* Texto en cursiva */
 }
