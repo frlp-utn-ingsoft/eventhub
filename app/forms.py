@@ -2,7 +2,7 @@
 from datetime import datetime
 from django import forms
 from .models import Event, Notification, RefundRequest, Ticket, User, Venue,Rating,Comment, Category
-
+import re
 
 class NotificationForm(forms.ModelForm):
     event = forms.ModelChoiceField(
@@ -53,15 +53,27 @@ class NotificationForm(forms.ModelForm):
             self.add_error("title", "El título debe tener al menos 10 caracteres.")
         elif Notification.objects.filter(title=title).exclude(pk=self.instance.pk).exists():
             self.add_error("title", "Ese título ya existe.")
+        elif len(title) > 100:
+            self.add_error("title", "El título no debe superar los 100 caracteres.")
+        elif len(re.findall(r"[a-zA-Z]", title)) < 10:
+            self.add_error("title", "El título debe contener al menos 10 letras.")
+
 
         if not message:
             self.add_error("message", "El mensaje no puede estar vacío.")
         elif len(message) < 10:
             self.add_error("message", "El mensaje debe tener al menos 10 caracteres.")
+        elif len(message) > 500:
+            self.add_error("message", "El mensaje no debe superar los 500 caracteres.")
+        elif len(re.findall(r"[a-zA-Z]", message)) < 10:
+             self.add_error("message", "El mensaje debe contener al menos 10 letras.")
+
 
         if priority not in ["High", "Medium", "Low"]:
             self.add_error("priority", "Prioridad inválida.")
 
+        if tipo_usuario not in ["all", "specific"]:
+            self.add_error(None, "Debes seleccionar un destinatario (todos o específico).")
         
         if tipo_usuario == "all":
             if not event:
