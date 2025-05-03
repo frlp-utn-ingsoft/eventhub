@@ -11,6 +11,8 @@ Aplicaci√≥n web para venta de entradas utilizada en la cursada 2025 de Ingenier√
 - Facundo Serra
 - Federico Nahuel Valle
 
+
+
 ## Dependencias
 
 - python 3
@@ -25,6 +27,9 @@ Aplicaci√≥n web para venta de entradas utilizada en la cursada 2025 de Ingenier√
 
 ## Iniciar la Base de Datos
 
+`rm app/migrations/0*.py`
+`python manage.py makemigrations app`
+`python manage.py¬†migrate`
 `python manage.py migrate`
 
 ### Crear usuario admin
@@ -38,3 +43,4 @@ Aplicaci√≥n web para venta de entradas utilizada en la cursada 2025 de Ingenier√
 ## Iniciar app
 
 `python manage.py runserver`
+
