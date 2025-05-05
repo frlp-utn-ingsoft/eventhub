@@ -80,6 +80,7 @@ class Event(models.Model):
         event = Event.objects.create(
             title=title,
             description=description,
+            venue=venue,
             scheduled_at=scheduled_at,
             organizer=organizer,
         )
