@@ -28,7 +28,7 @@
                     <form id="eventForm" action="{% if event.id %}{% url 'event_edit' id=event.id %}{% else %}{% url 'event_form' %}{% endif %}" method="POST">
                         {% csrf_token %}
                         <div class="vstack gap-3">
-                           
+
                             <div>
                                 <label for="id_title" class="form-label">Título del Evento</label>
                                 <input class="form-control {% if form.title.errors %}is-invalid{% endif %}"
@@ -41,8 +41,8 @@
                                     <div class="invalid-feedback">{{ form.title.errors }}</div>
                                 {% endif %}
                             </div>
-                            
-                          
+
+
                             <div>
                                 <label for="id_description" class="form-label">Descripción</label>
                                 <textarea
@@ -55,8 +55,8 @@
                                     <div class="invalid-feedback">{{ form.description.errors }}</div>
                                 {% endif %}
                             </div>
-                            
-                           
+
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <label for="id_scheduled_date" class="form-label">Fecha</label>
@@ -85,17 +85,17 @@
                                     {% endif %}
                                 </div>
                             </div>
+
                             
-                            <!-- Venue -->
                             <div>
                                 <label for="id_venue" class="form-label">Ubicación del evento</label>
-                                <select class="form-select {% if form.venue.errors %}is-invalid{% endif %}" 
-                                        id="id_venue" 
-                                        name="venue" 
+                                <select class="form-select {% if form.venue.errors %}is-invalid{% endif %}"
+                                        id="id_venue"
+                                        name="venue"
                                         required {% if not venues %}disabled{% endif %}>
                                     <option value="">Seleccionar lugar</option>
                                     {% for venue in venues %}
-                                        <option value="{{ venue.id }}" 
+                                        <option value="{{ venue.id }}"
                                             data-capacity="{{ venue.capacity }}"
                                             {% if form.venue.value == venue.id %}selected{% endif %}>
                                             {{ venue.name }} (Capacidad: {{ venue.capacity }} personas)
@@ -109,8 +109,8 @@
                                     <i class="bi bi-info-circle"></i> Capacidad del lugar: <span id="capacityDisplay">0</span> personas
                                 </div>
                             </div>
-                            
-                          
+
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <label for="id_general_price" class="form-label">Precio General ($)</label>
@@ -143,8 +143,8 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            
-                        
+
+
                             <div class="row">
                                 <div class="col-md-6">
                                     <label for="id_general_tickets_total" class="form-label">Total de Tickets Generales</label>
@@ -175,8 +175,8 @@
                                     {% endif %}
                                 </div>
                             </div>
-                            
-                           
+
+
                             <div id="ticketSummary" class="card bg-light mb-3" style="display: none;">
                                 <div class="card-body">
                                     <h5 class="card-title">Resumen de Tickets</h5>
@@ -196,8 +196,8 @@
                                     </div>
                                 </div>
                             </div>
-                            
-                           
+
+
                            <div class="mb-3">
                                 <label class="form-label">Categorías</label>
                                 <div class="row">
@@ -212,7 +212,7 @@
                                     {% endfor %}
                                 </div>
                             </div>
-                            
+
                             {% if form.non_field_errors %}
                                 <div class="alert alert-danger">
                                     {% for error in form.non_field_errors %}
@@ -220,7 +220,7 @@
                                     {% endfor %}
                                 </div>
                             {% endif %}
-                            
+
                             <div>
                                 <button type="submit" class="btn btn-primary" {% if not venues %}disabled{% endif %} id="submitButton">
                                     {% if event.id %}
@@ -255,33 +255,33 @@
         const maxCapacity = document.getElementById('maxCapacity');
         const capacityProgress = document.getElementById('capacityProgress');
         const submitButton = document.getElementById('submitButton');
-        
+
         let selectedVenueCapacity = 0;
-        
-        
+
+
         function updateTicketCounters() {
-            
+
             if (!selectedVenueCapacity) {
                 ticketSummary.style.display = 'none';
                 return;
             }
-            
+
             const generalTickets = parseInt(generalTicketsInput.value) || 0;
             const vipTickets = parseInt(vipTicketsInput.value) || 0;
             const totalTickets = generalTickets + vipTickets;
-            
-           
+
+
             generalCount.textContent = generalTickets;
             vipCount.textContent = vipTickets;
             totalCount.textContent = totalTickets;
             maxCapacity.textContent = selectedVenueCapacity;
-            
-            
+
+
             const percentUsed = Math.min(100, Math.round((totalTickets / selectedVenueCapacity) * 100));
             capacityProgress.style.width = percentUsed + '%';
             capacityProgress.textContent = percentUsed + '%';
-            
-           
+
+
             if (percentUsed < 70) {
                 capacityProgress.classList.remove('bg-warning', 'bg-danger');
                 capacityProgress.classList.add('bg-success');
@@ -292,84 +292,84 @@
                 capacityProgress.classList.remove('bg-success', 'bg-warning');
                 capacityProgress.classList.add('bg-danger');
             }
-            
-            
+
+
             ticketSummary.style.display = 'block';
-            
-            
+
+
             validateCapacity(totalTickets);
         }
-        
-        
+
+
         function validateCapacity(totalTickets) {
             const exceedsCapacity = totalTickets > selectedVenueCapacity;
-            
-            
+
+
             if (exceedsCapacity) {
                 ticketSummary.classList.remove('bg-light');
                 ticketSummary.classList.add('bg-danger', 'text-white');
                 submitButton.disabled = true;
-                
-               
+
+
                 if (!document.getElementById('capacityWarning')) {
                     const warning = document.createElement('div');
                     warning.id = 'capacityWarning';
                     warning.className = 'alert alert-danger mt-2';
                     warning.innerHTML = `
-                        <strong>Error:</strong> El total de tickets (${totalTickets}) excede la capacidad 
+                        <strong>Error:</strong> El total de tickets (${totalTickets}) excede la capacidad
                         del lugar (${selectedVenueCapacity}). Por favor, reduzca la cantidad de tickets.
                     `;
                     ticketSummary.appendChild(warning);
                 } else {
-                   
+
                     document.getElementById('capacityWarning').innerHTML = `
-                        <strong>Error:</strong> El total de tickets (${totalTickets}) excede la capacidad 
+                        <strong>Error:</strong> El total de tickets (${totalTickets}) excede la capacidad
                         del lugar (${selectedVenueCapacity}). Por favor, reduzca la cantidad de tickets.
                     `;
                 }
             } else {
-                
+
                 ticketSummary.classList.remove('bg-danger', 'text-white');
                 ticketSummary.classList.add('bg-light');
                 submitButton.disabled = false;
-                
-                
+
+
                 const warning = document.getElementById('capacityWarning');
                 if (warning) {
                     warning.remove();
                 }
             }
         }
-        
-        
+
+
         venueSelect.addEventListener('change', function() {
             const selectedOption = venueSelect.options[venueSelect.selectedIndex];
             if (selectedOption && selectedOption.value) {
                 selectedVenueCapacity = parseInt(selectedOption.dataset.capacity) || 0;
-                
-               
+
+
                 capacityDisplay.textContent = selectedVenueCapacity;
                 venueCapacityInfo.style.display = 'block';
-                
-                
+
+
                 generalTicketsInput.setAttribute('max', selectedVenueCapacity);
                 vipTicketsInput.setAttribute('max', selectedVenueCapacity);
-                
-                
+
+
                 updateTicketCounters();
             } else {
-                
+
                 selectedVenueCapacity = 0;
                 venueCapacityInfo.style.display = 'none';
                 ticketSummary.style.display = 'none';
             }
         });
-        
-        
+
+
         generalTicketsInput.addEventListener('input', updateTicketCounters);
         vipTicketsInput.addEventListener('input', updateTicketCounters);
-        
-        
+
+
         if (venueSelect.value) {
             const selectedOption = venueSelect.options[venueSelect.selectedIndex];
             if (selectedOption) {
@@ -379,18 +379,18 @@
                 updateTicketCounters();
             }
         }
-        
-      
+
+
         document.getElementById('eventForm').addEventListener('submit', function(e) {
             const generalTickets = parseInt(generalTicketsInput.value) || 0;
             const vipTickets = parseInt(vipTicketsInput.value) || 0;
             const totalTickets = generalTickets + vipTickets;
-            
+
             if (totalTickets > selectedVenueCapacity) {
                 e.preventDefault();
                 alert(`La cantidad total de tickets (${totalTickets}) excede la capacidad del lugar (${selectedVenueCapacity}).`);
             }
-            
+
             if (totalTickets <= 0) {
                 e.preventDefault();
                 alert('Debe haber al menos un ticket disponible (general o VIP).');
@@ -402,28 +402,28 @@
 @login_required
 def edit_event(request, event_id):
     event = get_object_or_404(Event, id=event_id)
-    
+
     if not request.user.is_organizer:
         return redirect('events')
-        
+
     if request.method == 'POST':
         form = EventForm(request.POST, request.FILES, instance=event)
         if form.is_valid():
             updated_event = form.save(commit=False)
-            
+
             scheduled_date = form.cleaned_data.get('scheduled_date')
             scheduled_time = form.cleaned_data.get('scheduled_time')
-            
+
             if scheduled_date and scheduled_time:
                 combined_datetime = datetime.datetime.combine(scheduled_date, scheduled_time)
                 updated_event.scheduled_at = timezone.make_aware(combined_datetime)
-            
+
             general_diff = updated_event.general_tickets_total - event.general_tickets_total
             vip_diff = updated_event.vip_tickets_total - event.vip_tickets_total
-            
+
             updated_event.general_tickets_available = event.general_tickets_available + general_diff
             updated_event.vip_tickets_available = event.vip_tickets_available + vip_diff
-            
+
             updated_event.save()
             form.save_m2m()
             return redirect('event_detail', event_id=event.pk)
@@ -439,7 +439,7 @@ def edit_event(request, event_id):
             'scheduled_time': event.scheduled_at.time()
         }
         form = EventForm(initial=initial_data, instance=event)
-    
+
     return render(
         request,
         "app/event_form.html",

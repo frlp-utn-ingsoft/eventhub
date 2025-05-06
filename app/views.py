@@ -100,7 +100,7 @@ def event_detail(request, id):
     now = timezone.now()
     rating_to_edit = None
     rating_id = request.GET.get('rating_id') or request.POST.get('rating_id')
-    
+
     event_has_started = event.scheduled_at <= now
 
     if rating_id:
@@ -149,64 +149,60 @@ def rating_delete(request, id, rating_id):
 @login_required
 def create_event(request):
     if not request.user.is_organizer:
-        return redirect('events')
-        
+        return redirect('events') 
+
     if request.method == 'POST':
         form = EventForm(request.POST, request.FILES)
         if form.is_valid():
             event = form.save(commit=False)
             event.organizer = request.user
-            
+
             scheduled_date = form.cleaned_data.get('scheduled_date')
             scheduled_time = form.cleaned_data.get('scheduled_time')
-            
+
             if scheduled_date and scheduled_time:
                 combined_datetime = datetime.datetime.combine(scheduled_date, scheduled_time)
                 event.scheduled_at = timezone.make_aware(combined_datetime)
-            
+
             event.general_tickets_available = event.general_tickets_total
             event.vip_tickets_available = event.vip_tickets_total
-            
+
             event.save()
             form.save_m2m()
             return redirect('event_detail', event_id=event.id)
     else:
         form = EventForm()
-    
-    return render(
-        request,
-        "app/event_form.html",
-        {
-            "form": form,
-            "title": "Crear Evento",
-        },
-    )
+
+    return render(request, "app/event_form.html", {
+        "form": form,
+        "title": "Crear Evento",
+    })
 
 @login_required
 def edit_event(request, event_id):
     event = get_object_or_404(Event, id=event_id)
-    
+
     if not request.user.is_organizer:
         return redirect('events')
-        
+
     if request.method == 'POST':
         form = EventForm(request.POST, request.FILES, instance=event)
         if form.is_valid():
             updated_event = form.save(commit=False)
-            
+
             scheduled_date = form.cleaned_data.get('scheduled_date')
             scheduled_time = form.cleaned_data.get('scheduled_time')
-            
+
             if scheduled_date and scheduled_time:
                 combined_datetime = datetime.datetime.combine(scheduled_date, scheduled_time)
                 updated_event.scheduled_at = timezone.make_aware(combined_datetime)
-            
+
             general_diff = updated_event.general_tickets_total - event.general_tickets_total
             vip_diff = updated_event.vip_tickets_total - event.vip_tickets_total
-            
+
             updated_event.general_tickets_available = event.general_tickets_available + general_diff
             updated_event.vip_tickets_available = event.vip_tickets_available + vip_diff
-            
+
             updated_event.save()
             form.save_m2m()
             return redirect('event_detail', event_id=event.pk)
@@ -221,14 +217,12 @@ def edit_event(request, event_id):
             'scheduled_date': event.scheduled_at.date(),
             'scheduled_time': event.scheduled_at.time(),
             'venue': event.venue.id if event.venue else None,
-            # Agrega aquí cualquier otro campo que necesites
         }
         form = EventForm(initial=initial_data, instance=event)
-    
-    # Pasa las categorías y venues al contexto
+
     categories = Category.objects.all()
     venues = Venue.objects.all()
-    
+
     return render(
         request,
         "app/event_form.html",
@@ -258,7 +252,7 @@ def event_delete(request, id):
 def organizer_tickets(request, event_id=None):
     if not request.user.is_organizer:
         return redirect('events')
-    
+
     if event_id:
         event = get_object_or_404(Event, pk=event_id, organizer=request.user)
         tickets = Ticket.objects.filter(event=event).select_related('user').order_by('-buy_date')
@@ -273,7 +267,7 @@ def organizer_tickets(request, event_id=None):
             tickets_sold=Count('ticket'),
             total_sales=Sum('ticket__total')
         ).order_by('-scheduled_at')
-        
+
         return render(request, 'app/organizer_event_list.html', {
             'events': events
         })
@@ -284,11 +278,11 @@ def ticket_purchase(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
     if request.user.is_organizer:
         return redirect('event_detail', id=event_id)
-    
+
     if request.method == 'POST':
         ticket_form = TicketForm(request.POST, event=event)
         payment_form = PaymentForm(request.POST)
-        
+
         if ticket_form.is_valid() and payment_form.is_valid():
             try:
                 with transaction.atomic():
@@ -296,29 +290,29 @@ def ticket_purchase(request, event_id):
                     ticket.user = request.user
                     ticket.event = event
                     ticket.ticket_code = ticket._generate_ticket_code()
-                    
+
                     price = event.general_price if ticket.type == Ticket.TicketType.GENERAL else event.vip_price
                     ticket.subtotal = price * Decimal(ticket.quantity)
                     ticket.taxes = ticket.subtotal * Decimal('0.10')
                     ticket.total = ticket.subtotal + ticket.taxes
                     ticket.payment_confirmed = True
-                    
+
                     payment_info = payment_form.save(commit=False)
                     payment_info.user = request.user
-                    
+
                     if payment_form.cleaned_data.get('save_card'):
                         payment_info.save()
-                    
+
                     ticket.save()
-                    
+
                     if ticket.type == Ticket.TicketType.GENERAL:
                         event.general_tickets_available -= ticket.quantity
                     else:
                         event.vip_tickets_available -= ticket.quantity
                     event.save()
-                    
+
                     return redirect('ticket_detail', ticket_id=ticket.id)
-                    
+
             except Exception as e:
                 print(f"Error during ticket purchase: {str(e)}")
         else:
@@ -337,10 +331,10 @@ def ticket_purchase(request, event_id):
 @login_required
 def ticket_detail(request, ticket_id):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
-    
+
     if ticket.user != request.user and (not request.user.is_organizer or request.user != ticket.event.organizer):
         return HttpResponseForbidden("No tienes permiso para ver este ticket")
-    
+
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -350,11 +344,11 @@ def ticket_detail(request, ticket_id):
     qr.add_data(ticket.ticket_code)
     qr.make(fit=True)
     img = qr.make_image(fill_color="black", back_color="white")
-    
+
     buffer = BytesIO()
     img.save(buffer, 'PNG')
     qr_code_base64 = ticket.qr_code_base64()
-    
+
     return render(request, 'app/ticket_detail.html', {
         'ticket': ticket,
         'qr_code': qr_code_base64,
@@ -366,13 +360,13 @@ def ticket_detail(request, ticket_id):
 @transaction.atomic
 def ticket_update(request, ticket_id):
     ticket = get_object_or_404(Ticket.objects.select_related('event'), pk=ticket_id)
-    
+
     if not ticket.can_be_modified_by(request.user):
         return redirect('ticket_detail', ticket_id=ticket_id)
-    
+
     if not ticket._is_within_edit_window():
         return redirect('ticket_detail', ticket_id=ticket_id)
-    
+
     if request.method == 'POST':
         form = TicketForm(request.POST, instance=ticket, event=ticket.event)
         if form.is_valid():
@@ -380,15 +374,15 @@ def ticket_update(request, ticket_id):
                 with transaction.atomic():
                     original_type = ticket.type
                     original_quantity = ticket.quantity
-                
+
                     updated_ticket = form.save(commit=False)
-                    
+
                     new_type = updated_ticket.type
                     new_quantity = updated_ticket.quantity
-                    
+
                     type_changed = original_type != new_type
                     quantity_diff = new_quantity - original_quantity
-                    
+
                     if type_changed or quantity_diff > 0:
                         if type_changed:
                             available = ticket.event.get_available_tickets(new_type)
@@ -400,19 +394,19 @@ def ticket_update(request, ticket_id):
                             if available < quantity_diff:
                                 messages.error(request, f"No hay suficientes entradas {new_type.lower()} disponibles")
                                 return redirect('ticket_update', ticket_id=ticket_id)
-                    
+
                     price = ticket.event.general_price if new_type == Ticket.TicketType.GENERAL else ticket.event.vip_price
-                    
+
                     updated_ticket.subtotal = price * Decimal(new_quantity)
                     updated_ticket.taxes = updated_ticket.subtotal * Decimal('0.10')
                     updated_ticket.total = updated_ticket.subtotal + updated_ticket.taxes
-                    
+
                     if type_changed:
                         if original_type == Ticket.TicketType.GENERAL:
                             ticket.event.general_tickets_available += original_quantity
                         else:
                             ticket.event.vip_tickets_available += original_quantity
-                            
+
                         if new_type == Ticket.TicketType.GENERAL:
                             ticket.event.general_tickets_available -= new_quantity
                         else:
@@ -422,20 +416,20 @@ def ticket_update(request, ticket_id):
                             ticket.event.general_tickets_available -= quantity_diff
                         else:
                             ticket.event.vip_tickets_available -= quantity_diff
-                    
+
                     ticket.event.save()
                     updated_ticket.save()
-                    
+
                     messages.success(request, "Ticket actualizado correctamente")
                     return redirect('ticket_detail', ticket_id=ticket_id)
-                    
+
             except Exception as e:
                 messages.error(request, f"Error al actualizar el ticket: {str(e)}")
                 print(f"Error updating ticket: {str(e)}")
                 return redirect('ticket_update', ticket_id=ticket_id)
     else:
         form = TicketForm(instance=ticket, event=ticket.event)
-    
+
     return render(request, 'app/ticket_update.html', {
         'form': form,
         'ticket': ticket,
@@ -447,11 +441,11 @@ def ticket_update(request, ticket_id):
 @transaction.atomic
 def ticket_delete(request, ticket_id):
     ticket = get_object_or_404(Ticket.objects.select_related('event', 'user'), pk=ticket_id)
-    
-    if not (ticket.user == request.user or 
+
+    if not (ticket.user == request.user or
             (request.user.is_organizer and request.user == ticket.event.organizer)):
         return redirect('ticket_detail', ticket_id=ticket_id)
-    
+
     if request.user.is_organizer and request.user == ticket.event.organizer:
         redirect_url = 'organizer_tickets_event'
         redirect_kwargs = {'event_id': ticket.event.id}
@@ -466,16 +460,16 @@ def ticket_delete(request, ticket_id):
                     ticket.event.general_tickets_available += ticket.quantity
                 else:
                     ticket.event.vip_tickets_available += ticket.quantity
-                
+
                 ticket.event.save()
                 ticket.delete()
-                
+
                 return redirect(redirect_url, **redirect_kwargs)
-                
+
         except Exception as e:
             messages.error(request, f"Error al eliminar el ticket: {str(e)}")
             return redirect('ticket_detail', ticket_id=ticket_id)
-    
+
     return render(request, 'app/ticket_delete.html', {
         'ticket': ticket,
         'is_organizer': request.user.is_organizer and request.user == ticket.event.organizer,
@@ -486,11 +480,11 @@ def ticket_delete(request, ticket_id):
 @login_required
 def ticket_use(request, ticket_id):
     ticket = get_object_or_404(Ticket, pk=ticket_id)
-    
+
     if not request.user.is_organizer or ticket.event.organizer != request.user:
         messages.error(request, "No tienes permiso para marcar este ticket")
         return redirect('event_detail', id=ticket.event.id)
-    
+
     if request.method == 'POST':
         if ticket.is_used:
             messages.warning(request, "Este ticket ya estaba marcado como usado")
@@ -498,7 +492,7 @@ def ticket_use(request, ticket_id):
             ticket.is_used = True
             ticket.save()
             messages.success(request, f"Ticket #{ticket.ticket_code} marcado como usado")
-    
+
     return redirect('event_detail', id=ticket.event.id)
 
 @login_required
@@ -506,10 +500,10 @@ def ticket_list(request):
     now = timezone.now()
     tickets = Ticket.objects.filter(user=request.user).select_related('event').order_by('-buy_date')
     filter_form = TicketFilterForm(request.GET or None)
-    
+
     if filter_form.is_valid():
         filter_by = filter_form.cleaned_data.get('filter_by', 'all')
-        
+
         if filter_by == 'upcoming':
             tickets = tickets.filter(event__scheduled_at__gt=now)
         elif filter_by == 'past':
@@ -518,7 +512,7 @@ def ticket_list(request):
             tickets = tickets.filter(is_used=True)
         elif filter_by == 'unused':
             tickets = tickets.filter(is_used=False)
-    
+
     return render(request, 'app/ticket_list.html', {
         'tickets': tickets,
         'filter_form': filter_form,
@@ -541,7 +535,7 @@ def category_list(request):
 @login_required
 def category_form(request, id=None):
     if not request.user.is_organizer:
-        return redirect('category_list') 
+        return redirect('category_list')
 
     if id:
         category = get_object_or_404(Category, pk=id)
@@ -556,7 +550,7 @@ def category_form(request, id=None):
                 messages.success(request, 'La categoría fue actualizada con éxito')
             else:
                 messages.success(request, 'La categoría fue creada con éxito')
-            return redirect('category_list') 
+            return redirect('category_list')
     else:
         form = CategoryForm(instance=category)
 
@@ -573,13 +567,13 @@ def category_detail(request, id):
 @login_required
 def category_delete(request, id):
     if not request.user.is_organizer:
-        return redirect('category_list')  
+        return redirect('category_list')
 
     category = get_object_or_404(Category, pk=id)
     if request.method == 'POST':
         category.delete()
         messages.success(request, 'La categoría fue eliminada con éxito')
-        return redirect('category_list')  
+        return redirect('category_list')
     return redirect('category_list')
 
 @login_required
@@ -591,15 +585,15 @@ def venue_list(request):
 def create_venue(request):
     if not request.user.is_organizer:
         return HttpResponseForbidden("Solo los organizadores pueden crear ubicaciones.")
-    
+
     form = VenueForm(request.POST or None)
     if request.method == 'POST' and form.is_valid():
         venue = form.save(commit=False)
-        venue.organizer = request.user  
+        venue.organizer = request.user
         venue.save()
         messages.success(request, "¡Ubicación creada con éxito!")
         return redirect('venue_list')
-    
+
     return render(request, 'venues/create_venue.html', {'form': form})
 
 @login_required
@@ -608,13 +602,13 @@ def edit_venue(request, venue_id):
 
     if not request.user.is_organizer:
         return HttpResponseForbidden("Solo los organizadores pueden editar ubicaciones.")
-    
+
     form = VenueForm(request.POST or None, instance=venue)
     if request.method == 'POST' and form.is_valid():
         form.save()
         messages.success(request, "¡Ubicación editada con éxito!")
         return redirect('venue_list')
-    
+
     return render(request, 'venues/edit_venue.html', {'form': form})
 
 @login_required
@@ -623,12 +617,12 @@ def delete_venue(request, venue_id):
 
     if not request.user.is_organizer:
         return HttpResponseForbidden("Solo los organizadores pueden eliminar ubicaciones.")
-    
+
     if request.method == 'POST':
         venue.delete()
         messages.success(request, "¡Ubicación eliminada con éxito!")
         return redirect('venue_list')
-    
+
     return render(request, 'venues/delete_venue.html', {'venue': venue})
 
 @login_required
@@ -638,7 +632,7 @@ def venue_detail(request, venue_id):
 
 def calculate_refund_fee(ticket):
     days_until_event = (ticket.event.scheduled_at - timezone.now()).days
-    
+
     if days_until_event > 7:
         return 0
     elif 3 < days_until_event <= 7:
@@ -651,18 +645,18 @@ def calculate_refund_fee(ticket):
 def process_payment(card_type, card_number, expiry_month, expiry_year, cvv, card_holder, amount):
     if card_number.endswith('1111'):
         return False, "Tarjeta declinada por el banco emisor"
-    
+
     import random
     if random.random() < 0.05:
         return False, "Error de conexión con el procesador de pagos"
-    
+
     return True, "Pago procesado exitosamente"
 
 def process_refund(ticket, amount):
     import random
     if random.random() < 0.05:
         return False
-    
+
     return True
 
 @login_required
@@ -753,7 +747,7 @@ def refund_request(request):
             reembolso.user = request.user
             reembolso.save()
             messages.success(request, "¡Reembolso creado con éxito!")
-            return redirect('my_refunds') 
+            return redirect('my_refunds')
     else:
         form = RefundRequestForm()
 
@@ -803,16 +797,16 @@ def refund_detail(request, id):
 @login_required
 def edit_refund(request, id):
     refund_request = get_object_or_404(RefundRequest, id=id)
-    
+
     if request.method == 'POST':
         form = RefundRequestForm(request.POST, instance=refund_request)
         if form.is_valid():
             form.save()
             messages.success(request, "¡Reembolso editado con éxito!")
-            return redirect('my_refunds') 
+            return redirect('my_refunds')
     else:
         form = RefundRequestForm(instance=refund_request)
-    
+
     return render(request, 'app/refund_request.html', {'form': form})
 
 @login_required
@@ -824,7 +818,7 @@ def delete_refund(request, id):
 
     if request.method == "POST":
         refund.delete()
-        messages.success(request, "¡Reembolso eliminado con éxito!") 
+        messages.success(request, "¡Reembolso eliminado con éxito!")
         return redirect("my_refunds")
 
     return redirect("my_refunds")
