@@ -386,12 +386,18 @@ def new_refund_request(request):
         if form.is_valid():
             refund = form.save(commit=False)
             refund.user = request.user
+            # Asignar el porcentaje calculado
+            refund.refund_percentage = form.cleaned_data['refund_percentage']
             refund.save()
+            messages.success(request,
+                f"Solicitud creada. Tu reembolso será del {int(refund.refund_percentage*100)}%.")
             return redirect("my_refund_requests")
     else:
         form = RefundRequestForm(user=request.user)
 
-    return render(request, "app/refund/create_refund_request.html", {"form": form})
+    return render(request, "app/refund/create_refund_request.html", {
+        "form": form
+    })
 
 
 @login_required

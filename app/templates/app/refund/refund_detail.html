@@ -33,6 +33,11 @@
         {% endif %}
 
     </li>
+    <li class="list-group-item">
+      <strong>Porcentaje de reembolso:</strong>
+      {% widthratio refund.refund_percentage 1 100 %}%
+    </li>
+    
   </ul>
 
   {# Elegimos el “volver” adecuado según el rol #}

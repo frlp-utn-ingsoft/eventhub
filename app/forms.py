@@ -76,32 +76,38 @@ class RefundRequestForm(forms.ModelForm):
             self.initial.update({'motivo': key, 'detalles': detalles_text})
 
     def clean_ticket_code(self):
-        code = self.cleaned_data.get('ticket_code', '').strip()
+        code = self.cleaned_data.get("ticket_code", "").strip()
         if not code:
-            # este error se sigue asociando al campo
             raise ValidationError("El código de ticket es obligatorio.")
 
-        # 1) Buscamos el Ticket
+        # 1) Verificamos que exista el Ticket
         try:
             ticket = Ticket.objects.get(ticket_code=code)
         except Ticket.DoesNotExist:
-            # error no-campo, aparecerá en form.non_field_errors
-            self.add_error(None, "Código de ticket inválido, por favor verificalo.")
-            return code
+            raise ValidationError("Código de ticket inválido: no existe ese Ticket.")
 
-        # 2) Tomamos la fecha del evento
+        # 2) Calculamos cuántos días faltan para el evento
         event_date = ticket.event.scheduled_at.date()
+        today = timezone.localdate()
+        dias_para_evento = (event_date - today).days
 
-        # 3) Calculamos días pasados
-        dias_pasados = (timezone.localdate() - event_date).days
-        if dias_pasados > 30:
-            self.add_error(
-                None,
-                f"Han pasado {dias_pasados} días desde el evento ({event_date}); ya no se aceptan reembolsos."
+        # 3) Aplicamos la política de reembolso
+        if dias_para_evento < 2:
+            # Menos de 48h → no hay reembolso
+            raise ValidationError(
+                "Sin reembolso: faltan menos de 48 horas para el evento."
             )
+        elif dias_para_evento < 7:
+            # Entre 2 y 7 días → reembolso 50%
+            # Guardamos el porcentaje para usarlo luego (por ejemplo, en la vista)
+            self.cleaned_data['refund_percentage'] = 0.5
+        else:
+            # 7 días o más → reembolso 100%
+            self.cleaned_data['refund_percentage'] = 1.0
 
-        # guardamos el objeto para el save() si hace falta
+        # 4) Guardamos el ticket por si lo necesitas más tarde
         self.cleaned_data['ticket_obj'] = ticket
+
         return code
 
     def clean_detalles(self):

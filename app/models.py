@@ -117,6 +117,7 @@ class RefundRequest(models.Model):
     approved = models.BooleanField(null=True, blank=True)
     approval_date = models.DateTimeField(null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    refund_percentage = models.FloatField(null=True, blank=True)
 
     @classmethod
     def validate(cls, ticket_code, reason):
