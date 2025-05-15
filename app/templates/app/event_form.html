@@ -92,6 +92,15 @@
                                     {% endfor %}
                                 </select>
                             </div>
+                            <div>
+                                <label for="capacity" class="form-label">Capacidad del Evento</label>
+                                <input class="form-control"
+                                    id="capacity"
+                                    required=""
+                                    type="number"
+                                    value="{{ event.capacity }}"
+                                    name="capacity" />
+                            </div>
 
                             <div>
                                 <button type="submit" class="btn btn-primary">
