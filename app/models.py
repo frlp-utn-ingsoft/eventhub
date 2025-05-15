@@ -37,6 +37,7 @@ class Event(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     category = models.ForeignKey('Category', on_delete=models.PROTECT, related_name="events", null=True, blank=True)
     venue = models.ForeignKey('Venue', on_delete=models.CASCADE, related_name='events', null=True, blank=True)
+    capacity = models.IntegerField(default=0, blank=True, null=True)
 
     def __str__(self):
         return self.title
@@ -54,7 +55,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer,category=None,venue=None):
+    def new(cls, title, description, scheduled_at, organizer,category=None,venue=None, capacity=None):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -67,17 +68,19 @@ class Event(models.Model):
             organizer=organizer,
             category=category,
             venue=venue,
+            capacity=capacity
         )
 
         return True, None
 
-    def update(self, title, description, scheduled_at, organizer, category=None, venue=None):
+    def update(self, title, description, scheduled_at, organizer, category=None, venue=None, capacity=None):
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
         self.category = category if category is not None else self.category
         self.venue = venue if venue is not None else self.venue
+        self.capacity = capacity if capacity is not None else self.capacity
 
         self.save()
 
