@@ -6,7 +6,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Count
 from .models import Event, User, Location, Category, Notification, NotificationXUser, Comments, Ticket
-
+from .forms import TicketForm
 
 def register(request):
     if request.method == "POST":
@@ -429,43 +429,86 @@ def detail_comment(request, comment_id):
     return render(request, 'comments/detail_comment.html', {'comment': comment})
 
 
-@login_required
-def buy_ticket(request, event_id):
-    event = get_object_or_404(Event, pk=event_id)
-    user = request.user
-    context = {'event': event}
+#@login_required
+#def buy_ticket(request, event_id):
+ #   event = get_object_or_404(Event, pk=event_id)
+  #  user = request.user
+   # context = {'event': event}
 
-    if request.method == "POST":
-        try:
+    #if request.method == "POST":
+     #   try:
             # Obtener datos del formulario
-            ticket_type = request.POST.get("ticket_type")
-            quantity = int(request.POST.get("quantity", 1))
+      #      ticket_type = request.POST.get("ticket_type")
+       #     quantity = int(request.POST.get("quantity", 1))
             
             # Validaciones básicas
-            if quantity < 1 or quantity > 10:
-                raise ValueError("La cantidad debe estar entre 1 y 10")
+        #    if quantity < 1 or quantity > 10:
+         #       raise ValueError("La cantidad debe estar entre 1 y 10")
             
-            if ticket_type not in [choice[0] for choice in Ticket.TICKET_TYPES]:
-                raise ValueError("Tipo de entrada inválido")
+          #  if ticket_type not in [choice[0] for choice in Ticket.TICKET_TYPES]:
+           #     raise ValueError("Tipo de entrada inválido")
 
             # Crear tickets
-            for _ in range(quantity):
-                Ticket.objects.create(
-                    user=user,
-                    event=event,
-                    type=ticket_type
-                )
+#            for _ in range(quantity):
+ #               Ticket.objects.create(
+  #                  user=user,
+   #                 event=event,
+    #                type=ticket_type
+     #           )
 
-            return redirect('tickets_list')
+      #      return redirect('tickets_list')
 
-        except Exception as e:
-            context['error'] = str(e)
-            return render(request, 'tickets/buy_ticket.html', context)
+  #      except Exception as e:
+   #         context['error'] = str(e)
+    #        return render(request, 'tickets/buy_ticket.html', context)
 
-    return render(request, 'tickets/buy_ticket.html', context)
+#    return render(request, 'tickets/buy_ticket.html', context)
 
 
 @login_required
 def tickets_list(request):
     tickets = Ticket.objects.filter(user=request.user)
     return render(request, "tickets/tickets_list.html", {"tickets": tickets})
+
+@login_required
+def buy_ticket(request):
+    if request.method == 'POST':
+        form = TicketForm(request.POST)
+        if form.is_valid():
+            card_number = form.cleaned_data['card_number']
+            card_cvv = form.cleaned_data['card_cvv']
+
+            # Podés validar longitud, formato, etc.
+            if len(card_number) != 16:
+                form.add_error('card_number', 'El número debe tener 16 dígitos.')
+                return render(request, 'tickets/buy_ticket.html', {'form': form})
+
+            ticket = form.save(commit=False)
+            ticket.user = request.user  # asignamos el usuario que inició sesión
+            ticket.last4_card_number = card_number[-4:]
+            ticket.save()
+            return redirect('tickets_list')  
+    else:
+        form = TicketForm()
+
+    return render(request, 'tickets/buy_ticket.html', {'form': form})
+
+@login_required
+def delete_ticket(request, ticket_code):
+    ticket = get_object_or_404(Ticket, ticket_code=ticket_code)
+    ticket.delete()
+    return redirect('tickets_list')
+
+@login_required
+def update_ticket(request, ticket_code):
+    ticket = get_object_or_404(Ticket, ticket_code=ticket_code, user=request.user)
+
+    if request.method == 'POST':
+        form = TicketForm(request.POST, instance=ticket)
+        if form.is_valid():
+            form.save()
+            return redirect('tickets_list')
+    else:
+        form = TicketForm(instance=ticket)
+
+    return render(request, 'tickets/update_ticket.html', {'form': form})

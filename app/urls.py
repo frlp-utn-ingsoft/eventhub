@@ -32,6 +32,9 @@ urlpatterns = [
     path('comment/<int:comment_id>/edit/', views.edit_comment, name='edit_comment'),
     path('comment/<int:comment_id>/delete/', views.delete_comment, name='delete_comment'),
     path('comment/<int:comment_id>/detail/', views.detail_comment, name='detail_comment'),
-    path("eventos/<int:event_id>/comprar-entrada", views.buy_ticket, name='buy_ticket'),
-    path("mis-entradas/", views.tickets_list, name="tickets_list")
+    path("tickets/buy_ticket", views.buy_ticket, name='buy_ticket'),
+    path("tickets/", views.tickets_list, name="tickets_list"),
+    path('tickets/<str:ticket_code>/delete/', views.delete_ticket, name='delete_ticket'),
+    path('tickets/<str:ticket_code>/edit/', views.update_ticket, name='update_ticket'),
+
 ]

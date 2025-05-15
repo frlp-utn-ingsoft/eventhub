@@ -1,9 +1,14 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
+
 <div class="container mt-5">
-    <h2 class="mb-4">Mis Entradas</h2>
-    
+    <div style="display: flex; justify-content: space-between;">
+        <h2 class="mb-4">Mis Entradas</h2>
+        <a href="{% url 'buy_ticket' %}" class="btn btn-primary mb-4">Comprar entradas</a>
+    </div>
+
     {% if tickets %}
     <div class="row">
         {% for ticket in tickets %}
@@ -12,9 +17,21 @@
                 <div class="card-body">
                     <h5 class="card-title">{{ ticket.event.title }}</h5>
                     <p class="card-text">
-                        <strong>Tipo:</strong> {{ ticket.get_type_display }}<br>
-                        <strong>Código:</strong> {{ ticket.ticket_code }}<br>
-                        <strong>Fecha del evento:</strong> {{ ticket.event.scheduled_at|date:"d/m/Y H:i" }}
+                        <strong>Fecha del evento:</strong> {{ ticket.event.scheduled_at|date:"d/m/Y H:i" }}<br>
+                        <strong>Tipo de entrada:</strong> {{ ticket.get_type_display }}<br>
+                        <strong>Cantidad de entradas:</strong> {{ ticket.quantity }}<br>
+                        <strong>Fecha de compra:</strong> {{ ticket.buy_date|date:"d/m/Y H:i" }}<br>
+                            <a href="{% url 'delete_ticket' ticket.ticket_code %}" class="btn btn-sm btn-outline-danger float-end"
+                            onclick="return confirm('¿Seguro que deseas eliminar este ticket?');" title="Eliminar" aria-label="Eliminar">
+                                    <i class="bi bi-trash" aria-hidden="true"></i>
+                            </a>
+                            
+                            <a href="{% url 'update_ticket' ticket.ticket_code %}"
+                                 class="btn btn-sm btn-outline-secondary float-end" style="margin-right: 5px;"
+                                 aria-label="Editar"
+                                 title="Editar">
+                                 <i class="bi bi-pencil" aria-hidden="true"></i>
+                            </a>
                     </p>
                 </div>
             </div>

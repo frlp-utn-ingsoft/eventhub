@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from decimal import Decimal
 import uuid
 from django.conf import settings
 
@@ -137,9 +138,8 @@ class Event(models.Model):
     location = models.ForeignKey(Location, on_delete=models.SET_NULL, related_name="events", null=True, blank=True)
     categories = models.ManyToManyField(Category, through='EventCategory')
 
-
     def __str__(self):
-        return self.title
+        return self.title    
 
     @classmethod
     def validate(cls, title, description, scheduled_at):
@@ -282,43 +282,104 @@ class Comments(models.Model):
 
 
 
+#class Ticket(models.Model):
+ #   TICKET_TYPES = [
+  #      ('GENERAL', 'Entrada General'),
+   #     ('VIP', 'Entrada VIP'),
+    #]
+
+    #user = models.ForeignKey(
+       # settings.AUTH_USER_MODEL,
+      #  on_delete=models.CASCADE,
+     #   related_name='tickets'
+    #)
+    #event = models.ForeignKey(
+     #   'Event',
+      #  on_delete=models.CASCADE,
+      #  related_name='tickets'
+    #)
+    #buy_date = models.DateField(auto_now_add=True)
+    #ticket_code = models.CharField(
+     #   max_length=12,
+      #  unique=True,
+       # editable=False
+    #)
+ #   quantity = models.PositiveIntegerField(default=1)
+  #  type = models.CharField(
+   #     max_length=7,
+    #    choices=TICKET_TYPES,
+     #   default='GENERAL'
+    #)
+
+#    def __str__(self):
+ #       return f"{self.type} - {self.event.title} ({self.ticket_code})"
+
+  #  def save(self, *args, **kwargs):
+   #     if not self.ticket_code:
+    #        self.ticket_code = str(uuid.uuid4())[:12].upper()
+     #   super().save(*args, **kwargs)
+
+ #   class Meta:
+  #      verbose_name = 'Ticket'
+   #     verbose_name_plural = 'Tickets'
+
 class Ticket(models.Model):
     TICKET_TYPES = [
-        ('GENERAL', 'Entrada General'),
-        ('VIP', 'Entrada VIP'),
+        ('general', 'General'),
+        ('vip', 'VIP'),
+    ]
+    CARD_TYPE_CHOICES = [
+        ('credit', 'Tarjeta de Credito'),
+        ('debit', 'Tarjeta de Debito'),
     ]
 
-    user = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='tickets'
-    )
-    event = models.ForeignKey(
-        'Event',
-        on_delete=models.CASCADE,
-        related_name='tickets'
-    )
-    buy_date = models.DateField(auto_now_add=True)
-    ticket_code = models.CharField(
-        max_length=12,
-        unique=True,
-        editable=False
-    )
-    quantity = models.PositiveIntegerField(default=1)
-    type = models.CharField(
-        max_length=7,
-        choices=TICKET_TYPES,
-        default='GENERAL'
-    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_ticket")
+    #event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="event_ticket")
+    event = models.CharField(max_length=100)
+    buy_date = models.DateTimeField(auto_now_add=True)
+    ticket_code = models.CharField(max_length=100, unique=True, editable=False)
+    quantity = models.PositiveIntegerField()
+    type = models.CharField(max_length=10, choices=TICKET_TYPES)
+    card_type = models.CharField(max_length=20, choices=CARD_TYPE_CHOICES)
+    last4_card_number = models.CharField(max_length=4, blank=True)
 
     def __str__(self):
-        return f"{self.type} - {self.event.title} ({self.ticket_code})"
+        return f"{self.ticket_code} - {self.type} x{self.quantity} - {self.user.username}"
 
     def save(self, *args, **kwargs):
         if not self.ticket_code:
-            self.ticket_code = str(uuid.uuid4())[:12].upper()
+            import uuid
+            self.ticket_code = str(uuid.uuid4()).replace('-', '')[:20]
         super().save(*args, **kwargs)
 
-    class Meta:
-        verbose_name = 'Ticket'
-        verbose_name_plural = 'Tickets'
+    @classmethod
+    def validate(cls, user, event, quantity, ticket_type, card_type):
+        errors = {}
+
+        if not user:
+            errors["user"] = "El usuario es requerido."
+        if not event:
+            errors["event"] = "El evento es requerido."
+        if not quantity or quantity <= 0:
+            errors["quantity"] = "La cantidad debe ser mayor a cero."
+        if ticket_type not in dict(cls.TICKET_TYPES):
+            errors["type"] = "El tipo debe ser 'General' o 'VIP'."
+        if card_type not in dict(cls.CARD_TYPE_CHOICES):
+            errors["type"] = "Debe ser una tarjeta de debito o credito."
+
+
+        return errors
+
+    @classmethod
+    def new(cls, user, event, quantity, ticket_type, card_type):
+        errors = cls.validate(user, event, quantity, ticket_type, card_type)
+        if errors:
+            raise ValueError(errors)
+
+        return cls.objects.create(
+            user=user,
+            event=event,
+            quantity=quantity,
+            type=ticket_type,
+            card_type=card_type
+        )
