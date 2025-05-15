@@ -11,6 +11,7 @@ import re
 import random
 from django.db import IntegrityError
 from django.utils.timezone import now
+from django.db.models import Sum
 
 
 
@@ -86,10 +87,17 @@ def home(request):
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
+    tickets_vendidos = Ticket.objects.filter(event=event).aggregate(total=Sum('quantity'))['total'] or 0
+    
+    # Porcentaje de ocupación
+    if event.capacity is None or event.capacity == 0:
+        porcentaje_ocupado = 0
+    else:
+        porcentaje_ocupado = (tickets_vendidos / event.capacity) * 100
     todos_los_comentarios = Comment.objects.filter(event=event).order_by('-created_at')
     ratings = Rating.objects.filter(event=event).order_by('-created_at')
 
-    return render(request, "app/event_detail.html", {"event": event, "todos_los_comentarios": todos_los_comentarios, "ratings": ratings, "user_is_organizer": request.user.is_organizer})
+    return render(request, "app/event_detail.html", {"event": event, "todos_los_comentarios": todos_los_comentarios, "ratings": ratings, "user_is_organizer": request.user.is_organizer, "porcentaje_ocupado": porcentaje_ocupado, "tickets_vendidos": tickets_vendidos})
 
 
 
