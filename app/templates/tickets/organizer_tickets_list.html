@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% if user_is_organizer %}        
+
+<h3>Tickets de mis eventos</h3>
+
+<form method="get" class="row g-3 mb-4">
+  <div class="col-md-3">
+    {{ form.event.label_tag }} {{ form.event }}
+  </div>
+  <div class="col-md-2">
+    {{ form.type.label_tag }} {{ form.type }}
+  </div>
+  <div class="col-md-2">
+    {{ form.date_from.label_tag }} {{ form.date_from }}
+  </div>
+  <div class="col-md-2">
+    {{ form.date_to.label_tag }} {{ form.date_to }}
+  </div>
+  <div class="col-md-2 d-flex align-items-end">
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+  </div>
+</form>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Evento</th>
+      <th>Usuario</th>
+      <th>Tipo</th>
+      <th>Cantidad</th>
+      <th>Fecha</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for ticket in tickets %}
+      <tr>
+        <td>{{ ticket.event.title }}</td>
+        <td>{{ ticket.user.username }}</td>
+        <td>{{ ticket.type }}</td>
+        <td>{{ ticket.quantity }}</td>
+        <td>{{ ticket.created_at|date:"d/m/Y" }}</td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="5">No hay tickets que coincidan con los filtros.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+
+<div>
+    <h1 class="text-danger">No tiene permisos para esta seccion</h1>
+    <a href="{% url 'tickets_list' %}" class="btn btn-outline-secondary" title="Regresar"></a>
+</div>
+{% endif %}
+
+{% endblock %}

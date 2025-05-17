@@ -137,9 +137,17 @@ class Event(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     location = models.ForeignKey(Location, on_delete=models.SET_NULL, related_name="events", null=True, blank=True)
     categories = models.ManyToManyField(Category, through='EventCategory')
+    price_general = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
+    price_vip = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
 
     def __str__(self):
         return self.title    
+    
+    @classmethod
+    def get_price_for_type(cls, type, price_general, price_vip):
+        if type == 'vip':
+            return price_vip
+        return price_general
 
     @classmethod
     def validate(cls, title, description, scheduled_at):
@@ -154,7 +162,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, location=None):
+    def new(cls, title, description, scheduled_at, organizer, location=None, price_general=Decimal('0.00'), price_vip=Decimal('0.00')):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -166,16 +174,20 @@ class Event(models.Model):
             scheduled_at=scheduled_at,
             organizer=organizer,
             location=location,
+            price_general=price_general,
+            price_vip=price_vip,
         )
 
         return event, None
 
-    def update(self, title, description, scheduled_at, organizer, location=None):
+    def update(self, title, description, scheduled_at, organizer, location=None, price_general=Decimal('0.00'), price_vip=Decimal('0.00')   ):
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
         self.location = location if location is not None else self.location
+        self.price_general= price_general or self.price_general
+        self.price_vip = price_vip or self.price_vip
 
         self.save()
 
@@ -280,49 +292,6 @@ class Comments(models.Model):
         )
         return True, comment
 
-
-
-#class Ticket(models.Model):
- #   TICKET_TYPES = [
-  #      ('GENERAL', 'Entrada General'),
-   #     ('VIP', 'Entrada VIP'),
-    #]
-
-    #user = models.ForeignKey(
-       # settings.AUTH_USER_MODEL,
-      #  on_delete=models.CASCADE,
-     #   related_name='tickets'
-    #)
-    #event = models.ForeignKey(
-     #   'Event',
-      #  on_delete=models.CASCADE,
-      #  related_name='tickets'
-    #)
-    #buy_date = models.DateField(auto_now_add=True)
-    #ticket_code = models.CharField(
-     #   max_length=12,
-      #  unique=True,
-       # editable=False
-    #)
- #   quantity = models.PositiveIntegerField(default=1)
-  #  type = models.CharField(
-   #     max_length=7,
-    #    choices=TICKET_TYPES,
-     #   default='GENERAL'
-    #)
-
-#    def __str__(self):
- #       return f"{self.type} - {self.event.title} ({self.ticket_code})"
-
-  #  def save(self, *args, **kwargs):
-   #     if not self.ticket_code:
-    #        self.ticket_code = str(uuid.uuid4())[:12].upper()
-     #   super().save(*args, **kwargs)
-
- #   class Meta:
-  #      verbose_name = 'Ticket'
-   #     verbose_name_plural = 'Tickets'
-
 class Ticket(models.Model):
     TICKET_TYPES = [
         ('general', 'General'),
@@ -334,14 +303,23 @@ class Ticket(models.Model):
     ]
 
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_ticket")
-    #event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="event_ticket")
-    event = models.CharField(max_length=100)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="event_ticket")
     buy_date = models.DateTimeField(auto_now_add=True)
     ticket_code = models.CharField(max_length=100, unique=True, editable=False)
     quantity = models.PositiveIntegerField()
     type = models.CharField(max_length=10, choices=TICKET_TYPES)
     card_type = models.CharField(max_length=20, choices=CARD_TYPE_CHOICES)
     last4_card_number = models.CharField(max_length=4, blank=True)
+    price_per_ticket = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
+    
+    def subtotal(self):
+        return self.quantity * self.price_per_ticket
+
+    def tax(self):
+        return self.subtotal() * Decimal('0.10')
+
+    def total(self):
+        return self.subtotal() + self.tax()
 
     def __str__(self):
         return f"{self.ticket_code} - {self.type} x{self.quantity} - {self.user.username}"
@@ -351,6 +329,11 @@ class Ticket(models.Model):
             import uuid
             self.ticket_code = str(uuid.uuid4()).replace('-', '')[:20]
         super().save(*args, **kwargs)
+        if self.event:
+            if self.type == 'vip':
+                self.price_per_ticket = self.event.price_vip
+            else:
+                self.price_per_ticket = self.event.price_general
 
     @classmethod
     def validate(cls, user, event, quantity, ticket_type, card_type):

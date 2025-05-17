@@ -1,6 +1,6 @@
-import re
 from django import forms
 from .models import Ticket
+from .models import Event
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from datetime import datetime
@@ -12,7 +12,7 @@ class TicketForm(forms.ModelForm):
 
     # Select para mes (01 a 12)
     MONTH_CHOICES = [(f"{i:02}", f"{i:02}") for i in range(1, 13)]
-    expiry_month = forms.ChoiceField(choices=MONTH_CHOICES, label="Mes de vencimiento")
+    expiry_month = forms.ChoiceField(choices=MONTH_CHOICES, label="Mes")
 
     # Select para año (desde el actual hasta +10 años)
     current_year = datetime.now().year
@@ -21,8 +21,11 @@ class TicketForm(forms.ModelForm):
     
     quantity = forms.IntegerField(
         min_value=1,
-        label="Cantidad de entradas"
+        label="Cantidad de entradas",
+        widget=forms.NumberInput(attrs={'id': 'quantityInput'})
     )
+
+    type = forms.ChoiceField(choices=[('general', 'General'), ('vip', 'VIP')], required=False, label="Tipo de entrada", widget=forms.Select(attrs={'id': 'typeSelect'}))
 
     class Meta:
         model = Ticket
@@ -50,7 +53,7 @@ class TicketForm(forms.ModelForm):
                     self.add_error('expiry_month', 'La tarjeta ya está vencida.')
     
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args,  fixed_event=False, event_instance=None, **kwargs):
         super().__init__(*args, **kwargs)
 
         # Si estamos editando (el ticket ya existe), deshabilitamos algunos campos
@@ -66,3 +69,23 @@ class TicketForm(forms.ModelForm):
             self.fields.pop('card_cvv', None)
             self.fields.pop('expiry_month', None)
             self.fields.pop('expiry_year', None)
+
+        if fixed_event and event_instance:
+            # Quitamos el campo del formulario si el evento es fijo
+            self.fields.pop('event')
+            self.event_instance = event_instance  # guardamos para mostrarlo en el template
+        else:
+            self.event_instance = None
+
+
+class TicketFilterForm(forms.ModelForm):
+    event = forms.ModelChoiceField(queryset=Event.objects.none(), required=False, label="Evento")
+    type = forms.ChoiceField(choices=[('', 'Todos'), ('general', 'General'), ('vip', 'VIP')], required=False, label="Tipo de entrada")
+    date_from = forms.DateField(required=False, label="Desde", widget=forms.DateInput(attrs={'type': 'date'}))
+    date_to = forms.DateField(required=False, label="Hasta", widget=forms.DateInput(attrs={'type': 'date'}))
+
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user', None)
+        super().__init__(*args, **kwargs)
+        if user:
+            self.fields['event'].queryset = Event.objects.filter(organizer=user) # type: ignore

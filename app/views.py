@@ -6,7 +6,10 @@ from django.contrib import messages
 from django.utils import timezone
 from django.db.models import Count
 from .models import Event, User, Location, Category, Notification, NotificationXUser, Comments, Ticket
-from .forms import TicketForm
+from .forms import TicketForm, TicketFilterForm
+from django.http import Http404
+from decimal import Decimal
+from django.core.serializers import serialize
 
 def register(request):
     if request.method == "POST":
@@ -428,74 +431,79 @@ def detail_comment(request, comment_id):
     comment = get_object_or_404(Comments, pk=comment_id)
     return render(request, 'comments/detail_comment.html', {'comment': comment})
 
-
-#@login_required
-#def buy_ticket(request, event_id):
- #   event = get_object_or_404(Event, pk=event_id)
-  #  user = request.user
-   # context = {'event': event}
-
-    #if request.method == "POST":
-     #   try:
-            # Obtener datos del formulario
-      #      ticket_type = request.POST.get("ticket_type")
-       #     quantity = int(request.POST.get("quantity", 1))
-            
-            # Validaciones básicas
-        #    if quantity < 1 or quantity > 10:
-         #       raise ValueError("La cantidad debe estar entre 1 y 10")
-            
-          #  if ticket_type not in [choice[0] for choice in Ticket.TICKET_TYPES]:
-           #     raise ValueError("Tipo de entrada inválido")
-
-            # Crear tickets
-#            for _ in range(quantity):
- #               Ticket.objects.create(
-  #                  user=user,
-   #                 event=event,
-    #                type=ticket_type
-     #           )
-
-      #      return redirect('tickets_list')
-
-  #      except Exception as e:
-   #         context['error'] = str(e)
-    #        return render(request, 'tickets/buy_ticket.html', context)
-
-#    return render(request, 'tickets/buy_ticket.html', context)
-
-
 @login_required
 def tickets_list(request):
     tickets = Ticket.objects.filter(user=request.user)
     return render(request, "tickets/tickets_list.html", {"tickets": tickets})
 
 @login_required
+def organizer_tickets_list(request):
+    organizer_events = Event.objects.filter(organizer=request.user)
+    tickets = Ticket.objects.filter(event__in=organizer_events)
+
+    form = TicketFilterForm(request.GET or None, user=request.user)
+
+    if form.is_valid():
+        if form.cleaned_data['event']:
+            tickets = tickets.filter(event=form.cleaned_data['event'])
+        if form.cleaned_data['type']:
+            tickets = tickets.filter(type=form.cleaned_data['type'])
+        if form.cleaned_data['date_from']:
+            tickets = tickets.filter(created_at__gte=form.cleaned_data['date_from'])
+        if form.cleaned_data['date_to']:
+            tickets = tickets.filter(created_at__lte=form.cleaned_data['date_to'])
+
+    return render(request, "tickets/organizer_tickets_list.html", {
+        "tickets": tickets,
+        "form": form,
+    })
+
+@login_required
 def buy_ticket(request):
     if request.method == 'POST':
         form = TicketForm(request.POST)
         if form.is_valid():
+            event = form.cleaned_data['event']
+            type_ = form.cleaned_data['type']
+            quantity = form.cleaned_data['quantity']
+
             card_number = form.cleaned_data['card_number']
             card_cvv = form.cleaned_data['card_cvv']
 
             # Podés validar longitud, formato, etc.
             if len(card_number) != 16:
                 form.add_error('card_number', 'El número debe tener 16 dígitos.')
-                return render(request, 'tickets/buy_ticket.html', {'form': form})
+                return render(request, 'tickets/buy_ticket.html', {'form': form, 'price_general': event.price_general,
+                    'price_vip': event.price_vip})
 
             ticket = form.save(commit=False)
             ticket.user = request.user  # asignamos el usuario que inició sesión
+
             ticket.last4_card_number = card_number[-4:]
             ticket.save()
-            return redirect('tickets_list')  
+
+            return render(request, 'tickets/tickets_list.html', {'ticket': ticket})
     else:
         form = TicketForm()
 
-    return render(request, 'tickets/buy_ticket.html', {'form': form})
+    events = Event.objects.all()
+    event_prices = {
+        event.id: {
+            'general': float(event.price_general),
+            'vip': float(event.price_vip)
+        } for event in events
+    }
+
+    return render(request, 'tickets/buy_ticket.html', {'form': form,'event_prices': event_prices})
 
 @login_required
 def delete_ticket(request, ticket_code):
     ticket = get_object_or_404(Ticket, ticket_code=ticket_code)
+
+    # Permitir eliminar solo si el usuario es dueño del ticket o organizador del evento
+    if ticket.user != request.user and ticket.event.organizer != request.user:
+        raise Http404("No tienes permiso para eliminar este ticket.")
+
     ticket.delete()
     return redirect('tickets_list')
 
@@ -512,3 +520,46 @@ def update_ticket(request, ticket_code):
         form = TicketForm(instance=ticket)
 
     return render(request, 'tickets/update_ticket.html', {'form': form})
+
+@login_required
+def buy_ticket_from_event(request, event_id):
+
+    event = get_object_or_404(Event, id=event_id)
+
+    if request.method == 'POST':
+        form = TicketForm(request.POST, fixed_event=True, event_instance=event)
+        if form.is_valid():
+            type_ = form.cleaned_data['type']
+            quantity = form.cleaned_data['quantity']
+
+            card_number = form.cleaned_data['card_number']
+            card_cvv = form.cleaned_data['card_cvv']
+
+            # Podés validar longitud, formato, etc.
+            if len(card_number) != 16:
+                form.add_error('card_number', 'El número debe tener 16 dígitos.')
+                return render(request, 'tickets/buy_ticket.html', {'form': form,'event': event,
+                    'event_prices': {
+                        'general': float(event.price_general),
+                        'vip': float(event.price_vip)}})
+
+            ticket = form.save(commit=False)
+            ticket.user = request.user  # asignamos el usuario que inició sesión
+
+            ticket.last4_card_number = card_number[-4:]
+            ticket.event = event
+            ticket.save()
+
+            return render(request, 'tickets/tickets_list.html', {'ticket': ticket})
+    else:
+        form = TicketForm(fixed_event=True, event_instance=event)
+
+    event_prices = {
+            event.id: {
+        'general': float(event.price_general),
+        'vip': float(event.price_vip)
+    }
+        }
+
+
+    return render(request, 'tickets/buy_ticket.html', {'form': form, 'event': event,'event_prices': event_prices})

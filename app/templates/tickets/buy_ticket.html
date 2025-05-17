@@ -1,107 +1,192 @@
-{% extends "base.html" %} 
+{% extends "base.html" %}
 
 {% block content %}
-  <div class="container mt-5 mb-5">
-    <h3 class="mb-4">Comprar Entrada</h3>
-    <div class="row">
+<div>
+  <h3 class="container mt-4">Comprar Entrada</h3>
+</div>
 
-    {% if form.errors %}
-      <div class="alert alert-danger">
-        <ul style="list-style-type: none; margin: 0; padding: 0;">
-          {% for error in form.non_field_errors %}
+<div class="container mt-4 mb-5">
+  <div class="d-flex justify-content-center">
+    <div class="row me-2">
+
+      <div class="col-md-7 w-100">
+
+        {% if form.errors %}
+        <div class="alert alert-danger">
+          <ul style="list-style-type: none; margin: 0; padding: 0;">
+            {% for error in form.non_field_errors %}
             <li>{{ error }}</li>
-          {% endfor %}
-          {% for field in form %}
-            {% for error in field.errors %}
-              <li>{{ field.label }}: {{ error }}</li>
             {% endfor %}
-          {% endfor %}
-        </ul>
+            {% for field in form %}
+            {% for error in field.errors %}
+            <li>{{ field.label }}: {{ error }}</li>
+            {% endfor %}
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+        <div class="border p-3 rounded card ">
+
+          <form method="post" id="ticketForm">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+
+            <div class="row mb-3">
+              <div class="col-md-4 text-left fw-bold">Evento:</div>
+              <div class="col-md-8">
+                {% if form.fields.event %}
+                {{ form.event }}
+                {% else %}
+                <input type="text" class="form-control" value="{{ event.title }}" disabled>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-4 text-left fw-bold">{{ form.quantity.label }}</div>
+              <div class="col-md-8">
+                {{ form.quantity }}
+                <div class="form-text">Disponibles: 120 entradas</div>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-4 text-left fw-bold">{{ form.type.label }}</div>
+              <div class="col-md-8">{{ form.type }}</div>
+            </div>
+
+            <h4 class="mt-4">Método de pago</h4>
+            <div class="border rounded card w-100 mb-3 p-3 bg-light">
+              <div class="row">
+
+                <div class="row mb-3">
+                  <div class="col-md-4 text-left fw-bold">{{ form.card_type.label }}</div>
+                  <div class="col-md-8">{{ form.card_type }}</div>
+                </div>
+
+                <div class="row mb-3">
+                  <div class="col-md-4 text-left fw-bold">{{ form.card_number.label }}</div>
+                  <div class="col-md-8">{{ form.card_number }}</div>
+                </div>
+
+                <div class="row mb-3">
+                  <div class="col-md-4 text-left fw-bold">Vencimiento</div>
+                  <div class="col-md-8 d-flex gap-2">
+                    {{ form.expiry_month }}
+                    {{ form.expiry_year }}
+                  </div>
+                </div>
+
+                <div class="row mb-3">
+                  <div class="col-md-4 text-left fw-bold">{{ form.card_cvv.label }}</div>
+                  <div class="col-md-8">{{ form.card_cvv }}</div>
+                </div>
+
+                <div class="form-check mb-3">
+                  <input class="form-check-input" type="checkbox" id="terms" required>
+                  <label class="form-check-label" for="terms">
+                    Acepto los <a href="#">términos y condiciones</a> y la <a href="#">política de privacidad</a>.
+                  </label>
+                </div>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary w-100" id="submitBtn" disabled>Confirmar compra</button>
+          </form>
+
+
+        </div>
       </div>
-    {% endif %}
-
-    <div class="col-md-8">
-      <form method="post" id="ticketForm">
-        {% csrf_token %}
-        {{ form.non_field_errors }}
-
-        <div class="mb-3">
-          {{ form.event.label_tag }} {{ form.event }}
-        </div>
-
-        <div class="mb-3">
-          {{ form.quantity.label_tag }} {{ form.quantity }}
-          <div class="form-text">Disponibles: 120 entradas</div>
-        </div>
-
-        <div class="mb-3">
-          {{ form.type.label_tag }} {{ form.type }}
-        </div>
-
-        <h6 class="mt-4">Método de pago</h6>
-
-        <div class="mb-3">
-          {{ form.card_type.label_tag }} {{ form.card_type }}
-        </div>
-
-        <div class="mb-3">
-          {{ form.card_number.label_tag }} {{ form.card_number }}
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label">Vencimiento</label>
-          <div class="row col-md-6 d-flex gap-2">
-            {{ form.expiry_month }}
-            {{ form.expiry_year }}
-          </div>
-        </div>
-
-        <div class="mb-3 mt-3">
-          {{ form.card_cvv.label_tag }} {{ form.card_cvv }}
-        </div>
-
-        <div class="form-check mb-3">
-          <input class="form-check-input" type="checkbox" id="terms" required>
-          <label class="form-check-label" for="terms">
-            Acepto los <a href="#">términos y condiciones</a> y la <a href="#">política de privacidad</a>.
-          </label>
-        </div>
-    
-        <button type="submit" class="btn btn-primary w-100" id="submitBtn" disabled>Confirmar compra</button>
-      </form>
     </div>
 
-     <div class="col-md-4">
-      <div class="border p-3 rounded mb-3">
-        <h6>Resumen de compra</h6>
-        <p class="mb-1">Precio por entrada: <strong>$45.99</strong></p>
-        <p class="mb-1">Cantidad: 1</p>
-        <p class="mb-1">Subtotal: $45.99</p>
-        <p class="mb-1">Impuestos (10%): $4.60</p>
-        <hr>
-        <p class="mb-0"><strong>Total: $50.59</strong></p>
+    <div class="col-md-4 d-flex flex-column gap-3">
+      <div class="border rounded card w-100">
+        <div class="card-header p-3"><strong>Resumen de compra</strong></div>
+        <div class="card-body">
+          <p>Precio por entrada: <span id="priceDisplay">$0.00</span></p>
+          <p>Cantidad: <span id="quantityDisplay">0</span></p>
+          <p>Subtotal: <span id="subtotalDisplay">$0.00</span></p>
+          <p>Impuestos (10%): <span id="taxDisplay">$0.00</span></p>
+          <hr>
+          <p><strong>Total: <span id="totalDisplay">$0.00</span></strong></p>
+        </div>
       </div>
 
-      <div class="border p-3 rounded bg-light">
-        <h6>Información importante</h6>
-        <ul class="ps-3">
-          <li>Las entradas son personales e intransferibles.</li>
-          <li>Puedes solicitar un reembolso hasta 48h antes del evento.</li>
-          <li>Recibirás tu entrada en tu correo electrónico.</li>
-          <li>Presenta tu entrada digital o impresa.</li>
-        </ul>
+
+
+      <div class="border mb-0 rounded card col-md-4 w-100">
+        <div class="card-header p-3"><strong>Información importante</strong></div>
+        <div class="card-body p-1">
+          <ul>
+            <li>Las entradas son personales e intransferibles.</li>
+            <li>Puedes solicitar un reembolso hasta 48h antes del evento.</li>
+            <li>Recibirás tu entrada en tu correo electrónico.</li>
+            <li>Presenta tu entrada digital o impresa.</li>
+          </ul>
+        </div>
       </div>
     </div>
   </div>
+</div>
 </div>
 
 <script>
   const termsCheckbox = document.getElementById('terms');
   const submitBtn = document.getElementById('submitBtn');
 
-  termsCheckbox.addEventListener('change', function() {
+  termsCheckbox.addEventListener('change', function () {
     submitBtn.disabled = !this.checked;
   });
+</script>
+
+<style>
+  #id_quantity,
+  #id_event,
+  #id_type,
+  #id_card_type,
+  #id_card_number,
+  #id_expiry_month,
+  #id_expiry_year,
+  #id_card_cvv {
+    width: 100%;
+  }
+</style>
+
+<script>
+  const eventPrices = {{ event_prices|safe }}; 
+  const eventSelect = document.getElementById("id_event");
+  const typeSelect = document.getElementById("typeSelect");
+  const quantityInput = document.getElementById("quantityInput");
+
+  const priceDisplay = document.getElementById("priceDisplay");
+  const quantityDisplay = document.getElementById("quantityDisplay");
+  const subtotalDisplay = document.getElementById("subtotalDisplay");
+  const taxDisplay = document.getElementById("taxDisplay");
+  const totalDisplay = document.getElementById("totalDisplay");
+
+  function updateSummary() {
+    const eventId = eventSelect.value;
+    const type = typeSelect.value;
+    const quantity = parseInt(quantityInput.value) || 0;
+
+    if (!eventPrices[eventId]) return;
+
+    const price = eventPrices[eventId][type];
+    const subtotal = price * quantity;
+    const tax = subtotal * 0.10;
+    const total = subtotal + tax;
+
+    priceDisplay.textContent = `$${price.toFixed(2)}`;
+    quantityDisplay.textContent = quantity;
+    subtotalDisplay.textContent = `$${subtotal.toFixed(2)}`;
+    taxDisplay.textContent = `$${tax.toFixed(2)}`;
+    totalDisplay.textContent = `$${total.toFixed(2)}`;
+  }
+
+  [eventSelect, typeSelect, quantityInput].forEach(el => {
+    el.addEventListener("change", updateSummary);
+    el.addEventListener("input", updateSummary);
+  });
+
 </script>
 
 {% endblock %}
