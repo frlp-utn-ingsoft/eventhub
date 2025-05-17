@@ -1,58 +1,95 @@
 {% extends 'base.html' %}
 
 {% block content %}
-{% if user_is_organizer %}        
+{% if user.is_organizer %}
 
-<h3>Tickets de mis eventos</h3>
+<div class="container mt-4">
+  <div class="card shadow-sm mb-4 p-3">
+    <form method="get" class="row g-3 d-flex justify-content-around">
+      
+      <div class="col-md-3">
+        <label for="id_event" class="form-label">Evento</label>
+        <select name="event" class="form-select" id="id_event">
+          <option value="">Todos los eventos</option>
+          {% for event in events %}
+          <option value="{{ event.id }}" {% if request.GET.event == event.id|add:"" %}selected{% endif %}>
+            {{ event.title }}
+          </option>
+          {% endfor %}
+        </select>
+      </div>
 
-<form method="get" class="row g-3 mb-4">
-  <div class="col-md-3">
-    {{ form.event.label_tag }} {{ form.event }}
-  </div>
-  <div class="col-md-2">
-    {{ form.type.label_tag }} {{ form.type }}
-  </div>
-  <div class="col-md-2">
-    {{ form.date_from.label_tag }} {{ form.date_from }}
-  </div>
-  <div class="col-md-2">
-    {{ form.date_to.label_tag }} {{ form.date_to }}
-  </div>
-  <div class="col-md-2 d-flex align-items-end">
-    <button type="submit" class="btn btn-primary">Filtrar</button>
-  </div>
-</form>
 
-<table class="table">
-  <thead>
-    <tr>
-      <th>Evento</th>
-      <th>Usuario</th>
-      <th>Tipo</th>
-      <th>Cantidad</th>
-      <th>Fecha</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for ticket in tickets %}
+      <div class="col-md-2">
+        <label for="id_type" class="form-label">Tipo</label>
+        <select name="type" class="form-select" id="id_type">
+          <option value="">Seleccione un tipo de entrada</option>
+          <option value="general" {% if form.data.type == "general" %}selected{% endif %}>General</option>
+          <option value="vip" {% if form.data.type == "vip" %}selected{% endif %}>VIP</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label for="id_date_from" class="form-label">Desde</label>
+        <input type="date" name="date_from" class="form-control" id="id_date_from" value="{{ form.data.date_from }}">
+      </div>
+
+      <div class="col-md-2">
+        <label for="id_date_to" class="form-label">Hasta</label>
+        <input type="date" name="date_to" class="form-control" id="id_date_to" value="{{ form.data.date_to }}">
+      </div>
+
+      <div class="col-md-1 align-self-end">
+        <button type="submit" class="btn w-100 btn-outline-primary">Filtrar</button>
+      </div>
+      <div class="col-md-1 align-self-end">
+        <a href="{% url 'organizer_tickets_list' %}" class="btn w-100 btn-outline-secondary">Limpiar</a>
+      </div>
+    </form>
+  </div>
+
+
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Evento</th>
+        <th>Fecha del evento</th>
+        <th>Usuario</th>
+        <th>Tipo</th>
+        <th>Cantidad</th>
+        <th>Fecha de compra</th>
+        <th>Acciones</th>
+
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for ticket in tickets %}
       <tr>
         <td>{{ ticket.event.title }}</td>
+        <td>{{ ticket.event.scheduled_at }}</td>
         <td>{{ ticket.user.username }}</td>
         <td>{{ ticket.type }}</td>
         <td>{{ ticket.quantity }}</td>
-        <td>{{ ticket.created_at|date:"d/m/Y" }}</td>
+        <td>{{ ticket.buy_date|date:"d/m/Y" }}</td>
+        <td><a href="{% url 'delete_ticket' ticket.ticket_code %}" class="btn btn-sm btn-outline-danger"
+            onclick="return confirm('¿Seguro que deseas eliminar este ticket?');" title="Eliminar"
+            aria-label="Eliminar">
+            <i class="bi bi-trash" aria-hidden="true"></i></a></td>
       </tr>
-    {% empty %}
-      <tr><td colspan="5">No hay tickets que coincidan con los filtros.</td></tr>
-    {% endfor %}
-  </tbody>
-</table>
-{% else %}
+      {% empty %}
+      <tr>
+        <td colspan="5">No hay tickets que coincidan con los filtros.</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
 
-<div>
+  <div>
     <h1 class="text-danger">No tiene permisos para esta seccion</h1>
-    <a href="{% url 'tickets_list' %}" class="btn btn-outline-secondary" title="Regresar"></a>
+    <a href="{% url 'home' %}" class="btn btn-outline-secondary" title="Regresar"></a>
+  </div>
+  {% endif %}
 </div>
-{% endif %}
-
 {% endblock %}

@@ -449,9 +449,9 @@ def organizer_tickets_list(request):
         if form.cleaned_data['type']:
             tickets = tickets.filter(type=form.cleaned_data['type'])
         if form.cleaned_data['date_from']:
-            tickets = tickets.filter(created_at__gte=form.cleaned_data['date_from'])
+            tickets = tickets.filter(buy_date__date__gte=form.cleaned_data['date_from'])
         if form.cleaned_data['date_to']:
-            tickets = tickets.filter(created_at__lte=form.cleaned_data['date_to'])
+            tickets = tickets.filter(buy_date__date__lte=form.cleaned_data['date_to'])
 
     return render(request, "tickets/organizer_tickets_list.html", {
         "tickets": tickets,
@@ -505,7 +505,10 @@ def delete_ticket(request, ticket_code):
         raise Http404("No tienes permiso para eliminar este ticket.")
 
     ticket.delete()
+    if request.user.is_organizer:
+        return redirect('organizer_tickets_list')
     return redirect('tickets_list')
+
 
 @login_required
 def update_ticket(request, ticket_code):

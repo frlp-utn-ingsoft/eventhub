@@ -91,7 +91,7 @@ class TicketForm(forms.ModelForm):
             self.event_instance = None
 
 
-class TicketFilterForm(forms.ModelForm):
+class TicketFilterForm(forms.Form):
     event = forms.ModelChoiceField(queryset=Event.objects.none(), required=False, label="Evento")
     type = forms.ChoiceField(choices=[('', 'Todos'), ('general', 'General'), ('vip', 'VIP')], required=False, label="Tipo de entrada")
     date_from = forms.DateField(required=False, label="Desde", widget=forms.DateInput(attrs={'type': 'date'}))
