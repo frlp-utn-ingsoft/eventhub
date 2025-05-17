@@ -438,6 +438,7 @@ def tickets_list(request):
 
 @login_required
 def organizer_tickets_list(request):
+    events = Event.objects.all()
     organizer_events = Event.objects.filter(organizer=request.user)
     tickets = Ticket.objects.filter(event__in=organizer_events)
 
@@ -456,6 +457,7 @@ def organizer_tickets_list(request):
     return render(request, "tickets/organizer_tickets_list.html", {
         "tickets": tickets,
         "form": form,
+        'events': events
     })
 
 @login_required

@@ -12,9 +12,9 @@
         <select name="event" class="form-select" id="id_event">
           <option value="">Todos los eventos</option>
           {% for event in events %}
-          <option value="{{ event.id }}" {% if request.GET.event == event.id|add:"" %}selected{% endif %}>
-            {{ event.title }}
-          </option>
+            <option value="{{ event.id }}" {% if request.GET.event == event.id|add:"" %}selected{% endif %}>
+              {{ event.title }}
+            </option>
           {% endfor %}
         </select>
       </div>

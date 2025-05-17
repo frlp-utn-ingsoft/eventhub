@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-5">
+<div class="container mt-5 mb-5">
     <div class="row">
         <div class="col-md-8 offset-md-2">
             <h1 class="mb-4">
@@ -91,6 +91,30 @@
                                             </div>
                                         </div>
                                     {% endfor %}
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="price_general" class="form-label">Precio entrada general</label>
+                                    <input class="form-control"
+                                    id="price_general"
+                                    required=""
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value="{{ event.price_general }}"
+                                    name="price_general" />
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="price_vip" class="form-label">Precio entrada VIP</label>
+                                    <input class="form-control"
+                                    id="price_vip"
+                                    required=""
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value="{{ event.price_vip }}"
+                                    name="price_vip" />
                                 </div>
                             </div>
                             <div>

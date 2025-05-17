@@ -49,19 +49,21 @@
                             <li class="nav-item">
                                 {% navbar_link 'events' 'Eventos' %}
                             </li>
-                            <li class="nav-item">
+                            {% if user.is_organizer %}
+                                <li class="nav-item">
                                 {% navbar_link 'locations_list' 'Locaciones' %}
                             </li>
                             <li class="nav-item">
                                 {% navbar_link 'categories_list' 'Categorías' %}
-
                             </li>
+                            {% endif %}
+                            
                             <li class="nav-item">
                                 {% navbar_link 'list_notifications' 'Notificaciones' %}
                             </li>
                             {% if user.is_organizer %}
                                 <li class="nav-item">
-                                    {% navbar_link 'organizer_tickets_list' 'Listado tickets' %}
+                                    {% navbar_link 'organizer_tickets_list' 'Tickets' %}
                                 </li>
                             {% else %}
                                 <li class="nav-item">
