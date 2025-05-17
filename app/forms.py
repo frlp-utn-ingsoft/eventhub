@@ -25,7 +25,20 @@ class TicketForm(forms.ModelForm):
         widget=forms.NumberInput(attrs={'id': 'quantityInput'})
     )
 
-    type = forms.ChoiceField(choices=[('general', 'General'), ('vip', 'VIP')], required=False, label="Tipo de entrada", widget=forms.Select(attrs={'id': 'typeSelect'}))
+    TYPE_CHOICES = [
+        ('', 'Seleccione un tipo de entrada'),  # Valor vacío
+        ('general', 'General'),
+        ('vip', 'VIP'),
+    ]
+
+
+    type = forms.ChoiceField(choices=TYPE_CHOICES, required=True, label="Tipo de entrada", widget=forms.Select(attrs={'id': 'typeSelect'}))
+
+    def clean_type(self):
+        value = self.cleaned_data['type']
+        if value == '':
+            raise forms.ValidationError('Debe seleccionar un tipo de entrada.')
+        return value
 
     class Meta:
         model = Ticket

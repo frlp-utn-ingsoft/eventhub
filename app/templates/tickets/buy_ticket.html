@@ -35,9 +35,10 @@
               <div class="col-md-4 text-left fw-bold">Evento:</div>
               <div class="col-md-8">
                 {% if form.fields.event %}
-                {{ form.event }}
+                  {{ form.event }}
                 {% else %}
-                <input type="text" class="form-control" value="{{ event.title }}" disabled>
+                  <input type="text" class="form-control" value="{{ event.title }}" disabled>
+                  <input type="hidden" id="id_event" value="{{ event.id }}">
                 {% endif %}
               </div>
             </div>
@@ -152,7 +153,7 @@
 </style>
 
 <script>
-  const eventPrices = {{ event_prices|safe }}; 
+  const eventPrices = {{ event_prices| safe }};
   const eventSelect = document.getElementById("id_event");
   const typeSelect = document.getElementById("typeSelect");
   const quantityInput = document.getElementById("quantityInput");

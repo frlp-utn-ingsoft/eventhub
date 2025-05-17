@@ -15,7 +15,7 @@ def register(request):
     if request.method == "POST":
         email = request.POST.get("email")
         username = request.POST.get("username")
-        is_superuser = request.POST.get("is-superuser") is not None
+        is_organizer = request.POST.get("is-organizer") is not None
         password = request.POST.get("password")
         password_confirm = request.POST.get("password-confirm")
 
@@ -32,7 +32,7 @@ def register(request):
             )
         else:
             user = User.objects.create_user(
-                email=email, username=username, password=password, is_superuser=is_superuser
+                email=email, username=username, password=password, is_organizer=is_organizer
             )
             login(request, user)
             return redirect("events")
@@ -68,7 +68,7 @@ def events(request):
     return render(
         request,
         "app/events.html",
-        {"events": events, "user_is_is_superuser": request.user.is_superuser},
+        {"events": events, "user_is_is_organizer": request.user.is_organizer},
     )
 
 
@@ -117,7 +117,7 @@ def event_detail(request, id):
 @login_required
 def event_delete(request, id):
     user = request.user
-    if not user.is_superuser:
+    if not user.is_organizer:
         return redirect("events")
 
     if request.method == "POST":
@@ -284,7 +284,7 @@ def delete_category(request, category_id):
 @login_required
 def create_notification(request, notification_id=None):
     user = request.user
-    if not user.is_superuser:
+    if not user.is_organizer:
         return redirect("list_notifications")
     
     events = Event.objects.all()
@@ -351,7 +351,7 @@ def list_notifications(request):
     event_filter = request.GET.get('event_filter', '')
     priority_filter = request.GET.get('priority_filter', '')
 
-    if request.user.is_staff:  # user admin
+    if request.user.is_organizer:
         notifications = Notification.objects.all()
         if search:
             notifications = notifications.filter(title__icontains=search)
@@ -379,7 +379,7 @@ def list_notifications(request):
 @login_required
 def delete_notification(request, notification_id):
     user = request.user
-    if not user.is_superuser:
+    if not user.is_organizer:
         return redirect("list_notifications")
     
     notification = get_object_or_404(Notification, id=notification_id)
