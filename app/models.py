@@ -353,10 +353,11 @@ class Notification(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES)
 
-    #users = models.ManyToManyField(
-   #     User,
-    #    related_name="notifications"
-    #)
+    users = models.ManyToManyField(
+        User,
+        related_name="notifications",
+        through='NotificationUser'
+    )
 
     event = models.ForeignKey(
         'Event',
@@ -406,18 +407,13 @@ class Notification(models.Model):
             title=title,
             message=message,
             priority=priority,
-            event=event
+            event=event # Django se encarga del id internamente
         )
-        # Asociar usuarios directamente (ManyToMany)
+
+#Esto actualiza la relación ManyToMany a través de la tabla intermedia 'NotificationUser
         notification.users.set(users)
-        # Asociamos los usuarios
-        #notification.users.add(*users)
-        for user in users:
-            
-            NotificationUser.objects.create(user=user, notification=notification)
 
         return True, None
-
 
     def update(self, title=None, message=None, priority=None, users=None, event=None):
         self.title = title or self.title
@@ -426,7 +422,7 @@ class Notification(models.Model):
 
         # Actualizar el evento si se proporciona uno nuevo
         if event is not None:
-            self.event = event
+            self.event_id = event.id
 
         self.save()
 
