@@ -345,7 +345,7 @@ class EventDeleteViewTest(BaseEventTestCase):
         # Crear tickets por 40 entradas
         Ticket.objects.create(event=event, user=self.organizer, quantity=40)
 
-        response = self.client.login(username="pepe", password="pepe1234")  # Autenticar
+        response = self.client.login(username="organizador", password="password123")  # Autenticar
         response = self.client.get(reverse("event_detail", args=[event.pk]))
         self.assertEqual(response.status_code, 200)
         self.assertIn("porcentaje_ocupado", response.context)
