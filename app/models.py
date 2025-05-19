@@ -43,7 +43,7 @@ class Event(models.Model):
         return self.title
 
     @classmethod
-    def validate(cls, title, description, scheduled_at):
+    def validate(cls, title, description, scheduled_at, capacity=None):
         errors = {}
 
         if title == "":
@@ -52,11 +52,14 @@ class Event(models.Model):
         if description == "":
             errors["description"] = "Por favor ingrese una descripcion"
 
+        if capacity is not None and capacity <= 0:
+            errors["capacity"] = "La capacidad debe ser mayor a 0"
+
         return errors
 
     @classmethod
     def new(cls, title, description, scheduled_at, organizer,category=None,venue=None, capacity=None):
-        errors = Event.validate(title, description, scheduled_at)
+        errors = Event.validate(title, description, scheduled_at, capacity)
 
         if len(errors.keys()) > 0:
             return False, errors
