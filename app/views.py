@@ -101,8 +101,9 @@ def event_detail(request, id):
     now = timezone.now()
     rating_to_edit = None
     rating_id = request.GET.get('rating_id') or request.POST.get('rating_id')
-
     event_has_started = event.scheduled_at <= now
+
+    has_ticket = Ticket.objects.filter(event=event, user=request.user).exists()  # 🔹 Agregado
 
     if rating_id:
         rating_to_edit = get_object_or_404(Rating, pk=rating_id, event=event)
@@ -118,14 +119,19 @@ def event_detail(request, id):
             form = RatingForm(request.POST, user=request.user, event=event)
 
         if form.is_valid():
-            try:
-                new_rating = form.save(commit=False)
-                new_rating.event = event
-                new_rating.user = request.user
-                new_rating.save()
-                return redirect('event_detail', id=id)
-            except IntegrityError:
-                form.add_error(None, "Ya has calificado este evento.")
+            if not event_has_started:
+                form.add_error(None, "Solo podés calificar eventos que ya ocurrieron.")  # 🔹 Validación
+            elif not has_ticket:
+                form.add_error(None, "Solo podés calificar si tenés una entrada para este evento.")  # 🔹 Validación
+            else:
+                try:
+                    new_rating = form.save(commit=False)
+                    new_rating.event = event
+                    new_rating.user = request.user
+                    new_rating.save()
+                    return redirect('event_detail', id=id)
+                except IntegrityError:
+                    form.add_error(None, "Ya has calificado este evento.")
     else:
         form = RatingForm(instance=rating_to_edit, user=request.user, event=event)
 
@@ -136,7 +142,8 @@ def event_detail(request, id):
         'rating_to_edit': rating_to_edit,
         'can_edit': user_is_organizer,
         'now': now,
-        'event_has_started': event_has_started
+        'event_has_started': event_has_started,
+        'has_ticket': has_ticket,  # 🔹 Para usarlo en el template si querés
     }
     return render(request, 'app/event_detail.html', context)
 
