@@ -12,6 +12,7 @@ import qrcode
 from io import BytesIO
 import qrcode.constants
 from django.db import transaction
+from django.db import IntegrityError
 
 from .models import Event, Ticket, User, PaymentInfo, Rating, Category, Venue, RefundRequest
 from .forms import EventForm, TicketForm, PaymentForm, TicketFilterForm, RatingForm, CategoryForm, VenueForm, RefundRequestForm, RefundApprovalForm
@@ -110,20 +111,23 @@ def event_detail(request, id):
 
     if request.method == 'POST':
         if rating_to_edit:
-            form = RatingForm(request.POST, instance=rating_to_edit)
+            form = RatingForm(request.POST, instance=rating_to_edit, user=request.user, event=event)
         else:
             if user_is_organizer:
                 return redirect('event_detail', id=id)
-            form = RatingForm(request.POST)
+            form = RatingForm(request.POST, user=request.user, event=event)
 
         if form.is_valid():
-            new_rating = form.save(commit=False)
-            new_rating.event = event
-            new_rating.user = request.user
-            new_rating.save()
-            return redirect('event_detail', id=id)
+            try:
+                new_rating = form.save(commit=False)
+                new_rating.event = event
+                new_rating.user = request.user
+                new_rating.save()
+                return redirect('event_detail', id=id)
+            except IntegrityError:
+                form.add_error(None, "Ya has calificado este evento.")
     else:
-        form = RatingForm(instance=rating_to_edit)
+        form = RatingForm(instance=rating_to_edit, user=request.user, event=event)
 
     context = {
         'event': event,
@@ -135,6 +139,7 @@ def event_detail(request, id):
         'event_has_started': event_has_started
     }
     return render(request, 'app/event_detail.html', context)
+
 
 @login_required
 def rating_delete(request, id, rating_id):
@@ -149,7 +154,7 @@ def rating_delete(request, id, rating_id):
 @login_required
 def create_event(request):
     if not request.user.is_organizer:
-        return redirect('events') 
+        return redirect('events')
 
     if request.method == 'POST':
         form = EventForm(request.POST, request.FILES)

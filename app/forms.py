@@ -12,23 +12,33 @@ class RatingForm(forms.ModelForm):
         model = Rating
         fields = ['title', 'score', 'comment']
 
-    def clean_title(self):
-        title = self.cleaned_data.get('title', '').strip()
-        if not title:
-            raise forms.ValidationError("El título no puede estar vacío.")
-        return title
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user", None)
+        self.event = kwargs.pop("event", None)
+        super().__init__(*args, **kwargs)
 
-    def clean_comment(self):
-        comment = self.cleaned_data.get('comment', '').strip()
-        if not comment:
-            raise forms.ValidationError("El comentario no puede estar vacío.")
-        return comment
+def clean(self):
+    cleaned_data = super().clean()
+    title = cleaned_data.get('title', '').strip()
+    comment = cleaned_data.get('comment', '').strip()
+    score = cleaned_data.get('score')
 
-    def clean_score(self):
-        score = self.cleaned_data.get('score')
-        if not score:
-            raise forms.ValidationError("Debe seleccionar una calificación.")
-        return score
+    # Validaciones básicas
+    if not title:
+        self.add_error('title', "El título no puede estar vacío.")
+    if not comment:
+        self.add_error('comment', "El comentario no puede estar vacío.")
+    if not score:
+        self.add_error('score', "Debe seleccionar una calificación.")
+
+    # Validación de duplicado
+    if self.user and self.event:
+        if Rating.objects.filter(user=self.user, event=self.event).exists():
+            self.add_error(None, "Ya has calificado este evento.")  # Error general del formulario
+
+    return cleaned_data
+
+
 
 class CategoryForm(forms.ModelForm):
     class Meta:

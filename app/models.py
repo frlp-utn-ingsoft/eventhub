@@ -77,28 +77,28 @@ class Event(models.Model):
     general_tickets_available = models.PositiveIntegerField(default=0)
     vip_tickets_total = models.PositiveIntegerField(default=0)
     vip_tickets_available = models.PositiveIntegerField(default=0)
-    
+
     def __str__(self):
         return self.title
-    
+
     @property
     def formatted_date(self):
         days = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
         months = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
         date = timezone.localtime(self.scheduled_at)
         return f"{days[date.weekday()]} {date.day} de {months[date.month - 1]} del {date.year} "
-    
+
     @property
     def is_sold_out(self):
         return self.general_tickets_available == 0 and self.vip_tickets_available == 0
-    
+
     def get_available_tickets(self, ticket_type):
         if ticket_type == Ticket.TicketType.GENERAL:
             return self.general_tickets_available
         elif ticket_type == Ticket.TicketType.VIP:
             return self.vip_tickets_available
         return 0
-    
+
     @classmethod
     def validate(cls, title, description, scheduled_at, general_tickets=None, vip_tickets=None):
         errors = {}
@@ -113,15 +113,15 @@ class Event(models.Model):
         if vip_tickets is not None and vip_tickets < 0:
             errors["vip_tickets"] = "Ingrese una cantidad válida de tickets VIP"
         return errors
-    
+
     @classmethod
     def new(cls, title, description, scheduled_at, organizer, venue=None, categories=None,
-            general_price=Decimal('0.00'), vip_price=Decimal('0.00'), 
+            general_price=Decimal('0.00'), vip_price=Decimal('0.00'),
             general_tickets=0, vip_tickets=0):
         errors = cls.validate(title, description, scheduled_at, general_tickets, vip_tickets)
         if len(errors.keys()) > 0:
             return False, errors
-        
+
         event = cls.objects.create(
             title=title,
             description=description,
@@ -138,7 +138,7 @@ class Event(models.Model):
         if categories:
             event.categories.set(categories)
         return True, event
-    
+
     def update(self, title=None, description=None, scheduled_at=None, organizer=None,
                general_price=None, vip_price=None, general_tickets=None, vip_tickets=None,
                venue=None, categories=None):
@@ -147,7 +147,7 @@ class Event(models.Model):
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
         self.venue = venue or self.venue
-        
+
         if general_price is not None:
             self.general_price = general_price
         if vip_price is not None:
@@ -160,25 +160,28 @@ class Event(models.Model):
             diff = vip_tickets - self.vip_tickets_total
             self.vip_tickets_total = vip_tickets
             self.vip_tickets_available += diff
-            
+
         self.save()
-        
+
         if categories is not None:
             self.categories.set(categories)
-        
-        return self
 
+        return self
 
 class Rating(models.Model):
     event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='ratings')
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     title = models.CharField(max_length=100)
     comment = models.TextField(blank=True, null=True)
-    score = models.PositiveSmallIntegerField() 
+    score = models.PositiveSmallIntegerField()
     created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('event', 'user')  # Garantiza que un usuario no pueda calificar el mismo evento dos veces
 
     def __str__(self):
         return f"{self.user.username} - {self.score} estrellas"
+
 
 
 class Ticket(models.Model):
@@ -254,8 +257,8 @@ class Ticket(models.Model):
 
     @property
     def is_refundable(self):
-        return (not self.is_used and 
-                self._is_within_edit_window() and 
+        return (not self.is_used and
+                self._is_within_edit_window() and
                 (self.event.scheduled_at - timezone.now()).days > 0)
 
     def can_be_modified_by(self, user):
@@ -280,7 +283,7 @@ class PaymentInfo(models.Model):
         ('MC', 'MasterCard'),
         ('AMEX', 'American Express'),
     ]
-    
+
     user = models.ForeignKey('User', on_delete=models.CASCADE)
     card_type = models.CharField(max_length=20, choices=CARD_TYPE_CHOICES, default='VISA')
     card_number = EncryptedCharField(max_length=19)
@@ -300,10 +303,10 @@ class PaymentInfo(models.Model):
 
     def clean(self):
         super().clean()
-    
+
         if self.expiry_month and (self.expiry_month < 1 or self.expiry_month > 12):
             raise ValidationError({'expiry_month': 'Mes de expiración inválido (1-12)'})
-     
+
         current_year = timezone.now().year
         if self.expiry_year and (self.expiry_year < current_year or self.expiry_year > current_year + 20):
             raise ValidationError({'expiry_year': 'Año de expiración inválido'})
