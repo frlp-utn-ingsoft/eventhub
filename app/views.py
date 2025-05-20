@@ -141,9 +141,22 @@ def event_form(request, id=None):
 
         category = get_object_or_404(Category, pk=category_id)
         venue = get_object_or_404(Venue, pk=venue_id)
+        capacity = int(request.POST.get("capacity") or 0)
+        if venue.capacity is not None and capacity > venue.capacity:
+            categories = Category.objects.filter(is_active=True)
+            venues = Venue.objects.all()
+            error = f"La capacidad del evento ({capacity}) excede la del lugar ({venue.capacity})."
+            return render(
+                request,
+                "app/event_form.html",
+                {
+                    "error": error,
+                }
+            )
 
         if id is None:
             success, errors = Event.new(title, description, scheduled_at, request.user, category, venue,capacity)
+        #si la capacity es mayor a la capacidad del venue, se muestra un error
         else:
             event = get_object_or_404(Event, pk=id)
             event.update(title, description, scheduled_at, request.user, category, venue,capacity)
