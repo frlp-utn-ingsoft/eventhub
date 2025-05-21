@@ -16,6 +16,24 @@
             </a>
         {% endif %}
     </div>
+
+    <!-- Checkbox para mostrar eventos pasados -->
+    <form method="get" class="mb-3">
+        <div class="form-check">
+            <input
+                type="checkbox"
+                class="form-check-input"
+                id="showPast"
+                name="show_past"
+                {% if show_past %}checked{% endif %}
+            >
+            <label class="form-check-label" for="showPast">
+                Mostrar eventos pasados
+            </label>
+        </div>
+        <button type="submit" class="btn btn-outline-primary btn-sm mt-2">Aplicar</button>
+    </form>
+
     <table class="table">
         <thead>
             <tr>
@@ -27,7 +45,7 @@
             </tr>
         </thead>
         <tbody>
-            {% for event in events%}
+            {% for event in events %}
                 <tr>
                     <td>{{ event.title }}</td>
                     <td>{{ event.description }}</td>
@@ -48,8 +66,7 @@
                                 <i class="bi bi-eye" aria-hidden="true"></i>
                             </a>
 
-                            <!-- Botón para comprar un ticket -->
-                             {% if not request.user.is_authenticated or not request.user.is_organizer %} <!-- si el user es ORGANIZER no puede visualizar el boton -->
+                            {% if not request.user.is_authenticated or not request.user.is_organizer %}
                             <a href="{% url 'ticket_create' event.id %}" 
                                class="btn btn-sm btn-outline-success" 
                                aria-label="Comprar Ticket" 
@@ -57,21 +74,20 @@
                                 <i class="bi bi-cart-plus" aria-hidden="true"></i> Comprar Ticket
                             </a>
                             {% endif %}
-                            
+
                             {% if user_is_organizer %}
                                 <a href="{% url 'event_edit' event.id %}"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    aria-label="Editar"
-                                    title="Editar">
+                                   class="btn btn-sm btn-outline-secondary"
+                                   aria-label="Editar"
+                                   title="Editar">
                                     <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
                                 <form action="{% url 'event_delete' event.id %}" method="POST">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-danger"
-                                        title="Eliminar"
-                                        type="submit"
-                                        aria-label="Eliminar"
-                                        titile="Eliminar">
+                                            title="Eliminar"
+                                            type="submit"
+                                            aria-label="Eliminar">
                                         <i class="bi bi-trash" aria-hidden="true"></i>
                                     </button>
                                 </form>
@@ -81,7 +97,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center">No hay eventos disponibles</td>
+                    <td colspan="5" class="text-center">No hay eventos disponibles</td>
                 </tr>
             {% endfor %}
         </tbody>
