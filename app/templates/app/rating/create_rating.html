@@ -1,7 +1,27 @@
 <div class="card mt-4">
     <div class="card-header">
-        <strong>Calificaciones y Reseñas ({{ ratings.count }})</strong>
+        <strong class="strong1">Calificaciones y Reseñas ({{ ratings.count }})</strong>
+        <!-- Si el usuario es organizador muestro promedio -->
+        {% if user_is_organizer %}
+            <strong class="strong2">Calificación promedio:</strong>
+            <!-- Si no hay calificaciones -->
+            {% if not ratings %}
+                Sin calificaciones
+            {% else %}
+                {{ promedio|floatformat:1 }}
+                {% for i in "12345" %}
+                    {% if forloop.counter <= promedio %}
+                        <i class="bi bi-star-fill text-warning"></i>
+                    {% elif forloop.counter <= promedio|add:"0.5" %}
+                        <i class="bi bi-star-half text-warning"></i>
+                    {% else %}
+                        <i class="bi bi-star text-warning"></i>
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endif %}
     </div>
+
     <div class="card-body">
         {% for ratingg in ratings %}
             <div class="mb-4 border-bottom pb-3">
@@ -10,7 +30,9 @@
                     <strong>{{ ratingg.user.username }}</strong>
                     <small class="text-muted ms-2">{{ ratingg.created_at|date:"j M Y, H:i" }}</small>
                 </div>
+
                 <div class="fw-bold">{{ ratingg.title }}</div>
+
                 <div class="text-warning mb-1">
                     {% for i in "12345" %}
                         {% if forloop.counter <= ratingg.rating %}
@@ -20,14 +42,15 @@
                         {% endif %}
                     {% endfor %}
                 </div>
+
                 <p class="mb-0">{{ ratingg.text }}</p>
+
                 <!-- Botones Editar y Eliminar -->
                 <div>
                     {% if request.user == ratingg.user or request.user.is_organizer %}
                         <button class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ ratingg.id }}">🗑️</button>
                     {% endif %}
                     {% if request.user == ratingg.user and not request.user.is_organizer %}
-                        <!-- Botón de Editar -->
                         <button class="btn btn-sm btn-outline-primary me-2" data-bs-toggle="modal" data-bs-target="#editModal{{ ratingg.id }}">✏️</button>
                     {% endif %}
                 </div>
@@ -47,7 +70,6 @@
                               <label for="title{{ ratingg.id }}" class="form-label">Título</label>
                               <input type="text" class="form-control" name="title" id="title{{ ratingg.id }}" value="{{ ratingg.title }}" required>
                             </div>
-                  
                             <div class="mb-3">
                               <label class="form-label">Calificación</label><br>
                               <div class="star-rating">
@@ -57,7 +79,6 @@
                                 {% endfor %}
                               </div>
                             </div>
-                  
                             <div class="mb-3">
                               <label for="comment{{ ratingg.id }}" class="form-label">Texto</label>
                               <textarea class="form-control" name="comment" id="comment{{ ratingg.id }}" rows="3" required>{{ ratingg.text }}</textarea>
@@ -71,27 +92,28 @@
                       </div>
                     </div>
                   </div>
-                   <!-- Modal de confirmación de eliminación -->
-                    <div class="modal fade" id="deleteModal{{ ratingg.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ ratingg.id }}" aria-hidden="true">
-                        <div class="modal-dialog">
-                        <div class="modal-content">
-                            <form method="post" action="{% url 'eliminar_rating' ratingg.id %}">
-                            {% csrf_token %}
-                            <div class="modal-header">
-                                <h5 class="modal-title" id="deleteModalLabel{{ ratingg.id }}">Confirmar eliminación</h5>
-                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
-                            </div>
-                            <div class="modal-body">
-                                ¿Estás seguro de que deseas eliminar esta reseña?
-                            </div>
-                            <div class="modal-footer">
-                                <button type="submit" class="btn btn-danger">Eliminar</button>
-                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            </div>
-                            </form>
+
+                <!-- Modal de confirmación de eliminación -->
+                <div class="modal fade" id="deleteModal{{ ratingg.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ ratingg.id }}" aria-hidden="true">
+                    <div class="modal-dialog">
+                    <div class="modal-content">
+                        <form method="post" action="{% url 'eliminar_rating' ratingg.id %}">
+                        {% csrf_token %}
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="deleteModalLabel{{ ratingg.id }}">Confirmar eliminación</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
                         </div>
+                        <div class="modal-body">
+                            ¿Estás seguro de que deseas eliminar esta reseña?
                         </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-danger">Eliminar</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        </div>
+                        </form>
                     </div>
+                    </div>
+                </div>
             </div>
         {% empty %}
             <p>No hay calificaciones aún.</p>
@@ -147,6 +169,7 @@
     .star-rating label:hover ~ label {
         color: gold;
     }
+
     .rating-container {
         display: flex;
         justify-content: space-between;
@@ -169,5 +192,12 @@
 
     .rating-buttons button:hover {
         background-color: #f0f0f0;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1rem;
     }
 </style>

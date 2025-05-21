@@ -9,6 +9,7 @@ from django.contrib import messages
 from .models import Category, Event, User, Venue, refund,Rating
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import ListView
+from django.db.models import Avg
 
 def register(request):
     if request.method == "POST":
@@ -77,7 +78,10 @@ def event_detail(request, id):
     categories = Category.objects.all()
      # Obtener todas las calificaciones de este evento
     ratings = Rating.objects.filter(event=event)
-
+    # calculo promedio de ratings
+    total = sum([r.rating for r in ratings])
+    count = ratings.count()
+    promedio = total / count if count > 0 else 0
     # Llamar a la función `handle_rating` para manejar la calificación
     rating_saved = create_rating(request, event)
 
@@ -85,7 +89,7 @@ def event_detail(request, id):
     if rating_saved:
         ratings = Rating.objects.filter(event=event)
         
-    return render(request, "app/event/event_detail.html", {"event": event,'ratings': ratings ,"categories": categories, "user_is_organizer": request.user.is_organizer})
+    return render(request, "app/event/event_detail.html", {"event": event,'ratings': ratings ,"promedio":promedio,"categories": categories, "user_is_organizer": request.user.is_organizer})
 
 
 @login_required
@@ -343,7 +347,7 @@ def create_rating(request, event):
             rating=stars,
             text=comment
         )
-        return True
+        return  True
     return False
 
 @login_required
