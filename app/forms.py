@@ -257,7 +257,17 @@ class VenueForm(forms.ModelForm):
         class Meta:
             model = Venue
             fields = ['name', 'address', 'city', 'capacity', 'contact']
-            # Ya no necesitamos definir widgets aquí porque los definimos arriba
+        
+        # --- Validaciones a nivel de campo ---
+        
+        def clean_capacity(self):
+            capacity = self.cleaned_data.get('capacity')
+            if capacity is not None: 
+                if capacity <= 0:
+                    raise forms.ValidationError("La capacidad debe ser un número positivo.")
+                if capacity > 100000: 
+                    raise forms.ValidationError("La capacidad excede el límite máximo (100,000).")
+            return capacity
 
 ## agregre el Event_form
 class VenueChoiceField(forms.ModelChoiceField):

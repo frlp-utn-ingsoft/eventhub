@@ -5,6 +5,27 @@
     <div class="row justify-content-center">
         <div class="col-md-10">
             <h1 class="mb-4 text-start">{{ action }} Nueva Ubicación</h1>
+
+            <div class="event_errors">
+                {% if form.errors %}
+                        <div class="alert alert-danger">
+                            Por favor, corrige los siguientes errores:
+                            <ul class="mb-0">
+                                {% for field in form %}
+                                    {% if field.errors %}
+                                        {% for error in field.errors %}
+                                            <li>{{ field.label }}: {{ error }}</li>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endfor %}
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+            </div>
+
             <div class="card shadow-sm p-4">
                 {% if messages %}
                     <div class="messages mb-3">
@@ -16,7 +37,7 @@
                         {% endfor %}
                     </div>
                 {% endif %}
-                <form method="post">
+                <form method="post" novalidate>
                     {% csrf_token %}
                     {% for field in form %}
                         <div class="mb-3">
