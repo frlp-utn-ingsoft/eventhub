@@ -40,7 +40,6 @@
                             <p class="mb-0">{{ event.organizer }}</p>
                         </div>
                     </div>
-                    <!-- Categorías -->
                     <div class="d-flex align-items-center mb-3">
                         <div class="bg-light rounded-circle p-2 me-3">
                             <i class="bi bi-tags text-primary"></i>
@@ -54,6 +53,14 @@
                             {% endfor %}
                         </div>
                     </div>
+                    {% if user_is_organizer %}
+                    <div class="alert alert-info d-flex align-items-center" role="alert">
+                        <div>
+                            <i class="bi bi-receipt"></i> <strong>Entradas vendidas:</strong> {{ tickets_sold }}<br>
+                            <i class="bi bi-bar-chart me-2"></i><strong>Demanda:</strong> {{ demand_message }}
+                        </div>
+                    </div>
+                    {% endif %}
                     <div class="card-footer text-end">
                         <a href="{% url 'buy_ticket' event.id %}" class="btn btn-success">
                             <i class="bi bi-cart-plus me-1"></i> Comprar
