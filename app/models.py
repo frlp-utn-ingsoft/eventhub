@@ -48,6 +48,9 @@ class Category(models.Model):
     def __str__(self):
         return self.name
 
+    def clean(self):
+        self.name = self.name.strip()
+        self.description = self.description.strip()
 
 class Venue(models.Model):
     name = models.CharField("Nombre", max_length=100)

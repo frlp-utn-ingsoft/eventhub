@@ -6,7 +6,6 @@ from django.utils import timezone
 from datetime import datetime
 import re
 
-
 class RatingForm(forms.ModelForm):
     class Meta:
         model = Rating
@@ -23,7 +22,6 @@ def clean(self):
     comment = cleaned_data.get('comment', '').strip()
     score = cleaned_data.get('score')
 
-    # Validaciones básicas
     if not title:
         self.add_error('title', "El título no puede estar vacío.")
     if not comment:
@@ -31,14 +29,11 @@ def clean(self):
     if not score:
         self.add_error('score', "Debe seleccionar una calificación.")
 
-    # Validación de duplicado
     if self.user and self.event:
         if Rating.objects.filter(user=self.user, event=self.event).exists():
-            self.add_error(None, "Ya has calificado este evento.")  # Error general del formulario
+            self.add_error(None, "Ya has calificado este evento.") 
 
     return cleaned_data
-
-
 
 class CategoryForm(forms.ModelForm):
     class Meta:
@@ -57,38 +52,42 @@ class CategoryForm(forms.ModelForm):
         error_messages = {
             'name': {
                 'required': 'Por favor, ingrese un nombre',
+                'max_length': 'El nombre es demasiado largo',
+                'min_length': 'El nombre es demasiado corto',
             },
             'description': {
                 'required': 'Por favor, ingrese una descripción',
+                'max_length': 'La descripción es demasiado extensa',
+                'min_length': 'La descripción es muy corta',
             },
         }
 
     def clean_name(self):
-        name = self.cleaned_data.get("name")
+        name = self.cleaned_data.get("name", "").strip()
 
         if not name:
-            raise forms.ValidationError("El nombre es obligatorio")
-
+            raise forms.ValidationError("El nombre no puede estar vacío o tener solo espacios")
+        
         if len(name) < 3:
             raise forms.ValidationError("El nombre debe tener al menos 3 caracteres")
 
         if len(name) > 100:
             raise forms.ValidationError("El nombre no puede tener más de 100 caracteres")
 
-        qs = Category.objects.filter(name=name)
+        qs = Category.objects.filter(name__iexact=name)
         if self.instance.pk:
             qs = qs.exclude(pk=self.instance.pk)
 
         if qs.exists():
             raise forms.ValidationError("Ya existe una categoría con ese nombre")
 
-        return name
+        return name.capitalize()
 
     def clean_description(self):
-        description = self.cleaned_data.get("description")
+        description = self.cleaned_data.get("description", "").strip()
 
         if not description:
-            raise forms.ValidationError("La descripción es obligatoria")
+            raise forms.ValidationError("La descripción no puede estar vacía o tener solo espacios")
 
         if len(description) < 10:
             raise forms.ValidationError("La descripción debe tener al menos 10 caracteres")
@@ -97,6 +96,7 @@ class CategoryForm(forms.ModelForm):
             raise forms.ValidationError("La descripción no puede tener más de 500 caracteres")
 
         return description
+
 
 class VenueForm(forms.ModelForm):
     class Meta:
