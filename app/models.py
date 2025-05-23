@@ -86,7 +86,23 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='events')
+
+    @property
+    def tickets_sold(self):
+        return sum(ticket.quantity for ticket in self.tickets.all()) # type: ignore
     
+    @property
+    def demand_message(self):
+        if not self.venue or self.venue.capacity == 0:
+            return "Capacidad indefinida"
+        
+        percent = (self.tickets_sold/self.venue.capacity)*100
+
+        if percent > 90:
+            return "Alta demanda"
+        elif percent < 10:
+            return "Baja demanda"
+
 
     def __str__(self):
         return self.title
