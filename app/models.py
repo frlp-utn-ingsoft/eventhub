@@ -99,9 +99,11 @@ class Event(models.Model):
         percent = (self.tickets_sold/self.venue.capacity)*100
 
         if percent > 90:
-            return "Alta demanda"
+            return "ALTA"
         elif percent < 10:
-            return "Baja demanda"
+            return "BAJA"
+        else:
+            return "MEDIA"
 
 
     def __str__(self):
