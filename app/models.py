@@ -9,6 +9,7 @@ from django.utils import timezone
 from django_countries.fields import CountryField
 from cities_light.models import City
 from decimal import Decimal
+import random, string
 
 def save(method):
     def wrapper(self, *args, **kwargs):
@@ -159,6 +160,28 @@ class Event(models.Model):
 
         self.save()
 
+class Coupon(models.Model):
+    event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='coupons')
+    code = models.CharField(max_length=10, unique=True, editable=False)
+    discount_percent = models.PositiveSmallIntegerField()
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.code:
+            self.code = self.generate_unique_code()
+        super().save(*args, **kwargs)
+
+    def generate_unique_code(self, length=8):
+        characters = string.ascii_uppercase + string.digits
+        while True:
+            code = ''.join(random.choices(characters, k=length))
+            if not Coupon.objects.filter(code=code).exists():
+                return code
+
+    def __str__(self):
+        return f'{self.code} - {self.discount_percent}% - Evento: {self.event.title}'
+    
 #comentarios
 class Comment(models.Model):
     title = models.CharField(max_length=200)
