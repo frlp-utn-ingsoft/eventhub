@@ -15,6 +15,7 @@ from django.urls import reverse_lazy
 from .models import Venue
 from .forms import VenueForm
 from .models import Event, Rating, Rating_Form, User, Comment
+import re
 
 
 def organizer_required(view_func):
@@ -525,6 +526,47 @@ def buy_ticket(request, event_id):
     if request.method == 'POST':
         form = TicketForm(request.POST)
         if form.is_valid():
+            card_number = form.cleaned_data.get('card_number', '').strip()
+            card_holder = form.cleaned_data.get('card_holder', '').strip()
+            expiration_date = form.cleaned_data.get('expiration_date', '').strip()  # formato esperado: MM/YY
+            cvc = form.cleaned_data.get('cvc', '').strip()
+            quantity = form.cleaned_data.get('quantity')
+
+            if quantity is None or quantity < 1:
+                form.add_error('quantity', 'Debes seleccionar al menos un ticket.')
+
+
+            if not re.fullmatch(r'\d{16}', card_number):
+                form.add_error('card_number', 'El número de tarjeta debe tener 16 dígitos numéricos.')
+
+           
+            if not card_holder:
+                form.add_error('card_holder', 'El nombre del titular no puede estar vacío.')
+
+          
+            if not re.fullmatch(r'(0[1-9]|1[0-2])\/\d{2}', expiration_date):
+                form.add_error('expiration_date', 'La fecha de expiración debe tener formato MM/AA.')
+            else:
+                try:
+                    month, year = expiration_date.split('/')
+                    exp_date = datetime.strptime(f'20{year}-{month}-01', '%Y-%m-%d')
+                    now = datetime.now()
+                    if exp_date < now.replace(day=1, hour=0, minute=0, second=0, microsecond=0):
+                        form.add_error('expiration_date', 'La tarjeta está vencida.')
+                except ValueError:
+                    form.add_error('expiration_date', 'Fecha de expiración inválida.')
+
+            
+            if not re.fullmatch(r'\d{3}', cvc):
+                form.add_error('cvc', 'El CVC debe tener 3 dígitos numéricos.')
+
+            if form.errors:
+               
+                return render(request, 'app/buy_ticket.html', {
+                    'form': form,
+                    'event': event,
+                    "user_is_organizer": request.user.is_organizer
+                })
             ticket = form.save(commit=False)
             ticket.user = request.user
             ticket.event = event
