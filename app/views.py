@@ -690,15 +690,20 @@ def notification_form(request):
         message = request.POST.get("message")
         priority = request.POST.get("priority")
         event_id = request.POST.get("event")
-        event = get_object_or_404(Event, id=event_id)
+
+        event = None
+        if event_id != "":
+            event = get_object_or_404(Event, id=event_id)
+
         recipient_type = request.POST.get("recipient_type")
 
-        users = []
+        users_selected = []
         if recipient_type == "all_users":
             users = User.objects.all()
-        else:
+        
+        if recipient_type == "specific_user" and user_id != "":
             user = get_object_or_404(User, id=user_id)
-            users.append(user)
+            users_selected.append(user)
         
         validations_pass, errors = createNotificationValidations(users, event, title, message, priority)
         if validations_pass == False:
