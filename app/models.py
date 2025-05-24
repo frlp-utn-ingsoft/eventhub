@@ -116,6 +116,13 @@ class Event(models.Model):
         if categories:
             event.categories.set(categories)
         return True, event
+    
+    @property
+    def rating_average(self):
+        rating = self.ratings.all() # type: ignore
+        if rating.exists():
+            return round(sum(r.calificacion for r in rating) / rating.count(), 2)
+        return 0
 
 
     def update(self, title, description, scheduled_at, organizer):
@@ -291,6 +298,7 @@ class Rating(models.Model):
     
     def __str__(self):
         return f'{self.usuario} - {self.evento} ({self.calificacion}⭐)'
+    
     
     def update(self, titulo, calificacion, texto):
         self.titulo = titulo
