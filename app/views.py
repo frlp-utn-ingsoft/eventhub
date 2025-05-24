@@ -240,6 +240,7 @@ def event_detail(request, id):
     comments = event.comments.all().order_by("-created_at") # type: ignore
     ratings = event.ratings.all().order_by("-fecha_creacion") # type: ignore
     cantidad_resenas = ratings.count()
+    rating_average = event.rating_average
 
     editando = False
     resena_existente = None
@@ -263,6 +264,7 @@ def event_detail(request, id):
          "editando": editando,
          "resena": resena_existente,
          "cantidad_resenas": cantidad_resenas, 
+         "rating_average": rating_average,
         })
 
 @login_required
