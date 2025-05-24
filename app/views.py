@@ -241,6 +241,11 @@ def event_detail(request, id):
     comments = event.comments.all().order_by("-created_at") # type: ignore
     ratings = event.ratings.all().order_by("-fecha_creacion") # type: ignore
     cantidad_resenas = ratings.count()
+    
+    if request.user == event.organizer:
+        rating_average = event.rating_average
+    else:
+        rating_average = None
 
     editando = False
     resena_existente = None
@@ -253,6 +258,8 @@ def event_detail(request, id):
             form = Rating_Form(instance=resena_existente)
         except Rating.DoesNotExist:
             form = Rating_Form()
+
+    
     
     is_organizer = request.user == event.organizer
 
@@ -263,10 +270,9 @@ def event_detail(request, id):
         tickets_sold = None
         demand_message = None
 
-
     return render(
         request, "app/event_detail.html", 
-        {"event": event, 
+        { "event": event, 
          "user_is_organizer": request.user == event.organizer, 
          "comments": comments, 
          "ratings": ratings,
@@ -276,6 +282,7 @@ def event_detail(request, id):
          "cantidad_resenas": cantidad_resenas,
          "tickets_sold": tickets_sold,
          "demand_message": demand_message 
+         "rating_average": rating_average,
         })
 
 @login_required
