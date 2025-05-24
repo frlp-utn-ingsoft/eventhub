@@ -36,3 +36,4 @@ class TicketLimitIntegrationTest(TestCase):
         # Verificar que el total de tickets sigue siendo 4
         total_tickets = Ticket.objects.filter(user=self.user, event=self.event).aggregate(total_quantity=Sum('quantity'))['total_quantity']
         self.assertEqual(total_tickets, 4, "No additional tickets should be created")
+    

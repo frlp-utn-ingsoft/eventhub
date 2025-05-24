@@ -303,20 +303,6 @@ class Ticket(models.Model):
         self.save()
         return True, None
 
-    def update(self, quantity=None, ticket_type=None):
-        # Si no se pasa un parámetro, se mantiene el valor actual
-        new_qty  = quantity    if quantity is not None    else self.quantity
-        new_type = ticket_type if ticket_type is not None else self.type
-
-        errors = self.validate(self.user, self.event, new_qty, new_type)
-        if errors:
-            return False, errors
-
-        self.quantity = new_qty
-        self.type     = new_type
-        self.save()
-        return True, None
-    
 class Notification(models.Model):
     title=models.CharField(max_length=200)
     massage=models.TextField()

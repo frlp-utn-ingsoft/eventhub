@@ -1,7 +1,9 @@
+from django.db.models import Sum
 from django.test import TestCase
 from django.utils import timezone
-from app.models import User, Event, Ticket
-from django.db.models import Sum
+
+from app.models import Event, Ticket, User
+
 
 class TicketLimitUnitTest(TestCase):
     def setUp(self):
