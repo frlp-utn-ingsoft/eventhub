@@ -347,7 +347,7 @@ def event_form(request, id=None):
             return redirect('event_detail', id=event.id)
 
         if success:
-            return redirect('event_detail', id=event_or_errors.id)
+            return redirect('event_detail', id=event_or_errors.id) # type: ignore
 
   
     event = None
@@ -362,9 +362,8 @@ def event_form(request, id=None):
 
     categories = list(Category.objects.all())
 
-   
     total = len(categories)
-    per_column = math.ceil(total / 3)
+    per_column = math.ceil(total / 3) if total > 0 else 1
     categories_chunks = [categories[i:i + per_column] for i in range(0, total, per_column)]
 
     context = {
