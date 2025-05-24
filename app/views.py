@@ -269,10 +269,9 @@ def event_detail(request, id):
         tickets_sold = None
         demand_message = None
 
-
     return render(
         request, "app/event_detail.html", 
-        {"event": event, 
+        { "event": event, 
          "user_is_organizer": request.user == event.organizer, 
          "comments": comments, 
          "ratings": ratings,
