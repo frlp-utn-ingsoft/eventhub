@@ -747,42 +747,114 @@ def rating_create(request, id):
 
     return redirect("event_detail", id=id)
 
+@login_required
 def my_refunds(request):
     refunds = RefundRequest.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'app/my_refunds.html', {'reembolsos': refunds})
 
+@login_required
+@transaction.atomic 
 def refund_request(request):
     if request.method == 'POST':
-        form = RefundRequestForm(request.POST)
+        form = RefundRequestForm(request.POST, initial={'user': request.user}) 
         if form.is_valid():
-            reembolso = form.save(commit=False)
-            reembolso.user = request.user
-            reembolso.save()
-            messages.success(request, "¡Reembolso creado con éxito!")
-            return redirect('my_refunds')
+            try:
+                reembolso = form.save(commit=False)
+                reembolso.user = request.user
+                reembolso.approved = None 
+                reembolso.approval_date = None 
+                reembolso.save()
+                messages.success(request, "¡Solicitud de reembolso enviada con éxito! Será revisada por un organizador.")
+                return redirect('my_refunds')
+            except IntegrityError:
+                messages.error(request, "Ya existe una solicitud de reembolso para este ticket.")
+            except ValidationError as e:
+                form.add_error(None, str(e))
+                messages.error(request, f"Error en la solicitud: {str(e)}")
+            except Exception as e:
+                messages.error(request, f"Ocurrió un error inesperado al procesar tu solicitud: {str(e)}")
+                print(f"Error inesperado en refund_request (creación): {e}")
+        else:
+            pass 
     else:
-        form = RefundRequestForm()
+        form = RefundRequestForm(initial={'user': request.user}) 
 
     return render(request, 'app/refund_request.html', {'form': form})
 
 @login_required
+@transaction.atomic 
 def manage_refunds(request):
     if not request.user.is_organizer:
-        return redirect('my_refunds')
+        messages.error(request, "Solo los organizadores pueden gestionar reembolsos.")
+        return redirect('my_refunds') 
 
     if request.method == "POST":
         refund_id = request.POST.get("refund_id")
-        refund = RefundRequest.objects.get(id=refund_id)
+        refund = get_object_or_404(RefundRequest, id=refund_id)
+
+        if refund.approved is not None:
+            messages.warning(request, "Esta solicitud de reembolso ya fue procesada.")
+            return redirect('manage_refunds')
+
+        try:
+            ticket = Ticket.objects.get(ticket_code=refund.ticket_code)
+        except Ticket.DoesNotExist:
+            messages.error(request, "El ticket asociado a esta solicitud de reembolso no existe.")
+            return redirect('manage_refunds')
+
+        if ticket.event.organizer != request.user:
+            messages.error(request, "No tienes permiso para gestionar reembolsos de este evento.")
+            return redirect('manage_refunds')
+
         form = RefundApprovalForm(request.POST, instance=refund)
         if form.is_valid():
-            if form.cleaned_data["approve"]:
-                refund.approved = True
-                refund.approval_date = timezone.now()
-            elif form.cleaned_data["reject"]:
-                refund.approved = False
-                refund.approval_date = timezone.now()
-            refund.save()
-        return redirect('manage_refunds')
+            try:
+                with transaction.atomic():
+                    if form.cleaned_data["approve"]:
+                        
+                        refund_fee_percentage = calculate_refund_fee(ticket)
+                        amount_to_refund = ticket.total * (1 - Decimal(str(refund_fee_percentage / 100)))
+
+                        refund_processed_successfully = process_refund(ticket, amount_to_refund)
+                        
+                        if refund_processed_successfully:
+                            refund.approved = True
+                            refund.approval_date = timezone.now()
+                            refund.save()
+
+                            ticket.payment_confirmed = False 
+                            if ticket.type == Ticket.TicketType.GENERAL:
+                                ticket.event.general_tickets_available += ticket.quantity
+                            else:
+                                ticket.event.vip_tickets_available += ticket.quantity
+                            ticket.event.save()
+                            ticket.save() 
+
+                            messages.success(request, f"¡Reembolso aprobado y procesado para ticket {ticket.ticket_code}! Se reembolsarán ${amount_to_refund:.2f}. Stock de tickets repuesto.")
+                        else:
+                            refund.approved = False 
+                            refund.approval_date = timezone.now()
+                            refund.save()
+                            messages.error(request, f"Error al procesar el reembolso monetario para ticket {ticket.ticket_code}. La solicitud fue rechazada por fallo de pago. Contacta a soporte.")
+
+                    elif form.cleaned_data["reject"]:
+                        refund.approved = False
+                        refund.approval_date = timezone.now()
+                        refund.save()
+                        messages.warning(request, f"Solicitud de reembolso para ticket {ticket.ticket_code} rechazada.")
+                    
+                    return redirect('manage_refunds')
+
+            except IntegrityError:
+                messages.error(request, "Error de integridad de datos al procesar el reembolso.")
+            except Exception as e:
+                messages.error(request, f"Ocurrió un error inesperado al procesar la solicitud: {str(e)}")
+                print(f"Error inesperado en manage_refunds: {e}")
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"Error en el formulario de aprobación: {error}")
+            return redirect('manage_refunds') 
 
     refunds = RefundRequest.objects.all().order_by("-created_at")
     forms_dict = {r.id: RefundApprovalForm(instance=r) for r in refunds}
@@ -790,6 +862,76 @@ def manage_refunds(request):
         'refunds': refunds,
         'forms_dict': forms_dict
     })
+
+@login_required
+def refund_detail(request, id):
+    refund = get_object_or_404(RefundRequest, id=id)
+
+    if refund.user != request.user and not request.user.is_organizer:
+        messages.error(request, "No tienes permiso para ver los detalles de esta solicitud de reembolso.")
+        return redirect('my_refunds') 
+
+    ticket = None
+    event = None
+    try:
+        ticket = Ticket.objects.get(ticket_code=refund.ticket_code)
+        event = ticket.event
+        
+        if request.user.is_organizer and event.organizer != request.user:
+            messages.error(request, "No tienes permiso para ver los detalles de reembolsos de eventos que no organizas.")
+            return redirect('manage_refunds')
+
+    except Ticket.DoesNotExist:
+        messages.warning(request, "Ticket asociado no encontrado.")
+
+    return render(request, 'app/refund_detail.html', {
+        'refund': refund,
+        'event': event,
+        'ticket': ticket,
+    })
+
+@login_required
+def edit_refund(request, id):
+    refund_request_obj = get_object_or_404(RefundRequest, id=id)
+
+    if refund_request_obj.user != request.user:
+        messages.error(request, "No tienes permiso para editar esta solicitud de reembolso.")
+        return redirect('my_refunds')
+
+    if refund_request_obj.approved is not None:
+        messages.warning(request, "Esta solicitud de reembolso ya fue procesada y no puede ser editada.")
+        return redirect('refund_detail', id=id)
+
+    if request.method == 'POST':
+        form = RefundRequestForm(request.POST, instance=refund_request_obj, initial={'user': request.user})
+        if form.is_valid():
+            form.save()
+            messages.success(request, "¡Reembolso editado con éxito!")
+            return redirect('my_refunds')
+    else:
+        form = RefundRequestForm(instance=refund_request_obj, initial={'user': request.user})
+
+    return render(request, 'app/refund_request.html', {'form': form})
+
+@login_required
+def delete_refund(request, id):
+    refund = get_object_or_404(RefundRequest, pk=id)
+
+    if refund.user != request.user and not request.user.is_organizer:
+        messages.error(request, "No tienes permiso para eliminar esta solicitud.")
+        return redirect("my_refunds")
+
+    if refund.approved is not None:
+        messages.warning(request, "No puedes eliminar una solicitud de reembolso que ya ha sido procesada.")
+        return redirect("refund_detail", id=id)
+
+    if request.method == "POST":
+        refund.delete()
+        messages.success(request, "¡Reembolso eliminado con éxito!")
+        return redirect("my_refunds")
+
+    messages.info(request, "Por favor, confirma la eliminación de la solicitud de reembolso.")
+    return render(request, 'app/refund_confirm_delete.html', {'refund': refund})
 
 def refund_detail(request, id):
     refund = get_object_or_404(RefundRequest, id=id)
@@ -805,32 +947,3 @@ def refund_detail(request, id):
         'event': event,
         'ticket': ticket,
     })
-
-@login_required
-def edit_refund(request, id):
-    refund_request = get_object_or_404(RefundRequest, id=id)
-
-    if request.method == 'POST':
-        form = RefundRequestForm(request.POST, instance=refund_request)
-        if form.is_valid():
-            form.save()
-            messages.success(request, "¡Reembolso editado con éxito!")
-            return redirect('my_refunds')
-    else:
-        form = RefundRequestForm(instance=refund_request)
-
-    return render(request, 'app/refund_request.html', {'form': form})
-
-@login_required
-def delete_refund(request, id):
-    refund = get_object_or_404(RefundRequest, pk=id)
-
-    if refund.user != request.user and not request.user.is_organizer:
-        return redirect("my_refunds")
-
-    if request.method == "POST":
-        refund.delete()
-        messages.success(request, "¡Reembolso eliminado con éxito!")
-        return redirect("my_refunds")
-
-    return redirect("my_refunds")
