@@ -8,6 +8,7 @@ from django import forms
 from django.utils import timezone
 from django_countries.fields import CountryField
 from cities_light.models import City
+from decimal import Decimal
 
 def save(method):
     def wrapper(self, *args, **kwargs):
@@ -86,6 +87,7 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='events')
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
 
     @property
     def tickets_sold(self):
@@ -122,7 +124,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, categories=None, venue=None):
+    def new(cls, title, description, scheduled_at, organizer, categories=None, venue=None, price=0.00):
         # Validaciones y creación
         errors = cls.validate(title, description, scheduled_at)
 
@@ -134,7 +136,8 @@ class Event(models.Model):
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
-            venue=venue
+            venue=venue,
+            price=price
         )
         if categories:
             event.categories.set(categories)

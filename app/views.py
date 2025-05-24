@@ -15,6 +15,7 @@ from django.urls import reverse_lazy
 from .models import Venue
 from .forms import VenueForm
 from .models import Event, Rating, Rating_Form, User, Comment
+from decimal import Decimal, InvalidOperation
 
 
 def organizer_required(view_func):
@@ -280,7 +281,7 @@ def event_detail(request, id):
          "resena": resena_existente,
          "cantidad_resenas": cantidad_resenas,
          "tickets_sold": tickets_sold,
-         "demand_message": demand_message 
+         "demand_message": demand_message, 
          "rating_average": rating_average,
         })
 
@@ -298,6 +299,7 @@ def event_delete(request, id):
 
     return redirect("events")
 
+######################################################################################
 @login_required
 def event_form(request, id=None):
     user = request.user
@@ -315,6 +317,12 @@ def event_form(request, id=None):
         time = request.POST.get("time")
         category_ids = request.POST.getlist('categories')  # Lista de IDs
         venue_id = request.POST.get("venue")  # Obtener el venue seleccionado
+        price_str = request.POST.get("price")
+        
+        try:
+            price = Decimal(price_str) if price_str else Decimal('0.00')
+        except InvalidOperation:
+            price = Decimal('0.00')
 
         # Parsear fecha y hora
         year, month, day = date.split("-")
@@ -329,7 +337,7 @@ def event_form(request, id=None):
             venue = get_object_or_404(Venue, pk=venue_id) if venue_id else Venue.objects.first()
             if venue is None:
                 raise ValueError("No se ha proporcionado un lugar de celebración y no se dispone de un lugar de celebración por defecto.")
-            success, event_or_errors = Event.new(title, description, scheduled_at, request.user, category_ids, venue)
+            success, event_or_errors = Event.new(title, description, scheduled_at, request.user, category_ids, venue, price)
             if not success:
                 errors = event_or_errors
                 
@@ -342,6 +350,8 @@ def event_form(request, id=None):
             if venue is None:
                 raise ValueError("No se ha proporcionado un lugar de celebración y no se dispone de un lugar de celebración por defecto.")
             event.venue = venue
+            event.price = price
+
             event.save()
 
             return redirect('event_detail', id=event.id)
@@ -374,10 +384,13 @@ def event_form(request, id=None):
         'event_categories_ids': event_categories_ids,
         'user_is_organizer': user.is_organizer,
         'venues': venues, 
-        'event_venue': event_venue, 
+        'event_venue': event_venue,
+        'price': getattr(event, 'price', 0.0) if event else 0.0,
+
     }
 
     return render(request, 'app/event_form.html', context)
+########################################################################################
 
 @login_required
 def notifications(request):
