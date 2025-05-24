@@ -552,10 +552,11 @@ def ticket_detail(request, ticket_id):
     return render(request, 'app/ticket_detail.html', {'ticket': ticket, "user_is_organizer": request.user.is_organizer})
 
 @login_required
+@organizer_required
 def edit_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
     
-    if request.user != ticket.user:
+    if request.user != ticket.event.organizer:
         messages.error(request, 'No tienes permiso para editar este ticket')
         return redirect('home')
     
@@ -584,14 +585,15 @@ def edit_ticket(request, ticket_id):
     })
 
 @login_required
+@organizer_required
 def delete_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
 
-    if request.user != ticket.user and not (request.user.is_organizer and request.user == ticket.event.organizer):
+    if request.user != ticket.event.organizer:
         messages.error(request, 'No tienes permiso para eliminar este ticket')
         return redirect('home')
     
-    if request.user == ticket.user:
+    if request.user == ticket.event.organizer:
         time_difference = timezone.now() - ticket.buy_date
         if time_difference.total_seconds() > 1800:
             messages.error(request, 'Solo puedes eliminar el ticket dentro de los primeros 30 minutos después de la compra')
