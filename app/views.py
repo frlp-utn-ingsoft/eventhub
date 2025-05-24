@@ -15,7 +15,8 @@ from django.urls import reverse_lazy
 from .models import Venue
 from .forms import VenueForm
 from .models import Event, Rating, Rating_Form, User, Comment
-
+from django.shortcuts import render
+from django.utils import timezone
 
 def organizer_required(view_func):
     @wraps(view_func)
@@ -234,6 +235,35 @@ def my_events(request):
         {"events": events, "user_is_organizer": request.user.is_organizer},
     )
 
+
+
+
+def countdown_timer(event):
+    if event:
+        time_remaining = event.scheduled_at - timezone.now()
+        days = time_remaining.days
+        hours = time_remaining.seconds // 3600
+        minutes = (time_remaining.seconds % 3600) // 60
+        seconds = time_remaining.seconds % 60
+   
+        if days<0 or hours<0 or minutes<0 and seconds<=0:
+            return {
+                'days': 0,
+                'completed': True,
+                'hours': 0,
+                'minutes': 0,
+                'seconds': 0
+            }
+        else:
+            return {
+                        'days': days,
+                        'completed': False,
+                        'hours': hours,
+                        'minutes': minutes,
+                        'seconds': seconds
+                    }
+    
+
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
@@ -268,10 +298,15 @@ def event_detail(request, id):
     else:
         tickets_sold = None
         demand_message = None
-
+    
+    timer_countdown = countdown_timer(event)
+    completed = timer_countdown["completed"]
+    print(completed)
     return render(
         request, "app/event_detail.html", 
         { "event": event, 
+         "timer_countdown": timer_countdown,
+         "event_completed": completed,
          "user_is_organizer": request.user == event.organizer, 
          "comments": comments, 
          "ratings": ratings,
