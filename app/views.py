@@ -280,7 +280,7 @@ def event_detail(request, id):
          "resena": resena_existente,
          "cantidad_resenas": cantidad_resenas,
          "tickets_sold": tickets_sold,
-         "demand_message": demand_message 
+         "demand_message": demand_message, 
          "rating_average": rating_average,
         })
 
