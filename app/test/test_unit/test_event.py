@@ -3,7 +3,7 @@ import datetime
 from django.test import TestCase
 from django.utils import timezone
 
-from app.models import Event, User, Venue
+from app.models import Event, User, Venue, Ticket
 
 
 class EventModelTest(TestCase):
@@ -13,6 +13,13 @@ class EventModelTest(TestCase):
             email="organizador@example.com",
             password="password123",
             is_organizer=True,
+        )
+
+        self.not_organizer = User.objects.create_user(
+            username="not_organizer_test",
+            email="not_organizer@example.com",
+            password="password123",
+            is_organizer=False,
         )
 
         self.venue_mocked = Venue.objects.create(
@@ -154,3 +161,29 @@ class EventModelTest(TestCase):
         self.assertEqual(updated_event.title, original_title)
         self.assertEqual(updated_event.description, new_description)
         self.assertEqual(updated_event.scheduled_at, original_scheduled_at)
+
+    def test_event_tickets_sold_correct_total(self):
+        event_mocked = Event.objects.create(
+            title="Pelicula",
+            description="Descripción de la pelicula",
+            scheduled_at=timezone.now() + datetime.timedelta(days=1),
+            organizer=self.organizer,
+            venue = self.venue_mocked
+        )
+
+        Ticket.objects.create(user = self.not_organizer, event=event_mocked, quantity=100, type="general")
+
+        self.assertEqual(event_mocked.tickets_sold, 100)
+
+    def test_event_tickets_sold_incorrect_total(self):
+        event_mocked = Event.objects.create(
+            title="Pelicula",
+            description="Descripción de la pelicula",
+            scheduled_at=timezone.now() + datetime.timedelta(days=1),
+            organizer=self.organizer,
+            venue = self.venue_mocked
+        )
+
+        Ticket.objects.create(user = self.not_organizer, event=event_mocked, quantity=100, type="general")
+
+        self.assertNotEqual(event_mocked.tickets_sold, 400)    
