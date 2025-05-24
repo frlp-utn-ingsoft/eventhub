@@ -124,6 +124,11 @@ class Event(models.Model):
     @classmethod
     def new(cls, title, description, scheduled_at, organizer, categories=None, venue=None):
         # Validaciones y creación
+        errors = cls.validate(title, description, scheduled_at)
+
+        if errors:
+            return False, errors
+
         event = cls.objects.create(
             title=title,
             description=description,

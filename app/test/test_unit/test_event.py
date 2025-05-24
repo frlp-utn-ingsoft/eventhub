@@ -3,7 +3,7 @@ import datetime
 from django.test import TestCase
 from django.utils import timezone
 
-from app.models import Event, User
+from app.models import Event, User, Venue
 
 
 class EventModelTest(TestCase):
@@ -15,13 +15,23 @@ class EventModelTest(TestCase):
             is_organizer=True,
         )
 
+        self.venue_mocked = Venue.objects.create(
+            name="Auditorio Nacional",
+            address="60 y 124",
+            capacity=5000,
+            country="ARG",  
+            city="La Plata"
+        )
+
     def test_event_creation(self):
         event = Event.objects.create(
             title="Evento de prueba",
             description="Descripción del evento de prueba",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
+            venue = self.venue_mocked
         )
+
         """Test que verifica la creación correcta de eventos"""
         self.assertEqual(event.title, "Evento de prueba")
         self.assertEqual(event.description, "Descripción del evento de prueba")
@@ -52,15 +62,16 @@ class EventModelTest(TestCase):
     def test_event_new_with_valid_data(self):
         """Test que verifica la creación de eventos con datos válidos"""
         scheduled_at = timezone.now() + datetime.timedelta(days=2)
-        success, errors = Event.new(
+        success, event = Event.new(
             title="Nuevo evento",
             description="Descripción del nuevo evento",
             scheduled_at=scheduled_at,
             organizer=self.organizer,
+            venue = self.venue_mocked
         )
 
         self.assertTrue(success)
-        self.assertIsNone(errors)
+        self.assertIsInstance(event, Event)
 
         # Verificar que el evento fue creado en la base de datos
         new_event = Event.objects.get(title="Nuevo evento")
@@ -78,6 +89,7 @@ class EventModelTest(TestCase):
             description="Descripción del evento",
             scheduled_at=scheduled_at,
             organizer=self.organizer,
+            venue = self.venue_mocked    
         )
 
         self.assertFalse(success)
@@ -97,6 +109,7 @@ class EventModelTest(TestCase):
             description="Descripción del evento de prueba",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
+            venue = self.venue_mocked
         )
 
         event.update(
@@ -120,6 +133,7 @@ class EventModelTest(TestCase):
             description="Descripción del evento de prueba",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
+            venue = self.venue_mocked
         )
 
         original_title = event.title
