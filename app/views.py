@@ -260,6 +260,16 @@ def event_detail(request, id):
 
     
     
+    is_organizer = request.user == event.organizer
+
+    if is_organizer:
+        tickets_sold = event.tickets_sold
+        demand_message = event.demand_message
+    else:
+        tickets_sold = None
+        demand_message = None
+
+
     return render(
         request, "app/event_detail.html", 
         {"event": event, 
@@ -269,7 +279,9 @@ def event_detail(request, id):
          "form": form,
          "editando": editando,
          "resena": resena_existente,
-         "cantidad_resenas": cantidad_resenas, 
+         "cantidad_resenas": cantidad_resenas,
+         "tickets_sold": tickets_sold,
+         "demand_message": demand_message 
          "rating_average": rating_average,
         })
 
