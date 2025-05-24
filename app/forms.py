@@ -120,7 +120,7 @@ class VenueForm(forms.ModelForm):
                 'class': 'form-control'
             }),
             'city': forms.TextInput(attrs={
-                'placeholder': 'Chile',
+                'placeholder': 'Ej: Santiago',
                 'class': 'form-control',
                 'maxlength': '100'
             }),
@@ -136,28 +136,57 @@ class VenueForm(forms.ModelForm):
             }),
         }
 
+    def clean_name(self):
+        name = self.cleaned_data.get('name', '').strip()
+        if not name:
+            raise ValidationError("El nombre de la ubicación es obligatorio.")
+        if len(name) < 3:
+            raise ValidationError("El nombre debe tener al menos 3 caracteres.")
+        if not re.match(r"^[\w\s\-\']+$", name):
+            raise ValidationError("El nombre solo puede contener letras, números, espacios, guiones y apóstrofes.")
+        return name
+
+    def clean_address(self):
+        address = self.cleaned_data.get('address', '').strip()
+        if not address:
+            raise ValidationError("La dirección es obligatoria.")
+        if len(address) < 5:
+            raise ValidationError("La dirección es demasiado corta.")
+        if not re.search(r'\d', address):
+            raise ValidationError("La dirección debe incluir un número (ej. calle y número).")
+        return address
+
+    def clean_city(self):
+        city = self.cleaned_data.get('city', '').strip()
+        if not city:
+            raise ValidationError("La ciudad es obligatoria.")
+        if len(city) < 3:
+            raise ValidationError("La ciudad debe tener al menos 3 caracteres.")
+        if not re.match(r"^[A-Za-zÁÉÍÓÚáéíóúñÑ\s\-]+$", city):
+            raise ValidationError("La ciudad solo puede contener letras, espacios y guiones.")
+        return city
+
     def clean_capacity(self):
         capacity = self.cleaned_data.get('capacity')
-        if capacity is not None and capacity <= 0:
-            raise ValidationError("La capacidad no puede ser cero.")
+        if capacity is None or capacity <= 0:
+            raise ValidationError("La capacidad debe ser mayor que cero.")
+        if capacity > 100000:
+            raise ValidationError("La capacidad no puede superar las 100.000 personas.")
         return capacity
 
     def clean_contact(self):
         contact = self.cleaned_data.get('contact', '').strip()
 
-        email_valid = True
         try:
             validate_email(contact)
+            return contact
         except ValidationError:
-            email_valid = False
+            pass
 
-        phone_valid = bool(re.match(r'^\+?\d[\d\s\-\(\)]{7,}$', contact))
+        if re.match(r'^\+?\d[\d\s\-\(\)]{7,}$', contact):
+            return contact
 
-        if not (email_valid or phone_valid):
-            raise ValidationError("El contacto debe ser un número de teléfono válido o una dirección de email.")
-
-        return contact
-
+        raise ValidationError("El contacto debe ser un número de teléfono válido o una dirección de email.")
 
 class EventForm(forms.ModelForm):
     scheduled_date = forms.DateField(
