@@ -1,13 +1,12 @@
 import datetime
-
 from django.test import TestCase
 from django.utils import timezone
-
 from app.models import Event, User, Venue, Ticket
 
 
 class EventModelTest(TestCase):
     def setUp(self):
+        print("Setting Up")
         self.organizer = User.objects.create_user(
             username="organizador_test",
             email="organizador@example.com",
