@@ -1,4 +1,5 @@
 import uuid
+import re
 
 from django.conf import settings
 from django.contrib.auth import get_user_model
@@ -155,6 +156,75 @@ class Notification(models.Model):
     def __str__(self):
         return self.title
     
+    @classmethod
+    def validate(cls, title, message, priority):
+        errors = {}
+
+        if not title or not title.strip():
+            errors["title"] = "El título no puede estar vacío."
+        elif len(title.strip()) < 10:
+            errors["title"] = "El título debe tener al menos 10 caracteres."
+        elif cls.objects.filter(title=title).exists():
+            errors["title"] = "Ese título ya existe."
+        elif len(title.strip()) > 100:
+            errors["title"] = "El título no debe superar los 100 caracteres."
+        elif len(re.findall(r"[a-zA-Z]", title)) < 10:
+            errors["title"] = "El título debe contener al menos 10 letras."
+
+        if not message or not message.strip():
+            errors["message"] = "El mensaje no puede estar vacío."
+        elif len(message.strip()) < 10:
+            errors["message"] = "El mensaje debe tener al menos 10 caracteres."
+        elif len(message.strip()) > 500:
+            errors["message"] = "El mensaje no debe superar los 500 caracteres."
+        elif len(re.findall(r"[a-zA-Z]", message)) < 10:
+            errors["message"] = "El mensaje debe contener al menos 10 letras."
+
+        if priority not in ["High", "Medium", "Low"]:
+            errors["priority"] = "Prioridad inválida."
+
+        return errors
+
+    @classmethod
+    def new(cls, title, message, priority, event=None, users=None):
+        errors = cls.validate(title, message, priority)
+
+        user_ids = set()
+
+        if event:
+            user_ids.update(
+                Ticket.objects.filter(event=event)
+                .values_list("user_id", flat=True)
+            )
+
+        if users:
+            if isinstance(users, list):
+                user_ids.update([u.id for u in users])
+            else:
+                user_ids.add(users.id)
+
+        if not user_ids:
+            errors["users"] = "Debes asignar al menos un usuario o evento con asistentes."
+
+        if errors:
+            return False, errors
+
+        notification = cls.objects.create(
+            title=title,
+            message=message,
+            priority=priority,
+            event=event
+        )
+
+        final_users = User.objects.filter(id__in=user_ids)
+        notification.users.add(*final_users)
+
+        for user in final_users:
+            User_Notification.objects.create(user=user, notification=notification)
+
+        return True, notification
+
+
 class Rating(models.Model):
     title = models.CharField(max_length=255)
     text = models.TextField()
