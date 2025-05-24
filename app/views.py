@@ -240,7 +240,11 @@ def event_detail(request, id):
     comments = event.comments.all().order_by("-created_at") # type: ignore
     ratings = event.ratings.all().order_by("-fecha_creacion") # type: ignore
     cantidad_resenas = ratings.count()
-    rating_average = event.rating_average
+    
+    if request.user == event.organizer:
+        rating_average = event.rating_average
+    else:
+        rating_average = None
 
     editando = False
     resena_existente = None
@@ -253,6 +257,8 @@ def event_detail(request, id):
             form = Rating_Form(instance=resena_existente)
         except Rating.DoesNotExist:
             form = Rating_Form()
+
+    
     
     return render(
         request, "app/event_detail.html", 
