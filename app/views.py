@@ -301,13 +301,14 @@ def event_detail(request, id):
     
     timer_countdown = countdown_timer(event)
     completed = timer_countdown["completed"]
-    print(completed)
+
     return render(
         request, "app/event_detail.html", 
         { "event": event, 
          "timer_countdown": timer_countdown,
          "event_completed": completed,
-         "user_is_organizer": request.user == event.organizer, 
+         "user_is_organizer_of_the_event": request.user == event.organizer, 
+         "user_is_organizer": request.user.is_organizer,
          "comments": comments, 
          "ratings": ratings,
          "form": form,
