@@ -48,7 +48,7 @@ class Venue(models.Model):
     
     @classmethod
     def new(cls, name, adress, city, capacity, contact):
-        """Create a new ticketvenue with validation"""
+        """Create a new venue with validation"""
         errors = cls.validate(name, adress, city, capacity, contact)
 
         if errors:
