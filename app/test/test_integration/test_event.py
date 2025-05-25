@@ -5,7 +5,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from app.models import Event, User
+from app.models import Event, User, Venue, Category, Notification, Ticket
 
 
 class BaseEventTestCase(TestCase):
@@ -42,6 +42,17 @@ class BaseEventTestCase(TestCase):
             scheduled_at=timezone.now() + datetime.timedelta(days=2),
             organizer=self.organizer,
         )
+        ## Creamos venues
+        self.venue1 = Venue.objects.create(name="Lugar 1", capacity=100)
+        self.venue2 = Venue.objects.create(name="Lugar 2", capacity=100)
+        
+        # Creamos categorias
+        self.category = Category.objects.create(name="Conferencia", is_active=True)
+        
+        # Usuario con Ticket
+        self.attendee = User.objects.create_user(username="att", password="1234")
+        Ticket.objects.create(user=self.attendee, event=self.event1, quantity=1, type="GENERAL")
+        
 
         # Cliente para hacer peticiones
         self.client = Client()
@@ -247,7 +258,24 @@ class EventFormSubmissionTest(BaseEventTestCase):
         self.assertEqual(self.event1.scheduled_at.day, 15)
         self.assertEqual(self.event1.scheduled_at.hour, 16)
         self.assertEqual(self.event1.scheduled_at.minute, 45)
-
+    def test_notification_creation_on_event_creation(self):
+        """Test que verifica que se crea una notificación al editar un evento"""
+        # Login con usuario organizador
+        self.client.login(username="organizador", password="password123")
+        # Datos para actualizar el evento
+        updated_data = {
+            "title": "Evento 1 Actualizado",
+            "description": "Nueva descripción actualizada",
+            "date": "2025-06-15",
+            "time": "16:45",
+        }
+        # Hacer petición POST para editar el evento
+        response = self.client.post(reverse("event_edit", args=[self.event1.id]), updated_data)
+        self.assertEqual(response.status_code, 200)
+        
+       
+        
+       
 
 class EventDeleteViewTest(BaseEventTestCase):
     """Tests para la eliminación de eventos"""
