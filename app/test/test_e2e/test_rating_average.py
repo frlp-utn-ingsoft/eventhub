@@ -31,7 +31,7 @@ class RatingAverageVisibilityTest(TestCase):
         #No autenticado
         response = self.client.get(url)
         self.assertEqual(response.status_code, 302)
-        self.assertIn("/login", response.url) # type: ignore
+        self.assertIn("/login", response.url)
 
         #Autenticado, pero no organizador
         self.client.login(username="usuario", password="password123")

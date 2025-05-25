@@ -99,7 +99,7 @@ class EventsListViewTest(BaseEventTestCase):
 
         # Verificar que redirecciona al login
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.url.startswith("/accounts/login/")) # type: ignore
+        self.assertTrue(response.url.startswith("/accounts/login/"))
 
 
 class EventDetailViewTest(BaseEventTestCase):
@@ -126,7 +126,7 @@ class EventDetailViewTest(BaseEventTestCase):
 
         # Verificar que redirecciona al login
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.url.startswith("/accounts/login/")) # type: ignore
+        self.assertTrue(response.url.startswith("/accounts/login/"))
 
     def test_event_detail_view_with_invalid_id(self):
         """Test que verifica que la vista event_detail devuelve 404 cuando el evento no existe"""
@@ -167,7 +167,7 @@ class EventFormViewTest(BaseEventTestCase):
 
         # Verificar que redirecciona a events
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("events")) # type: ignore
+        self.assertEqual(response.url, reverse("events"))
 
     def test_event_form_view_without_login(self):
         """Test que verifica que la vista event_form redirige a login cuando el usuario no está logueado"""
@@ -176,7 +176,7 @@ class EventFormViewTest(BaseEventTestCase):
 
         # Verificar que redirecciona al login
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.url.startswith("/accounts/login/")) # type: ignore
+        self.assertTrue(response.url.startswith("/accounts/login/"))
 
     def test_event_form_edit_existing(self):
         """Test que verifica que se puede editar un evento existente"""
@@ -213,13 +213,13 @@ class EventFormSubmissionTest(BaseEventTestCase):
 
         # Verificar que redirecciona a events
         self.assertEqual(response.status_code, 302)
-        #self.assertEqual(response.url, reverse("events")) # type: ignore
+        #self.assertEqual(response.url, reverse("events")) 
 
         # Verificar que se creó el evento
         self.assertTrue(Event.objects.filter(title="Nuevo Evento").exists())
         evento = Event.objects.get(title="Nuevo Evento")
 
-        self.assertEqual(response.url, reverse("event_detail", args=[evento.id])) # type: ignore
+        self.assertEqual(response.url, reverse("event_detail", args=[evento.id])) 
 
         self.assertEqual(evento.description, "Descripción del nuevo evento")
         self.assertEqual(evento.scheduled_at.year, 2025)
@@ -247,7 +247,7 @@ class EventFormSubmissionTest(BaseEventTestCase):
 
         # Verificar que redirecciona a events
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("event_detail", args=[self.event1.id])) # type: ignore
+        self.assertEqual(response.url, reverse("event_detail", args=[self.event1.id])) 
 
         # Verificar que el evento fue actualizado
         self.event1.refresh_from_db()
@@ -339,7 +339,7 @@ class EventDeleteViewTest(BaseEventTestCase):
 
         # Verificar que redirecciona al login
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.url.startswith("/accounts/login/")) # type: ignore
+        self.assertTrue(response.url.startswith("/accounts/login/"))
 
         # Verificar que el evento sigue existiendo
         self.assertTrue(Event.objects.filter(pk=self.event1.id).exists())
