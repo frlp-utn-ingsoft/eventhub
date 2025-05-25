@@ -381,7 +381,7 @@ def ticket_create(request, event_id):
     event = get_object_or_404(Event, id=event_id)
 
     if request.method == "POST":
-        form = TicketForm(request.POST)
+        form = TicketForm(request.POST, user=request.user, event=event)
         if form.is_valid():
             ticket = form.save(commit=False)  
             ticket.user = request.user
@@ -390,7 +390,7 @@ def ticket_create(request, event_id):
             messages.success(request, "Ticket creado exitosamente.", extra_tags='ticket')
             return redirect("ticket_list")
     else:
-        form = TicketForm()
+        form = TicketForm(user=request.user, event=event)
 
     return render(request, "app/ticket_form.html", {"form": form, "event": event})
 
@@ -411,13 +411,13 @@ def ticket_update(request, ticket_id):
     event = ticket.event 
 
     if request.method == "POST":
-        form = TicketForm(request.POST, instance=ticket)
+        form = TicketForm(request.POST, instance=ticket, user=request.user, event=event)
         if form.is_valid():
             form.save()
             messages.success(request, "Ticket actualizado exitosamente.", extra_tags='ticket')
             return redirect("ticket_list")
     else:
-        form = TicketForm(instance=ticket)
+        form = TicketForm(instance=ticket, user=request.user, event=event)
 
     return render(request, "app/ticket_form.html", {"form": form,  'event': event})
 
