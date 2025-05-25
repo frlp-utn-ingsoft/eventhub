@@ -123,9 +123,11 @@ class Event(models.Model):
 
     @classmethod
     def new(cls, title, description, scheduled_at, organizer, categories=None, venue=None):
-        # Validaciones y creación
         errors = cls.validate(title, description, scheduled_at)
-
+        if not organizer:
+            errors["organizer"] = "El organizador es obligatorio"
+        if not venue:
+            errors["venue"] = "La sede es obligatoria"
         if errors:
             return False, errors
 
@@ -350,7 +352,7 @@ class RefoundRequest(models.Model):
     REFOUND_STATES= [('pending', 'PENDIENTE'), ('approved', 'APROBADA'), ('denied', 'DENEGADA')]
 
     id = models.AutoField(primary_key=True)
-    approved = models.CharField(choices= REFOUND_STATES,default= 'pending')
+    approved = models.CharField(choices= REFOUND_STATES,max_length=255, default= 'pending')
     approval_date = models.DateField(default=None, null=True, blank=True)
     ticket_code = models.TextField(max_length=50)
     reason = models.TextField(max_length=255)

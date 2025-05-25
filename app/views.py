@@ -366,8 +366,12 @@ def event_form(request, id=None):
    
     total = len(categories)
     per_column = math.ceil(total / 3)
-    categories_chunks = [categories[i:i + per_column] for i in range(0, total, per_column)]
-
+    total = len(categories)
+    if total == 0:
+        categories_chunks = []
+    else:
+        per_column = math.ceil(total / 3)
+        categories_chunks = [categories[i:i + per_column] for i in range(0, total, per_column)]
     context = {
         'event': event,
         'categories': categories,
