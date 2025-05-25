@@ -74,8 +74,14 @@ def home(request):
 
 @login_required
 def events(request):
-    events = Event.objects.all().order_by("scheduled_at") # Los eventos
-    events_with_comments = Event.objects.annotate(num_comment=Count('comment')).order_by('scheduled_at') # Los eventos pero con conteo de comentarios
+    show_past = request.GET.get("show_past") == "on"  # Checkbox marcada
+
+    if show_past:
+        events = Event.objects.all().order_by("scheduled_at")
+    else:
+        events = Event.objects.filter(scheduled_at__gte=timezone.now()).order_by("scheduled_at")
+
+    events_with_comments = events.annotate(num_comment=Count('comment'))
 
     return render(
     request,
