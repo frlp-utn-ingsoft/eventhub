@@ -21,12 +21,22 @@ class BaseEventTestCase(TestCase):
         )
 
         # Crear un usuario regular
-        self.regular_user = User.objects.create_user(
+        self.regular_user1 = User.objects.create_user(
             username="regular",
             email="regular@test.com",
             password="password123",
             is_organizer=False,
         )
+        self.regular_user2 = User.objects.create_user(
+            username="regular2",
+            email="regular1@test.com",
+            password="password123",
+            is_organizer=False,
+        )
+        
+        ## Creamos venues
+        self.venue1 = Venue.objects.create(name="Lugar 1", capacity=100)
+        self.venue2 = Venue.objects.create(name="Lugar 2", capacity=100)
 
         # Crear algunos eventos de prueba
         self.event1 = Event.objects.create(
@@ -34,25 +44,15 @@ class BaseEventTestCase(TestCase):
             description="Descripción del evento 1",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
+            venue = self.venue1,
         )
-
-        self.event2 = Event.objects.create(
-            title="Evento 2",
-            description="Descripción del evento 2",
-            scheduled_at=timezone.now() + datetime.timedelta(days=2),
-            organizer=self.organizer,
-        )
-        ## Creamos venues
-        self.venue1 = Venue.objects.create(name="Lugar 1", capacity=100)
-        self.venue2 = Venue.objects.create(name="Lugar 2", capacity=100)
         
         # Creamos categorias
         self.category = Category.objects.create(name="Conferencia", is_active=True)
         
-        # Usuario con Ticket
-        self.attendee = User.objects.create_user(username="att", password="1234")
-        Ticket.objects.create(user=self.attendee, event=self.event1, quantity=1, type="GENERAL")
-        
+        # Usuarios con Tickets para el evento 1
+        Ticket.objects.create(user=self.regular_user1, event=self.event1, quantity=1, type="GENERAL")
+        Ticket.objects.create(user=self.regular_user2, event=self.event1, quantity=1, type="GENERAL")
 
         # Cliente para hacer peticiones
         self.client = Client()
@@ -258,22 +258,46 @@ class EventFormSubmissionTest(BaseEventTestCase):
         self.assertEqual(self.event1.scheduled_at.day, 15)
         self.assertEqual(self.event1.scheduled_at.hour, 16)
         self.assertEqual(self.event1.scheduled_at.minute, 45)
-    def test_notification_creation_on_event_creation(self):
+
+    def test_notification_creation_on_event_update(self):
         """Test que verifica que se crea una notificación al editar un evento"""
         # Login con usuario organizador
         self.client.login(username="organizador", password="password123")
-        # Datos para actualizar el evento
-        updated_data = {
-            "title": "Evento 1 Actualizado",
-            "description": "Nueva descripción actualizada",
-            "date": "2025-06-15",
-            "time": "16:45",
+
+        # Editamos el evento
+        update_event_data = {
+            "title": "Evento 1",
+            "description": "Descripción del evento 1",
+            "date": (timezone.now() + datetime.timedelta(days=1)).date().isoformat(),  # 'YYYY-MM-DD'
+            "time": (timezone.now() + datetime.timedelta(days=1)).time().strftime("%H:%M"),  # 'HH:MM'
+            "venue": self.venue2.id,  # o simplemente self.venue1.id si el form espera int
         }
-        # Hacer petición POST para editar el evento
-        response = self.client.post(reverse("event_edit", args=[self.event1.id]), updated_data)
-        self.assertEqual(response.status_code, 200)
+        #Formateo la fecha al igual que la vista
+        date_str = update_event_data["date"]  # 'YYYY-MM-DD'
+        time_str = update_event_data["time"]  # 'HH:MM'
+
+        year, month, day = map(int, date_str.split("-"))
+        hour, minute = map(int, time_str.split(":"))
+
+        schedule_at = timezone.make_aware(
+            datetime.datetime(year, month, day, hour, minute)
+        )
+
+        # Hacer petición POST a la vista event_form
+        url = reverse("event_edit", args=[self.event1.id])
+        response = self.client.post(url, update_event_data)
+        self.assertRedirects(response, reverse("events"))
         
-       
+        #Verificar que los usarios tengan notificaciones
+        usuarios = User.objects.filter(tickets__event=self.event1)
+        for usuario in usuarios:
+            self.assertTrue(
+                Notification.objects.filter(
+                    users=usuario,
+                    message = f"El evento '{self.event1.title}' ha sido actualizado. Fecha: {schedule_at} y lugar: {self.venue2.name}."
+                ).exists()
+            )
+    
         
        
 
