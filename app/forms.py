@@ -148,6 +148,10 @@ class TicketForm(forms.ModelForm):
                 event=self.event
             ).aggregate(total=Sum('quantity'))['total'] or 0
 
+            # Restar el valor original si se está editando un ticket existente
+            if self.instance and self.instance.pk:
+                total_anteriores -= self.instance.quantity
+
             if total_anteriores + quantity > 4:
                 raise forms.ValidationError("No puede comprar más de 4 entradas para este evento.")
 
