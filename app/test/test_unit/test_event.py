@@ -38,7 +38,8 @@ class EventModelTest(TestCase):
     def test_event_validate_with_empty_title(self):
         """Test que verifica la validación de eventos con título vacío"""
         scheduled_at = timezone.now() + datetime.timedelta(days=1)
-        errors = Event.validate("", "Descripción válida", scheduled_at)
+        errors = Event.validate("", scheduled_at, "Descripción válida")
+        self.assertIsNotNone(errors)
         self.assertIn("title", errors)
         self.assertEqual(errors["title"], "Por favor ingrese un titulo")
 
@@ -81,7 +82,7 @@ class EventModelTest(TestCase):
         )
 
         self.assertFalse(success)
-        self.assertIn("title", errors)
+        self.assertIn("title", errors or {})
 
         # Verificar que no se creó ningún evento nuevo
         self.assertEqual(Event.objects.count(), initial_count)

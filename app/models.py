@@ -1,6 +1,11 @@
+from typing import List, Optional, Union
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.db.models import QuerySet
 from django.utils.crypto import get_random_string
+
+from app.utils.dates import is_valid_date
 
 
 class User(AbstractUser):
@@ -167,10 +172,30 @@ class Event(models.Model):
         return self.title
 
     @classmethod
-    def validate(cls, title, categories, venue, description, scheduled_at, status=None):
+    def validate(cls, 
+        title, 
+        description, 
+        scheduled_at, 
+        categories: Optional[Union[List[Category], QuerySet]] = [],
+        venue: Optional[Venue] = None
+    ):
         errors = {}
         if title == "":
             errors["title"] = "Por favor ingrese un titulo"
+
+        if categories and len(categories) > 0:
+            for category in categories:
+                if isinstance(category, Category):
+                    errs = Category.validate(category.name, category.description, category.is_active)
+                    if errs:
+                        errors["categories"] = errs
+                else:
+                    errors["categories"] = "Las categorías deben ser instancias válidas de Category"
+        
+        if venue:
+            err = Venue.validate(venue.name, venue.address, venue.city, venue.capacity, venue.contact)
+            if err:
+                errors["venue"] = err
 
         if description == "":
             errors["description"] = "Por favor ingrese una descripcion"
@@ -178,11 +203,20 @@ class Event(models.Model):
         if status and status not in dict(cls.STATUS_CHOICES):
             errors["status"] = "Estado no válido"
 
+        if(not is_valid_date(scheduled_at)):
+            errors["scheduled_at"] = "Por favor ingrese una fecha valida"
         return errors
 
     @classmethod
-    def new(cls, title, categories, venue, description, scheduled_at, organizer, status='active'):
-        errors = Event.validate(title, categories, venue, description, scheduled_at, status)
+    def new(cls, 
+        title, 
+        description, 
+        scheduled_at, 
+        organizer, status='active',
+        categories: Optional[Union[List[Category], QuerySet]] = [],
+        venue: Optional[Venue] = None
+    ):
+        errors = Event.validate(title, description, scheduled_at, status, categories, venue)
 
         if len(errors.keys()) > 0:
             return False, errors
@@ -194,10 +228,18 @@ class Event(models.Model):
             organizer=organizer,
             status=status,
         )
-        event.categories.set(categories)
+        if categories is not None:
+            event.categories.set(categories)
         return True, None
     
-    def update(self, title, categories, venue, description, scheduled_at, organizer, status=None):
+    def update(self, 
+        title, 
+        description, 
+        scheduled_at, 
+        organizer,
+        categories: Optional[Union[List[Category], QuerySet]] = None,
+        venue: Optional[Venue] = None,
+    ):
         self.title = title or self.title
         self.description = description or self.description
         self.venue = venue or self.venue
