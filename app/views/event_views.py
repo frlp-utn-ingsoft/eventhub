@@ -10,11 +10,6 @@ from app.models import Category, Event, Rating, Ticket, Venue
 from app.views.rating_views import create_rating
 
 
-from django.contrib import messages
-from django.shortcuts import redirect, render, get_object_or_404
-from django.utils import timezone
-import datetime
-
 @login_required
 def event_form(request, id=None):
     user = request.user
@@ -30,6 +25,17 @@ def event_form(request, id=None):
             return redirect("events")
     
     if request.method == "POST":
+        # Si se presionó el botón de cancelar evento
+        if request.POST.get("cancel_event") == "1":
+            event_id = request.POST.get("id")
+            event = get_object_or_404(Event, pk=event_id)
+            if user != event.organizer:
+                messages.error(request, 'No tienes permiso para cancelar este evento.')
+                return redirect("events")
+            event.update(event.title, list(event.categories.all()), event.venue, event.description, event.scheduled_at, event.organizer, status='canceled')
+            messages.success(request, 'El evento ha sido cancelado.')
+            return redirect("events")
+
         event_id = request.POST.get("id")
         title = request.POST.get("title")
         description = request.POST.get("description")

@@ -1,15 +1,15 @@
-from typing import List, Optional, Union
-
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.db.models import QuerySet
 from django.utils.crypto import get_random_string
-
-from app.utils.dates import is_valid_date
 
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
+    favorite_events = models.ManyToManyField(
+        'Event', 
+        related_name='favorited_by',
+        blank=True,
+    )  # Un usuario puede tener múltiples eventos favoritos. Un evento puede ser marcado como favorito por múltiples usuarios
 
     @classmethod
     def validate_new_user(cls, email, username, password, password_confirm):
@@ -143,13 +143,6 @@ class Venue(models.Model):
         return cls.objects.filter(user=user)
 
 class Event(models.Model):
-    STATUS_CHOICES = [
-        ('active', 'Active'),
-        ('reprogramed', 'Reprogramed'),
-        ('finished', 'Finished'),
-        ('canceled', 'Canceled'),  # Fixed spelling from "canel"
-    ]
-    
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
@@ -164,59 +157,34 @@ class Event(models.Model):
         null=True,
         blank=True,
         related_name='events')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    STATUS_CHOICES = [
+        ('active', 'Activo'),
+        ('canceled', 'Cancelado'),
+        ('reprogramed', 'Reprogramado'),
+        ('soldout', 'Agotado'),
+        ('finished', 'Finalizado'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
 
     def __str__(self):
         return self.title
 
     @classmethod
-    def validate(cls, 
-        title, 
-        description, 
-        scheduled_at, 
-        categories: Optional[Union[List[Category], QuerySet]] = [],
-        venue: Optional[Venue] = None
-    ):
+    def validate(cls, title, categories, venue, description, scheduled_at):
         errors = {}
         if title == "":
             errors["title"] = "Por favor ingrese un titulo"
 
-        if categories and len(categories) > 0:
-            for category in categories:
-                if isinstance(category, Category):
-                    errs = Category.validate(category.name, category.description, category.is_active)
-                    if errs:
-                        errors["categories"] = errs
-                else:
-                    errors["categories"] = "Las categorías deben ser instancias válidas de Category"
-        
-        if venue:
-            err = Venue.validate(venue.name, venue.address, venue.city, venue.capacity, venue.contact)
-            if err:
-                errors["venue"] = err
-
         if description == "":
             errors["description"] = "Por favor ingrese una descripcion"
-            
-        if status and status not in dict(cls.STATUS_CHOICES):
-            errors["status"] = "Estado no válido"
 
-        if(not is_valid_date(scheduled_at)):
-            errors["scheduled_at"] = "Por favor ingrese una fecha valida"
         return errors
 
     @classmethod
-    def new(cls, 
-        title, 
-        description, 
-        scheduled_at, 
-        organizer, status='active',
-        categories: Optional[Union[List[Category], QuerySet]] = [],
-        venue: Optional[Venue] = None
-    ):
-        errors = Event.validate(title, description, scheduled_at, status, categories, venue)
+    def new(cls, title, categories, venue, description, scheduled_at, organizer):
+        errors = Event.validate(title, categories, venue, description, scheduled_at)
 
         if len(errors.keys()) > 0:
             return False, errors
@@ -226,33 +194,23 @@ class Event(models.Model):
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
-            status=status,
         )
-        if categories is not None:
-            event.categories.set(categories)
+        event.categories.set(categories)
         return True, None
     
-    def update(self, 
-        title, 
-        description, 
-        scheduled_at, 
-        organizer,
-        categories: Optional[Union[List[Category], QuerySet]] = None,
-        venue: Optional[Venue] = None,
-    ):
+    def update(self, title, categories, venue, description, scheduled_at, organizer, status=None):
         self.title = title or self.title
         self.description = description or self.description
         self.venue = venue or self.venue
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
-        self.status = status or self.status
-
+        if status is not None:
+            self.status = status
         if categories is not None:
             if isinstance(categories, models.Manager):
                 raise ValueError("Error updating event.categories")
             self.save()
             self.categories.set(categories)
-
         self.save()
 
 class Refund(models.Model):
