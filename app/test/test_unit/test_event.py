@@ -3,7 +3,7 @@ import datetime
 from django.test import TestCase
 from django.utils import timezone
 
-from app.models import Event, User
+from app.models import Event, User, Venue, Category, Notification, Ticket
 
 
 class EventModelTest(TestCase):
@@ -140,3 +140,50 @@ class EventModelTest(TestCase):
         self.assertEqual(updated_event.title, original_title)
         self.assertEqual(updated_event.description, new_description)
         self.assertEqual(updated_event.scheduled_at, original_scheduled_at)
+    
+    def test_notification_created_on_event_update(self):
+        """Test que verifica si se notifica a los usuarios con ticket del evento cuando cambia la fecha o el lugar"""
+        # Crear venue y usuario
+        venue1 = Venue.objects.create(name="Lugar 1", capacity=100)
+        venue2 = Venue.objects.create(name="Lugar 2", capacity=100)
+        category = Category.objects.create(name="Cat", is_active=True)
+        user1 = User.objects.create_user(username='att', password='pass')
+        user2 = User.objects.create_user(username='att2', password='pass2')
+
+        # Crear evento y ticket
+        event = Event.objects.create(
+            title="Evento de prueba",
+            description="Descripción del evento de prueba",
+            scheduled_at=timezone.now() + datetime.timedelta(days=1),
+            organizer=self.organizer,
+            venue=venue1
+        )
+        event.categories.add(category)
+        Ticket.objects.create(event=event, user=user1, quantity=1, type="GENERAL")
+        Ticket.objects.create(event=event, user=user2, quantity=1, type="VIP")
+        # Simular cambio de fecha y lugar
+        old_scheduled_at = event.scheduled_at
+        old_venue = event.venue
+        new_scheduled_at = old_scheduled_at + datetime.timedelta(days=2)
+        new_venue = venue2
+
+        event.scheduled_at = new_scheduled_at
+        event.venue = new_venue
+        event.save()
+
+        # Lógica de notificación
+        if old_scheduled_at != new_scheduled_at or old_venue != new_venue:
+            notification = Notification.objects.create(
+                title="Evento Modificado",
+                message=f"El evento '{event.title}' ha sido modificado. Fecha: {new_scheduled_at} y lugar: {new_venue.name}.",
+                priority="MEDIUM",
+            )
+        usuarios = User.objects.filter(tickets__event=event).distinct()
+        notification.users.set(usuarios)
+        notification.save()
+            
+
+        # Verificar que la notificacion este en el usuario
+        for usuario in usuarios:
+            self.assertIn(notification, usuario.notifications.all())
+        
