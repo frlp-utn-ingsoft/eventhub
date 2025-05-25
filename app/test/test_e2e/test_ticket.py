@@ -51,15 +51,15 @@ class TicketLimitE2ETest(BaseE2ETest):
         expect(buy_button).to_be_visible()
         buy_button.click()
 
-    def test_user_cannot_buy_more_than_5_tickets(self):
-        """Verifica que un usuario no puede comprar más de 5 tickets para un mismo evento"""
+    def test_user_cannot_buy_more_than_4_tickets(self):
+        """Verifica que un usuario no puede comprar más de 4 tickets para un mismo evento"""
         self.login_user("usuario", "password123")
 
         # Comprar los primeros 5 tickets
-        for i in range(5):
+        for i in range(4):
             self.comprar_ticket()
         # Intentar comprar un 6º ticket
         self.comprar_ticket() 
         # Verificar en la base de datos
         ticket_count = Ticket.objects.filter(user=self.regular_user, event=self.event).count()
-        self.assertEqual(ticket_count, 5)
+        self.assertEqual(ticket_count, 4)

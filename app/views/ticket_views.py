@@ -38,10 +38,10 @@ def purchase_ticket(request, event_id):
         qty   = int(request.POST.get("quantity", 1))
         ttype = request.POST.get("type", "GENERAL")
         existing_qty = Ticket.objects.filter(user=user, event=event).aggregate(total=Sum('quantity'))['total'] or 0
-        if existing_qty + qty > 5:
+        if existing_qty + qty > 4:
             return render(request, "app/ticket/purchase_ticket.html", {
                 "event": event,
-                "errors": {"quantity": "No podes comprar más de 5 tickets para un mismo evento"},
+                "errors": {"quantity": "No podes comprar más de 4 tickets para un mismo evento"},
                 "ticket_types": dict(Ticket.TICKET_TYPES).keys()
             })
         success, result = Ticket.new(user, event, qty, ttype)

@@ -17,8 +17,8 @@ class TicketLimitIntegrationTest(TestCase):
             organizer=self.organizer
         )
 
-    def test_cannot_purchase_more_than_five_tickets(self):
-        """Verifica que un usuario no pueda comprar más de 5 entradas por evento."""
+    def test_cannot_purchase_more_than_four_tickets(self):
+        """Verifica que un usuario no pueda comprar más de 4 entradas por evento."""
         # Crear 4 tickets inicialmente
         success, _ = Ticket.new(user=self.user, event=self.event, quantity=4, ticket_type="GENERAL")
         self.assertTrue(success, "Initial ticket creation should succeed")
@@ -29,11 +29,11 @@ class TicketLimitIntegrationTest(TestCase):
         self.assertIn("quantity", result, "Error should indicate quantity issue")
         self.assertEqual(
             result["quantity"],
-            "No puedes comprar más de 5 entradas por evento.",
+            "No puedes comprar más de 4 entradas por evento.",
             "Error message should match"
         )
 
-        # Verificar que el total de tickets sigue siendo 4
+        # Verificar que el total de tickets sigue siendo 4 en la bd
         total_tickets = Ticket.objects.filter(user=self.user, event=self.event).aggregate(total_quantity=Sum('quantity'))['total_quantity']
         self.assertEqual(total_tickets, 4, "No additional tickets should be created")
     

@@ -271,8 +271,8 @@ class Ticket(models.Model):
             errors["type"] = "El tipo de ticket no es válido."
         # Check total tickets per user per event
         existing_tickets = Ticket.objects.filter(user=user, event=event).aggregate(total_quantity=Sum('quantity'))['total_quantity'] or 0
-        if existing_tickets + quantity > 5:
-            errors["quantity"] = "No puedes comprar más de 5 entradas por evento."
+        if existing_tickets + quantity > 4:
+            errors["quantity"] = "No puedes comprar más de 4 entradas por evento."
         return errors
 
     @classmethod
@@ -288,7 +288,7 @@ class Ticket(models.Model):
         )
         return True, ticket
     
-    @classmethod
+    
     def update(self, quantity=None, ticket_type=None):
         # Si no se pasa un parámetro, se mantiene el valor actual
         new_qty  = quantity    if quantity is not None    else self.quantity
