@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block title %}Encuesta{% endblock %}
+
+{% block content %}
+<h2>Encuesta de Satisfacción</h2>
+<p>Gracias por tu compra. Cuéntanos tu experiencia:</p>
+
+<form method="post">
+    {% csrf_token %}
+
+    <!-- Satisfacción con estrellas -->
+    <label for="id_satisfaction">¿Qué tan satisfecho estás con la experiencia de compra?</label>
+    {% include "components/star_rating.html" with name="satisfaction" selected=form.initial.satisfaction %}
+
+    <br><br>
+
+    <!-- Comentarios -->
+    <label for="id_issue">¿Hubo algo que no funcionó como esperabas?</label>
+    {{ form.issue }}
+
+    <br><br>
+
+    <!-- Recomendación -->
+    <label for="id_recommend">¿Recomendarías nuestro sistema a otros?</label>
+    {{ form.recommend }}
+
+    <br><br>
+
+    <button type="submit" class="btn btn-primary">Enviar</button>
+</form>
+{% endblock %}
