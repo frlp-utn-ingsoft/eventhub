@@ -1,0 +1,58 @@
+{% extends "base.html" %} {% load static %} {% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Detalle de Solicitud de Reembolso</h2>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <table class="table table-borderless mb-0">
+                <tbody>
+                    <tr>
+                        <th scope="row" style="width: 200px">
+                            Código del Ticket:
+                        </th>
+                        <td>{{ refund.ticket_code }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Solicitante:</th>
+                        <td>{{ refund.user.username }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Evento:</th>
+                        <td>{{ refund.event_name|default:"No encontrado" }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Fecha de solicitud:</th>
+                        <td>{{ refund.created_at|date:"d M Y" }}</td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Estado:</th>
+                        <td>
+                            {% if refund.approval is True %}
+                            <span class="badge bg-success">Aprobado</span>
+                            {% elif refund.approval is False %}
+                            <span class="badge bg-danger">Rechazado</span>
+                            {% else %}
+                            <span class="badge bg-warning text-dark"
+                                >Pendiente</span
+                            >
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% if refund.approval_date %}
+                    <tr>
+                        <th scope="row">Fecha de resolución:</th>
+                        <td>{{ refund.approval_date|date:"d M Y" }}</td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{% url 'organizer_refund' %}" class="btn btn-secondary"
+            >← Volver</a
+        >
+    </div>
+</div>
+{% endblock %}

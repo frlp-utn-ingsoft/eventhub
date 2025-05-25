@@ -48,7 +48,7 @@ class Venue(models.Model):
     
     @classmethod
     def new(cls, name, adress, city, capacity, contact):
-        """Create a new ticketvenue with validation"""
+        """Create a new venue with validation"""
         errors = cls.validate(name, adress, city, capacity, contact)
 
         if errors:
@@ -79,7 +79,7 @@ class Venue(models.Model):
             self.contact = contact
         
         self.save()
-        return self
+        return True, self
     
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -144,7 +144,7 @@ class Category(models.Model):
             is_active=is_active,
         )
 
-        return True, None
+        return True, category
 
     def update(self, name=None, description=None, is_active=None):
         if name and name != self.name:
@@ -199,21 +199,36 @@ class Event(models.Model):
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
+<<<<<<< HEAD
             venue=venue,
+=======
+            venue=venue
+>>>>>>> main
         )
         
         if categories:
             event.categories.set(categories)
 
-        return True, None
+        return True, event
 
+<<<<<<< HEAD
     def update(self, title=None, description=None, scheduled_at=None, organizer=None, categories=None, venue=None):
+=======
+    def update(self, title=None, description=None, scheduled_at=None, organizer=None, venue=None, categories=None):
+>>>>>>> main
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
         self.venue = venue or self.venue
+<<<<<<< HEAD
 
+=======
+        
+        if categories:
+            self.categories.set(categories)
+            
+>>>>>>> main
         self.save()
     
    
@@ -343,18 +358,15 @@ class Ticket(models.Model):
 
 
 class Rating(models.Model):
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="ratings")
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="ratings")
-    score = models.IntegerField(choices=[(i, i) for i in range(1, 6)])
-    comment = models.TextField(blank=True)
+    title = models.CharField(max_length=200, default="Calificación")
+    text = models.TextField(default="Sin comentarios")
+    rating = models.IntegerField(default=5)  # Valor por defecto de 5 estrellas
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        unique_together = ['event', 'user']
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings')
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='ratings')
 
     def __str__(self):
-        return f"Calificación de {self.user.username} para {self.event.title}"
+        return f"{self.title} - {self.event.title}"
 
     @classmethod
     def validate(cls, score, comment):
@@ -395,7 +407,11 @@ class Rating(models.Model):
         self.save()
         
         return True, None
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> main
 class Comment(models.Model):
     title = models.CharField(max_length=200)
     text = models.TextField()
@@ -459,3 +475,18 @@ class Notification(models.Model):
     )
     def __str__(self):
         return self.title
+    
+class RefundRequest(models.Model):
+    approval = models.BooleanField(null=True, blank=True)
+    approval_date = models.DateField(null=True, blank=True)
+    ticket_code = models.CharField(max_length=255)
+    reason = models.CharField(max_length=255)
+    additional_details = models.TextField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    accepted_policy = models.BooleanField(default=False)
+    event_name = models.CharField(max_length=255, blank=True, null=True)
+
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refund_requests")
+
+    def __str__(self):
+        return f"Refund Request for Ticket: {self.ticket_code}"

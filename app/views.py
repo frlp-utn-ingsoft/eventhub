@@ -5,9 +5,11 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .models import Event, User, Ticket, Comment, Notification, Venue
 from django.contrib import messages
+from django.db.models import Q
+import uuid
 
-from .models import Event, User, Rating, Category
-from .forms import CategoryForm
+
+from .models import Event, User, Ticket, RefundRequest, Rating, Category
 
 
 def is_organizer(user):
@@ -117,6 +119,8 @@ def event_form(request, event_id=None):
     
     venues = Venue.objects.all()
     categories = Category.objects.filter(is_active=True)
+    
+    venues = Venue.objects.all()
     event_categories = []
     event = {}
 
@@ -127,12 +131,20 @@ def event_form(request, event_id=None):
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
+        
+        venue_id = request.POST.get("venue")
         date = request.POST.get("date")
         time = request.POST.get("time")
         categories = request.POST.getlist("categories")
+<<<<<<< HEAD
         venue_id = request.POST.get("venue")
         venue = get_object_or_404(Venue, pk=venue_id)
+=======
+        venue = request.POST.getlist("venue")
+>>>>>>> main
 
+
+        venue = get_object_or_404(Venue, pk=venue_id)
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
 
@@ -141,10 +153,31 @@ def event_form(request, event_id=None):
         )
 
         if event_id is None:
+<<<<<<< HEAD
             Event.new(title, description, scheduled_at, request.user, categories, venue)
         else:
             event = get_object_or_404(Event, pk=event_id)
             event.update(title, description, scheduled_at, request.user, categories, venue)
+=======
+            event = Event.objects.create(
+                title=title,
+                description=description,
+                scheduled_at=scheduled_at,
+                organizer=request.user,
+                venue=venue
+            )
+            if categories:
+                event.categories.set(categories)
+        else:
+            event = get_object_or_404(Event, pk=event_id)
+            event.title = title
+            event.description = description
+            event.scheduled_at = scheduled_at
+            event.venue = venue
+            event.save()
+            if categories:
+                event.categories.set(categories)
+>>>>>>> main
 
         return redirect("events")
 
@@ -154,11 +187,209 @@ def event_form(request, event_id=None):
         {
             "event": event,
             "categories": categories,
+            
+            "venues": venues,
             "event_categories": event_categories,
             "user_is_organizer": request.user.is_organizer,
             "venues": venues
         },
     )
+
+
+@login_required
+def refund_form(request, id):
+    ticket = get_object_or_404(Ticket, pk=id)
+
+    if request.method == "POST":
+        ticket_code = request.POST.get("ticket_code")
+        reason = request.POST.get("reason")
+        additional_details = request.POST.get("additional_details")
+        accepted_policy = request.POST.get("accepted_policy") == "on"
+
+        # Validaciones básicas
+        if not ticket_code or not reason or not accepted_policy:
+            return render(request, "app/refund_form.html", {
+                "error": "Todos los campos son obligatorios.",
+                "data": request.POST
+            })
+
+        # Crear la solicitud de reembolso con estado pendiente
+        RefundRequest.objects.create(
+            ticket_code=ticket_code,
+            reason=reason,
+            additional_details=additional_details,
+            user=request.user,
+            accepted_policy=accepted_policy,
+            approval=None,  # Estado pendiente
+            event_name=ticket.event.title
+        )
+
+        # Crear una notificación para el usuario que solicitó el reembolso
+        notification = Notification.objects.create(
+            title="Solicitud de Reembolso Enviada",
+            message=f"Tu solicitud de reembolso para el evento: '{ticket.event.title}' ha sido enviada y está en proceso de revisión.",
+            priority="MEDIUM",
+            event=ticket.event
+        )
+        notification.users.add(request.user)
+        notification.save()
+
+        return redirect("events")
+
+    return render(request, "app/refund_form.html", {"ticket": ticket})
+
+
+@login_required
+def refund_edit_form(request, id):
+    refund_request = get_object_or_404(RefundRequest, pk=id)
+
+    
+    if request.method == "POST":
+        ticket_code_uuid = uuid.UUID(refund_request.ticket_code)
+        ticket = Ticket.objects.get(ticket_code=ticket_code_uuid, user=refund_request.user)
+
+        ticket_code = request.POST.get("ticket_code")
+        reason = request.POST.get("reason")
+        additional_details = request.POST.get("additional_details")
+        accepted_policy = request.POST.get("accepted_policy") == "on"
+
+        # Validaciones básicas
+        if not ticket_code or not reason or not accepted_policy:
+            return render(request, "app/refund_form.html", {
+                "error": "Todos los campos son obligatorios.",
+                "data": request.POST
+            })
+
+        # Crear la solicitud de reembolso con estado pendiente
+        RefundRequest.objects.update(
+            ticket_code=ticket_code,
+            reason=reason,
+            additional_details=additional_details,
+            user=request.user,
+            accepted_policy=accepted_policy,
+            approval=None,  # Estado pendiente
+            event_name=ticket.event.title
+        )
+
+        # Crear una notificación para el usuario que solicitó el reembolso
+        notification = Notification.objects.create(
+            title="Solicitud de Reembolso Enviada",
+            message=f"Tu solicitud de reembolso para el evento: '{ticket.event.title}' ha sido enviada y está en proceso de revisión.",
+            priority="MEDIUM",
+            event=ticket.event
+        )
+        notification.users.add(request.user)
+        notification.save()
+
+        return redirect("events")
+
+    return render(request, "app/refund_edit_form.html", {"refund_request": refund_request})
+
+@login_required
+def organizer_refund_requests(request):
+    # Si no es organizador, redirigir a eventos
+    if not request.user.is_organizer:
+        # Obtener todos los eventos organizados por el usuario
+        refund_requests = RefundRequest.objects.filter(user=request.user)
+
+        # Asignar el evento relacionado a cada refund request
+        for r in refund_requests:
+            try:
+                ticket_code_uuid = uuid.UUID(r.ticket_code)
+                ticket = Ticket.objects.get(ticket_code=ticket_code_uuid, user=r.user)
+                r.event = ticket.event
+            except (Ticket.DoesNotExist, ValueError, TypeError):
+                r.event = None
+
+        return render(
+            request,
+            "app/organizer_refund_requests.html", 
+            {
+                "refund_requests": refund_requests,
+            })
+    else:
+        # Obtener todos los eventos organizados por el usuario
+        organizer_events = Event.objects.filter(organizer=request.user)
+
+        # Obtener todos los refund requests cuyos usuarios compraron tickets para esos eventos
+        refund_requests = RefundRequest.objects.filter(
+            Q(event_name__in=organizer_events.values_list("title", flat=True))
+            ).select_related("user")
+
+        # Asignar el evento relacionado a cada refund request
+        for r in refund_requests:
+            try:
+                ticket_code_uuid = uuid.UUID(r.ticket_code)
+                ticket = Ticket.objects.get(ticket_code=ticket_code_uuid, user=r.user)
+                r.event = ticket.event
+            except (Ticket.DoesNotExist, ValueError, TypeError):
+                r.event = None
+
+        return render(request, "app/organizer_refund_requests.html", {
+            "refund_requests": refund_requests,
+        })
+
+
+@login_required
+def approve_refund_request(request, id):
+    if not request.user.is_organizer:
+        return redirect("events")
+
+    refund = get_object_or_404(RefundRequest, pk=id)
+
+    # Aseguramos que la solicitud aún no fue procesada
+    if refund.approval is not None:
+        messages.info(request, "La solicitud ya fue procesada.")
+        return redirect("organizer_refund")
+
+    # Buscar el ticket relacionado
+    ticket = Ticket.objects.filter(
+        ticket_code=refund.ticket_code,
+        event__organizer=request.user
+    ).first()
+
+    if ticket:
+        # Eliminar solo el ticket
+        ticket.delete()
+
+    # NO eliminar la refund request, solo actualizarla
+    refund.approval = True
+    refund.approval_date = timezone.now()
+    refund.save()
+
+    return redirect("organizer_refund")
+
+
+@login_required
+def reject_refund_request(request, id):
+    # Si no es organizador, redirigir a eventos
+    if not request.user.is_organizer:
+        return redirect("events")
+    
+    refund = get_object_or_404(RefundRequest, pk=id)
+    # Cambiar el estado a rechazado
+    refund.approval = False
+    refund.approval_date = timezone.now()
+    refund.save()
+    return redirect("organizer_refund")
+
+@login_required
+def refund_delete(request, id):
+    
+    refund = get_object_or_404(RefundRequest, pk=id)
+    # Cambiar el estado a rechazado
+    refund.delete()
+    
+    return redirect("organizer_refund")
+
+@login_required
+def view_refund_request(request, id):
+    # si no es organizador, redirigir a eventos
+    if not request.user.is_organizer:
+        return redirect("events")
+    refund = get_object_or_404(RefundRequest, pk=id)
+    #verificar si la solicitud de reembolso ya fue aprobada o rechazada
+    return render(request, "app/view_refund_request.html", {"refund": refund})
 
 @login_required
 def buy_ticket(request, id):
@@ -257,24 +488,45 @@ def ticket_edit(request, id):
 @login_required
 def create_rating(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
+
+    # Verificar que el usuario no sea el organizador
+    if request.user == event.organizer:
+        messages.error(request, "Los organizadores no pueden calificar sus propios eventos.")
+        return redirect("event_detail", event_id=event.id)
+    
+    # Verificar si el usuario ya ha calificado este evento
+    if Rating.objects.filter(event=event, user=request.user).exists():
+        messages.error(request, "Ya has calificado este evento.")
+        return redirect("event_detail", event_id=event.id)
+    
     
     if request.method == "POST":
-        score = int(request.POST.get("score"))
-        comment = request.POST.get("comment", "")
+        title = request.POST.get("title")
+        text = request.POST.get("text", "")  # Texto es opcional
+        rating = int(request.POST.get("rating"))
         
-        success, result = Rating.new(event, request.user, score, comment)
-        
-        if success:
-            return redirect("event_detail", event_id=event.id)
-        else:
+        if rating < 1 or rating > 5:
+            messages.error(request, "La calificación debe estar entre 1 y 5 estrellas.")
             return render(request, "app/rating_form.html", {
                 "event": event,
-                "errors": result,
-                "score": score,
-                "comment": comment
+                "title": title,
+                "text": text,
+                "rating_value": rating
             })
+        
+        Rating.objects.create(
+            title=title,
+            text=text,
+            rating=rating,
+            event=event,
+            user=request.user
+        )
+        messages.success(request, "Tu reseña ha sido publicada.")
+        return redirect("event_detail", event_id=event.id)
             
-    return render(request, "app/rating_form.html", {"event": event})
+    return render(request, "app/rating_form.html", {
+        "event": event
+    })
 
 
 @login_required
@@ -283,30 +535,38 @@ def edit_rating(request, rating_id):
     
     # Verificar que el usuario es el dueño de la calificación
     if rating.user != request.user:
+        messages.error(request, "No tienes permiso para editar esta reseña.")
         return redirect("event_detail", event_id=rating.event.id)
     
     if request.method == "POST":
-        score = int(request.POST.get("score"))
-        comment = request.POST.get("comment", "")
+        title = request.POST.get("title")
+        text = request.POST.get("text", "")  # Texto es opcional
+        rating_value = int(request.POST.get("rating"))
         
-        success, result = rating.update(score, comment)
-        
-        if success:
-            return redirect("event_detail", event_id=rating.event.id)
-        else:
+        if rating_value < 1 or rating_value > 5:
+            messages.error(request, "La calificación debe estar entre 1 y 5 estrellas.")
             return render(request, "app/rating_form.html", {
                 "event": rating.event,
-                "errors": result,
-                "score": score,
-                "comment": comment,
-                "rating": rating
+                "rating": rating,
+                "title": title,
+                "text": text,
+                "rating_value": rating_value
             })
+        
+        rating.title = title
+        rating.text = text
+        rating.rating = rating_value
+        rating.save()
+        
+        messages.success(request, "Tu reseña ha sido actualizada.")
+        return redirect("event_detail", event_id=rating.event.id)
             
     return render(request, "app/rating_form.html", {
         "event": rating.event,
         "rating": rating,
-        "score": rating.score,
-        "comment": rating.comment
+        "title": rating.title,
+        "text": rating.text,
+        "rating_value": rating.rating
     })
 
 
@@ -326,44 +586,68 @@ def delete_rating(request, rating_id):
 @login_required
 def add_comment(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
+    
+    # Verificar si el usuario ya ha comentado en este evento
+    if Comment.objects.filter(event=event, user=request.user).exists():
+        messages.error(request, "Ya has comentado en este evento. Puedes editar tu comentario existente.")
+        return redirect("event_detail", event_id=event_id)
+    
     if request.method == "POST":
         user = request.user
         title = request.POST.get("title")
         text = request.POST.get("text")
+
+        if not title or not text:
+            messages.error(request, "El título y el comentario son obligatorios.")
+            return redirect("event_detail", event_id=event_id)
+        
         Comment.objects.create(
             title=title,
             text=text,
             event=event,
             user=user
         )
-        return redirect("event_detail", event_id=event_id)
+        messages.success(request, "Tu comentario ha sido publicado.")
     return redirect("event_detail", event_id=event_id)
 
 
 @login_required
 def delete_comment(request, event_id, comment_id):
     comment = get_object_or_404(Comment, id=comment_id, event_id=event_id)
-    if comment.user == request.user or request.user.is_organizer:
-        if request.method == "POST":
-            comment.delete()
-            return redirect("event_detail", event_id=event_id)
+    # Verificar que el usuario es el dueño del comentario o es el organizador del evento
+    if comment.user != request.user and not request.user.is_organizer:
+        messages.error(request, "No tienes permiso para eliminar este comentario.")
         return redirect("event_detail", event_id=event_id)
-    else:
-        return redirect("event_detail", event_id=event_id)
+    
+    if request.method == "POST":
+        comment.delete()
+        messages.success(request, "El comentario ha sido eliminado.")
+        
+    return redirect("event_detail", event_id=event_id)
 
 
 @login_required
 def update_comment(request, event_id, comment_id):
     comment = get_object_or_404(Comment, id=comment_id, event_id=event_id)
-    if comment.user == request.user or request.user.is_organizer:
-        if request.method == "POST":
-            title = request.POST.get("title")
-            text = request.POST.get("text")
-            comment.update(title, text)
-            return redirect("event_detail", event_id=event_id)
-    else:
+    # Verificar que el usuario es el dueño del comentario
+    if comment.user != request.user:
+        messages.error(request, "No tienes permiso para editar este comentario.")
         return redirect("event_detail", event_id=event_id)
-    return render(request, "app/update_comment.html", {"comment": comment, "event_id": event_id})
+    
+    if request.method == "POST":
+        title = request.POST.get("title")
+        text = request.POST.get("text")
+        
+        if not title or not text:
+            messages.error(request, "El título y el comentario son obligatorios.")
+            return redirect("event_detail", event_id=event_id)
+        
+        comment.title = title
+        comment.text = text
+        comment.save()
+        messages.success(request, "Tu comentario ha sido actualizado.")
+        
+    return redirect("event_detail", event_id=event_id)
 
 
 @login_required
@@ -559,3 +843,78 @@ def notification_mark_read(request, notification_id):
 def mark_all_notifications_read(request):
     request.user.notifications.update(is_read=True)
     return redirect('notification_list')
+
+
+@login_required
+def venue_form(request):
+    if request.method == 'POST':
+        name=request.POST.get("name")
+        adress=request.POST.get("adress")
+        city=request.POST.get("city")
+        capacity=int(request.POST.get("capacity"))
+        contact=request.POST.get("contact")
+
+
+        success, venue=Venue.new(
+            name=name,
+            adress=adress,
+            city=city,
+            capacity=capacity,
+            contact=contact
+        )
+
+        if success:
+            return redirect('venues')
+
+    return render(request, "app/venue_form.html")
+
+@login_required
+def venues(request):
+    venues = Venue.objects.all()
+
+    return render(
+        request,
+        "app/venues.html",
+        {"venues": venues, "user_is_organizer": request.user.is_organizer},
+    )
+
+@login_required
+def venue_delete(request, id):
+    if request.user.is_organizer:     
+        venue = get_object_or_404(Venue, pk=id)
+
+        venue.delete()
+
+        return redirect("venues")
+
+@login_required
+def venue_edit(request, id):
+    venue = get_object_or_404(Venue, pk=id)
+
+
+    if request.method == "POST":
+        name=request.POST.get("name")
+        adress=request.POST.get("adress")
+        city=request.POST.get("city")
+        capacity=int(request.POST.get("capacity"))
+        contact=request.POST.get("contact")
+
+
+        success, updatedVenue=venue.update(
+            name=name,
+            adress=adress,
+            city=city,
+            capacity=capacity,
+            contact=contact
+        )
+
+        # Validaciones básicas
+        if not success:
+            return render(request, "app/venue_edit_form.html", {
+                "error": "Todos los campos son obligatorios.",
+                "data": request.POST
+            })
+        else:
+            return redirect('venues')
+
+    return render(request, "app/venue_edit_form.html", {"venue": venue})

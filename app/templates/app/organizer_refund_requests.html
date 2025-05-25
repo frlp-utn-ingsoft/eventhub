@@ -1,0 +1,148 @@
+{% extends "base.html" %} {% load static %} {% block content %}
+<div class="p-4">
+    <h1 class="text-2xl fw-bold mb-4">Solicitudes de Reembolso</h1>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table
+                    class="table table-hover table-bordered table-striped align-middle"
+                >
+                    <thead class="table-info">
+                        <tr>
+                            <th class="px-3 py-2 text-start">
+                                Código de Entrada
+                            </th>
+                            <th class="px-3 py-2 text-start">Evento</th>
+                            <th class="px-3 py-2 text-start">Solicitante</th>
+                            <th class="px-3 py-2 text-start">
+                                Fecha de Solicitud
+                            </th>
+                            <th class="px-3 py-2 text-start">Estado</th>
+                            <th class="px-3 py-2 text-start">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for r in refund_requests %}
+                        <tr>
+                            <td class="px-3 py-2">{{ r.ticket_code }}</td>
+                            <td class="px-3 py-2">
+                                {{ r.event_name|default:"No encontrado" }}
+                            </td>
+                            <td class="px-3 py-2">{{ r.user.username }}</td>
+                            <td class="px-3 py-2">
+                                {{ r.created_at|date:"d M Y, H:i" }}
+                            </td>
+                            <td class="px-3 py-2">
+                                {% if r.approval is True %}
+                                <span class="badge bg-success"
+                                    ><i class="bi bi-check-circle"></i>
+                                    Aprobado</span
+                                >
+                                {% elif r.approval is False %}
+                                <span class="badge bg-danger"
+                                    ><i class="bi bi-x-circle"></i>
+                                    Rechazado</span
+                                >
+                                {% else %}
+                                <span class="badge bg-warning text-dark"
+                                    ><i class="bi bi-hourglass-split"></i>
+                                    Pendiente</span
+                                >
+                                {% endif %}
+                            </td>
+                            <td class="px-3 py-2">
+                                <div class="d-flex gap-2">
+                                    <a
+                                        href="{% url 'refund_view' r.id %}"
+                                        class="btn btn-sm btn-outline-primary"
+                                        title="Ver detalle"
+                                        data-bs-toggle="tooltip"
+                                    >
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    {% if r.approval is None and user.is_organizer %}
+                                        <form
+                                            method="post"
+                                            action="{% url 'refund_approve' r.id %}"
+                                        >
+                                            {% csrf_token %}
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm btn-outline-success"
+                                                title="Aprobar"
+                                                data-bs-toggle="tooltip"
+                                            >
+                                                <i class="bi bi-check"></i>
+                                            </button>
+                                        </form>
+                                        <form
+                                            method="post"
+                                            action="{% url 'refund_reject' r.id %}"
+                                        >
+                                            {% csrf_token %}
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm btn-outline-danger"
+                                                title="Rechazar"
+                                                data-bs-toggle="tooltip"
+                                            >
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+
+                                    {% if not user.is_organizer %}
+                                        <form
+                                            method="get"
+                                            action="{% url 'refund_edit_form' r.id %}"
+                                        >
+                                            {% csrf_token %}
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm btn-outline-success"
+                                                title="Editar"
+                                                data-bs-toggle="tooltip"
+                                            >
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                        </form>
+                                        <form
+                                            method="post"
+                                            action="{% url 'refund_delete' r.id %}"
+                                        >
+                                            {% csrf_token %}
+                                            <button
+                                                type="submit"
+                                                class="btn btn-sm btn-outline-danger"
+                                                title="Eliminar"
+                                                data-bs-toggle="tooltip"
+                                            >
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-3">
+                                No hay solicitudes
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const tooltipTriggerList = Array.from(
+        document.querySelectorAll('[data-bs-toggle="tooltip"]')
+    );
+    tooltipTriggerList.forEach((el) => new bootstrap.Tooltip(el));
+</script>
+{% endblock %}
