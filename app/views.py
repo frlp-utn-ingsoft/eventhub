@@ -65,7 +65,12 @@ def home(request):
 
 @login_required
 def events(request):
-    events = Event.objects.all().order_by("scheduled_at")
+    url_name = request.resolver_match.url_name
+    show_past = (url_name == "events_all")
+    if show_past:
+        events = Event.get_all_events()
+    else:
+        events = Event.get_upcoming_events()
     return render(
         request,
         "app/events.html",

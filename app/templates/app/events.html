@@ -6,6 +6,9 @@
 <div class="container p-4">
     <div class="d-flex py-4 justify-content-between align-items-center mb-4">
         <h1>Eventos</h1>
+        <div class="d-flex align-items-center gap-3">
+            <!-- Switch para mostrar/ocultar pasados -->
+            
         {% if user_is_organizer %}
         <div class="d-flex">
             <a
@@ -26,6 +29,25 @@
           
         {% endif %}
     </div>
+    </div>
+    <div class="d-flex justify-content-end mb-3">
+        <div class="form-check form-switch">
+          <input
+            class="form-check-input"
+            type="checkbox"
+            id="showPastSwitch"
+            {% if request.resolver_match.url_name == 'events_all' %}checked{% endif %}
+            onchange="
+              window.location.href = this.checked
+            ? '{% url 'events_all' %}'
+            : '{% url 'events' %}';
+            "
+          >
+          <label class="form-check-label" for="showPastSwitch">
+            Mostrar eventos pasados
+          </label>
+        </div>
+      </div>
     <table class="table">
         <thead>
             <tr>
