@@ -44,7 +44,7 @@ class Event(models.Model):
     
     @classmethod
     def get_upcoming_events(cls):
-        return cls.objects.filter(scheduled_at__gte=timezone.now()).order_by("scheduled_at")
+        return cls.objects.filter(scheduled_at__gte=timezone.localtime()).order_by("scheduled_at")
     
     @classmethod
     def get_all_events(cls):

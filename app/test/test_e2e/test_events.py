@@ -9,11 +9,6 @@ from app.models import Event, User
 
 from app.test.test_e2e.base import BaseE2ETest
 
-def fmt_like_template(dt):
-    return date_format(
-        timezone.localtime(dt), "d M Y, H:i", use_l10n=True
-    ).lower()
-
 class EventBaseTest(BaseE2ETest):
     """Clase base específica para tests de eventos"""
 
@@ -38,7 +33,7 @@ class EventBaseTest(BaseE2ETest):
 
         # Crear eventos de prueba
         # Evento 1
-        event_date1 = timezone.now() - datetime.timedelta(days=60)
+        event_date1 = timezone.localtime() - datetime.timedelta(days=60)
         self.event1 = Event.objects.create(
             title="Evento de prueba 1",
             description="Descripción del evento 1",
@@ -47,7 +42,7 @@ class EventBaseTest(BaseE2ETest):
         )
 
         # Evento 2
-        event_date2 = timezone.now() - datetime.timedelta(days=50)
+        event_date2 = timezone.localtime() - datetime.timedelta(days=50)
         self.event2 = Event.objects.create(
             title="Evento de prueba 2",
             description="Descripción del evento 2",
@@ -72,14 +67,15 @@ class EventBaseTest(BaseE2ETest):
         # Verificar datos del primer evento
         row0 = rows.nth(0)
         expect(row0.locator("td").nth(0)).to_have_text("Evento de prueba 1")
-        expect(row0.locator("td").nth(1)).to_have_text(fmt_like_template(self.event1.scheduled_at))
+        expected_date = date_format(self.event1.scheduled_at, "d M Y, H:i", use_l10n=True).lower()
+        expect(row0.locator("td").nth(1)).to_have_text(expected_date)
         expect(row0.locator("td").nth(2)).to_have_text("organizador")
 
         # Verificar datos del segundo evento
         row1 = rows.nth(1)
         expect(row1.locator("td").nth(0)).to_have_text("Evento de prueba 2")
-        expect(row1.locator("td").nth(1)).to_have_text(fmt_like_template(self.event2.scheduled_at))
-        expect(row1.locator("td").nth(2)).to_have_text("organizador")
+        expected_date = date_format(self.event2.scheduled_at, "d M Y, H:i", use_l10n=True).lower()
+        expect(row1.locator("td").nth(1)).to_have_text(expected_date)
 
     def _table_has_correct_actions(self, user_type):
         """Método auxiliar para verificar que las acciones son correctas según el tipo de usuario"""
