@@ -15,8 +15,9 @@ from django.urls import reverse_lazy
 from .models import Venue
 from .forms import VenueForm
 from .models import Event, Rating, Rating_Form, User, Comment
-import re
-
+from django.shortcuts import render
+from django.utils import timezone
+from .utils import countdown_timer
 
 def organizer_required(view_func):
     @wraps(view_func)
@@ -258,8 +259,6 @@ def event_detail(request, id):
             form = Rating_Form(instance=resena_existente)
         except Rating.DoesNotExist:
             form = Rating_Form()
-
-    
     
     is_organizer = request.user == event.organizer
 
@@ -269,11 +268,17 @@ def event_detail(request, id):
     else:
         tickets_sold = None
         demand_message = None
+        
+    timer_countdown = countdown_timer(event.scheduled_at)
+    completed = timer_countdown["completed"]
 
     return render(
         request, "app/event_detail.html", 
         { "event": event, 
-         "user_is_organizer": request.user == event.organizer, 
+         "timer_countdown": timer_countdown,
+         "event_completed": completed,
+         "user_is_organizer_of_the_event": request.user == event.organizer, 
+         "user_is_organizer": request.user.is_organizer,
          "comments": comments, 
          "ratings": ratings,
          "form": form,
