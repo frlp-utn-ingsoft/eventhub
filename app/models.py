@@ -110,7 +110,7 @@ class User(AbstractUser):
         """
         Returns the amount of tickets that the User can buy, taking into account that the max is 4.
         """
-        
+
         event_tickets = self.tickets.filter(event=event)
         aux = 0
 
@@ -298,19 +298,22 @@ class Ticket(models.Model):
         """Validate ticket data before creation"""
         errors = {}
 
+        if not event:
+            errors["event"] = "Evento es requerido"
+
         if quantity is None:
             errors["quantity"] = "La cantidad es requerida"
         elif not isinstance(quantity, int) or isinstance(quantity, bool):
             errors["quantity"] = "La cantidad debe ser un número entero válido"
+        elif user.available_tickets_to_buy(event) == 0:
+            errors["quantity"] = "Ya has alcanzado el límite de entradas que puedes comprar para este evento."
         elif quantity < 1:
             errors["quantity"] = "La cantidad debe ser al menos 1"
         
         valid_types = [choice[0] for choice in cls.TICKETS_TYPE_CHOICES]
         if not type or type not in valid_types:
             errors["type"] = f"Tipo inválido. Opciones válidas: {', '.join(valid_types)}"
-        
-        if not event:
-            errors["event"] = "Evento es requerido"
+
         
         if not user:
             errors["user"] = "Usuario es requerido"
