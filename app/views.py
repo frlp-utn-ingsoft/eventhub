@@ -380,16 +380,21 @@ def view_refund_request(request, id):
 @login_required
 def buy_ticket(request, id):
     event = get_object_or_404(Event, pk=id)
+    user = request.user
+    available_tickets_to_buy = user.available_tickets_to_buy(event)
 
     if request.method == "POST":
+        if available_tickets_to_buy == 0:
+            messages.error(request, "Lo sentimos. Ya has comprado el máximo disponible de entradas por usuario.")
+            return render(request, "app/buy_ticket.html", {"event": event, "available_tickets_to_buy": available_tickets_to_buy})
+
         try:
             quantity = int(request.POST.get("quantity"))
         except (TypeError, ValueError):
             messages.error(request, "La cantidad debe ser un número entero")
-            return render(request, "app/buy_ticket.html", {"event": event})
+            return render(request, "app/buy_ticket.html", {"event": event, "available_tickets_to_buy": available_tickets_to_buy})
 
         type = request.POST.get("type")
-        user = request.user
 
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
@@ -403,12 +408,13 @@ def buy_ticket(request, id):
                 "app/buy_ticket.html",
                 {
                     "event": event,
+                    "available_tickets_to_buy": available_tickets_to_buy,
                     "errors": result,
                     "data": request.POST,
                 }
             )
 
-    return render(request, "app/buy_ticket.html", {"event": event})
+    return render(request, "app/buy_ticket.html", {"event": event, "available_tickets_to_buy": available_tickets_to_buy})
 
 @login_required
 def tickets(request):
