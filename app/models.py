@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 from category.models import Category
 
@@ -40,6 +41,14 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+    
+    @classmethod
+    def get_upcoming_events(cls):
+        return cls.objects.filter(scheduled_at__gte=timezone.now()).order_by("scheduled_at")
+    
+    @classmethod
+    def get_all_events(cls):
+        return cls.objects.all().order_by("scheduled_at")
 
     @classmethod
     def validate(cls, title, description, scheduled_at):
