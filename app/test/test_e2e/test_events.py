@@ -56,7 +56,9 @@ class EventBaseTest(BaseE2ETest):
         expect(headers.nth(0)).to_have_text("Título")
         expect(headers.nth(1)).to_have_text("Descripción")
         expect(headers.nth(2)).to_have_text("Fecha")
-        expect(headers.nth(3)).to_have_text("Acciones")
+        expect(headers.nth(3)).to_have_text("Categorias")
+        expect(headers.nth(4)).to_have_text("Lugar")
+        expect(headers.nth(5)).to_have_text("Acciones")
 
         # Verificar que los eventos aparecen en la tabla
         rows = self.page.locator("table tbody tr")
@@ -79,7 +81,8 @@ class EventBaseTest(BaseE2ETest):
 
         detail_button = row0.get_by_role("link", name="Ver Detalle")
         edit_button = row0.get_by_role("link", name="Editar")
-        delete_form = row0.locator("form")
+        # Seleccionar el formulario de eliminación del primer evento
+        delete_form = self.page.locator(f"#deleteModal{self.event1.id} form")
 
         expect(detail_button).to_be_visible()
         expect(detail_button).to_have_attribute("href", f"/events/{self.event1.id}/")
@@ -91,8 +94,6 @@ class EventBaseTest(BaseE2ETest):
             expect(delete_form).to_have_attribute("action", f"/events/{self.event1.id}/delete/")
             expect(delete_form).to_have_attribute("method", "POST")
 
-            delete_button = delete_form.get_by_role("button", name="Eliminar")
-            expect(delete_button).to_be_visible()
         else:
             expect(edit_button).to_have_count(0)
             expect(delete_form).to_have_count(0)
@@ -215,14 +216,19 @@ class EventCRUDTest(EventBaseTest):
         # Verificar que estamos en la página de creación de evento
         expect(self.page).to_have_url(f"{self.live_server_url}/events/create/")
 
-        header = self.page.locator("h1")
-        expect(header).to_have_text("Crear evento")
-        expect(header).to_be_visible()
+        expect(self.page.get_by_role("heading", name="Crear evento")).to_be_visible()
 
         # Completar el formulario
         self.page.get_by_label("Título del Evento").fill("Evento de prueba E2E")
-        self.page.get_by_label("Descripción").fill("Descripción creada desde prueba E2E")
+        # Esperar a que el campo descripción esté visible (único dentro del div)
+        self.page.locator("#description_event >> textarea#description").wait_for(state="visible")
+
+        # Llenar el campo
+        self.page.locator("#description_event >> textarea#description").fill(
+            "Descripción creada desde prueba E2E"
+        )
         self.page.get_by_label("Fecha").fill("2025-06-15")
+
         self.page.get_by_label("Hora").fill("16:45")
 
         # Enviar el formulario
@@ -254,18 +260,20 @@ class EventCRUDTest(EventBaseTest):
         # Verificar que estamos en la página de edición
         expect(self.page).to_have_url(f"{self.live_server_url}/events/{self.event1.id}/edit/")
 
-        header = self.page.locator("h1")
-        expect(header).to_have_text("Editar evento")
-        expect(header).to_be_visible()
+        expect(self.page.get_by_text("Editar evento")).to_be_visible()
 
         # Verificar que el formulario está precargado con los datos del evento y luego los editamos
         title = self.page.get_by_label("Título del Evento")
         expect(title).to_have_value("Evento de prueba 1")
         title.fill("Titulo editado")
 
-        description = self.page.get_by_label("Descripción")
+        # Esperar a que el campo descripción esté visible (único dentro del div)
+        self.page.locator("#description_event >> textarea#description").wait_for(state="visible")
+
+        # Llenar el campo
+        description = self.page.locator("#description_event >> textarea#description")
         expect(description).to_have_value("Descripción del evento 1")
-        description.fill("Descripcion Editada")
+        description.fill("Descripción Editada")
 
         date = self.page.get_by_label("Fecha")
         expect(date).to_have_value("2025-02-10")
@@ -276,7 +284,7 @@ class EventCRUDTest(EventBaseTest):
         time.fill("03:00")
 
         # Enviar el formulario
-        self.page.get_by_role("button", name="Crear Evento").click()
+        self.page.get_by_role("button", name="Guardar").click()
 
         # Verificar que redirigió a la página de eventos
         expect(self.page).to_have_url(f"{self.live_server_url}/events/")
@@ -284,7 +292,7 @@ class EventCRUDTest(EventBaseTest):
         # Verificar que el título del evento ha sido actualizado
         row = self.page.locator("table tbody tr").last
         expect(row.locator("td").nth(0)).to_have_text("Titulo editado")
-        expect(row.locator("td").nth(1)).to_have_text("Descripcion Editada")
+        expect(row.locator("td").nth(1)).to_have_text("Descripción Editada")
         expect(row.locator("td").nth(2)).to_have_text("20 abr 2025, 03:00")
 
     def test_delete_event_organizer(self):
@@ -298,8 +306,27 @@ class EventCRUDTest(EventBaseTest):
         # Contar eventos antes de eliminar
         initial_count = len(self.page.locator("table tbody tr").all())
 
-        # Hacer clic en el botón eliminar del primer evento
-        self.page.get_by_role("button", name="Eliminar").first.click()
+        row = self.page.get_by_role("row", name="Evento de prueba 1").nth(0)
+
+        # Abrir el modal
+        row.get_by_role("button", name="Eliminar").click()
+
+        # Esperar a que el modal esté completamente visible
+        self.page.locator("div[role='dialog']").wait_for(state="visible")
+
+        # Confirmar la eliminación desde el modal
+        self.page.locator("div[role='dialog']").get_by_role(
+            "button", name="Eliminar", exact=True
+        ).click()
+
+        # Esperar que el evento específico ya no esté en la tabla
+        expect(self.page.get_by_text("Evento de prueba 1")).to_have_count(0)
+
+        # Esperar que el modal se cierre
+        rows = self.page.locator("table tbody tr")
+
+        # Luego esperar que la tabla tenga una fila menos
+        expect(rows).to_have_count(initial_count - 1)
 
         # Verificar que redirigió a la página de eventos
         expect(self.page).to_have_url(f"{self.live_server_url}/events/")

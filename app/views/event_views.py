@@ -10,6 +10,11 @@ from app.models import Category, Event, Rating, Ticket, Venue
 from app.views.rating_views import create_rating
 
 
+from django.contrib import messages
+from django.shortcuts import redirect, render, get_object_or_404
+from django.utils import timezone
+import datetime
+
 @login_required
 def event_form(request, id=None):
     user = request.user
@@ -17,7 +22,7 @@ def event_form(request, id=None):
     if not user.is_organizer:
         return redirect("events")
     
-    # Si es edición, verificar que sea el dueño del evento
+    # Edición: verificar que sea el dueño del evento
     if id is not None:
         event = get_object_or_404(Event, pk=id)
         if user != event.organizer:
@@ -30,40 +35,44 @@ def event_form(request, id=None):
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
+
+        # Validar presencia de date y time
+        if not date or not time:
+            messages.error(request, "Debes ingresar una fecha y una hora válidas.")
+            return redirect(request.path)
+
+        try:
+            year, month, day = map(int, date.split("-"))
+            hour, minutes = map(int, time.split(":"))
+            scheduled_at = timezone.make_aware(
+                datetime.datetime(year, month, day, hour, minutes)
+            )
+        except ValueError:
+            messages.error(request, "Formato de fecha u hora inválido.")
+            return redirect(request.path)
+
         category_ids = list(map(int, request.POST.getlist('categories[]')))
-        categories = None
-        if category_ids:
-            categories = Category.objects.filter(id__in=category_ids)
+        categories = Category.objects.filter(id__in=category_ids) if category_ids else []
+
         venue_id = request.POST.get("venue")
-        venue = None
-        if venue_id is not None:
-            venue = get_object_or_404(Venue, pk=venue_id)
-        [year, month, day] = date.split("-")
-        [hour, minutes] = time.split(":")
-
-        scheduled_at = timezone.make_aware(
-            datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
-        )
-
+        venue = get_object_or_404(Venue, pk=venue_id) if venue_id else None
+        
         if event_id is None:
-            Event.new(title, categories, venue, description, scheduled_at, request.user)
+            Event.new(title, description, scheduled_at, request.user, categories, venue)
         else:
             event = get_object_or_404(Event, pk=event_id)
-            # Verificar permisos antes de actualizar
             if user != event.organizer:
                 messages.error(request, 'No tienes permiso para editar este evento.')
                 return redirect("events")
-            event.update(title, categories, venue, description, scheduled_at, request.user)
+            event.update(title, description, scheduled_at, request.user, categories, venue)
 
         return redirect("events")
 
-    event = {}
-    if id is not None:
-        event = get_object_or_404(Event, pk=id)
-
+    event = get_object_or_404(Event, pk=id) if id is not None else None
     categories = Category.objects.all()
     venues = Venue.get_venues_by_user(user)
-    selected_categories = event.categories.all() if event else [] # type: ignore
+    selected_categories = event.categories.all() if event else []  # type: ignore
+
     return render(
         request,
         "app/event/event_form.html",
@@ -75,6 +84,7 @@ def event_form(request, id=None):
             "venues": venues
         },
     )
+
 
 @login_required
 def events(request):
@@ -121,7 +131,7 @@ def event_detail(request, id):
 @login_required
 def event_delete(request, id):
     user = request.user
-    event = Event.objects.get(id=id)
+    event = get_object_or_404(Event, id=id)
     
     if not user.is_organizer:
         return redirect("events")
