@@ -11,18 +11,7 @@ Aplicación web para venta de entradas utilizada en la cursada 2025 de Ingenier�
 - Gardiner, Ariadna
 
 ## Aclaraciones
- 1. volver a instalar dependencias con `pip install -r requirements.txt` ya que se instalaron:
-    - qrcode para la utilización de qr en los tickets
-    - fernet-fields para encriptación de datos
-
- 2. En el caso de que la última dependencia no funcione, recomendamos instalar un entorno virtual:
-    Procedimiento:
-    - En la raíz del proyecto, escribir este comando: 'python -m venv venv'
-    - Activar el entorno virtual: 'venv\Scripts\activate'
-    - Instalar las dependencias dentro del venv con `pip install -r requirements.txt`
-    - Ejecutar el siguiente script: 'python postinstall.py'. Este último fue de ayuda ya que tuvimos inconvenientes de compatibilidad entre dependencias
-
-3. Iniciar la app
+ Antes de comenzar la app, desinstalar la dependencia django-fernet-fields con `pip uninstall uninstall django-fernet-fields`
 
 ## Dependencias
 

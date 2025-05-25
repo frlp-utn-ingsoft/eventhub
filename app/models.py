@@ -12,7 +12,7 @@ from decimal import Decimal
 import qrcode
 import base64
 from io import BytesIO
-from fernet_fields import EncryptedCharField
+from .fields import EncryptedCharField
 
 
 class User(AbstractUser):
