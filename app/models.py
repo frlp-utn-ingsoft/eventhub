@@ -48,7 +48,7 @@ class Event(models.Model):
     
     @classmethod
     def get_all_events(cls):
-        return cls.objects.all().order_by("scheduled_at")
+        return cls.objects.all().order_by("scheduled_at").reverse()
 
     @classmethod
     def validate(cls, title, description, scheduled_at):
