@@ -18,20 +18,22 @@
     </div>
 
     <!-- Checkbox para mostrar eventos pasados -->
-    <form method="get" class="mb-3">
+    <form method="get" class="mb-3" id="filterForm">
         <div class="form-check">
             <input
                 type="checkbox"
                 class="form-check-input"
                 id="showPast"
                 name="show_past"
-                {% if show_past %}checked{% endif %}
+                value="1"
+                {% if request.GET.show_past == "1" %}checked{% endif %}
+                onchange="document.getElementById('filterForm').submit();"
             >
             <label class="form-check-label" for="showPast">
                 Mostrar eventos pasados
             </label>
         </div>
-        <button type="submit" class="btn btn-outline-primary btn-sm mt-2">Aplicar</button>
+
     </form>
 
     <table class="table">
