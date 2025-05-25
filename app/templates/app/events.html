@@ -21,6 +21,7 @@
             <a
               href="{% url 'event_form' %}"
               class="btn btn-primary"
+              name="Crear Evento"
             >
               <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
               Crear Evento
@@ -36,6 +37,7 @@
             class="form-check-input"
             type="checkbox"
             id="showPastSwitch"
+            name="showPastSwitch"
             {% if request.resolver_match.url_name == 'events_all' %}checked{% endif %}
             onchange="
               window.location.href = this.checked
@@ -84,6 +86,7 @@
                             </a>
                             {% if user_is_organizer %}
                                 <a href="{% url 'event_edit' event.id %}"
+                                    name="Editar"
                                     class="btn btn-sm btn-outline-secondary"
                                     aria-label="Editar"
                                     title="Editar">
@@ -92,7 +95,7 @@
                                 <form action="{% url 'event_delete' event.id %}" method="POST">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-danger"
-                                        title="Eliminar"
+                                        name="Eliminar"
                                         type="submit"
                                         aria-label="Eliminar"
                                         titile="Eliminar">
