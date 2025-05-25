@@ -15,6 +15,7 @@ from django.urls import reverse_lazy
 from .models import Venue
 from .forms import VenueForm
 from .models import Event, Rating, Rating_Form, User, Comment
+import re
 
 
 def organizer_required(view_func):
@@ -363,9 +364,13 @@ def event_form(request, id=None):
     categories = list(Category.objects.all())
 
     total = len(categories)
-    per_column = math.ceil(total / 3) if total > 0 else 1
-    categories_chunks = [categories[i:i + per_column] for i in range(0, total, per_column)]
-
+    per_column = math.ceil(total / 3)
+    total = len(categories)
+    if total == 0:
+        categories_chunks = []
+    else:
+        per_column = math.ceil(total / 3)
+        categories_chunks = [categories[i:i + per_column] for i in range(0, total, per_column)]
     context = {
         'event': event,
         'categories': categories,
@@ -531,6 +536,47 @@ def buy_ticket(request, event_id):
     if request.method == 'POST':
         form = TicketForm(request.POST)
         if form.is_valid():
+            card_number = form.cleaned_data.get('card_number', '').strip()
+            card_holder = form.cleaned_data.get('card_holder', '').strip()
+            expiration_date = form.cleaned_data.get('expiration_date', '').strip()  # formato esperado: MM/YY
+            cvc = form.cleaned_data.get('cvc', '').strip()
+            quantity = form.cleaned_data.get('quantity')
+
+            if quantity is None or quantity < 1:
+                form.add_error('quantity', 'Debes seleccionar al menos un ticket.')
+
+
+            if not re.fullmatch(r'\d{16}', card_number):
+                form.add_error('card_number', 'El número de tarjeta debe tener 16 dígitos numéricos.')
+
+           
+            if not card_holder:
+                form.add_error('card_holder', 'El nombre del titular no puede estar vacío.')
+
+          
+            if not re.fullmatch(r'(0[1-9]|1[0-2])\/\d{2}', expiration_date):
+                form.add_error('expiration_date', 'La fecha de expiración debe tener formato MM/AA.')
+            else:
+                try:
+                    month, year = expiration_date.split('/')
+                    exp_date = datetime.strptime(f'20{year}-{month}-01', '%Y-%m-%d')
+                    now = datetime.now()
+                    if exp_date < now.replace(day=1, hour=0, minute=0, second=0, microsecond=0):
+                        form.add_error('expiration_date', 'La tarjeta está vencida.')
+                except ValueError:
+                    form.add_error('expiration_date', 'Fecha de expiración inválida.')
+
+            
+            if not re.fullmatch(r'\d{3}', cvc):
+                form.add_error('cvc', 'El CVC debe tener 3 dígitos numéricos.')
+
+            if form.errors:
+               
+                return render(request, 'app/buy_ticket.html', {
+                    'form': form,
+                    'event': event,
+                    "user_is_organizer": request.user.is_organizer
+                })
             ticket = form.save(commit=False)
             ticket.user = request.user
             ticket.event = event
@@ -558,10 +604,11 @@ def ticket_detail(request, ticket_id):
     return render(request, 'app/ticket_detail.html', {'ticket': ticket, "user_is_organizer": request.user.is_organizer})
 
 @login_required
+@organizer_required
 def edit_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
     
-    if request.user != ticket.user:
+    if request.user != ticket.event.organizer:
         messages.error(request, 'No tienes permiso para editar este ticket')
         return redirect('home')
     
@@ -590,14 +637,15 @@ def edit_ticket(request, ticket_id):
     })
 
 @login_required
+@organizer_required
 def delete_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
 
-    if request.user != ticket.user and not (request.user.is_organizer and request.user == ticket.event.organizer):
+    if request.user != ticket.event.organizer:
         messages.error(request, 'No tienes permiso para eliminar este ticket')
         return redirect('home')
     
-    if request.user == ticket.user:
+    if request.user == ticket.event.organizer:
         time_difference = timezone.now() - ticket.buy_date
         if time_difference.total_seconds() > 1800:
             messages.error(request, 'Solo puedes eliminar el ticket dentro de los primeros 30 minutos después de la compra')
@@ -696,15 +744,20 @@ def notification_form(request):
         message = request.POST.get("message")
         priority = request.POST.get("priority")
         event_id = request.POST.get("event")
-        event = get_object_or_404(Event, id=event_id)
+
+        event = None
+        if event_id != "":
+            event = get_object_or_404(Event, id=event_id)
+
         recipient_type = request.POST.get("recipient_type")
 
-        users = []
+        users_selected = []
         if recipient_type == "all_users":
             users = User.objects.all()
-        else:
+        
+        if recipient_type == "specific_user" and user_id != "":
             user = get_object_or_404(User, id=user_id)
-            users.append(user)
+            users_selected.append(user)
         
         validations_pass, errors = createNotificationValidations(users, event, title, message, priority)
         if validations_pass == False:
