@@ -54,7 +54,7 @@
                         </div>
                     </div>
 
-                    {% if rating_average is not None %}
+                    {% if user == event.organizer and rating_average is not None %}
                         <div class="d-flex align-items-center mb-3">
                             <div class="bg-light rounded-circle p-2 me-3">
                                 <i class="bi bi-star text-primary"></i>
