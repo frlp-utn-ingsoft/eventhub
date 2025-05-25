@@ -268,8 +268,7 @@ def event_detail(request, id):
     else:
         tickets_sold = None
         demand_message = None
-    
-  
+        
     timer_countdown = countdown_timer(event.scheduled_at)
     completed = timer_countdown["completed"]
 
