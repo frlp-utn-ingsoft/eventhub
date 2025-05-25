@@ -1,6 +1,6 @@
 from django.test import Client, TestCase
 from django.urls import reverse
-from app.models import Notification, User, Event, NotificationUser, Venue, Ticket
+from app.models import Notification, User, Event, Venue, Ticket
 
 class BaseNotificationTestCase(TestCase):
     def setUp(self):
