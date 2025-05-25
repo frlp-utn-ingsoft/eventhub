@@ -10,7 +10,7 @@ urlpatterns = [
     path("accounts/login/", views.login_view, name="login"),
     #Events
     path("events/", views.events, name="events"),
-    
+    path('events/<int:event_id>/favorite/', views.toggle_favorite, name='toggle_favorite'),
     path("events/create/", views.event_form, name="event_form"),
     path("events/<int:id>/edit/", views.event_form, name="event_edit"),
     path('events/<int:event_id>/', views.event_detail, name='event_detail'),
