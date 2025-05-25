@@ -138,6 +138,13 @@ class Venue(models.Model):
         return cls.objects.filter(user=user)
 
 class Event(models.Model):
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('reprogramed', 'Reprogramed'),
+        ('finished', 'Finished'),
+        ('canceled', 'Canceled'),  # Fixed spelling from "canel"
+    ]
+    
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
@@ -152,6 +159,7 @@ class Event(models.Model):
         null=True,
         blank=True,
         related_name='events')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -159,19 +167,22 @@ class Event(models.Model):
         return self.title
 
     @classmethod
-    def validate(cls, title, categories, venue, description, scheduled_at):
+    def validate(cls, title, categories, venue, description, scheduled_at, status=None):
         errors = {}
         if title == "":
             errors["title"] = "Por favor ingrese un titulo"
 
         if description == "":
             errors["description"] = "Por favor ingrese una descripcion"
+            
+        if status and status not in dict(cls.STATUS_CHOICES):
+            errors["status"] = "Estado no válido"
 
         return errors
 
     @classmethod
-    def new(cls, title, categories, venue, description, scheduled_at, organizer):
-        errors = Event.validate(title, categories, venue, description, scheduled_at)
+    def new(cls, title, categories, venue, description, scheduled_at, organizer, status='active'):
+        errors = Event.validate(title, categories, venue, description, scheduled_at, status)
 
         if len(errors.keys()) > 0:
             return False, errors
@@ -181,16 +192,18 @@ class Event(models.Model):
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
+            status=status,
         )
         event.categories.set(categories)
         return True, None
     
-    def update(self, title, categories, venue, description, scheduled_at, organizer):
+    def update(self, title, categories, venue, description, scheduled_at, organizer, status=None):
         self.title = title or self.title
         self.description = description or self.description
         self.venue = venue or self.venue
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
+        self.status = status or self.status
 
         if categories is not None:
             if isinstance(categories, models.Manager):

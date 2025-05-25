@@ -46,7 +46,22 @@
         <tbody>
             {% for event in events%}
                 <tr>
-                    <td>{{ event.title }}</td>
+                    <td>
+                        {% comment %} Este item muestra en forma de etiqueta el estado del evento {% endcomment %}
+                        {{ event.title }}
+                        {% if event.status == 'finished' or event.status == 'FINISHED' %}
+                            <span class="badge bg-secondary ms-2">Finalizado</span>
+                        {% elif event.status == 'canceled' or event.status == 'CANCELED' %}
+                            <span class="badge bg-danger ms-2">Cancelado</span>
+                        {% elif event.status == 'reprogramed' or event.status == 'REPROGRAMED' %}
+                            <span class="badge bg-warning text-dark ms-2">Reprogramado</span>
+                            {% if event.scheduled_at %}<span class="ms-1">({{ event.scheduled_at|date:"d b Y, H:i" }})</span>{% endif %}
+                        {% elif event.status == 'soldout' or event.status == 'SOLDOUT' %}
+                            <span class="badge bg-dark ms-2">Agotado</span>
+                        {% elif event.status == 'active' or event.status == 'ACTIVE' %}
+                            <span class="badge bg-success ms-2">Activo</span>
+                        {% endif %}
+                    </td>
                     <td>{{ event.description }}</td>
                     <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
                     <td>
@@ -57,7 +72,7 @@
                                 </div>
                                 {% empty %}
                                 Sin categoría
-                                {% endfor %}
+                        {% endfor %}
                         </div>
                     </td>
                     <td>
