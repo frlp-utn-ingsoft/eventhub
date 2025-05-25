@@ -105,6 +105,20 @@ class User(AbstractUser):
 
         return errors
 
+    
+    def available_tickets_to_buy(self, event):
+        """
+        Returns the amount of tickets that the User can buy, taking into account that the max is 4.
+        """
+        
+        event_tickets = self.tickets.filter(event=event)
+        aux = 0
+
+        for t in event_tickets:
+            aux += t.quantity
+
+        return max(0, 4 - aux)
+
 
 class Category(models.Model):
     name = models.CharField(max_length=100)
