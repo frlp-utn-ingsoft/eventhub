@@ -4,15 +4,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from app.models import Event
-
 from .models import Ticket
+from .forms import TicketCompraForm, TicketUpdateForm
 
-# Create your views here.
-
-# @login_required #decorador para requerir autenticacion
-# def tickets(request,id):
-#     event = get_object_or_404(Event, id=id)
-#     return render(request, "tickets/compra.html", {'event': event}) 
 
 @login_required
 def compra(request, id):
@@ -21,37 +15,27 @@ def compra(request, id):
         event = get_object_or_404(Event, id=id)
         
         if request.method == 'POST':
-            # Obtener datos del formulario
-            print(request.POST)
-            tipo_entrada = request.POST.get('tipoEntrada')
-            cantidad = int(request.POST.get('cantidad'))
-            
-            # Datos de la tarjeta (en un caso real, estos se procesarían con un gateway de pago)
-            card_number = request.POST.get('card_number')
-            expiry_date = request.POST.get('expiry_date')
-            cvv = request.POST.get('cvv')
-            card_name = request.POST.get('card_name')
-            
-            # Validaciones básicas
-            if not all([tipo_entrada, cantidad, card_number, expiry_date, cvv, card_name]):
-                messages.error(request, 'Por favor complete todos los campos')
-                return render(request, 'tickets/compra.html', {'event': event})
-                
-            try:
-                # Crear el ticket - el ticket_code se generará automáticamente en el método save()
-                ticket = Ticket(
-                    user=request.user,
-                    event=event,
-                    quantity=cantidad,
-                    type=tipo_entrada
-                )
-                ticket.save()
-                
-                # Redirigir a página de confirmación
-                return redirect("events")
-                
-            except Exception as e:
-                print(e)
+            form = TicketCompraForm(request.POST)
+            if form.is_valid():
+                try:
+                    # Crear el ticket - el ticket_code se generará automáticamente en el método save()
+                    ticket = form.save(commit=False)
+                    ticket.user = request.user
+                    ticket.event = event
+                    ticket.save()
+                    
+                    # Redirigir a página de confirmación
+                    return redirect("events")
+                    
+                except Exception as e:
+                    print(e)
+                    messages.error(request, 'Error al procesar la compra.')
+                    return render(request, 'tickets/compra.html', {'event': event})
+            else:
+                # Si hay errores de validación, mostrar mensajes
+                for field, errors in form.errors.items():
+                    for error in errors:
+                        messages.error(request, error)  # type: ignore
                 return render(request, 'tickets/compra.html', {'event': event})
         
         # Si es GET, mostrar formulario
@@ -111,11 +95,24 @@ def actualizacion(request, id):
                         cantidad = request.POST.get(f'cantidad_{index}', 1)
                         tipo_entrada = request.POST.get(f'tipoEntrada_{index}', 'GENERAL')
                         
-                        #actualizo
-                        ticket = get_object_or_404(Ticket, id=ticket_id, user=request.user)
-                        ticket.quantity = cantidad
-                        ticket.type = tipo_entrada
-                        ticket.save()
+                        # Validar con form antes de actualizar
+                        form_data = {
+                            'type': tipo_entrada,
+                            'quantity': cantidad
+                        }
+                        form = TicketUpdateForm(form_data)
+                        
+                        if form.is_valid():
+                            #actualizo
+                            ticket = get_object_or_404(Ticket, id=ticket_id, user=request.user)
+                            ticket.quantity = form.cleaned_data['quantity']
+                            ticket.type = form.cleaned_data['type']
+                            ticket.save()
+                        else:
+                            # Si hay errores, mostrar mensajes
+                            for field, errors in form.errors.items():
+                                for error in errors:
+                                    messages.error(request, f'Ticket {ticket_id}: {error}')
             return redirect('tickets:actualizacion', id=id)
     else:
         return redirect(reverse('home'))

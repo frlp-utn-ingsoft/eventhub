@@ -48,7 +48,7 @@
                                     <div class="mb-3">
                                         <label for="tipoEntrada-{{ forloop.counter }}" class="form-label">Tipo de entrada</label>
                                         <select id="tipoEntrada-{{ forloop.counter }}" name="tipoEntrada_{{ forloop.counter }}" class="form-select">
-                                            <option value="GENERAL" {% if ticket.type == "GENERAL" %}selected{% endif %}>GENERAL</option>
+                                            <option value="General" {% if ticket.type == "General" %}selected{% endif %}>GENERAL</option>
                                             <option value="VIP" {% if ticket.type == "VIP" %}selected{% endif %}>VIP</option>
                                         </select>
                                     </div>

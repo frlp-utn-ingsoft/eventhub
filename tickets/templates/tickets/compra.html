@@ -66,7 +66,7 @@
 
 <!-- Script para actualizar el resumen de compra -->
 <script>
-    const inputCantidad = document.getElementById("cantidad");
+    const inputCantidad = document.getElementById("quantity");
     const spanResumen = document.getElementById("resumen-cantidad");
   
     inputCantidad.addEventListener("input", () => {
@@ -75,8 +75,8 @@
 
     const precios = { GENERAL: 50, VIP: 100 };
     const precioEntrada = document.getElementById("precio"); // precio base del ticket
-    const tipo = document.getElementById("tipoEntrada");
-    const cantidad = document.getElementById("cantidad");
+    const tipo = document.getElementById("type");
+    const cantidad = document.getElementById("quantity");
     const subtotal = document.getElementById("subtotal");
     const impuestos = document.getElementById("impuestos");
     const total = document.getElementById("total");
@@ -99,17 +99,16 @@
     tipo.addEventListener("change", actualizarResumen);
     cantidad.addEventListener("input", actualizarResumen);
 
+    document.getElementById("masCantidad").addEventListener("click", () => actualizarCantidad(1));
+    document.getElementById("menosCantidad").addEventListener("click", () => actualizarCantidad(-1));
+
     const actualizarCantidad = (delta) => {
         let nuevaCantidad = parseInt(cantidad.value) + delta;
         if (nuevaCantidad < 1) return;
         cantidad.value = nuevaCantidad;
         spanResumen.textContent = nuevaCantidad;
         actualizarResumen();
-      };
-      
-      document.getElementById("masCantidad").addEventListener("click", () => actualizarCantidad(1));
-      document.getElementById("menosCantidad").addEventListener("click", () => actualizarCantidad(-1));
-      
+    };
       
 
 </script>
