@@ -236,9 +236,6 @@ def my_events(request):
         {"events": events, "user_is_organizer": request.user.is_organizer},
     )
 
-
-
-
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
