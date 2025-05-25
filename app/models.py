@@ -123,9 +123,11 @@ class Event(models.Model):
 
     @classmethod
     def new(cls, title, description, scheduled_at, organizer, categories=None, venue=None):
-        # Validaciones y creación
         errors = cls.validate(title, description, scheduled_at)
-
+        if not organizer:
+            errors["organizer"] = "El organizador es obligatorio"
+        if not venue:
+            errors["venue"] = "La sede es obligatoria"
         if errors:
             return False, errors
 
