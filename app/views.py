@@ -12,7 +12,7 @@ from django.db.models import Count
 import math
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from .models import Venue
+from .models import Venue, Coupon
 from .forms import VenueForm
 from .models import Event, Rating, Rating_Form, User, Comment
 from decimal import Decimal, InvalidOperation
@@ -391,7 +391,70 @@ def event_form(request, id=None):
 
     return render(request, 'app/event_form.html', context)
 ########################################################################################
+@login_required
+@organizer_required
+def coupon_list(request, event_id):
+    event = get_object_or_404(Event, id=event_id, organizer=request.user)
+    coupons = Coupon.objects.filter(event=event)
+    return render(request, "coupons/list.html", {"event": event, "coupons": coupons})
 
+@login_required
+def coupon_create(request, event_id):
+    event = get_object_or_404(Event, id=event_id, organizer=request.user)
+
+    if request.method == "POST":
+        discount_str = request.POST.get("discount_percentage", "").strip()
+        try:
+            discount = float(discount_str)
+            if not 0 < discount < 100:
+                raise ValueError("Porcentaje fuera de rango.")
+        except:
+            messages.error(request, "Por favor ingrese un porcentaje válido (1-99).")
+        else:
+            Coupon.objects.create(
+                event=event,
+                discount_percentage=discount,
+                created_by=request.user
+            )
+            messages.success(request, "Cupón creado correctamente.")
+            return redirect("coupon_list", event_id=event.id)
+
+    return render(request, "app/coupons/create.html", {"event": event})
+
+@login_required
+def coupon_edit(request, event_id, coupon_id):
+    event = get_object_or_404(Event, id=event_id, organizer=request.user)
+    coupon = get_object_or_404(Coupon, id=coupon_id, event=event)
+
+    if request.method == "POST":
+        discount_str = request.POST.get("discount_percentage", "").strip()
+        try:
+            discount = float(discount_str)
+            if not 0 < discount < 100:
+                raise ValueError()
+        except:
+            messages.error(request, "Porcentaje inválido.")
+        else:
+            coupon.discount_percentage = discount
+            coupon.save()
+            messages.success(request, "Cupón actualizado correctamente.")
+            return redirect("coupon_list", event_id=event.id)
+
+    return render(request, "app/coupons/edit.html", {"event": event, "coupon": coupon})
+
+@login_required
+def coupon_delete(request, event_id, coupon_id):
+    event = get_object_or_404(Event, id=event_id, organizer=request.user)
+    coupon = get_object_or_404(Coupon, id=coupon_id, event=event)
+
+    if request.method == "POST":
+        coupon.delete()
+        messages.success(request, "Cupón eliminado.")
+        return redirect("coupon_list", event_id=event.id)
+
+    return render(request, "app/coupons/delete_confirm.html", {"event": event, "coupon": coupon})
+
+##################################################################################
 @login_required
 def notifications(request):
     user = request.user
