@@ -299,12 +299,10 @@ def event_delete(request, id):
 
     return redirect("events")
 
+@organizer_required
 @login_required
 def event_form(request, id=None):
     user = request.user
-
-    if not user.is_organizer:
-        return redirect("events")
 
     # Obtener todos los venues disponibles
     venues = Venue.objects.all()
@@ -344,6 +342,13 @@ def event_form(request, id=None):
                 raise ValueError("No se ha proporcionado un lugar de celebración y no se dispone de un lugar de celebración por defecto.")
             event.venue = venue
             event.save()
+
+            users_to_notify = User.objects.filter(tickets__event=event).distinct()
+            
+            if len(users_to_notify) > 0:
+                title = "Evento Modificado"
+                message = "El evento ha sido modificado. Revisa el detalle del evento para mantenerte actualizado " + "<a href=/events/" + str(event.id) + ">aqui</a>"
+                Notification.new([user, *users_to_notify], event, title, message, "LOW")
 
             return redirect('event_detail', id=event.id)
 
