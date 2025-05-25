@@ -317,3 +317,97 @@ class EventCRUDTest(EventBaseTest):
 
         # Verificar que el evento eliminado ya no aparece en la tabla
         expect(self.page.get_by_text("Evento de prueba 1")).to_have_count(0)
+
+class EventFilterTest(BaseE2ETest):
+    """Tests relacionados con la visualización de eventos"""
+
+    def setUp(self):
+        super().setUp()
+
+        self.organizer = User.objects.create_user(
+            username="organizador",
+            password="contraseña123",
+            is_organizer=True,
+            email="organizador@gmail.com",
+        )
+
+        self.uuser = User.objects.create_user(
+            username="usuario",
+            password="contraseña123",
+            is_organizer=True,
+            email="usuario@gmail.com",
+        )
+
+        # Un evento en el pasado y uno en el futuro
+        now = timezone.now()
+        self.past_event = Event.objects.create(
+            title="Pasado",
+            description="Evento pasado",
+            scheduled_at=now - datetime.timedelta(days=2),
+            organizer=self.organizer,
+        )
+        self.future_event = Event.objects.create(
+            title="Futuro",
+            description="Evento futuro",
+            scheduled_at=now + datetime.timedelta(days=10),
+            organizer=self.organizer,
+        )
+    
+    def test_dashboard_hides_past_events_by_default(self):
+        """Al entrar a /events/ sólo se ve el evento futuro."""
+        self.login_user("organizador", "contraseña123")
+        self.page.goto(f"{self.live_server_url}/events/")
+
+        # el switch debe estar desactivado
+        show_switch = self.page.locator("#showPastSwitch")
+        expect(show_switch).not_to_be_checked()
+
+        # solo 1 fila (evento futuro)
+        rows = self.page.locator("table tbody tr")
+        expect(rows).to_have_count(1)
+        expect(rows.nth(0)).to_contain_text("Futuro")
+        expect(rows.nth(0)).not_to_contain_text("Pasado")
+
+    def test_toggle_switch_shows_and_hides_past_events(self):
+        """El switch permite alternar entre futuros y todos los eventos."""
+        self.login_user("organizador", "contraseña123")
+        self.page.goto(f"{self.live_server_url}/events/")
+
+        switch = self.page.locator("#showPastSwitch")
+
+        # activar switch
+        switch.check()
+
+        # verificar que redirige a /events/all/
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/all/")
+
+        rows = self.page.locator("table tbody tr")
+        # verificar que ahora hay 2 filas (futuro y pasado)
+        expect(rows).to_have_count(2)
+        expect(rows.nth(0)).to_contain_text("Pasado")
+        expect(rows.nth(1)).to_contain_text("Futuro")
+        expect(switch).to_be_checked()
+
+    def test_toggle_switch_redirects(self):
+        """El switch redirige de /all/ a / y viceversa."""
+        self.login_user("organizador", "contraseña123")
+        self.page.goto(f"{self.live_server_url}/events/all/")
+
+        switch = self.page.locator("#showPastSwitch")
+
+        # desactivar switch
+        switch.uncheck()
+
+        # verificar que redirige a /events/
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/")
+
+        # verificar que el switch está desactivado
+        expect(switch).not_to_be_checked()
+        
+        # activar switch
+        switch.check()
+
+        # verificar que redirige a /events/all/
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/all/")
+        # verificar que el switch está activado
+        expect(switch).to_be_checked()
