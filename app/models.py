@@ -401,3 +401,10 @@ class RefundRequest(models.Model):
         except cls.DoesNotExist:
             return False, "Solicitud de reembolso no encontrada."
         
+class FavoriteEvent(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    event = models.ForeignKey('Event', on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'event')  # evita duplicados
