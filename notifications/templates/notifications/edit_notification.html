@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Editar Notificación: {{ notification.title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Editar Notificación</h1>
+        <a href="{% url 'notifications:notification_management' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a la Lista
+        </a>
+    </div>
+
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" action="{% url 'notifications:edit_notification' notification.pk %}">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }} *</label>
+                            {{ form.title }}
+                            {% if form.title.errors %}<div class="invalid-feedback d-block">{{ form.title.errors|join:", " }}</div>{% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="{{ form.message.id_for_label }}" class="form-label">{{ form.message.label }} *</label>
+                            {{ form.message }}
+                            {% if form.message.errors %}<div class="invalid-feedback d-block">{{ form.message.errors|join:", " }}</div>{% endif %}
+                        </div>
+
+                        <div class="mb-3 row">
+                             <div class="col-md-6">
+                                 <label for="{{ form.priority.id_for_label }}" class="form-label">{{ form.priority.label }}</label>
+                                 {{ form.priority }}
+                                 {% if form.priority.errors %}<div class="invalid-feedback d-block">{{ form.priority.errors|join:", " }}</div>{% endif %}
+                             </div>
+                             <div class="col-md-6">
+                                 <label for="{{ form.event.id_for_label }}" class="form-label">{{ form.event.label }}</label>
+                                 {{ form.event }}
+                                 {% if form.event.errors %}<div class="invalid-feedback d-block">{{ form.event.errors|join:", " }}</div>{% endif %}
+                                 {% if form.event.help_text %}<div class="form-text">{{ form.event.help_text }}</div>{% endif %}
+                             </div>
+                         </div>
+
+                        <div class="mb-3">
+                             <label class="form-label">{{ form.recipients.label }} *</label>
+                             <div class="border p-2 rounded" style="max-height: 250px; overflow-y: auto;">
+                                 {{ form.recipients }}
+                             </div>
+                              <div class="form-text">{{ form.recipients.help_text }}</div>
+                             {% if form.recipients.errors %}<div class="invalid-feedback d-block">{{ form.recipients.errors|join:", " }}</div>{% endif %}
+                         </div>
+
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {{ form.non_field_errors|join:", " }}
+                        </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                             <a href="{% url 'notifications:notification_management' %}" class="btn btn-secondary">Cancelar</a>
+                             <button type="submit" class="btn btn-primary">Actualizar Notificación</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Información Adicional</h5>
+                </div>
+                <div class="card-body">
+                     <ul class="list-group list-group-flush">
+                         <li class="list-group-item d-flex justify-content-between align-items-center">
+                             Creado por:
+                             <span class="text-muted">{{ notification.creator.username }}</span>
+                         </li>
+                         <li class="list-group-item d-flex justify-content-between align-items-center">
+                             Fecha de creación:
+                             <span class="text-muted">{{ notification.created_at|date:"d/m/Y H:i" }}</span>
+                         </li>
+                          <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Última actualización:
+                            <span class="text-muted">{{ notification.updated_at|date:"d/m/Y H:i" }}</span>
+                        </li>
+                     </ul>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                 <div class="card-header">
+                     <h5 class="mb-0">Consejos</h5>
+                 </div>
+                 <div class="card-body">
+                     <ul class="list-unstyled mb-0">
+                         <li class="mb-3">
+                             <i class="bi bi-lightbulb text-warning me-2"></i>
+                             Modifica los campos necesarios y revisa los destinatarios antes de guardar.
+                         </li>
+                         <li class="mb-3">
+                            <i class="bi bi-lightbulb text-warning me-2"></i>
+                             Puedes asociar o desasociar un evento a esta notificación.
+                         </li>
+                     </ul>
+                 </div>
+             </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
