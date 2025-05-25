@@ -53,7 +53,14 @@ def event_form(request, id=None):
             if user != event.organizer:
                 messages.error(request, 'No tienes permiso para editar este evento.')
                 return redirect("events")
-            event.update(title, categories, venue, description, scheduled_at, request.user)
+            
+            # Si la fecha cambia, poner estado reprogramado
+            # Se que medio patata programming pero no se me ocurre otra forma
+            fecha_anterior = event.scheduled_at
+            if fecha_anterior != scheduled_at:
+                event.update(title, categories, venue, description, scheduled_at, request.user, status='reprogramed')
+            else:
+                event.update(title, categories, venue, description, scheduled_at, request.user)
 
         return redirect("events")
 
