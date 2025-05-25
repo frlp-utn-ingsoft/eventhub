@@ -74,7 +74,7 @@ def home(request):
 
 @login_required
 def events(request):
-    show_past = request.GET.get("show_past") == "on"  # Checkbox marcada
+    show_past = request.GET.get("show_past") == "1"  # Checkbox marcada
 
     if show_past:
         events = Event.objects.all().order_by("scheduled_at")
