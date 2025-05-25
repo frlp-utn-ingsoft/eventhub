@@ -262,8 +262,6 @@ def event_detail(request, id):
             form = Rating_Form(instance=resena_existente)
         except Rating.DoesNotExist:
             form = Rating_Form()
-
-    
     
     is_organizer = request.user == event.organizer
 
@@ -274,7 +272,8 @@ def event_detail(request, id):
         tickets_sold = None
         demand_message = None
     
-    timer_countdown = countdown_timer(event)
+  
+    timer_countdown = countdown_timer(event.scheduled_at)
     completed = timer_countdown["completed"]
 
     return render(

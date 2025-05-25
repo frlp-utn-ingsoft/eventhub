@@ -32,7 +32,7 @@
                             {% if not user_is_organizer %}
                                 {% if not event_completed %}
                                     <div class="countdown-section mt-3">
-                                        <h7 class="countdown-label mb-1">Faltan:</h7>
+                                        <h7 class="countdown-label mb-1">Cuenta Regresiva:</h7>
                                         <div class="d-flex justify-content-center align-items-center bg-light p-3 rounded shadow-sm">
                                             <div class="time-segment mx-2 text-center">
                                             <span class="time-value" id="days">{{ timer_countdown.days|stringformat:"02d" }}</span>
@@ -57,7 +57,7 @@
                                         </div>
                                 {% else %}
                                     <div class="event-passed">
-                                    <h7 class="passed-message mb-3">Este concierto ya pasó, esperamos verte en el próximo. ¡Dejanos tus comentarios y reseñas!</h7>
+                                        <h7 class="passed-message mb-3">Este concierto ya pasó, esperamos verte en el próximo. ¡Dejanos tus comentarios y reseñas!</h7>
                                     </div>
                                 {% endif %}
                             {% endif %}

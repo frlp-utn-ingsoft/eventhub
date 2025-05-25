@@ -3,9 +3,11 @@ from django.shortcuts import render
 from django.utils import timezone
 
 
-def countdown_timer(event):
-    if event:
-        time_remaining = event.scheduled_at - timezone.now()
+def countdown_timer(target_time):
+    if target_time:
+        if not getattr(target_time, 'tzinfo', None):
+            target_time = timezone.make_aware(target_time)
+        time_remaining = target_time - timezone.now()
         days = time_remaining.days
         hours = time_remaining.seconds // 3600
         minutes = (time_remaining.seconds % 3600) // 60
@@ -27,4 +29,5 @@ def countdown_timer(event):
                         'minutes': minutes,
                         'seconds': seconds
                     }
+        
     

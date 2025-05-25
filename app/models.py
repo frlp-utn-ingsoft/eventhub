@@ -352,11 +352,8 @@ class RefoundRequest(models.Model):
     REFOUND_STATES= [('pending', 'PENDIENTE'), ('approved', 'APROBADA'), ('denied', 'DENEGADA')]
 
     id = models.AutoField(primary_key=True)
-<<<<<<< HEAD
     approved = models.CharField(choices= REFOUND_STATES, max_length=255, default= 'pending')
-=======
-    approved = models.CharField(choices= REFOUND_STATES,max_length=255, default= 'pending')
->>>>>>> main
+
     approval_date = models.DateField(default=None, null=True, blank=True)
     ticket_code = models.TextField(max_length=50)
     reason = models.TextField(max_length=255)
