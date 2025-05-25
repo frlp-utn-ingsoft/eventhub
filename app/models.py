@@ -108,9 +108,9 @@ class Event(models.Model):
     def validate(cls, title, description, scheduled_at, general_tickets=None, vip_tickets=None):
         errors = {}
         if not title:
-            errors["title"] = "Por favor ingrese un título"
+            errors["title"] = "Por favor ingrese un titulo"
         if not description:
-            errors["description"] = "Por favor ingrese una descripción"
+            errors["description"] = "Por favor ingrese una descripcion"
         if not scheduled_at or scheduled_at < timezone.now():
             errors["scheduled_at"] = "La fecha del evento debe ser en el futuro"
         if general_tickets is not None and general_tickets < 0:
@@ -279,9 +279,12 @@ class Ticket(models.Model):
             raise ValidationError("No podés comprar más de 4 entradas para este evento.")
 
         ticket = cls(user=user, event=event, quantity=quantity, type=ticket_type)
+        if not ticket.ticket_code:
+            ticket.ticket_code = ticket._generate_ticket_code()
         ticket.full_clean()
         ticket.save()
         return ticket
+
 
 
 
