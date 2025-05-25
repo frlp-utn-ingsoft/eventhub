@@ -158,6 +158,8 @@ def event_form(request, event_id=None):
                 event.categories.set(categories)
         else:
             event = get_object_or_404(Event, pk=event_id)
+            old_scheduled_at = event.scheduled_at
+            old_venue = event.venue
             event.title = title
             event.description = description
             event.scheduled_at = scheduled_at
@@ -165,7 +167,18 @@ def event_form(request, event_id=None):
             event.save()
             if categories:
                 event.categories.set(categories)
-
+            #Noticar por cambios de fecha o venue
+            if old_scheduled_at != scheduled_at or old_venue != venue:
+                notification = Notification.objects.create(
+                    title="Evento Modificado",
+                    message=f"El evento '{event.title}' ha sido modificado. Fecha: {scheduled_at} y lugar: {venue.name}.",
+                    priority="MEDIUM",
+                    event=event
+                )
+                usuarios = User.objects.filter(tickets__event=event).distinct()
+                print(usuarios)
+                notification.users.set(usuarios)
+                notification.save()
         return redirect("events")
 
     return render(
