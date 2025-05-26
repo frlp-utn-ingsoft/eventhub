@@ -169,7 +169,6 @@ class Event(models.Model):
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
     attendees = models.ManyToManyField(User, related_name="attended_events", blank=True)
     categories = models.ManyToManyField(Category, related_name="events")
@@ -200,7 +199,7 @@ class Event(models.Model):
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
-            venue=venue
+            venue=venue,
         )
         
         if categories:
@@ -208,7 +207,7 @@ class Event(models.Model):
 
         return True, event
 
-    def update(self, title=None, description=None, scheduled_at=None, organizer=None, venue=None, categories=None):
+    def update(self, title=None, description=None, scheduled_at=None, organizer=None, categories=None, venue=None):
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
@@ -396,7 +395,7 @@ class Rating(models.Model):
         self.save()
         
         return True, None
-
+    
 class Comment(models.Model):
     title = models.CharField(max_length=200)
     text = models.TextField()
@@ -452,9 +451,6 @@ class Notification(models.Model):
         max_length=10, choices=PRIORITY_CHOICES, default="LOW"
     )
     is_read = models.BooleanField(default=False)
-    event = models.ForeignKey(
-        "Event", on_delete=models.CASCADE, related_name="notifications"
-    )
     users = models.ManyToManyField(
         settings.AUTH_USER_MODEL, related_name="notifications"
     )

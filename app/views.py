@@ -117,6 +117,7 @@ def event_form(request, event_id=None):
     if not user.is_organizer:
         return redirect("events")
     
+    venues = Venue.objects.all()
     categories = Category.objects.filter(is_active=True)
     
     venues = Venue.objects.all()
@@ -190,7 +191,8 @@ def event_form(request, event_id=None):
             
             "venues": venues,
             "event_categories": event_categories,
-            "user_is_organizer": request.user.is_organizer
+            "user_is_organizer": request.user.is_organizer,
+            "venues": venues
         },
     )
 
@@ -407,6 +409,7 @@ def buy_ticket(request, id):
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
         if success:
+            event.attendees.add(user)
             messages.success(request, "¡Ticket comprado!")
             return redirect("tickets")
         else:
@@ -753,29 +756,29 @@ def notification_create(request):
         event_id = request.POST.get("event_id")
         usuario_id = request.POST.get("usuario_id")
 
-        if not event_id:
+        # Validaciones
+        if destinatario == "todos" and not event_id:
             messages.error(request, "Debe seleccionar un evento.")
             return redirect("notification_create")
 
-        event = get_object_or_404(Event, id=event_id)
-
-        if destinatario == "usuario":
-            if not usuario_id:
-                messages.error(request, "Debe seleccionar un usuario.")
-                return redirect("notification_create")
+        if destinatario == "usuario" and not usuario_id:
+            messages.error(request, "Debe seleccionar un usuario.")
+            return redirect("notification_create")
 
         notification = Notification.objects.create(
             title=title,
             message=message,
-            event=event,
             priority=priority,
             created_at=timezone.now(),
         )
 
+        # Asignar destinatarios
         if destinatario == "todos":
+            event = get_object_or_404(Event, id=event_id)
             asistentes = event.attendees.all()
+            print("Asistentes para notificación:", asistentes)
             notification.users.set(asistentes)
-        elif destinatario == "usuario" and usuario_id:
+        elif destinatario == "usuario":
             usuario = get_object_or_404(User, pk=usuario_id)
             notification.users.set([usuario])
 
