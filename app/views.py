@@ -119,27 +119,21 @@ def event_form(request, event_id=None):
     
     venues = Venue.objects.all()
     categories = Category.objects.filter(is_active=True)
-    
-    venues = Venue.objects.all()
-    event_categories = []
     event = {}
 
     if event_id is not None:
         event = get_object_or_404(Event, pk=event_id)
-        event_categories = [category.id for category in event.categories.all()]
 
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
-        
         venue_id = request.POST.get("venue")
+        category_id = request.POST.get("category")
         date = request.POST.get("date")
         time = request.POST.get("time")
-        categories = request.POST.getlist("categories")
-        venue = request.POST.getlist("venue")
-
 
         venue = get_object_or_404(Venue, pk=venue_id)
+        category = get_object_or_404(Category, pk=category_id) if category_id else None
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
 
@@ -148,26 +142,39 @@ def event_form(request, event_id=None):
         )
 
         if event_id is None:
-            event = Event.objects.create(
+            success, event = Event.new(
                 title=title,
                 description=description,
                 scheduled_at=scheduled_at,
                 organizer=request.user,
-                venue=venue
+                venue=venue,
+                category=category
             )
-            if categories:
-                event.categories.set(categories)
+            if not success:
+                return render(request, "app/event_form.html", {
+                    "event": event,
+                    "categories": categories,
+                    "venues": venues,
+                    "errors": event
+                })
         else:
             event = get_object_or_404(Event, pk=event_id)
             old_scheduled_at = event.scheduled_at
             old_venue = event.venue
-            event.title = title
-            event.description = description
-            event.scheduled_at = scheduled_at
-            event.venue = venue
-            event.save()
-            if categories:
-                event.categories.set(categories)
+            success, event = event.update(
+                title=title,
+                description=description,
+                scheduled_at=scheduled_at,
+                venue=venue,
+                category=category
+            )
+            if not success:
+                return render(request, "app/event_form.html", {
+                    "event": event,
+                    "categories": categories,
+                    "venues": venues,
+                    "errors": event
+                })
             #Noticar por cambios de fecha o venue
             if old_scheduled_at != scheduled_at or old_venue != venue:
                 notification = Notification.objects.create(
@@ -176,7 +183,6 @@ def event_form(request, event_id=None):
                     priority="MEDIUM",
                 )
                 usuarios = User.objects.filter(tickets__event=event).distinct()
-                print(usuarios)
                 notification.users.set(usuarios)
                 notification.save()
         return redirect("events")
@@ -187,11 +193,8 @@ def event_form(request, event_id=None):
         {
             "event": event,
             "categories": categories,
-            
             "venues": venues,
-            "event_categories": event_categories,
-            "user_is_organizer": request.user.is_organizer,
-            "venues": venues
+            "user_is_organizer": request.user.is_organizer
         },
     )
 
