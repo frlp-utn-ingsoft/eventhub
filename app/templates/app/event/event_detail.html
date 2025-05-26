@@ -5,20 +5,51 @@
     <div class="row">
         <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex justify-content-center align-items-center my-4">
-                <h1 class="me-2 mb-0">{{ event.title }}</h1>
+                <h1 class="me-2 mb-0">{{ event.title }}
+                    {% if event.status == 'finished' or event.status == 'FINISHED' %}
+                        <span class="badge text-dark fw-bold align-middle ms-2" style="background-color: #ff9800;">Finalizado</span>
+                    {% elif event.status == 'canceled' or event.status == 'CANCELED' %}
+                        <span class="badge bg-danger align-middle ms-2">Cancelado</span>
+                    {% elif event.status == 'reprogramed' or event.status == 'REPROGRAMED' %}
+                        <span class="badge bg-warning text-dark align-middle ms-2">Reprogramado</span>
+                        {% if event.scheduled_at %}<span class="ms-1">({{ event.scheduled_at|date:"d b Y, H:i" }})</span>{% endif %}
+                    {% elif event.status == 'soldout' or event.status == 'SOLDOUT' %}
+                        <span class="badge bg-dark align-middle ms-2">Agotado</span>
+                    {% elif event.status == 'active' or event.status == 'ACTIVE' %}
+                        <span class="badge bg-success align-middle ms-2">Activo</span>
+                    {% endif %}
+                </h1>
             </div>
             <div>
                 {% if user_is_organizer and request.user == event.organizer %}
+                {% comment %} Solo el usuario Organizador del evento puede jacerlo {% endcomment %}
                     <a href="{% url 'event_tickets' event.id %}" class="btn btn-primary">
                         <i class="bi bi-ticket-perforated me-2"></i>Gestionar entradas
                     </a>
+                    {% if event.status != 'canceled' and event.status != 'CANCELED' and event.status != 'finished' and event.status != 'FINISHED' and event.status != 'soldout' and event.status != 'SOLDOUT' %}
                     <a
                         href="{% url 'event_edit' event.id %}"
                         class="btn btn-outline-primary me-2"
                     >
                         <i class="bi bi-pencil me-1"></i>Editar
                     </a>
-
+                    <form method="post" action="" style="display:inline;" onsubmit="return confirm('¿Seguro que deseas cancelar este evento?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="id" value="{{ event.id }}">
+                        <input type="hidden" name="cancel_event" value="1">
+                        <button type="submit" class="btn btn-danger ms-2">
+                            <i class="bi bi-x-circle me-1"></i>Cancelar
+                        </button>
+                    </form>
+                    <form method="post" action="" style="display:inline;" onsubmit="return confirm('¿Seguro que deseas finalizar este evento?');">
+                        {% csrf_token %}
+                        <input type="hidden" name="id" value="{{ event.id }}">
+                        <input type="hidden" name="finish_event" value="1">
+                        <button type="submit" class="btn btn-warning ms-2 text-dark fw-bold" style="background-color: #ff9800; border-color: #ff9800;">
+                            <i class="bi bi-flag me-1"></i>Finalizar
+                        </button>
+                    </form>
+                    {% endif %}
                 {% else %}
                     <a href="{% url 'ticket_create' event.id %}" class="btn btn-primary">
                         <i class="bi bi-ticket-perforated me-2"></i>Comprar entradas
@@ -78,23 +109,6 @@
                             </div>
                         </div>
                     </div>
-                    <div class="d-flex align-items-center mb-3">
-                    <span>
-                        {% comment %} Esta seccion muestra una etiqueta que detalla el estado del evento en el detalle del evento{% endcomment %}
-                        {% if event.status == 'finished' or event.status == 'FINISHED' %}
-                            <span class="badge bg-secondary">Finalizado</span>
-                        {% elif event.status == 'canceled' or event.status == 'CANCELED' %}
-                            <span class="badge bg-danger">Cancelado</span>
-                        {% elif event.status == 'reprogramed' or event.status == 'REPROGRAMED' %}
-                            <span class="badge bg-warning text-dark">Reprogramado</span>
-                            {% if event.scheduled_at %}<span class="ms-1">({{ event.scheduled_at|date:"d b Y, H:i" }})</span>{% endif %}
-                        {% elif event.status == 'soldout' or event.status == 'SOLDOUT' %}
-                            <span class="badge bg-dark">Agotado</span>
-                        {% elif event.status == 'active' or event.status == 'ACTIVE' %}
-                            <span class="badge bg-success">Activo</span>
-                        {% endif %}
-                    </span>
-                </div>
                 </div>
             </div>
         </div>

@@ -50,7 +50,7 @@
                         {% comment %} Este item muestra en forma de etiqueta el estado del evento {% endcomment %}
                         {{ event.title }}
                         {% if event.status == 'finished' or event.status == 'FINISHED' %}
-                            <span class="badge bg-secondary ms-2">Finalizado</span>
+                            <span class="badge text-dark fw-bold ms-2" style="background-color: #ff9800;">Finalizado</span>
                         {% elif event.status == 'canceled' or event.status == 'CANCELED' %}
                             <span class="badge bg-danger ms-2">Cancelado</span>
                         {% elif event.status == 'reprogramed' or event.status == 'REPROGRAMED' %}
@@ -91,12 +91,13 @@
                                 <i class="bi bi-eye" aria-hidden="true"></i>
                             </a>
                             {% if user_is_organizer and event.organizer == user %}
-                                <a href="{% url 'event_edit' event.id %}"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    aria-label="Editar"
-                                    title="Editar">
-                                    <i class="bi bi-pencil" aria-hidden="true"></i>
-                                </a>
+                                {% if event.status != 'canceled' and event.status != 'CANCELED' and event.status != 'finished' and event.status != 'FINISHED' and event.status != 'soldout' and event.status != 'SOLDOUT' %}
+                                    <a href="{% url 'event_edit' event.id %}"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        aria-label="Editar"
+                                        title="Editar">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                                    </a>
                                     <button class="btn btn-sm btn-outline-danger"
                                         title="Eliminar"
                                         type="submit"
@@ -109,6 +110,7 @@
                                     {% with title_text="Eliminar evento: "|add:event.title %}
                                         {% include "app/common/delete_modal.html" with object=event delete_url_name='event_delete' title=title_text message="¿Estás seguro de que deseas eliminar este evento?" %}
                                     {% endwith %}
+                                {% endif %}
                             {% endif %}
                         </div>
                     </td>

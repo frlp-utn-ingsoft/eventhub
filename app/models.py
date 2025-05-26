@@ -159,6 +159,7 @@ class Event(models.Model):
         related_name='events')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
     STATUS_CHOICES = [
         ('active', 'Activo'),
         ('canceled', 'Cancelado'),
@@ -166,7 +167,7 @@ class Event(models.Model):
         ('soldout', 'Agotado'),
         ('finished', 'Finalizado'),
     ]
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active') # Empieza en estado activo por defecto
 
     def __str__(self):
         return self.title
@@ -199,6 +200,9 @@ class Event(models.Model):
         return True, None
     
     def update(self, title, categories, venue, description, scheduled_at, organizer, status=None):
+        if hasattr(self, 'status') and self.status == 'canceled':
+            # Si el evento está cancelado, no se puede editar
+            raise ValueError('No se puede editar un evento cancelado.')
         self.title = title or self.title
         self.description = description or self.description
         self.venue = venue or self.venue

@@ -17,12 +17,19 @@ def event_form(request, id=None):
     if not user.is_organizer:
         return redirect("events")
     
-    # Edición: verificar que sea el dueño del evento
+    # Edición: verificar que sea el dueño del evento y que no esté cancelado
     if id is not None:
         event = get_object_or_404(Event, pk=id)
         if user != event.organizer:
             messages.error(request, 'No tienes permiso para editar este evento.')
             return redirect("events")
+        if event.status == 'canceled':
+            messages.error(request, 'No se puede editar un evento cancelado.')
+            return redirect("events")
+        if event.status == 'finished':
+            messages.error(request, 'No se puede editar un evento finalizado.')
+            return redirect("events")
+
     
     if request.method == "POST":
         # Si se presionó el botón de cancelar evento
@@ -122,6 +129,17 @@ def event_detail(request, id):
 
     # Verificar si el usuario tiene ticket para este evento
     has_ticket = Ticket.objects.filter(event=event, user=request.user).exists()
+
+    # Procesar acciones POST (cancelar/finalizar) SOLO si el usuario es organizador y dueño
+    if request.method == "POST" and request.user.is_organizer and request.user == event.organizer:
+        if request.POST.get("cancel_event") == "1":
+            event.update(event.title, list(event.categories.all()), event.venue, event.description, event.scheduled_at, event.organizer, status='canceled')
+            messages.success(request, 'El evento ha sido cancelado.')
+            return redirect("events")
+        if request.POST.get("finish_event") == "1":
+            event.update(event.title, list(event.categories.all()), event.venue, event.description, event.scheduled_at, event.organizer, status='finished')
+            messages.success(request, 'El evento ha sido finalizado.')
+            return redirect("events")
 
     # Llamar a la función `handle_rating` para manejar la calificación
     rating_saved = create_rating(request, event)
