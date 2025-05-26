@@ -26,6 +26,10 @@ class Ticket(models.Model):
         choices=TipoTicket.choices,
         default=TipoTicket.GENERAL) #tipo de ticket, por defecto es general
     
+    class Meta:
+        #esto asegura que solo pueda existir UN ticket por usuario y evento
+        unique_together = ('user', 'event')
+    
     def save(self, *args, **kwargs): #sobreescribimos el metodo save para generar el ticket_code
         #generar ticket_code solo si es un objeto nuevo o si está vacío
         if not self.ticket_code:

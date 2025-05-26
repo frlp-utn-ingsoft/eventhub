@@ -4,8 +4,9 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 
 from app.models import Event
-from .models import Ticket
+
 from .forms import TicketCompraForm, TicketUpdateForm
+from .models import Ticket
 
 
 @login_required
@@ -15,7 +16,7 @@ def compra(request, id):
         event = get_object_or_404(Event, id=id)
         
         if request.method == 'POST':
-            form = TicketCompraForm(request.POST)
+            form = TicketCompraForm(request.POST, user=request.user, event=event)
             if form.is_valid():
                 try:
                     # Crear el ticket - el ticket_code se generará automáticamente en el método save()
@@ -30,16 +31,26 @@ def compra(request, id):
                 except Exception as e:
                     print(e)
                     messages.error(request, 'Error al procesar la compra.')
-                    return render(request, 'tickets/compra.html', {'event': event})
+                    return render(request, 'tickets/compra.html', {
+                        'event': event,
+                        'form': form, 
+                    })
             else:
                 # Si hay errores de validación, mostrar mensajes
                 for field, errors in form.errors.items():
                     for error in errors:
                         messages.error(request, error)  # type: ignore
-                return render(request, 'tickets/compra.html', {'event': event})
+                return render(request, 'tickets/compra.html', {
+                    'event': event,
+                    'form': form,  
+                })
         
         # Si es GET, mostrar formulario
-        return render(request, 'tickets/compra.html', {'event': event})
+        form = TicketCompraForm(user=request.user, event=event)
+        return render(request, 'tickets/compra.html', {
+            'event': event,
+            'form': form,
+        })
     else:
         return redirect(reverse('events'))
     
@@ -95,16 +106,18 @@ def actualizacion(request, id):
                         cantidad = request.POST.get(f'cantidad_{index}', 1)
                         tipo_entrada = request.POST.get(f'tipoEntrada_{index}', 'GENERAL')
                         
+                        #obtenes el ticket que se está editando
+                        ticket = get_object_or_404(Ticket, id=ticket_id, user=request.user)
+                        
                         # Validar con form antes de actualizar
                         form_data = {
                             'type': tipo_entrada,
                             'quantity': cantidad
                         }
-                        form = TicketUpdateForm(form_data)
+                        form = TicketUpdateForm(form_data, user=request.user, event=event, ticket_instance=ticket)
                         
                         if form.is_valid():
                             #actualizo
-                            ticket = get_object_or_404(Ticket, id=ticket_id, user=request.user)
                             ticket.quantity = form.cleaned_data['quantity']
                             ticket.type = form.cleaned_data['type']
                             ticket.save()
