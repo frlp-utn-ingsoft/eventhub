@@ -4,7 +4,7 @@ import re
 from django.utils import timezone
 from playwright.sync_api import expect
 
-from app.models import Event, User
+from app.models import Event, User, Venue, Ticket
 
 from app.test.test_e2e.base import BaseE2ETest
 
@@ -31,13 +31,30 @@ class EventBaseTest(BaseE2ETest):
             is_organizer=False,
         )
 
+        # Crear una sala de eventos
+        self.venue1 = Venue.objects.create(  # Este venue tiene id=1 (Asi recuperamos desde la pag los venues!)
+            name="Auditorio Principal",
+            adress="Calle Falsa 123",
+            city="Ciudad Autonoma de Buenos Aires",
+            capacity=500,
+            contact = "Juan Perez",
+        )
+        self.venue2 = Venue.objects.create(  #Con id=2
+            name="Sala Principal",
+            adress="Avenida Siempre Viva 456",
+            city="Ciudad Autonoma de Buenos Aires",
+            capacity=300,
+            contact = "Maria Lopez",
+        )
+
         # Crear eventos de prueba
         # Evento 1
         event_date1 = timezone.make_aware(datetime.datetime(2025, 2, 10, 10, 10))
-        self.event1 = Event.objects.create(
+        self.event1 = Event.objects.create( #Evento con venue id=1
             title="Evento de prueba 1",
             description="Descripción del evento 1",
             scheduled_at=event_date1,
+            venue = self.venue1,
             organizer=self.organizer,
         )
 
@@ -47,8 +64,13 @@ class EventBaseTest(BaseE2ETest):
             title="Evento de prueba 2",
             description="Descripción del evento 2",
             scheduled_at=event_date2,
+            venue=self.venue1,
             organizer=self.organizer,
         )
+
+        # Crear ticket
+        Ticket.objects.create(user=self.regular_user, event=self.event1, quantity=1, type="GENERAL")
+
 
     def _table_has_event_info(self):
         """Método auxiliar para verificar que la tabla tiene la información correcta de eventos"""
@@ -311,3 +333,50 @@ class EventCRUDTest(EventBaseTest):
 
         # Verificar que el evento eliminado ya no aparece en la tabla
         expect(self.page.get_by_text("Evento de prueba 1")).to_have_count(0)
+
+    def  test_notification_creation_on_event_update(self):
+        #Iniciamos como organizador
+        self.login_user("organizador", "password123"),
+        #Vamos a la pagina de eventos
+        self.page.goto(f"{self.live_server_url}/events/")
+        #Hacemos click en el boton de editar del primer evento
+        self.page.get_by_role("link", name="Editar").first.click()
+        #Verificamos que estamos en la pagina de edicion
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/{self.event1.id}/edit/")
+        #Verificamos que el formulario esta precargado con los datos del evento y luego lo editamos con fecha y lugar
+        title = self.page.get_by_label("Título del Evento")
+        expect(title).to_have_value("Evento de prueba 1")
+
+        description = self.page.get_by_label("Descripción")
+        expect(description).to_have_value("Descripción del evento 1")
+
+        date = self.page.get_by_label("Fecha")
+        expect(date).to_have_value("2025-02-10")
+        date.fill("2025-04-20")
+
+        time = self.page.get_by_label("Hora")
+        expect(time).to_have_value("10:10")
+
+        venue = self.page.get_by_label("Lugar")
+        expect(venue).to_have_value("1")
+        venue.select_option(value="2") ##Cambiamos el venue a 2
+        
+        #Hacemos click en el boton de guardar cambios
+        self.page.get_by_role("button", name="Guardar Cambios").click()
+        self.page.goto(f"{self.live_server_url}/events/")
+        #Salimos del usuario organizador
+        self.page.get_by_role("button", name="Salir").click()
+        #Iniciamos sesion como usuario normal
+        self.login_user("usuario", "password123")
+        #Vamos a la pagina de eventos
+        self.page.goto(f"{self.live_server_url}/events/")
+        #Verificamos que redirigió a la pagina de eventos
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/")
+        #Vamos a la pagina de notificaciones
+        self.page.goto(f"{self.live_server_url}/notifications/")
+        #Verificamos que existe una notificacion con el texto "Evento modificado"
+        notification = self.page.get_by_text("Evento modificado")
+        expect(notification).to_be_visible()
+
+
+
