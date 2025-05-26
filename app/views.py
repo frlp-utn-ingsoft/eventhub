@@ -1,9 +1,12 @@
 import datetime
+from django.db.models import BooleanField, ExpressionWrapper, Q
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
+from .forms import NotificationForm,TicketForm,RefundRequestForm,RatingForm,CommentForm, VenueForm, EventForm
+from .models import Event, User, Notification, User_Notification,Ticket, Rating, RefundRequest, FavoriteEvent
 from .forms import NotificationForm,TicketForm,RefundRequestForm,RatingForm,CommentForm, VenueForm, EventForm, SurveyForm
 from .models import Event, User, Notification, User_Notification,Ticket, Rating, RefundRequest
 from datetime import timedelta
@@ -75,24 +78,29 @@ def home(request):
 
 @login_required
 def events(request):
-    show_past = request.GET.get("show_past") == "1"  # Checkbox marcada
+    show_past = request.GET.get("show_past") == "1"
+    now = timezone.now()
 
-    if show_past:
-        events = Event.objects.all().order_by("scheduled_at")
+    events = Event.objects.all()
+    if not show_past:
+        events = events.filter(scheduled_at__gte=now)
+
+    if request.user.is_authenticated:
+        favorites = FavoriteEvent.objects.filter(user=request.user).values_list('event_id', flat=True)
+        # Anotamos cuáles son favoritos
+        events = events.annotate(
+            is_favorite=ExpressionWrapper(
+                Q(id__in=favorites),
+                output_field=BooleanField()
+            )
+        ).order_by('-is_favorite', 'scheduled_at')  # favoritos arriba
     else:
-        events = Event.objects.filter(scheduled_at__gte=timezone.now()).order_by("scheduled_at")
+        events = events.order_by('scheduled_at')
 
-    events_with_comments = events.annotate(num_comment=Count('comment'))
-
-    return render(
-    request,
-    "app/events.html",
-    {
-        "events": events,
-        "events_with_comments": events_with_comments,
-        "user_is_organizer": request.user.is_organizer,
-    },
-)
+    return render(request, 'app/events.html', {
+        'events': events,
+        'user_is_organizer': request.user.is_authenticated and request.user.is_organizer,
+    })
 
 @login_required
 def event_detail(request, event_id):
@@ -809,6 +817,14 @@ def venue_delete(request, venue_id):
    
 
     return redirect('organizator_comment')  # Redirige a la vista de los comentarios o al listado de eventos
+
+
+def toggle_favorite(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    favorite, created = FavoriteEvent.objects.get_or_create(user=request.user, event=event)
+    if not created:
+        favorite.delete()
+    return redirect('events')
 
 
 @login_required
