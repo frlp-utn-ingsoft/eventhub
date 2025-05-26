@@ -70,6 +70,8 @@ def home(request):
 @login_required
 def events(request):
     events = Event.objects.all().order_by("scheduled_at")
+    for ev in events:
+        ev.auto_update_state()  # Actualizar el estado de cada evento
     return render(
         request,
         "app/events.html",
@@ -174,6 +176,9 @@ def event_form(request, event_id=None):
                 event.categories.set(categories)
         else:
             event = get_object_or_404(Event, pk=event_id)
+            #Marco como reprogamado el evento
+            if scheduled_at != event.scheduled_at:
+                event.state = Event.REPROGRAMED
             event.title = title
             event.description = description
             event.scheduled_at = scheduled_at
@@ -410,6 +415,8 @@ def buy_ticket(request, id):
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
         if success:
+            #GENERO UN CHEQUEO PARA VERIFICAR EL ESTADO DE SOLD OUT
+            event.auto_update_state()
             messages.success(request, "¡Ticket comprado!")
             return redirect("tickets")
         else:

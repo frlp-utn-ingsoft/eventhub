@@ -34,6 +34,9 @@
                     </div>
                     
                     <div class="mt-4">
+                        {% if event.state != 'FINISHED' %}
+                        {% if event.state != 'CANCELED' %}
+                        {% if event.state != 'SOLD_OUT' %}
                         {% if user_is_organizer %}
                             <a href="{% url 'event_edit' event.id %}" class="btn btn-outline-primary me-2">
                                 <i class="bi bi-pencil me-1"></i>Editar Evento
@@ -42,6 +45,9 @@
                             <a href="{% url 'buy_ticket' event.id %}" class="btn btn-primary me-2">
                                 <i class="bi bi-ticket-perforated me-2"></i>Comprar Entrada
                             </a>
+                        {% endif %}
+                        {% endif %}
+                        {% endif %}
                         {% endif %}
                     </div>
                 </div>
