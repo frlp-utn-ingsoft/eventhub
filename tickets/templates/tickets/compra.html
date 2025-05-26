@@ -105,6 +105,7 @@
     const actualizarCantidad = (delta) => {
         let nuevaCantidad = parseInt(cantidad.value) + delta;
         if (nuevaCantidad < 1) return;
+        if (nuevaCantidad > 4) return;
         cantidad.value = nuevaCantidad;
         spanResumen.textContent = nuevaCantidad;
         actualizarResumen();
