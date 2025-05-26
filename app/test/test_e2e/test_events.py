@@ -335,6 +335,7 @@ class EventCRUDTest(EventBaseTest):
         expect(self.page.get_by_text("Evento de prueba 1")).to_have_count(0)
 
     def  test_notification_creation_on_event_update(self):
+        """Test que verifica la creación de una notificación al actualizar un evento"""
         #Iniciamos como organizador
         self.login_user("organizador", "password123"),
         #Vamos a la pagina de eventos
