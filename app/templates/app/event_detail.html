@@ -80,7 +80,40 @@
                 </div>
             </div>
         </div>
-        
+
+        {% if not user_is_organizer %}
+        <div class="alert alert-info text-center">
+            <h4>Cuenta regresiva para el evento:</h4>
+            <h5 id="countdown"></h5>
+        </div>
+
+        <script>
+            const eventDate = new Date("{{ event.scheduled_at|date:'c' }}");
+
+            function updateCountdown() {
+                const now = new Date();
+                const diff = eventDate - now;
+
+                if (diff <= 0) {
+                    document.getElementById("countdown").innerText = "¡El evento ha comenzado!";
+                    clearInterval(intervalId);
+                    return;
+                }
+
+                const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+                const minutes = Math.floor((diff / (1000 * 60)) % 60);
+                const seconds = Math.floor((diff / 1000) % 60);
+
+                document.getElementById("countdown").innerText =
+                    `${days}d ${hours}h ${minutes}m ${seconds}s`;
+            }
+
+            updateCountdown();
+            const intervalId = setInterval(updateCountdown, 1000);
+        </script>
+        {% endif %}
+
         {% if user_is_organizer %}
         <div class="container mt-5">
             <h2 class="mb-4">Comentarios del Evento</h2>
