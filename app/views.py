@@ -83,6 +83,11 @@ def events(request):
 
     events_with_comments = events.annotate(num_comment=Count('comment'))
 
+    for event in events:
+        if event.status == 'active' and event.scheduled_at < timezone.now():
+            event.status = 'finished'
+            event.save(update_fields=["status"])
+
     return render(
     request,
     "app/events.html",
@@ -158,6 +163,7 @@ def event_delete(request, id):
 
 #modifique event_form
 @login_required
+@login_required
 def event_form(request, id=None):
     user = request.user
 
@@ -166,8 +172,10 @@ def event_form(request, id=None):
 
     if id:
         instance = get_object_or_404(Event, pk=id)
+        original_scheduled_at = instance.scheduled_at
     else:
         instance = None
+        original_scheduled_at = None
 
     if request.method == "POST":
         form = EventForm(request.POST, instance=instance)
@@ -175,8 +183,7 @@ def event_form(request, id=None):
         if form.is_valid():
             event = form.save(commit=False)
             event.organizer = request.user
-            event.status = request.POST.get("status", "active")
-
+            
 
             # Combinar date y time desde POST para formar scheduled_at
             date = request.POST.get("date")
@@ -185,13 +192,23 @@ def event_form(request, id=None):
                 try:
                     y, m, d = map(int, date.split("-"))
                     h, mi = map(int, time.split(":"))
-                    event.scheduled_at = timezone.make_aware(datetime.datetime(y, m, d, h, mi))
+                    new_scheduled_at = timezone.make_aware(datetime.datetime(y, m, d, h, mi))
+                    event.scheduled_at = new_scheduled_at
                 except Exception:
                     form.add_error(None, "Fecha y hora inválidas.")
                     return render(request, "app/event_form.html", {
                         "form": form,
                         "user_is_organizer": request.user.is_organizer
                     })
+
+            # Lógica para definir el estado del evento
+            if instance:
+                if original_scheduled_at != event.scheduled_at:
+                    event.status = "rescheduled"
+                else:
+                    event.status = request.POST.get("status", instance.status or "active")
+            else:
+                event.status = request.POST.get("status", "active")
 
             event.save()
             form.save_m2m()

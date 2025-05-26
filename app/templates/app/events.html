@@ -43,6 +43,7 @@
                 <th>Descripción</th>
                 <th>Fecha</th>
                 <th>Categorías</th>
+                <th>Estado</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -59,6 +60,22 @@
                             <span class="text-muted">Sin categoría</span>
                         {% endfor %}
                     </td>
+                    <td>
+                        {% if event.status == 'active' %}
+                            <span class="badge bg-success">Activo</span>
+                        {% elif event.status == 'cancelled' %}
+                            <span class="badge bg-danger">Cancelado</span>
+                        {% elif event.status == 'sold_out' %}
+                            <span class="badge bg-danger">Agotado</span>
+                        {% elif event.status == 'finished' %}
+                            <span class="badge bg-danger">Finalizado</span>
+                        {% elif event.status == 'rescheduled' %}
+                            <span class="badge bg-warning text-dark">Reprogramado</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Desconocido</span>
+                        {% endif %}
+                    </td>
+
                     <td>
                         <div class="hstack gap-1">
                             <a href="{% url 'event_detail' event.id %}"
