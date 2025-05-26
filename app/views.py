@@ -202,13 +202,9 @@ def event_form(request, id=None):
                     })
 
             # Lógica para definir el estado del evento
-            if instance:
-                if original_scheduled_at != event.scheduled_at:
-                    event.status = "rescheduled"
-                else:
-                    event.status = request.POST.get("status", instance.status or "active")
-            else:
-                event.status = request.POST.get("status", "active")
+            event.status = request.POST.get("status") or event.status  # Se puede editar manualmente desde el form
+            event.update_status(original_scheduled_at)  # Aplica lógica de reprogramado o activación
+
 
             event.save()
             form.save_m2m()
