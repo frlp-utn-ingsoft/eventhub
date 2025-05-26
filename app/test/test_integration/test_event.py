@@ -279,7 +279,7 @@ class EventFormSubmissionTest(BaseEventTestCase):
         year, month, day = map(int, date_str.split("-"))
         hour, minute = map(int, time_str.split(":"))
 
-        schedule_at = timezone.make_aware(
+        scheduled_at = timezone.make_aware(
             datetime.datetime(year, month, day, hour, minute)
         )
 
@@ -294,7 +294,7 @@ class EventFormSubmissionTest(BaseEventTestCase):
             self.assertTrue(
                 Notification.objects.filter(
                     users=usuario,
-                    message = f"El evento '{self.event1.title}' ha sido actualizado. Fecha: {schedule_at} y lugar: {self.venue2.name}."
+                    message = f"El evento '{self.event1.title}' ha sido actualizado. Fecha: {scheduled_at} y lugar: {self.venue2.name}."
                 ).exists()
             )
     

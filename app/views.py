@@ -172,9 +172,8 @@ def event_form(request, event_id=None):
             if old_scheduled_at != scheduled_at or old_venue != venue:
                 notification = Notification.objects.create(
                     title="Evento Modificado",
-                    message=f"El evento '{event.title}' ha sido modificado. Fecha: {scheduled_at} y lugar: {venue.name}.",
+                    message=f"El evento '{event.title}' ha sido actualizado. Fecha: {scheduled_at} y lugar: {venue.name}.",
                     priority="MEDIUM",
-                    event=event
                 )
                 usuarios = User.objects.filter(tickets__event=event).distinct()
                 print(usuarios)
