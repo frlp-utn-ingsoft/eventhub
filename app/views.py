@@ -68,7 +68,7 @@ def events(request):
     return render(
         request,
         "app/events.html",
-        {"events": events, "user_is_is_organizer": request.user.is_organizer},
+        {"events": events, "user_is_organizer": request.user.is_organizer},
     )
 
 
@@ -149,9 +149,8 @@ def event_form(request, id=None):
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
 
-        scheduled_at = timezone.make_aware(
-            datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
-        )
+        naive_datetime = datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
+        scheduled_at = timezone.make_aware(naive_datetime, timezone=datetime.timezone.utc)
 
         if id is None:
             event, errors = Event.new(title, description, scheduled_at, request.user, location)
@@ -161,7 +160,7 @@ def event_form(request, id=None):
 
         if event:
             event.categories.set(categories)
-        return redirect("events")
+            return redirect("events")
 
     
     
@@ -175,7 +174,7 @@ def event_form(request, id=None):
     return render(
         request,
         "app/event_form.html",
-        {"event": event, "user.is_organizer": request.user.is_organizer, "locations": locations, "categories": categories},
+        {"event": event, "user_is_organizer": request.user.is_organizer, "locations": locations, "categories": categories},
     )
 
 

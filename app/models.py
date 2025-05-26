@@ -3,6 +3,9 @@ from django.db import models
 from decimal import Decimal
 import uuid
 from django.conf import settings
+from django.utils.dateparse import parse_datetime
+from datetime import datetime
+from django.utils import timezone
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -160,10 +163,20 @@ class Event(models.Model):
             errors["description"] = "Por favor ingrese una descripcion"
 
         return errors
+    
+    @classmethod
+    def convert_to_datetime(cls, value):
+        if isinstance(value, datetime):
+            return value  # ya es datetime, no parsear
+        if isinstance(value, str):
+            return parse_datetime(value)  # parsea string a datetime
+        return None  # o lanzar excepción si esperas siempre datetime o str
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, location=None, price_general=Decimal('0.00'), price_vip=Decimal('0.00')):
+    def new(cls, title, description, scheduled_at, organizer, location=None, price_general=Decimal('0.00'), price_vip=Decimal('0.00'), tickets_sold=0):
         errors = Event.validate(title, description, scheduled_at)
+
+        scheduled_at = cls.convert_to_datetime(scheduled_at)
 
         if len(errors.keys()) > 0:
             return False, errors
@@ -180,7 +193,7 @@ class Event(models.Model):
 
         return event, None
 
-    def update(self, title, description, scheduled_at, organizer, location=None, price_general=Decimal('0.00'), price_vip=Decimal('0.00')   ):
+    def update(self, title, description, scheduled_at, organizer, location=None, price_general=Decimal('0.00'), price_vip=Decimal('0.00')):
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
@@ -188,6 +201,9 @@ class Event(models.Model):
         self.location = location if location is not None else self.location
         self.price_general= price_general or self.price_general
         self.price_vip = price_vip or self.price_vip
+
+        if not timezone.is_aware(scheduled_at):
+            scheduled_at = timezone.make_aware(scheduled_at)
 
         self.save()
 

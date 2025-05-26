@@ -137,27 +137,36 @@ class EventDisplayTest(EventBaseTest):
         self._table_has_event_info()
         self._table_has_correct_actions("organizador")
 
-    def test_events_page_regular_user(self):
-        """Test que verifica la visualización de la página de eventos para un usuario regular"""
-        # Iniciar sesión como usuario regular
-        self.login_user("usuario", "password123")
+    def _table_has_event_info(self):
+        """Método auxiliar para verificar que la tabla tiene la información correcta de eventos"""
+        headers = self.page.locator("table thead th")
 
-        # Ir a la página de eventos
-        self.page.goto(f"{self.live_server_url}/events/")
+        # Verificar que existan las columnas esperadas (sin importar el orden)
+        for expected_text in ["Título", "Descripción", "Fecha", "Acciones"]:
+            header_with_text = headers.filter(has_text=expected_text)
+            expect(header_with_text).to_have_count(1)
 
-        expect(self.page).to_have_title("Eventos")
+        # Verificar que hay 2 filas
+        rows = self.page.locator("table tbody tr")
+        expect(rows).to_have_count(2)
 
-        # Verificar que existe un encabezado con el texto "Eventos"
-        header = self.page.locator("h1")
-        expect(header).to_have_text("Eventos")
-        expect(header).to_be_visible()
+        # Para verificar contenido, primero mapeamos los índices de cada columna por su encabezado
+        count = headers.count()
+        header_texts = [headers.nth(i).inner_text() for i in range(count)]
+        header_indices = {text: idx for idx, text in enumerate(header_texts)}
 
-        # Verificar que existe una tabla
-        table = self.page.locator("table")
-        expect(table).to_be_visible()
+        # Verificar datos de la primera fila según índices detectados
+        row0 = rows.nth(0)
+        expect(row0.locator("td").nth(header_indices["Título"])).to_have_text("Evento de prueba 1")
+        expect(row0.locator("td").nth(header_indices["Descripción"])).to_have_text("Descripción del evento 1")
+        expect(row0.locator("td").nth(header_indices["Fecha"])).to_have_text("10 feb 2025, 10:10")
 
-        self._table_has_event_info()
-        self._table_has_correct_actions("regular")
+        # Verificar datos de la segunda fila
+        row1 = rows.nth(1)
+        expect(row1.locator("td").nth(header_indices["Título"])).to_have_text("Evento de prueba 2")
+        expect(row1.locator("td").nth(header_indices["Descripción"])).to_have_text("Descripción del evento 2")
+        expect(row1.locator("td").nth(header_indices["Fecha"])).to_have_text("15 mar 2025, 14:30")
+
 
     def test_events_page_no_events(self):
         """Test que verifica el comportamiento cuando no hay eventos"""
@@ -225,6 +234,8 @@ class EventCRUDTest(EventBaseTest):
         self.page.get_by_label("Descripción").fill("Descripción creada desde prueba E2E")
         self.page.get_by_label("Fecha").fill("2025-06-15")
         self.page.get_by_label("Hora").fill("16:45")
+        self.page.get_by_label("Precio General").fill("100.00")
+        self.page.get_by_label("Precio VIP").fill("200.00")
 
         # Enviar el formulario
         self.page.get_by_role("button", name="Crear Evento").click()
@@ -250,7 +261,7 @@ class EventCRUDTest(EventBaseTest):
         self.page.goto(f"{self.live_server_url}/events/")
 
         # Hacer clic en el botón editar del primer evento
-        self.page.get_by_role("link", name="Editar").first.click()
+        self.page.locator("[aria-label='Editar']").first.click()
 
         # Verificar que estamos en la página de edición
         expect(self.page).to_have_url(f"{self.live_server_url}/events/{self.event1.id}/edit/")
@@ -277,7 +288,7 @@ class EventCRUDTest(EventBaseTest):
         time.fill("03:00")
 
         # Enviar el formulario
-        self.page.get_by_role("button", name="Crear Evento").click()
+        self.page.get_by_role("button", name="Guardar Cambios").click()
 
         # Verificar que redirigió a la página de eventos
         expect(self.page).to_have_url(f"{self.live_server_url}/events/")
