@@ -37,7 +37,7 @@ class Category(models.Model):
     description = models.TextField(null=True, blank=True, default="Sin descripción")
     active = models.BooleanField(default=True)
     event = models.ForeignKey(
-        'app.Event',                # Ajusta 'app' al nombre real de tu app si es distinto
+        'app.Event',                
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
@@ -86,6 +86,19 @@ class Event(models.Model):
     categories = models.ManyToManyField('Category', related_name="event_categories", blank=True)  # Allowing nulls 
     
     venue = models.ForeignKey('Venue', on_delete=models.CASCADE, related_name='events', null=True, blank=True) ## agg fk para la relacion events / venue
+    STATUS_CHOICES = [
+        ('active', 'Activo'),
+        ('cancelled', 'Cancelado'),
+        ('rescheduled', 'Reprogramado'),
+        ('sold_out', 'Agotado'),
+        ('finished', 'Finalizado'),
+    ]
+    status = models.CharField(
+        max_length=20,
+        choices=STATUS_CHOICES,
+        default='active',
+        help_text='Estado actual del evento'
+    )
 
     def __str__(self):
         return self.title
@@ -103,7 +116,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, venue):
+    def new(cls, title, description, scheduled_at, organizer, venue, status):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -115,16 +128,18 @@ class Event(models.Model):
             scheduled_at=scheduled_at,
             organizer=organizer,
             venue=venue,  ## agg para la relacion events / venue
+            status=status
         )
 
         return True, None
 
-    def update(self, title, description, scheduled_at, organizer, venue):
+    def update(self, title, description, scheduled_at, organizer, venue, status):
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
         self.venue = venue or self.venue ## agg para la relacion events / venue
+        self.status = status or self.status
 
         self.save()
 

@@ -175,6 +175,8 @@ def event_form(request, id=None):
         if form.is_valid():
             event = form.save(commit=False)
             event.organizer = request.user
+            event.status = request.POST.get("status", "active")
+
 
             # Combinar date y time desde POST para formar scheduled_at
             date = request.POST.get("date")

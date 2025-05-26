@@ -103,6 +103,18 @@
                                     <div class="text-danger mt-1">{{ form.venue.errors.0 }}</div>
                                 {% endif %}
                             </div>
+                            <!-- Estado del Evento -->
+                            <div class="mb-3">
+                                <label for="status" class="form-label">Estado del Evento</label>
+                                <select name="status" class="form-select" id="status">
+                                    <option value="active" {% if form.instance.status == 'active' %}selected{% endif %}>Activo</option>
+                                    <option value="cancelled" {% if form.instance.status == 'cancelled' %}selected{% endif %}>Cancelado</option>
+                                    <option value="rescheduled" {% if form.instance.status == 'rescheduled' %}selected{% endif %}>Reprogramado</option>
+                                    <option value="sold_out" {% if form.instance.status == 'sold_out' %}selected{% endif %}>Agotado</option>
+                                    <option value="finished" {% if form.instance.status == 'finished' %}selected{% endif %}>Finalizado</option>
+                                </select>
+                            </div>
+
 
                             <div>
                                 <button type="submit" class="btn btn-primary">
