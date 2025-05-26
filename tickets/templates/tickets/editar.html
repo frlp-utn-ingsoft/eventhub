@@ -139,8 +139,9 @@
             btn.addEventListener('click', function() {
                 const inputId = this.getAttribute('data-target');
                 const input = document.getElementById(inputId);
-                if (parseInt(input.value) < 4) { 
+                if (parseInt(input.value) < 4) { // Limitar a un máximo de 4 entradas
                     input.value = parseInt(input.value) + 1;
+                }
             });
         });
 
