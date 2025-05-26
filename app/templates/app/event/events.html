@@ -19,18 +19,43 @@
     
     <nav class="navbar navbar-light bg-light">
         <form class="d-flex align-items-center gap-2" action="{% url 'event_filter' %}" method="GET">
-            {% csrf_token %}
-            <input class="form-control" name="search" type="text" placeholder="Busca un evento..." aria-label="Search" >
-            <button class="btn btn-outline-primary" type="submit" name="filter" value="all" >
-                Buscar
-            </button>
-            {% if user_is_organizer %}
-                <button class="btn {% if my_events %}btn-primary{% else %}btn-outline-primary{% endif %} flex-shrink-0" type="submit" name="filter" value="my_events">
-                    Mis eventos
-                </button>
-            {% endif %}
+          <input class="form-control" name="search" type="text" placeholder="Buscar eventos..." aria-label="Search"
+            value="{{ request.GET.search }}">
+          <button class="btn btn-outline-primary" type="submit">Buscar</button>
+          
+          <div class="dropdown">
+            <a class="btn btn-outline-secondary dropdown-toggle d-flex align-items-center" href="#" id="filtersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="bi bi-filter me-1 "></i> Filtros
+            </a>
+      
+            <div class="dropdown-menu dropdown-menu-end p-3" aria-labelledby="filtersDropdown" style="min-width: 200px;" onclick="event.stopPropagation();">
+              {% if user_is_organizer %}
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="my_events" id="my_events"
+                {% if request.GET.my_events %}checked{% endif %}>
+                <label class="form-check-label" for="my_events">Mis eventos</label>
+              </div>
+              {% endif %}
+              <div class="form-check d-flex align-items-center gap-2">
+                <input class="form-check-input" type="checkbox" name="past_events" id="past_events"
+                {% if request.GET.past_events %}checked{% endif %}>
+                <label class="form-check-label" for="past_events">Incluir eventos pasados</label>
+              </div>
+              {% comment %} TO DO: filtro de eventos disponibles
+              <div class="form-check">
+                <input class="form-check-input" type="checkbox" name="available_events" id="available_events"
+                {% if request.GET.available_events %}checked{% endif %}>
+                <label class="form-check-label" for="available_events">Eventos disponibles</label>
+              </div> 
+              {% endcomment %}
+              <div class="mt-3 d-grid">
+                <button class="btn btn-primary btn-sm" type="submit" id="apply_filters">Aplicar filtros</button>
+              </div>
+            </div>
+          </div>
+      
         </form>
-    </nav>
+      </nav>
 
     <table class="table">
         <thead>

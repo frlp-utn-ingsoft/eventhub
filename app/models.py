@@ -40,7 +40,7 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
-    
+
     @classmethod
     def validate(cls, name, description, is_active):
         errors = {}
@@ -76,21 +76,20 @@ class Category(models.Model):
         self.is_active = is_active or self.is_active
         self.save()
 
+
 class Venue(models.Model):
     name = models.CharField(max_length=200)
     address = models.CharField(max_length=200)
     city = models.CharField(max_length=200)
     capacity = models.IntegerField(blank=True, null=True)
-    user = models.ForeignKey(User,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='venues')
+    user = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True, related_name="venues"
+    )
     contact = models.CharField(max_length=200)
 
     def __str__(self):
         return self.name
-    
+
     @classmethod
     def validate(cls, name, address, city, capacity, contact):
         errors = {}
@@ -103,7 +102,7 @@ class Venue(models.Model):
 
         if city == "":
             errors["city"] = "La ciudad del lugar es requerida"
-        
+
         if capacity is not None and not isinstance(capacity, int):
             errors["capacity"] = "La capacidad del lugar debe ser numérica"
 
@@ -128,7 +127,7 @@ class Venue(models.Model):
         )
         return True, new_venue
 
-    def update(self, name, address, city, capacity, contact, user): # TO DO: validate this
+    def update(self, name, address, city, capacity, contact, user):  # TO DO: validate this
         self.name = name or self.name
         self.address = address or self.address
         self.city = city or self.city
@@ -142,21 +141,16 @@ class Venue(models.Model):
     def get_venues_by_user(cls, user):
         return cls.objects.filter(user=user)
 
+
 class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
-    categories = models.ManyToManyField(
-        Category,
-        blank=True,
-        related_name='events'
+    categories = models.ManyToManyField(Category, blank=True, related_name="events")
+    venue = models.ForeignKey(
+        Venue, on_delete=models.SET_NULL, null=True, blank=True, related_name="events"
     )
-    venue = models.ForeignKey(Venue,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='events')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -164,12 +158,13 @@ class Event(models.Model):
         return self.title
 
     @classmethod
-    def validate(cls, 
-        title, 
-        description, 
-        scheduled_at, 
+    def validate(
+        cls,
+        title,
+        description,
+        scheduled_at,
         categories: Optional[Union[List[Category], QuerySet]] = [],
-        venue: Optional[Venue] = None
+        venue: Optional[Venue] = None,
     ):
         errors = {}
         if title == "":
@@ -178,32 +173,37 @@ class Event(models.Model):
         if categories and len(categories) > 0:
             for category in categories:
                 if isinstance(category, Category):
-                    errs = Category.validate(category.name, category.description, category.is_active)
+                    errs = Category.validate(
+                        category.name, category.description, category.is_active
+                    )
                     if errs:
                         errors["categories"] = errs
                 else:
                     errors["categories"] = "Las categorías deben ser instancias válidas de Category"
-        
+
         if venue:
-            err = Venue.validate(venue.name, venue.address, venue.city, venue.capacity, venue.contact)
+            err = Venue.validate(
+                venue.name, venue.address, venue.city, venue.capacity, venue.contact
+            )
             if err:
                 errors["venue"] = err
 
         if description == "":
             errors["description"] = "Por favor ingrese una descripcion"
 
-        if(not is_valid_date(scheduled_at)):
+        if not is_valid_date(scheduled_at):
             errors["scheduled_at"] = "Por favor ingrese una fecha valida"
         return errors
 
     @classmethod
-    def new(cls, 
-        title, 
-        description, 
-        scheduled_at, 
+    def new(
+        cls,
+        title,
+        description,
+        scheduled_at,
         organizer,
         categories: Optional[Union[List[Category], QuerySet]] = [],
-        venue: Optional[Venue] = None
+        venue: Optional[Venue] = None,
     ):
         errors = Event.validate(title, description, scheduled_at, categories, venue)
 
@@ -219,11 +219,12 @@ class Event(models.Model):
         if categories is not None:
             event.categories.set(categories)
         return True, None
-    
-    def update(self, 
-        title, 
-        description, 
-        scheduled_at, 
+
+    def update(
+        self,
+        title,
+        description,
+        scheduled_at,
         organizer,
         categories: Optional[Union[List[Category], QuerySet]] = None,
         venue: Optional[Venue] = None,
@@ -242,6 +243,7 @@ class Event(models.Model):
 
         self.save()
 
+
 class Refund(models.Model):
     approved = models.BooleanField(default=None, null=True, blank=True)
     aproval_date = models.DateTimeField(null=True, blank=True)
@@ -249,18 +251,22 @@ class Refund(models.Model):
     reason = models.CharField(max_length=200)
     created_at = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="refunded_tickets")
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, null=True, blank=True, related_name="refunded_tickets")
-    
+    event = models.ForeignKey(
+        Event, on_delete=models.CASCADE, null=True, blank=True, related_name="refunded_tickets"
+    )
+
     class Meta:
         unique_together = ("ticket_code", "user")
 
-    def __str__(self): return self.ticket_code
-    
+    def __str__(self):
+        return self.ticket_code
+
+
 class Comment(models.Model):
     # Estas variables son de relacion
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comments")
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="comments")
-    
+
     # Estas variables son de contenido que pidio el profesor
     title = models.CharField(max_length=200)
     text = models.TextField()
@@ -269,31 +275,32 @@ class Comment(models.Model):
     def __str__(self):
         return f"{self.user.username} - {self.event.title}"
 
+
 class Rating(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
-    title=models.CharField(max_length=300)
-    text=models.TextField()
-    rating=models.IntegerField()
-    created_at=models.DateTimeField(auto_now_add=True)
-    
-    def __str__(self):
-        return f'{self.title} {self.text}({self.rating})'
+    title = models.CharField(max_length=300)
+    text = models.TextField()
+    rating = models.IntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
 
-    
+    def __str__(self):
+        return f"{self.title} {self.text}({self.rating})"
+
+
 class Ticket(models.Model):
     TICKET_TYPES = [
         ("GENERAL", "General"),
-        ("VIP",     "VIP"),
+        ("VIP", "VIP"),
     ]
-    
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="tickets")
     event = models.ForeignKey("app.Event", on_delete=models.CASCADE, related_name="tickets")
-    
-    buy_date    = models.DateField(auto_now_add=True)
+
+    buy_date = models.DateField(auto_now_add=True)
     ticket_code = models.CharField(max_length=12, unique=True, editable=False)
-    quantity    = models.PositiveIntegerField()
-    type        = models.CharField(max_length=10, choices=TICKET_TYPES)
+    quantity = models.PositiveIntegerField()
+    type = models.CharField(max_length=10, choices=TICKET_TYPES)
 
     def save(self, *args, **kwargs):
         if not self.ticket_code:
@@ -318,17 +325,12 @@ class Ticket(models.Model):
         errors = cls.validate(user, event, quantity, ticket_type)
         if errors:
             return False, errors
-        ticket = cls.objects.create(
-            user=user,
-            event=event,
-            quantity=quantity,
-            type=ticket_type
-        )
+        ticket = cls.objects.create(user=user, event=event, quantity=quantity, type=ticket_type)
         return True, ticket
 
     def update(self, quantity=None, ticket_type=None):
         # Si no se pasa un parámetro, se mantiene el valor actual
-        new_qty  = quantity    if quantity is not None    else self.quantity
+        new_qty = quantity if quantity is not None else self.quantity
         new_type = ticket_type if ticket_type is not None else self.type
 
         errors = self.validate(self.user, self.event, new_qty, new_type)
@@ -336,22 +338,23 @@ class Ticket(models.Model):
             return False, errors
 
         self.quantity = new_qty
-        self.type     = new_type
+        self.type = new_type
         self.save()
         return True, None
-    
-class Notification(models.Model):
-    title=models.CharField(max_length=200)
-    massage=models.TextField()
-    created_at=models.DateTimeField(auto_now_add=True)
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='notifications')
-    addressee=models.ManyToManyField(User)
 
-    prioridadOpciones=[    
-        ('High', 'HIGH'),
-        ('Medium', 'MEDIUM'),
-        ('Low', 'LOW'),
-        ]
-    
-    Priority=models.CharField(choices=prioridadOpciones, default='Medium')
-    is_read=models.BooleanField(default=False)
+
+class Notification(models.Model):
+    title = models.CharField(max_length=200)
+    massage = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="notifications")
+    addressee = models.ManyToManyField(User)
+
+    prioridadOpciones = [
+        ("High", "HIGH"),
+        ("Medium", "MEDIUM"),
+        ("Low", "LOW"),
+    ]
+
+    Priority = models.CharField(choices=prioridadOpciones, default="Medium")
+    is_read = models.BooleanField(default=False)
