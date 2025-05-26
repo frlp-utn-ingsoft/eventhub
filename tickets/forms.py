@@ -56,6 +56,12 @@ class TicketUpdateForm(forms.ModelForm):
         model = Ticket
         fields = ['type', 'quantity']
 
+    def __init__(self, *args, user=None, event=None, ticket_instance=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+        self.event = event
+        self.ticket_instance = ticket_instance
+
     def clean(self):
         cleaned_data = super().clean()
         quantity = cleaned_data.get('quantity')
@@ -65,5 +71,22 @@ class TicketUpdateForm(forms.ModelForm):
                 raise forms.ValidationError('La cantidad debe ser mayor a 0.')
             if quantity > 4:
                 raise forms.ValidationError('No se pueden tener más de 4 tickets.')
+
+            # Validar límite total por evento
+            user = self.user
+            event = self.event
+            ticket_instance = self.ticket_instance
+
+            if user and event and ticket_instance:
+                entradas_actuales = sum(
+                    ticket.quantity for ticket in Ticket.objects.filter(user=user, event=event)
+                    if ticket.id != ticket_instance.id # type: ignore
+                )
+                total_entradas = entradas_actuales + quantity
+
+                if total_entradas > 4:
+                    raise forms.ValidationError(
+                        f'Con esta cantidad tendrías {total_entradas} entradas en total. No puedes superar las 4 por evento.'
+                    )
         
         return cleaned_data

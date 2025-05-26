@@ -106,16 +106,18 @@ def actualizacion(request, id):
                         cantidad = request.POST.get(f'cantidad_{index}', 1)
                         tipo_entrada = request.POST.get(f'tipoEntrada_{index}', 'GENERAL')
                         
+                        #obtenes el ticket que se está editando
+                        ticket = get_object_or_404(Ticket, id=ticket_id, user=request.user)
+                        
                         # Validar con form antes de actualizar
                         form_data = {
                             'type': tipo_entrada,
                             'quantity': cantidad
                         }
-                        form = TicketUpdateForm(form_data)
+                        form = TicketUpdateForm(form_data, user=request.user, event=event, ticket_instance=ticket)
                         
                         if form.is_valid():
                             #actualizo
-                            ticket = get_object_or_404(Ticket, id=ticket_id, user=request.user)
                             ticket.quantity = form.cleaned_data['quantity']
                             ticket.type = form.cleaned_data['type']
                             ticket.save()
