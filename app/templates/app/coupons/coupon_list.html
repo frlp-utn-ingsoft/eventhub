@@ -4,7 +4,7 @@
     <h2>Cupones para "{{ event.title }}"</h2>
 
     <a href="{% url 'coupon_form' event.id %}" class="btn btn-success mb-3">Crear nuevo cupón</a>
-
+    
     {% if coupons %}
         <table class="table table-bordered">
            <thead>

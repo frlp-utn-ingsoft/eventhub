@@ -426,12 +426,23 @@ def event_form(request, id=None):
 
     return render(request, 'app/event_form.html', context)
 ########################################################################################
+from django.http import Http404
+
+@organizer_required
 @login_required
 def coupon_list(request, event_id):
-    event = get_object_or_404(Event, id=event_id, organizer=request.user)
+    try:
+        event = Event.objects.get(id=event_id)
+    except Event.DoesNotExist:
+        raise Http404("Evento no encontrado")
+
+    # Validar que el usuario sea organizador
+    if event.organizer != request.user:
+        return render(request, 'app/access_denied.html', status=403)  # O mostrar mensaje personalizado
+
     coupons = event.coupons.all().order_by('-created_at')
     active_coupons_count = coupons.filter(active=True).count()
-    
+
     context = {
         'event': event,
         'coupons': coupons,
@@ -440,6 +451,8 @@ def coupon_list(request, event_id):
     return render(request, "app/coupons/coupon_list.html", context)
 
 
+
+@organizer_required
 @login_required
 def coupon_form(request, event_id):
     event = get_object_or_404(Event, id=event_id, organizer=request.user)
@@ -449,12 +462,12 @@ def coupon_form(request, event_id):
         expiration_str = request.POST.get("expiration_date", "").strip()
 
         try:
-            # Validar descuento
+          
             discount = int(discount_str)
             if not 1 <= discount <= 100:
                 raise ValueError("El porcentaje debe estar entre 1 y 100.")
 
-            # Validar y convertir fecha
+         
             if not expiration_str:
                 raise ValueError("La fecha de expiración es obligatoria.")
 
@@ -495,14 +508,14 @@ def coupon_edit(request, event_id, coupon_id):
         active_str = request.POST.get("active", "").strip()
         
         try:
-            # Validar discount_percentage
+            
             discount = int(discount_str)
             if not 1 <= discount <= 100:
                 raise ValueError("El porcentaje debe estar entre 1 y 100.")
             
-            # Actualizar campos del modelo
+            
             coupon.discount_percent = discount
-            # Manejar el campo active (checkbox)
+            
             coupon.active = active_str == 'on' or active_str == '1' or active_str == 'true'
             coupon.save()
             
@@ -523,12 +536,44 @@ def coupon_delete(request, event_id, coupon_id):
     coupon = get_object_or_404(Coupon, id=coupon_id, event=event)
 
     if request.method == "POST":
-        coupon_code = coupon.code  # Guardar para el mensaje
+        coupon_code = coupon.code 
         coupon.delete()
         messages.success(request, f"Cupón {coupon_code} eliminado correctamente.")
         return redirect("coupon_list", event_id=event.id)
 
     return render(request, "app/coupons/coupon_delete.html", {"event": event, "coupon": coupon})
+@csrf_exempt
+def validar_cupon(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            codigo = data.get("codigo", "").strip().upper()
+
+            now = timezone.now()
+            cupón = Coupon.objects.filter(
+                code=codigo,
+                active=True,
+                expiration_date__gte=now
+            ).first()
+
+            if cupón:
+                return JsonResponse({
+                    "valido": True,
+                    "descuento": float(cupón.discount_percent)
+                })
+            else:
+                return JsonResponse({
+                    "valido": False,
+                    "error": "Cupón inválido, expirado o no activo."
+                })
+
+        except Exception as e:
+            return JsonResponse({
+                "valido": False,
+                "error": "Error al procesar la solicitud."
+            }, status=400)
+
+    return JsonResponse({"error": "Método no permitido"}, status=405)
 ##################################################################################
 @login_required
 def notifications(request):
@@ -675,39 +720,6 @@ def comment_edit(request, comment_id):
         "comment": comment,
         "next_url": next_url
     })
-    
-@csrf_exempt
-def validar_cupon(request):
-    if request.method == "POST":
-        try:
-            data = json.loads(request.body)
-            codigo = data.get("codigo", "").strip().upper()
-
-            now = timezone.now()
-            cupón = Coupon.objects.filter(
-                code=codigo,
-                active=True,
-                expiration_date__gte=now
-            ).first()
-
-            if cupón:
-                return JsonResponse({
-                    "valido": True,
-                    "descuento": float(cupón.discount_percent)
-                })
-            else:
-                return JsonResponse({
-                    "valido": False,
-                    "error": "Cupón inválido, expirado o no activo."
-                })
-
-        except Exception as e:
-            return JsonResponse({
-                "valido": False,
-                "error": "Error al procesar la solicitud."
-            }, status=400)
-
-    return JsonResponse({"error": "Método no permitido"}, status=405)
 
 
 @login_required
@@ -762,6 +774,9 @@ def buy_ticket(request, event_id):
                 ticket.coupon_code = applied_coupon.code if applied_coupon else None  # si tienes este campo
                 ticket.save()
                 messages.success(request, f'¡Ticket comprado con éxito! Tu código es: {ticket.ticket_code}')
+                if applied_coupon:
+                    applied_coupon.active = False
+                    applied_coupon.save()
                 return redirect('ticket_detail', ticket_id=ticket.id)
     else:
         form = TicketForm()

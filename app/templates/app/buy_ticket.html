@@ -34,7 +34,6 @@
                     </div>
                 </div>
 
-                <!-- NUEVO: Código de cupón -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
                         
@@ -50,7 +49,6 @@
                     </div>
                 </div>
 
-                <!-- NUEVO: Previsualización de costos -->
                 <div class="row mt-3">
                     <div class="col-md-12">
                         <h6>Resumen:</h6>
@@ -113,11 +111,11 @@
     </form>
 
     <script>
-    // Precio base y datos del backend (se inicializan con valores desde Django)
+   
     const precioBase = parseFloat("{{ event.price|default:0|floatformat:2|safe }}".replace(",", "."));
     const eventoGratis = precioBase <= 0;
     
-    // Variable global para descuento que se actualizará cuando valides el cupón
+   
     window.descuentoBackend = parseFloat("{{ discount_amount|default:0|floatformat:2|safe }}".replace(",", ".")) || 0;
 
     function calcularTotal() {
@@ -128,7 +126,6 @@
         let subtotal = precioBase * cantidad;
         let descuento = 0;
 
-        // Aplico recargo VIP del 30%
         if (tipo.toLowerCase() === 'vip') {
             subtotal *= 1.3;
         }
@@ -137,7 +134,7 @@
             subtotal = 0;
             descuento = 0;
         } else {
-            // Aplico descuento solo si hay cupón válido y descuentoBackend > 0
+          
             if (cupon && window.descuentoBackend > 0) {
                 descuento = subtotal * (window.descuentoBackend / 100);
             }
@@ -145,18 +142,18 @@
 
         const total = subtotal - descuento;
 
-        // Muestro valores en pantalla con 2 decimales
+    
         document.getElementById('subtotal').innerText = subtotal.toFixed(2);
         document.getElementById('descuento').innerText = descuento.toFixed(2);
         document.getElementById('total').innerText = total.toFixed(2);
     }
 
     document.addEventListener("DOMContentLoaded", function () {
-        // Listeners para recalcular cuando cambian cantidad, tipo o cupón
+        
         document.getElementById("id_quantity").addEventListener("input", calcularTotal);
         document.getElementById("id_type").addEventListener("change", calcularTotal);
         document.getElementById("coupon_code")?.addEventListener("input", () => {
-            // Reseteo descuento al borrar cupón
+            
             if (!document.getElementById('coupon_code').value.trim()) {
                 window.descuentoBackend = 0;
                 calcularTotal();
@@ -165,7 +162,7 @@
             }
         });
 
-        // Validar cupón con botón
+       
         document.getElementById("validateCoupon").addEventListener("click", function () {
             const cuponInput = document.getElementById("coupon_code");
             const codigo = cuponInput.value.trim();
@@ -215,7 +212,6 @@
             });
         });
 
-        // Botón comprar: validar cantidad mínima
         document.getElementById("buyButton").addEventListener("click", function (e) {
             const quantityInput = document.getElementById("id_quantity");
             const quantity = parseInt(quantityInput.value);
@@ -227,7 +223,7 @@
             }
         });
 
-        // Calculo inicial
+     
         calcularTotal();
     });
 </script>
