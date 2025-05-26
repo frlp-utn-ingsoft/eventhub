@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load rating_average %}
 
 {% block content %}
 <div class="container">
@@ -18,7 +19,23 @@
     </div>
     <div class="row">
         <div class="card mb-4">
-            <div class="card-body">
+            <div class="card-body position-relative">
+                {% if user_is_organizer %}
+                    {% average_rating event as avg_rating %}
+                    <div class="position-absolute top-0 end-0 m-3 text-end">
+                        <div class="bg-light border rounded p-3 shadow-sm">
+                            <h6 class="mb-1 text-muted">Promedio de Calificación</h6>
+                            {% if avg_rating %}
+                                <p class="mb-0">
+                                    <span class="fs-1 fw-bold text-primary">{{ avg_rating }}</span>
+                                    <span class="fs-5 text-primary">/ 5</span>
+                                </p>
+                            {% else %}
+                                <p class="mb-0 fst-italic text-muted">Este evento aún no ha sido calificado.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
                 <h5 class="card-title">Detalles del Evento</h5>
                 <p class="card-text">{{ event.description }}</p>
                 <div class="mt-4">
