@@ -301,14 +301,16 @@ class Ticket(models.Model):
         if not event:
             errors["event"] = "Evento es requerido"
 
-        if quantity is None:
+        if quantity is None or "":
             errors["quantity"] = "La cantidad es requerida"
-        elif not isinstance(quantity, int) or isinstance(quantity, bool):
+        elif not isinstance(quantity, int):
             errors["quantity"] = "La cantidad debe ser un número entero válido"
         elif user.available_tickets_to_buy(event) == 0:
             errors["quantity"] = "Ya has alcanzado el límite de entradas que puedes comprar para este evento."
         elif quantity < 1:
             errors["quantity"] = "La cantidad debe ser al menos 1"
+        elif quantity > 4:
+            errors["quantity"] = "Puedes comprar 4 lugares como máximo."
         
         valid_types = [choice[0] for choice in cls.TICKETS_TYPE_CHOICES]
         if not type or type not in valid_types:
