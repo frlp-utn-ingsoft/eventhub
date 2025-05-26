@@ -71,7 +71,7 @@ def event_form(request, id=None):
         venue = get_object_or_404(Venue, pk=venue_id) if venue_id else None
         
         if event_id is None:
-            Event.new(title, description, scheduled_at, request.user, categories, venue)
+            Event.new(title, categories, venue, description, scheduled_at, request.user)
         else:
             event = get_object_or_404(Event, pk=event_id)
             if user != event.organizer:

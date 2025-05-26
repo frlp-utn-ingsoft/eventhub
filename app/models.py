@@ -1,6 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.db.models import QuerySet, Sum
+from django.db.models import Sum
 from django.utils.crypto import get_random_string
 
 

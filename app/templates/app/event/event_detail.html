@@ -27,28 +27,32 @@
                         <i class="bi bi-ticket-perforated me-2"></i>Gestionar entradas
                     </a>
                     {% if event.status != 'canceled' and event.status != 'CANCELED' and event.status != 'finished' and event.status != 'FINISHED' and event.status != 'soldout' and event.status != 'SOLDOUT' %}
-                    <a
-                        href="{% url 'event_edit' event.id %}"
-                        class="btn btn-outline-primary me-2"
-                    >
-                        <i class="bi bi-pencil me-1"></i>Editar
-                    </a>
-                    <form method="post" action="" style="display:inline;" onsubmit="return confirm('¿Seguro que deseas cancelar este evento?');">
-                        {% csrf_token %}
-                        <input type="hidden" name="id" value="{{ event.id }}">
-                        <input type="hidden" name="cancel_event" value="1">
-                        <button type="submit" class="btn btn-danger ms-2">
-                            <i class="bi bi-x-circle me-1"></i>Cancelar
-                        </button>
-                    </form>
-                    <form method="post" action="" style="display:inline;" onsubmit="return confirm('¿Seguro que deseas finalizar este evento?');">
-                        {% csrf_token %}
-                        <input type="hidden" name="id" value="{{ event.id }}">
-                        <input type="hidden" name="finish_event" value="1">
-                        <button type="submit" class="btn btn-warning ms-2 text-dark fw-bold" style="background-color: #ff9800; border-color: #ff9800;">
-                            <i class="bi bi-flag me-1"></i>Finalizar
-                        </button>
-                    </form>
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <!-- Botón de Finalizar -->
+                        <form method="post" action="" onsubmit="return confirm('¿Seguro que deseas finalizar este evento?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="id" value="{{ event.id }}">
+                            <input type="hidden" name="finish_event" value="1">
+                            <button type="submit" class="btn btn-warning text-dark fw-bold me-2">
+                                <i class="bi bi-flag me-1"></i> Finalizar
+                            </button>
+                        </form>
+
+                        <!-- Botón de Cancelar -->
+                        <form method="post" action="" onsubmit="return confirm('¿Seguro que deseas cancelar este evento?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="id" value="{{ event.id }}">
+                            <input type="hidden" name="cancel_event" value="1">
+                            <button type="submit" class="btn btn-danger me-2">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </button>
+                        </form>
+
+                        <!-- Botón de Editar -->
+                        <a href="{% url 'event_edit' event.id %}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil me-1"></i> Editar
+                        </a>
+                    </div>
                     {% endif %}
                 {% else %}
                     <a href="{% url 'ticket_create' event.id %}" class="btn btn-primary">
