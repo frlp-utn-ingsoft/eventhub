@@ -7,52 +7,101 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Eventos</h1>
         {% if user_is_organizer %}
-            <a
-                href="{% url 'event_form' %}"
-                class="btn btn-primary"
-            >
+            <a href="{% url 'event_form' %}" class="btn btn-primary">
                 <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
                 Crear Evento
             </a>
         {% endif %}
     </div>
-    <table class="table">
+
+    <form method="get" class="row align-items-end mb-4 gx-2 gy-2">
+        
+
+        <div class="col-md-auto">
+            <label for="venue" class="form-label">Ubicación</label>
+            <select id="venue" name="venue" class="form-select">
+                <option value="">Todas</option>
+                {% for venue in venues %}
+                    <option value="{{ venue.id }}" {% if request.GET.venue == venue.id|stringformat:"s" %}selected{% endif %}>
+                        {{ venue.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-4">
+            <label for="categoria" class="form-label">Categoría</label>
+            <select name="categoria" id="categoria" class="form-select">
+                <option value="">Todas</option>
+                {% for categoria in categorias %}
+                    <option value="{{ categoria.id }}" {% if request.GET.categoria == categoria.id|stringformat:"s" %}selected{% endif %}>
+                        {{ categoria.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div class="col-md-auto">
+            <label for="fecha" class="form-label">Fecha</label>
+            <input type="date" class="form-control" id="fecha" name="fecha" value="{{ request.GET.fecha }}">
+        </div>
+
+        <div class="col-md-auto d-flex gap-2">
+            <button type="submit" class="btn btn-outline-primary rounded-circle d-flex align-items-center justify-content-center mt-4"
+                style="width: 40px; height: 40px;" title="Buscar">
+                🔍
+            </button>
+            <a href="{% url 'events' %}" class="btn btn-outline-danger rounded-circle d-flex align-items-center justify-content-center mt-4"
+                style="width: 40px; height: 40px;" title="Limpiar filtros">
+                ❌
+            </a>
+        </div>
+    </form>
+
+    <h5 class="mt-5 mb-4">Lista de Eventos</h5>
+    <table class="table mt-2">
         <thead>
             <tr>
                 <th>Título</th>
                 <th>Descripción</th>
                 <th>Fecha</th>
+                <th>Ubicación</th>
+                <th>Organizador</th>
+                <th>Categorías</th>  
                 <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
-            {% for event in events%}
+            {% for event in events %}
                 <tr>
                     <td>{{ event.title }}</td>
                     <td>{{ event.description }}</td>
                     <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
+                    <td>{{ event.venue.name }}</td>
+                    <td>{{ event.organizer }}</td>
+                    <td>
+                        {% for category in event.categories.all %}
+                            <span class="badge bg-light text-dark me-1">{{ category.name }}</span>
+                        {% empty %}
+                            <span class="text-muted">Sin categorías</span>
+                        {% endfor %}
+                    </td>
                     <td>
                         <div class="hstack gap-1">
-                            <a href="{% url 'event_detail' event.id %}"
-                               class="btn btn-sm btn-outline-primary"
-                               aria-label="Ver detalle"
-                               title="Ver detalle">
+                            <a href="{% url 'event_detail' event.id %}" class="btn btn-sm btn-outline-primary"
+                                aria-label="Ver detalle" title="Ver detalle">
                                 <i class="bi bi-eye" aria-hidden="true"></i>
                             </a>
                             {% if user_is_organizer %}
-                                <a href="{% url 'event_edit' event.id %}"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    aria-label="Editar"
-                                    title="Editar">
+                                <a href="{% url 'event_edit' event.id %}" class="btn btn-sm btn-outline-secondary"
+                                    aria-label="Editar" title="Editar">
                                     <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
-                                <form action="{% url 'event_delete' event.id %}" method="POST">
+                                <form action="{% url 'event_delete' event.id %}" method="POST" style="display:inline;"
+                                      onsubmit="return confirm('¿Estás segura de que querés eliminar este evento?');">
                                     {% csrf_token %}
-                                    <button class="btn btn-sm btn-outline-danger"
-                                        title="Eliminar"
-                                        type="submit"
-                                        aria-label="Eliminar"
-                                        titile="Eliminar">
+                                    <button class="btn btn-sm btn-outline-danger" title="Eliminar" type="submit"
+                                        aria-label="Eliminar">
                                         <i class="bi bi-trash" aria-hidden="true"></i>
                                     </button>
                                 </form>
@@ -62,7 +111,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center">No hay eventos disponibles</td>
+                    <td colspan="7" class="text-center">No hay eventos disponibles</td>
                 </tr>
             {% endfor %}
         </tbody>

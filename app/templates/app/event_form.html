@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
 {% block content %}
 <div class="container mt-5">
@@ -12,53 +12,226 @@
                 {% endif %}
             </h1>
 
+            {% if error %}
+                <div class="alert alert-danger">{{ error }}</div>
+            {% endif %}
+
+            {% if not venues %}
+                <div class="alert alert-warning d-flex justify-content-between align-items-center">
+                    <span>No hay ubicaciones disponibles. Por favor, crea una primero.</span>
+                    <a class="btn btn-sm btn-secondary" href="{% url 'create_venue' %}">Crear lugar</a>
+                </div>
+            {% endif %}
+
             <div class="card">
                 <div class="card-body">
-                    <form action="{% url 'event_form' %}" method="POST">
+                    <form id="eventForm" action="{% if event.id %}{% url 'event_edit' id=event.id %}{% else %}{% url 'event_form' %}{% endif %}" method="POST">
                         {% csrf_token %}
                         <div class="vstack gap-3">
+
                             <div>
-                                <label for="title" class="form-label">Título del Evento</label>
-                                <input class="form-control"
-                                    id="title"
-                                    required=""
+                                <label for="id_title" class="form-label">Título del Evento</label>
+                                <input class="form-control {% if form.title.errors %}is-invalid{% endif %}"
+                                    id="id_title"
+                                    required
                                     type="text"
-                                    value="{{ event.title }}"
-                                    name="title" />
+                                    value="{{ form.title.value|default:'' }}"
+                                    name="title">
+                                {% if form.title.errors %}
+                                    <div class="invalid-feedback">{{ form.title.errors }}</div>
+                                {% endif %}
                             </div>
+
+
                             <div>
-                                <label for="description" class="form-label">Descripción</label>
+                                <label for="id_description" class="form-label">Descripción</label>
                                 <textarea
-                                    class="form-control"
-                                    id="description"
+                                    class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+                                    id="id_description"
                                     name="description"
                                     rows="4"
-                                    required="">{{ event.description }}</textarea>
+                                    required>{{ form.description.value|default:'' }}</textarea>
+                                {% if form.description.errors %}
+                                    <div class="invalid-feedback">{{ form.description.errors }}</div>
+                                {% endif %}
                             </div>
+
+
                             <div class="row">
                                 <div class="col-md-6">
-                                    <label for="date" class="form-label">Fecha</label>
+                                    <label for="id_scheduled_date" class="form-label">Fecha</label>
                                     <input
-                                        class="form-control"
-                                        id="date"
-                                        required=""
+                                        class="form-control {% if form.scheduled_date.errors %}is-invalid{% endif %}"
+                                        id="id_scheduled_date"
+                                        required
                                         type="date"
-                                        value="{{ event.scheduled_at|date:'Y-m-d'}}"
-                                        name="date" />
+                                        value="{{ form.scheduled_date.value|date:'Y-m-d'|default:'' }}"
+                                        name="scheduled_date">
+                                    {% if form.scheduled_date.errors %}
+                                        <div class="invalid-feedback">{{ form.scheduled_date.errors }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="time" class="form-label">Hora</label>
+                                    <label for="id_scheduled_time" class="form-label">Hora</label>
                                     <input
-                                        class="form-control"
-                                        id="time"
-                                        required=""
+                                        class="form-control {% if form.scheduled_time.errors %}is-invalid{% endif %}"
+                                        id="id_scheduled_time"
+                                        required
                                         type="time"
-                                        value="{{ event.scheduled_at|date:'g:i'}}"
-                                        name="time" />
+                                        value="{{ form.scheduled_time.value|time:'H:i'|default:'' }}"
+                                        name="scheduled_time">
+                                    {% if form.scheduled_time.errors %}
+                                        <div class="invalid-feedback">{{ form.scheduled_time.errors }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
+
+                            
                             <div>
-                                <button type="submit" class="btn btn-primary">Crear Evento</button>
+                                <label for="id_venue" class="form-label">Ubicación del evento</label>
+                                <select class="form-select {% if form.venue.errors %}is-invalid{% endif %}"
+                                        id="id_venue"
+                                        name="venue"
+                                        required {% if not venues %}disabled{% endif %}>
+                                    <option value="">Seleccionar lugar</option>
+                                    {% for venue in venues %}
+                                        <option value="{{ venue.id }}"
+                                            data-capacity="{{ venue.capacity }}"
+                                            {% if form.venue.value == venue.id %}selected{% endif %}>
+                                            {{ venue.name }} (Capacidad: {{ venue.capacity }} personas)
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {% if form.venue.errors %}
+                                    <div class="invalid-feedback">{{ form.venue.errors }}</div>
+                                {% endif %}
+                                <div id="venueCapacityInfo" class="form-text text-info mt-1" style="display: none;">
+                                    <i class="bi bi-info-circle"></i> Capacidad del lugar: <span id="capacityDisplay">0</span> personas
+                                </div>
+                            </div>
+
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="id_general_price" class="form-label">Precio General ($)</label>
+                                    <input
+                                        class="form-control {% if form.general_price.errors %}is-invalid{% endif %}"
+                                        id="id_general_price"
+                                        required
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value="{{ form.general_price.value|default:'0.00' }}"
+                                        name="general_price">
+                                    {% if form.general_price.errors %}
+                                        <div class="invalid-feedback">{{ form.general_price.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="id_vip_price" class="form-label">Precio VIP ($)</label>
+                                    <input
+                                        class="form-control {% if form.vip_price.errors %}is-invalid{% endif %}"
+                                        id="id_vip_price"
+                                        required
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value="{{ form.vip_price.value|default:'0.00' }}"
+                                        name="vip_price">
+                                    {% if form.vip_price.errors %}
+                                        <div class="invalid-feedback">{{ form.vip_price.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="id_general_tickets_total" class="form-label">Total de Tickets Generales</label>
+                                    <input
+                                        class="form-control {% if form.general_tickets_total.errors %}is-invalid{% endif %}"
+                                        id="id_general_tickets_total"
+                                        required
+                                        type="number"
+                                        min="0"
+                                        value="{{ form.general_tickets_total.value|default:'0' }}"
+                                        name="general_tickets_total">
+                                    {% if form.general_tickets_total.errors %}
+                                        <div class="invalid-feedback">{{ form.general_tickets_total.errors }}</div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="id_vip_tickets_total" class="form-label">Total de Tickets VIP</label>
+                                    <input
+                                        class="form-control {% if form.vip_tickets_total.errors %}is-invalid{% endif %}"
+                                        id="id_vip_tickets_total"
+                                        required
+                                        type="number"
+                                        min="0"
+                                        value="{{ form.vip_tickets_total.value|default:'0' }}"
+                                        name="vip_tickets_total">
+                                    {% if form.vip_tickets_total.errors %}
+                                        <div class="invalid-feedback">{{ form.vip_tickets_total.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+
+                            <div id="ticketSummary" class="card bg-light mb-3" style="display: none;">
+                                <div class="card-body">
+                                    <h5 class="card-title">Resumen de Tickets</h5>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <p class="mb-1">Tickets Generales: <span id="generalCount">0</span></p>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <p class="mb-1">Tickets VIP: <span id="vipCount">0</span></p>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <p class="mb-1 fw-bold">Total: <span id="totalCount">0</span> / <span id="maxCapacity">0</span></p>
+                                        </div>
+                                    </div>
+                                    <div class="progress mt-2">
+                                        <div id="capacityProgress" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                           <div class="mb-3">
+                                <label class="form-label">Categorías</label>
+                                <div class="row">
+                                    {% for cat in categories %}
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="categories" value="{{ cat.id }}"
+                                                    {% if cat in event.categories.all %}checked{% endif %}>
+                                                <label class="form-check-label">{{ cat.name }}</label>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger">
+                                    {% for error in form.non_field_errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+                            <div>
+                                <button type="submit" class="btn btn-primary" {% if not venues %}disabled{% endif %} id="submitButton">
+                                    {% if event.id %}
+                                        Guardar Cambios
+                                    {% else %}
+                                        Crear Evento
+                                    {% endif %}
+                                </button>
+                                <a href="{% url 'events' %}" class="btn btn-outline-secondary ms-2">
+                                    Cancelar
+                                </a>
                             </div>
                         </div>
                     </form>
@@ -67,4 +240,212 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const venueSelect = document.getElementById('id_venue');
+        const generalTicketsInput = document.getElementById('id_general_tickets_total');
+        const vipTicketsInput = document.getElementById('id_vip_tickets_total');
+        const venueCapacityInfo = document.getElementById('venueCapacityInfo');
+        const capacityDisplay = document.getElementById('capacityDisplay');
+        const ticketSummary = document.getElementById('ticketSummary');
+        const generalCount = document.getElementById('generalCount');
+        const vipCount = document.getElementById('vipCount');
+        const totalCount = document.getElementById('totalCount');
+        const maxCapacity = document.getElementById('maxCapacity');
+        const capacityProgress = document.getElementById('capacityProgress');
+        const submitButton = document.getElementById('submitButton');
+
+        let selectedVenueCapacity = 0;
+
+
+        function updateTicketCounters() {
+
+            if (!selectedVenueCapacity) {
+                ticketSummary.style.display = 'none';
+                return;
+            }
+
+            const generalTickets = parseInt(generalTicketsInput.value) || 0;
+            const vipTickets = parseInt(vipTicketsInput.value) || 0;
+            const totalTickets = generalTickets + vipTickets;
+
+
+            generalCount.textContent = generalTickets;
+            vipCount.textContent = vipTickets;
+            totalCount.textContent = totalTickets;
+            maxCapacity.textContent = selectedVenueCapacity;
+
+
+            const percentUsed = Math.min(100, Math.round((totalTickets / selectedVenueCapacity) * 100));
+            capacityProgress.style.width = percentUsed + '%';
+            capacityProgress.textContent = percentUsed + '%';
+
+
+            if (percentUsed < 70) {
+                capacityProgress.classList.remove('bg-warning', 'bg-danger');
+                capacityProgress.classList.add('bg-success');
+            } else if (percentUsed < 90) {
+                capacityProgress.classList.remove('bg-success', 'bg-danger');
+                capacityProgress.classList.add('bg-warning');
+            } else {
+                capacityProgress.classList.remove('bg-success', 'bg-warning');
+                capacityProgress.classList.add('bg-danger');
+            }
+
+
+            ticketSummary.style.display = 'block';
+
+
+            validateCapacity(totalTickets);
+        }
+
+
+        function validateCapacity(totalTickets) {
+            const exceedsCapacity = totalTickets > selectedVenueCapacity;
+
+
+            if (exceedsCapacity) {
+                ticketSummary.classList.remove('bg-light');
+                ticketSummary.classList.add('bg-danger', 'text-white');
+                submitButton.disabled = true;
+
+
+                if (!document.getElementById('capacityWarning')) {
+                    const warning = document.createElement('div');
+                    warning.id = 'capacityWarning';
+                    warning.className = 'alert alert-danger mt-2';
+                    warning.innerHTML = `
+                        <strong>Error:</strong> El total de tickets (${totalTickets}) excede la capacidad
+                        del lugar (${selectedVenueCapacity}). Por favor, reduzca la cantidad de tickets.
+                    `;
+                    ticketSummary.appendChild(warning);
+                } else {
+
+                    document.getElementById('capacityWarning').innerHTML = `
+                        <strong>Error:</strong> El total de tickets (${totalTickets}) excede la capacidad
+                        del lugar (${selectedVenueCapacity}). Por favor, reduzca la cantidad de tickets.
+                    `;
+                }
+            } else {
+
+                ticketSummary.classList.remove('bg-danger', 'text-white');
+                ticketSummary.classList.add('bg-light');
+                submitButton.disabled = false;
+
+
+                const warning = document.getElementById('capacityWarning');
+                if (warning) {
+                    warning.remove();
+                }
+            }
+        }
+
+
+        venueSelect.addEventListener('change', function() {
+            const selectedOption = venueSelect.options[venueSelect.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                selectedVenueCapacity = parseInt(selectedOption.dataset.capacity) || 0;
+
+
+                capacityDisplay.textContent = selectedVenueCapacity;
+                venueCapacityInfo.style.display = 'block';
+
+
+                generalTicketsInput.setAttribute('max', selectedVenueCapacity);
+                vipTicketsInput.setAttribute('max', selectedVenueCapacity);
+
+
+                updateTicketCounters();
+            } else {
+
+                selectedVenueCapacity = 0;
+                venueCapacityInfo.style.display = 'none';
+                ticketSummary.style.display = 'none';
+            }
+        });
+
+
+        generalTicketsInput.addEventListener('input', updateTicketCounters);
+        vipTicketsInput.addEventListener('input', updateTicketCounters);
+
+
+        if (venueSelect.value) {
+            const selectedOption = venueSelect.options[venueSelect.selectedIndex];
+            if (selectedOption) {
+                selectedVenueCapacity = parseInt(selectedOption.dataset.capacity) || 0;
+                capacityDisplay.textContent = selectedVenueCapacity;
+                venueCapacityInfo.style.display = 'block';
+                updateTicketCounters();
+            }
+        }
+
+
+        document.getElementById('eventForm').addEventListener('submit', function(e) {
+            const generalTickets = parseInt(generalTicketsInput.value) || 0;
+            const vipTickets = parseInt(vipTicketsInput.value) || 0;
+            const totalTickets = generalTickets + vipTickets;
+
+            if (totalTickets > selectedVenueCapacity) {
+                e.preventDefault();
+                alert(`La cantidad total de tickets (${totalTickets}) excede la capacidad del lugar (${selectedVenueCapacity}).`);
+            }
+
+            if (totalTickets <= 0) {
+                e.preventDefault();
+                alert('Debe haber al menos un ticket disponible (general o VIP).');
+            }
+        });
+    });
+</script>
 {% endblock %}
+@login_required
+def edit_event(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+
+    if not request.user.is_organizer:
+        return redirect('events')
+
+    if request.method == 'POST':
+        form = EventForm(request.POST, request.FILES, instance=event)
+        if form.is_valid():
+            updated_event = form.save(commit=False)
+
+            scheduled_date = form.cleaned_data.get('scheduled_date')
+            scheduled_time = form.cleaned_data.get('scheduled_time')
+
+            if scheduled_date and scheduled_time:
+                combined_datetime = datetime.datetime.combine(scheduled_date, scheduled_time)
+                updated_event.scheduled_at = timezone.make_aware(combined_datetime)
+
+            general_diff = updated_event.general_tickets_total - event.general_tickets_total
+            vip_diff = updated_event.vip_tickets_total - event.vip_tickets_total
+
+            updated_event.general_tickets_available = event.general_tickets_available + general_diff
+            updated_event.vip_tickets_available = event.vip_tickets_available + vip_diff
+
+            updated_event.save()
+            form.save_m2m()
+            return redirect('event_detail', event_id=event.pk)
+    else:
+        initial_data = {
+            'title': event.title,
+            'description': event.description,
+            'general_price': event.general_price,
+            'vip_price': event.vip_price,
+            'general_tickets_total': event.general_tickets_total,
+            'vip_tickets_total': event.vip_tickets_total,
+            'scheduled_date': event.scheduled_at.date(),
+            'scheduled_time': event.scheduled_at.time()
+        }
+        form = EventForm(initial=initial_data, instance=event)
+
+    return render(
+        request,
+        "app/event_form.html",
+        {
+            "form": form,
+            "title": "Editar Evento",
+            "event": event,
+        },
+    )

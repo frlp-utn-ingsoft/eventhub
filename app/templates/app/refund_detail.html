@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-md-8 offset-md-2">
+      {% if request.user.is_organizer %}
+                <a href="{% url 'manage_refunds' %}" class="text-decoration-none text-secondary">
+                  <i class="bi bi-arrow-left"></i> Volver a Solicitudes de Reembolso
+                </a>
+            {% else %}
+                <a href="{% url 'my_refunds' %}" class="text-decoration-none text-secondary">
+                <i class="bi bi-arrow-left"></i>Volver a Mis Solicitudes de Reembolso</a>
+      {% endif %}
+      <div class="card">
+        <div class="card-header">
+          <h5>Detalle de Solicitud de Reembolso</h5>
+        </div>
+        <div class="card-body">
+          <ul class="list-group list-group-flush">
+            <li class="list-group-item">
+              <strong>Código del ticket:</strong> {{ ticket.ticket_code }}
+            </li>
+            <li class="list-group-item">
+              <strong>Evento:</strong> {{ event.title }}
+            </li>
+            <li class="list-group-item">
+              <strong>Fecha del evento:</strong> {{ event.scheduled_at|date:"d/m/Y H:i" }}
+            </li>
+            <li class="list-group-item">
+              <strong>Fecha de solicitud:</strong> {{ refund.created_at|date:"d/m/Y H:i" }}
+            </li>
+            <li class="list-group-item">
+              <strong>Motivo:</strong> {{ refund.get_reason_display }}
+            </li>
+            <li class="list-group-item">
+              <strong>Detalles:</strong> {{ refund.details|default:"(Sin detalles adicionales)" }}
+            </li>
+
+            {% if request.user.is_organizer %}
+            <li class="list-group-item">
+              <strong>Solicitante:</strong>
+              {{ refund.user.get_full_name|default:refund.user.username }}
+            </li>
+            {% endif %}
+
+            <li class="list-group-item">
+              <strong>Estado:</strong>
+              {% if refund.approved is None %}
+                <span class="badge bg-warning">Pendiente</span>
+              {% elif refund.approved %}
+                <span class="badge bg-success">Aprobado</span>
+              {% else %}
+                <span class="badge bg-danger">Rechazado</span>
+              {% endif %}
+            </li>
+          </ul>         
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
