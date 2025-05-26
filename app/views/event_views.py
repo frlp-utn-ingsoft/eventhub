@@ -135,11 +135,11 @@ def event_detail(request, id):
         if request.POST.get("cancel_event") == "1":
             event.update(event.title, list(event.categories.all()), event.venue, event.description, event.scheduled_at, event.organizer, status='canceled')
             messages.success(request, 'El evento ha sido cancelado.')
-            return redirect("events")
+            return redirect("event_detail", id=event.id)  # Redirige al detalle del evento
         if request.POST.get("finish_event") == "1":
             event.update(event.title, list(event.categories.all()), event.venue, event.description, event.scheduled_at, event.organizer, status='finished')
             messages.success(request, 'El evento ha sido finalizado.')
-            return redirect("events")
+            return redirect("event_detail", id=event.id)  # Redirige al detalle del evento
 
     # Llamar a la función `handle_rating` para manejar la calificación
     rating_saved = create_rating(request, event)

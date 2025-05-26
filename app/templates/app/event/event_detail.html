@@ -5,24 +5,12 @@
     <div class="row">
         <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex justify-content-center align-items-center my-4">
-                <h1 class="me-2 mb-0">{{ event.title }}
-                    {% if event.status == 'finished' or event.status == 'FINISHED' %}
-                        <span class="badge text-dark fw-bold align-middle ms-2" style="background-color: #ff9800;">Finalizado</span>
-                    {% elif event.status == 'canceled' or event.status == 'CANCELED' %}
-                        <span class="badge bg-danger align-middle ms-2">Cancelado</span>
-                    {% elif event.status == 'reprogramed' or event.status == 'REPROGRAMED' %}
-                        <span class="badge bg-warning text-dark align-middle ms-2">Reprogramado</span>
-                        {% if event.scheduled_at %}<span class="ms-1">({{ event.scheduled_at|date:"d b Y, H:i" }})</span>{% endif %}
-                    {% elif event.status == 'soldout' or event.status == 'SOLDOUT' %}
-                        <span class="badge bg-dark align-middle ms-2">Agotado</span>
-                    {% elif event.status == 'active' or event.status == 'ACTIVE' %}
-                        <span class="badge bg-success align-middle ms-2">Activo</span>
-                    {% endif %}
-                </h1>
+                <h1 class="me-2 mb-0">{{ event.title }}</h1>
+                <!-- Eliminé las etiquetas de estado del título -->
             </div>
             <div>
                 {% if user_is_organizer and request.user == event.organizer %}
-                {% comment %} Solo el usuario Organizador del evento puede jacerlo {% endcomment %}
+                {% comment %} Solo el usuario Organizador del evento puede hacerlo {% endcomment %}
                     <a href="{% url 'event_tickets' event.id %}" class="btn btn-primary">
                         <i class="bi bi-ticket-perforated me-2"></i>Gestionar entradas
                     </a>
@@ -33,7 +21,7 @@
                             {% csrf_token %}
                             <input type="hidden" name="id" value="{{ event.id }}">
                             <input type="hidden" name="finish_event" value="1">
-                            <button type="submit" class="btn btn-warning text-dark fw-bold me-2">
+                            <button type="submit" class="btn btn-warning text-dark fw-bold me-2" id="finish-event-button">
                                 <i class="bi bi-flag me-1"></i> Finalizar
                             </button>
                         </form>
@@ -43,7 +31,7 @@
                             {% csrf_token %}
                             <input type="hidden" name="id" value="{{ event.id }}">
                             <input type="hidden" name="cancel_event" value="1">
-                            <button type="submit" class="btn btn-danger me-2">
+                            <button type="submit" class="btn btn-danger me-2" id="cancel-event-button">
                                 <i class="bi bi-x-circle me-1"></i> Cancelar
                             </button>
                         </form>
@@ -62,7 +50,7 @@
             </div>
         </div>
     </div>
-    
+
     <div class="row">
         <div class="card">
             <div class="card-body">
@@ -94,6 +82,27 @@
                         <div>
                             <h6 class="mb-0">Organizador</h6>
                             <p class="mb-0">{{ event.organizer }}</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-info-circle text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Estado</h6>
+                            <p class="mb-0 event-status" id="event-status-display">
+                                {% if event.status == 'finished' or event.status == 'FINISHED' %}
+                                    Finalizado
+                                {% elif event.status == 'canceled' or event.status == 'CANCELED' %}
+                                    Cancelado
+                                {% elif event.status == 'reprogramed' or event.status == 'REPROGRAMED' %}
+                                    Reprogramado
+                                {% elif event.status == 'soldout' or event.status == 'SOLDOUT' %}
+                                    Agotado
+                                {% elif event.status == 'active' or event.status == 'ACTIVE' %}
+                                    Activo
+                                {% endif %}
+                            </p>
                         </div>
                     </div>
                     <div class="d-flex align-items-center mb-3">

@@ -21,13 +21,12 @@ class EventModelTest(TestCase):
             description="Descripción del evento de prueba",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
-            status="active",
         )
         """Test que verifica la creación correcta de eventos"""
         self.assertEqual(event.title, "Evento de prueba")
         self.assertEqual(event.description, "Descripción del evento de prueba")
         self.assertEqual(event.organizer, self.organizer)
-        self.assertEqual(event.status, "active")
+        self.assertEqual(event.status, "active") # Por default debe ser activo
         self.assertIsNotNone(event.created_at)
         self.assertIsNotNone(event.updated_at)
 
