@@ -22,11 +22,13 @@ class BaseEventTestCase(TestCase):
 
         #Creacion de venue para los eventos
         self.venue = Venue.objects.create(
-            name='Auditorio UTN',
-            address='Av. Siempreviva 742',
-            capacity=200
+            name="Auditorio Nacional",
+            address="60 y 124",
+            capacity=5000,
+            country="ARG",  
+            city="La Plata"
         )
-
+        
         # Crear un usuario regular
         self.regular_user = User.objects.create_user(
             username="regular",
@@ -206,14 +208,16 @@ class EventFormSubmissionTest(BaseEventTestCase):
             "description": "Descripción del nuevo evento",
             "date": "2025-05-01",
             "time": "14:30",
+            "venue":1
         }
-
         # Hacer petición POST a la vista event_form
         response = self.client.post(reverse("event_form"), event_data)
-
+        last_event = Event.objects.latest("id")
+    
         # Verificar que redirecciona a events
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("events")) 
+        url_pattern = f"/events/{last_event.pk}/"
+        self.assertEqual(response.url, url_pattern) 
 
         # Verificar que se creó el evento
         self.assertTrue(Event.objects.filter(title="Nuevo Evento").exists())
