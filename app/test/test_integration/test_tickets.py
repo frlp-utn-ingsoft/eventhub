@@ -3,15 +3,12 @@ from decimal import Decimal
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-from django.contrib.auth import get_user_model
 from django.db.models import Sum
-from app.models import Event, Ticket, Venue
-
-User = get_user_model()
+from app.models import User, Event, Ticket, Venue
 
 class TicketPurchaseIntegrationTest(TestCase):
     def setUp(self):
-        # Crear usuario organizador primero
+
         self.organizer = User.objects.create_user(
             username="organizador",
             email="organizador@test.com",
