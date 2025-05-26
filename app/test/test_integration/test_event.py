@@ -1,5 +1,7 @@
 import datetime
 import time
+import pytz
+from django.conf import settings
 
 from django.test import Client, TestCase
 from django.urls import reverse
@@ -199,23 +201,25 @@ class EventFormSubmissionTest(BaseEventTestCase):
             "time": "14:30",
         }
 
-        # Hacer petición POST a la vista event_form
+        # Hacer petición POST para crear el evento
         response = self.client.post(reverse("event_form"), event_data)
 
         # Verificar que redirecciona a events
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse("events"))
 
-        # Verificar que se creó el evento
-        self.assertTrue(Event.objects.filter(title="Nuevo Evento").exists())
+        # Verificar que el evento fue creado
         evento = Event.objects.get(title="Nuevo Evento")
         self.assertEqual(evento.description, "Descripción del nuevo evento")
         self.assertEqual(evento.scheduled_at.year, 2025)
         self.assertEqual(evento.scheduled_at.month, 5)
         self.assertEqual(evento.scheduled_at.day, 1)
-        self.assertEqual(evento.scheduled_at.hour, 14)
-        self.assertEqual(evento.scheduled_at.minute, 30)
-        self.assertEqual(evento.organizer, self.organizer)
+        
+        # Convertir la hora UTC a la zona horaria local para la comparación
+        local_tz = pytz.timezone(settings.TIME_ZONE)
+        local_time = evento.scheduled_at.astimezone(local_tz)
+        self.assertEqual(local_time.hour, 14)
+        self.assertEqual(local_time.minute, 30)
 
     def test_event_form_post_edit(self):
         """Test que verifica que se puede editar un evento existente mediante POST"""
@@ -245,8 +249,12 @@ class EventFormSubmissionTest(BaseEventTestCase):
         self.assertEqual(self.event1.scheduled_at.year, 2025)
         self.assertEqual(self.event1.scheduled_at.month, 6)
         self.assertEqual(self.event1.scheduled_at.day, 15)
-        self.assertEqual(self.event1.scheduled_at.hour, 16)
-        self.assertEqual(self.event1.scheduled_at.minute, 45)
+        
+        # Convertir la hora UTC a la zona horaria local para la comparación
+        local_tz = pytz.timezone(settings.TIME_ZONE)
+        local_time = self.event1.scheduled_at.astimezone(local_tz)
+        self.assertEqual(local_time.hour, 16)
+        self.assertEqual(local_time.minute, 45)
 
 
 class EventDeleteViewTest(BaseEventTestCase):

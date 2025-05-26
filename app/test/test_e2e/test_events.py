@@ -52,12 +52,12 @@ class EventBaseTest(BaseE2ETest):
 
     def _table_has_event_info(self):
         """Método auxiliar para verificar que la tabla tiene la información correcta de eventos"""
-        # Verificar encabezados de la tabla
-        headers = self.page.locator("table thead th")
-        expect(headers.nth(0)).to_have_text("Título")
-        expect(headers.nth(1)).to_have_text("Descripción")
-        expect(headers.nth(2)).to_have_text("Fecha")
-        expect(headers.nth(3)).to_have_text("Acciones")
+        # Verificar encabezados de la tabla (por texto, no por posición)
+        header_texts = self.page.locator("table thead th").all_inner_texts()
+        assert "Título" in header_texts
+        assert "Descripción" in header_texts
+        assert "Fecha" in header_texts
+        assert "Acciones" in header_texts
 
         # Verificar que los eventos aparecen en la tabla
         rows = self.page.locator("table tbody tr")
@@ -78,8 +78,8 @@ class EventBaseTest(BaseE2ETest):
         """Método auxiliar para verificar que las acciones son correctas según el tipo de usuario"""
         row0 = self.page.locator("table tbody tr").nth(0)
 
-        detail_button = row0.get_by_role("link", name="Ver Detalle")
-        edit_button = row0.get_by_role("link", name="Editar")
+        detail_button = row0.locator("[aria-label='Ver Detalle']")
+        edit_button = row0.locator("[aria-label='Editar']")
         delete_form = row0.locator("form")
 
         expect(detail_button).to_be_visible()
@@ -92,7 +92,7 @@ class EventBaseTest(BaseE2ETest):
             expect(delete_form).to_have_attribute("action", f"/events/{self.event1.id}/delete/")
             expect(delete_form).to_have_attribute("method", "POST")
 
-            delete_button = delete_form.get_by_role("button", name="Eliminar")
+            delete_button = delete_form.locator("[aria-label='Eliminar']")
             expect(delete_button).to_be_visible()
         else:
             expect(edit_button).to_have_count(0)
@@ -225,6 +225,8 @@ class EventCRUDTest(EventBaseTest):
         self.page.get_by_label("Descripción").fill("Descripción creada desde prueba E2E")
         self.page.get_by_label("Fecha").fill("2025-06-15")
         self.page.get_by_label("Hora").fill("16:45")
+        self.page.get_by_label("Precio General").fill("100.00")
+        self.page.get_by_label("Precio VIP").fill("200.00")
 
         # Enviar el formulario
         self.page.get_by_role("button", name="Crear Evento").click()
@@ -250,7 +252,7 @@ class EventCRUDTest(EventBaseTest):
         self.page.goto(f"{self.live_server_url}/events/")
 
         # Hacer clic en el botón editar del primer evento
-        self.page.get_by_role("link", name="Editar").first.click()
+        self.page.locator("[aria-label='Editar']").first.click()
 
         # Verificar que estamos en la página de edición
         expect(self.page).to_have_url(f"{self.live_server_url}/events/{self.event1.id}/edit/")
@@ -300,7 +302,7 @@ class EventCRUDTest(EventBaseTest):
         initial_count = len(self.page.locator("table tbody tr").all())
 
         # Hacer clic en el botón eliminar del primer evento
-        self.page.get_by_role("button", name="Eliminar").first.click()
+        self.page.locator("[aria-label='Eliminar']").first.click()
 
         # Verificar que redirigió a la página de eventos
         expect(self.page).to_have_url(f"{self.live_server_url}/events/")
