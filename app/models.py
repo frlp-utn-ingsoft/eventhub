@@ -401,3 +401,10 @@ class RefundRequest(models.Model):
         except cls.DoesNotExist:
             return False, "Solicitud de reembolso no encontrada."
         
+
+class SurveyResponse(models.Model):
+    ticket = models.OneToOneField('Ticket', on_delete=models.CASCADE)
+    satisfaction = models.IntegerField()
+    issue = models.TextField(blank=True, null=True)
+    recommend = models.BooleanField()
+    submitted_at = models.DateTimeField(auto_now_add=True)
