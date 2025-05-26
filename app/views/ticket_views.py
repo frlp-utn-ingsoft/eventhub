@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Sum
 from django.shortcuts import get_object_or_404, redirect, render
@@ -29,10 +30,15 @@ def purchase_ticket(request, event_id):
     Vista para crear un nuevo Ticket usando Ticket.new()
     """
     user = request.user
+    event = get_object_or_404(Event, pk=event_id)
+
+    # Bloquear compra si el evento está cancelado, agotado o finalizado
+    if event.status in ["canceled", "CANCELED", "finished", "FINISHED", "soldout", "SOLDOUT"]:
+        messages.error(request, "No se pueden comprar entradas para este evento.")
+        return redirect("event_detail", id=event.id)
+
     if user.is_organizer:
         return redirect("event_detail", id=event_id)
-
-    event = get_object_or_404(Event, pk=event_id)
 
     if request.method == "POST":
         qty   = int(request.POST.get("quantity", 1))
