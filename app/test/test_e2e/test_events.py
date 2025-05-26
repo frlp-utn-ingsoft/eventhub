@@ -4,7 +4,7 @@ import re
 from django.utils import timezone
 from playwright.sync_api import expect
 
-from app.models import Event, User
+from app.models import Event, User, Venue
 
 from app.test.test_e2e.base import BaseE2ETest
 
@@ -31,6 +31,15 @@ class EventBaseTest(BaseE2ETest):
             is_organizer=False,
         )
 
+        # Crear un venue para las pruebas
+        self.venue = Venue.objects.create(
+            name="Venue de prueba",
+            adress="Dirección de prueba",
+            city="Ciudad de prueba",
+            capacity=100,
+            contact="contacto@prueba.com"
+        )
+
         # Crear eventos de prueba
         # Evento 1
         event_date1 = timezone.make_aware(datetime.datetime(2025, 2, 10, 10, 10))
@@ -39,6 +48,7 @@ class EventBaseTest(BaseE2ETest):
             description="Descripción del evento 1",
             scheduled_at=event_date1,
             organizer=self.organizer,
+            venue=self.venue
         )
 
         # Evento 2
@@ -48,6 +58,7 @@ class EventBaseTest(BaseE2ETest):
             description="Descripción del evento 2",
             scheduled_at=event_date2,
             organizer=self.organizer,
+            venue=self.venue
         )
 
     def _table_has_event_info(self):
@@ -225,6 +236,7 @@ class EventCRUDTest(EventBaseTest):
         self.page.get_by_label("Descripción").fill("Descripción creada desde prueba E2E")
         self.page.get_by_label("Fecha").fill("2025-06-15")
         self.page.get_by_label("Hora").fill("16:45")
+        self.page.get_by_label("Lugar").select_option(label=f"{self.venue.name} ({self.venue.city}) - Capacidad: {self.venue.capacity}")
 
         # Enviar el formulario
         self.page.get_by_role("button", name="Crear Evento").click()
@@ -276,8 +288,11 @@ class EventCRUDTest(EventBaseTest):
         expect(time).to_have_value("10:10")
         time.fill("03:00")
 
+        venue = self.page.get_by_label("Lugar")
+        expect(venue).to_have_value(str(self.venue.id))
+
         # Enviar el formulario
-        self.page.get_by_role("button", name="Crear Evento").click()
+        self.page.get_by_role("button", name="Guardar Cambios").click()
 
         # Verificar que redirigió a la página de eventos
         expect(self.page).to_have_url(f"{self.live_server_url}/events/")
@@ -311,3 +326,36 @@ class EventCRUDTest(EventBaseTest):
 
         # Verificar que el evento eliminado ya no aparece en la tabla
         expect(self.page.get_by_text("Evento de prueba 1")).to_have_count(0)
+
+    def test_favorite_functionality(self):
+        """Test e2e que verifica la funcionalidad completa de favoritos"""
+        # Login como usuario regular
+        self.page.goto(f"{self.live_server_url}/accounts/login/")
+        self.page.fill('input[name="username"]', "usuario")
+        self.page.fill('input[name="password"]', "password123")
+        self.page.click('button[type="submit"]')
+        
+        # Ir a la página de eventos
+        self.page.goto(f"{self.live_server_url}/events/")
+        
+        # Verificar que el botón de favorito está visible
+        favorite_button = self.page.locator(f'[href="/events/{self.event1.id}/toggle-favorite/"]')
+        expect(favorite_button).to_be_visible()
+        
+        # Marcar el evento como favorito
+        favorite_button.click()
+        
+        # Verificar que aparece el mensaje de éxito
+        expect(self.page.locator('.alert-success')).to_contain_text("Evento agregado a favoritos")
+        
+        # Verificar que la estrella está llena
+        expect(self.page.locator(f'[href="/events/{self.event1.id}/toggle-favorite/"] i.bi-star-fill')).to_be_visible()
+        
+        # Quitar el evento de favoritos
+        favorite_button.click()
+        
+        # Verificar que aparece el mensaje de éxito
+        expect(self.page.locator('.alert-success')).to_contain_text("Evento removido de favoritos")
+        
+        # Verificar que la estrella está vacía
+        expect(self.page.locator(f'[href="/events/{self.event1.id}/toggle-favorite/"] i.bi-star')).to_be_visible()

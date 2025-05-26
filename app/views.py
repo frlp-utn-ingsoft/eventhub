@@ -122,8 +122,6 @@ def event_form(request, event_id=None):
     
     venues = Venue.objects.all()
     categories = Category.objects.filter(is_active=True)
-    
-    venues = Venue.objects.all()
     event_categories = []
     event = {}
 
@@ -134,13 +132,10 @@ def event_form(request, event_id=None):
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
-        
         venue_id = request.POST.get("venue")
         date = request.POST.get("date")
         time = request.POST.get("time")
         categories = request.POST.getlist("categories")
-        venue = request.POST.getlist("venue")
-
 
         venue = get_object_or_404(Venue, pk=venue_id)
         [year, month, day] = date.split("-")
@@ -160,6 +155,7 @@ def event_form(request, event_id=None):
             )
             if categories:
                 event.categories.set(categories)
+            messages.success(request, "Evento creado exitosamente")
         else:
             event = get_object_or_404(Event, pk=event_id)
             event.title = title
@@ -169,6 +165,7 @@ def event_form(request, event_id=None):
             event.save()
             if categories:
                 event.categories.set(categories)
+            messages.success(request, "Evento actualizado exitosamente")
 
         return redirect("events")
 
@@ -178,11 +175,9 @@ def event_form(request, event_id=None):
         {
             "event": event,
             "categories": categories,
-            
             "venues": venues,
             "event_categories": event_categories,
             "user_is_organizer": request.user.is_organizer,
-            "venues": venues
         },
     )
 
