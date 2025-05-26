@@ -219,6 +219,18 @@ def refund_form(request, id):
                 "error": "Todos los campos son obligatorios.",
                 "data": request.POST
             })
+        
+        #Validacion para evitar que haya solicitudes de reembolso duplicadas
+        existing_request = RefundRequest.objects.filter(
+            user=request.user,
+            approval__isnull=True,  # Reembolso todavia pendientes
+        ).first()
+
+        if existing_request:
+            return render(request, "app/refund_form.html",{
+                "error": "Ya tienes una solicitud de reembolso pendiente.",
+                "data": request.POST
+            })
 
         # Crear la solicitud de reembolso con estado pendiente
         RefundRequest.objects.create(
