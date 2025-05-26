@@ -23,8 +23,8 @@ class TicketCompraForm(forms.ModelForm):
         if quantity is not None:
             if quantity < 1:
                 raise forms.ValidationError('La cantidad debe ser mayor a 0.')
-            if quantity > 10:
-                raise forms.ValidationError('No se pueden comprar más de 10 tickets.')
+            if quantity > 4:
+                raise forms.ValidationError('No se pueden comprar más de 10 tickets por usuario.')
         
         return cleaned_data
 
