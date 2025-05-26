@@ -170,7 +170,7 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
-    categories = models.ManyToManyField(Category, related_name="events")
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="events", null=True, blank=True)
 
     def __str__(self):
         return self.title
