@@ -170,10 +170,14 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
-    attendees = models.ManyToManyField(User, related_name="attended_events", blank=True)
     categories = models.ManyToManyField(Category, related_name="events")
+
     def __str__(self):
         return self.title
+
+    def get_attendees(self):
+        """Obtiene los usuarios inscriptos al evento a través de los tickets"""
+        return User.objects.filter(tickets__event=self).distinct()
 
     @classmethod
     def validate(cls, title, description, scheduled_at):

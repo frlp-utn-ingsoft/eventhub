@@ -396,7 +396,6 @@ def buy_ticket(request, id):
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
         if success:
-            event.attendees.add(user)
             messages.success(request, "¡Ticket comprado!")
             return redirect("tickets")
         else:
@@ -762,8 +761,7 @@ def notification_create(request):
         # Asignar destinatarios
         if destinatario == "todos":
             event = get_object_or_404(Event, id=event_id)
-            asistentes = event.attendees.all()
-            print("Asistentes para notificación:", asistentes)
+            asistentes = event.get_attendees()
             notification.users.set(asistentes)
         elif destinatario == "usuario":
             usuario = get_object_or_404(User, pk=usuario_id)
