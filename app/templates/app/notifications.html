@@ -22,7 +22,7 @@
                             <span class="badge bg-primary ms-2">Nueva</span>
                         {% endif %}
                     </h6>
-                    <p class="mb-1">{{ notification.message }}</p>
+                    <p class="mb-1">{{ notification.message | safe }}</p>
                     <small class="text-muted">{{ notification.created_at|date:"d M Y, H:i" }}</small>
                 </div>
                 {% if not notification.is_read %}
