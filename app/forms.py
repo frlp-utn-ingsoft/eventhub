@@ -1,7 +1,7 @@
 
 from datetime import datetime
 from django import forms
-from .models import Event, Notification, RefundRequest, Ticket, User, Venue,Rating,Comment, Category
+from .models import Event, Notification, RefundRequest, Ticket, User, Venue,Rating,Comment, Category, SurveyResponse
 import re
 from django.db.models import Sum
 
@@ -396,3 +396,12 @@ class EventForm(forms.ModelForm):
         if not venue:
             raise forms.ValidationError("La ubicación es obligatoria.")
         return venue
+
+class SurveyForm(forms.ModelForm):
+    class Meta:
+        model = SurveyResponse
+        fields = ['satisfaction', 'issue', 'recommend']
+        widgets = {
+            'issue': forms.Textarea(attrs={'rows': 3}),
+            'recommend': forms.RadioSelect(choices=[(True, 'Sí'), (False, 'No')]),
+        }

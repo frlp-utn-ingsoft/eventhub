@@ -408,3 +408,10 @@ class FavoriteEvent(models.Model):
 
     class Meta:
         unique_together = ('user', 'event')  # evita duplicados
+
+class SurveyResponse(models.Model):
+    ticket = models.OneToOneField('Ticket', on_delete=models.CASCADE)
+    satisfaction = models.IntegerField()
+    issue = models.TextField(blank=True, null=True)
+    recommend = models.BooleanField()
+    submitted_at = models.DateTimeField(auto_now_add=True)
