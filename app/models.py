@@ -223,6 +223,10 @@ class Event(models.Model):
         return True, event
 
     def update(self, title=None, description=None, scheduled_at=None, organizer=None, venue=None, categories=None):
+        #VERIFICO SI LA FECHA FUE CAMBIADA
+        if scheduled_at and scheduled_at != self.scheduled_at:
+            self.state = self.REPROGRAMED
+
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
@@ -242,6 +246,18 @@ class Event(models.Model):
             aux = aux + t.quantity
 
         return self.venue.capacity - aux
+    
+    def auto_update_state(self):
+        # ESTADO FINALIZADO SI LA FECHA YA PASO
+        if self.scheduled_at < timezone.now():
+            self.state = self.FINISHED
+            self.save()
+            return
+        # ESTADO AGOTADO SI NO HAY MAS TICKETS DISPONIBLES
+        if self.available_tickets() <= 0:
+            self.state = self.SOLD_OUT
+            self.save()
+            return
 
 class Ticket(models.Model):
     # Constants

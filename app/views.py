@@ -109,6 +109,22 @@ def event_delete(request, event_id):
 
     return redirect("events")
 
+@login_required
+def event_canceled(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+
+    user = request.user
+    if not user.is_organizer:
+        return redirect("events")
+
+    if request.method == "POST":
+        event = get_object_or_404(Event, pk=event_id)
+        event.state = Event.CANCELED
+        event.save()
+        return redirect("events")
+
+    return redirect("events")
+
 
 @login_required
 def event_form(request, event_id=None):

@@ -46,6 +46,20 @@
                             <i class="bi bi-pencil" aria-hidden="true"></i>
                         </a>
                         <form
+                            action="{% url 'event_canceled' event.id %}"
+                            method="POST"
+                        >
+                            {% csrf_token %}
+                            <button
+                                class="btn btn-sm btn-outline-danger"
+                                title="Cancelar evento"
+                                type="submit"
+                                aria-label="Cancelar evento"
+                            >
+                                <i class="bi bi-ban" aria-hidden="true"></i>
+                            </button>
+                        </form>
+                        <form
                             action="{% url 'event_delete' event.id %}"
                             method="POST"
                         >
