@@ -2,7 +2,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth import get_user_model
-from app.models import Event, Ticket, Venue 
+from app.models import Event, Ticket, Venue, SurveyResponse
 from datetime import datetime
 from django.utils import timezone
 
@@ -24,7 +24,7 @@ class TicketPurchaseE2ETest(TestCase):
         self.client.login(username='testuser', password='testpassword')
 
     # Simula y verifica el flujo completo de una compra de ticket exitosa,
-    # desde ver el evento hasta la creación del ticket en la BD y
+    # desde ver el evento hasta la creación del ticket en la BD, la encuesta y
     # su aparición en la lista del usuario
     
     def test_complete_valid_ticket_purchase_flow_from_event_list(self):
@@ -71,14 +71,36 @@ class TicketPurchaseE2ETest(TestCase):
 
         # 4. Verificar que la compra fue exitosa
         self.assertEqual(response.status_code, 200) 
-        # Verifica que la aplicación redirige a la página de lista de tickets
-        self.assertRedirects(response, reverse('ticket_list')) 
-        # Verifica que el título del evento y la cantidad aparecen en la página de tickets del usuario
+
+        # Verifica que la aplicación redirige a la página de encuestas 
+        ticket = Ticket.objects.get(user=self.user, event=self.event)
+        expected_url = reverse('satisfaction_survey', args=[ticket.id])  # type: ignore
+        self.assertRedirects(response, expected_url)
+
+          # 5. Simula el envío del formulario de encuesta post compra
+        encuesta_url = reverse('satisfaction_survey', args=[ticket.id]) #type: ignore
+        encuesta_data = {
+            'satisfaction': 5,
+            'issue': 'Todo excelente.',
+            'recommend': 'True', 
+        }
+
+        response = self.client.post(encuesta_url, encuesta_data, follow=True)
+
+        # 6. Verifica que se redirige a la lista de tickets tras enviar la encuesta
+        ticket_list_url = reverse('ticket_list')
+        self.assertRedirects(response, ticket_list_url)
+
+        # 7. Verifica que el ticket se muestra correctamente en la lista
         self.assertContains(response, self.event.title)
-        self.assertContains(response, f"<td>{self.event.title}</td>") 
-        
-        # Verificar que el ticket se creó correctamente en la base de datos
+        self.assertContains(response, f"<td>{self.event.title}</td>")
+
+        # 8. Verifica que el ticket se creó correctamente en la base de datos
         self.assertTrue(Ticket.objects.filter(user=self.user, event=self.event, quantity=1).exists())
+
+        # 9. Verifica que la respuesta de la encuesta se guardó
+        self.assertTrue(SurveyResponse.objects.filter(ticket=ticket, satisfaction=5).exists())
+ 
 
     # Simula y verifica que la compra falla y
     # se muestra un mensaje de error si se usan datos de tarjeta inválidos,

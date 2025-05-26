@@ -47,7 +47,7 @@ class TicketCreateIntegrationTest(TestCase):
         self.assertContains(response, "No puede comprar más de 4 entradas") #Verifica que la página web devuelta al usuario el mensaje de error
         self.assertEqual(Ticket.objects.filter(user=self.user, event=self.event).count(), 1) # Verifica que no se haya creado ningún nuevo ticket en la base de datos
 
-    #Permite una compra inicial válida (1-4 tickets), redirigiendo a la lista.
+    #Permite una compra inicial válida (1-4 tickets), redirigiendo a la encuesta.
     def test_valid_initial_ticket_purchase_integration(self):
             self.client.login(username='user1', password='pass')
             
@@ -65,11 +65,14 @@ class TicketCreateIntegrationTest(TestCase):
             
             response = self.client.post(reverse('ticket_create', args=[self.event.pk]), form_data)
             
-            self.assertRedirects(response, reverse('ticket_list')) 
+             # Obtener el último ticket creado por este usuario para este evento
+            ticket = Ticket.objects.filter(user=self.user, event=self.event).latest('id')
+
+            self.assertRedirects(response, reverse('satisfaction_survey', args=[ticket.id]))# type: ignore
             
             self.assertEqual(Ticket.objects.filter(user=self.user, event=self.event).count(), initial_ticket_count + 1)
             
-    # Permite una compra adicional válida si el total no excede 4, redirigiendo a la lista.
+    # Permite una compra adicional válida si el total es IGUAL al maximo de 4, redirigiendo a la encuesta.
     def test_valid_additional_ticket_purchase_integration(self):
         self.client.login(username='user1', password='pass')
             
@@ -89,7 +92,8 @@ class TicketCreateIntegrationTest(TestCase):
             
         response = self.client.post(reverse('ticket_create', args=[self.event.pk]), form_data)
             
-        self.assertRedirects(response, reverse('ticket_list')) 
+        ticket = Ticket.objects.filter(user=self.user, event=self.event).latest('id')
 
+        self.assertRedirects(response, reverse('satisfaction_survey', args=[ticket.id]))# type: ignore
         self.assertEqual(Ticket.objects.filter(user=self.user, event=self.event).count(), initial_ticket_count + 1)
         
