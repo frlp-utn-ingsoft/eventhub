@@ -66,7 +66,6 @@ def seed():
     Notification.objects.create(
         title="Quedan 24hs para que comience el evento. No te lo pierdas!",
         message="No dejes pasar esta oportunidad única de vivir una experiencia increíble. ¡Prepárate, ajusta tu agenda y nos vemos allí!",
-        event=newEvent,
         priority="MEDIUM",
         created_at=timezone.now(),
     )

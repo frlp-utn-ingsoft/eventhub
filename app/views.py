@@ -136,12 +136,7 @@ def event_form(request, event_id=None):
         date = request.POST.get("date")
         time = request.POST.get("time")
         categories = request.POST.getlist("categories")
-<<<<<<< HEAD
-        venue_id = request.POST.get("venue")
-        venue = get_object_or_404(Venue, pk=venue_id)
-=======
         venue = request.POST.getlist("venue")
->>>>>>> main
 
 
         venue = get_object_or_404(Venue, pk=venue_id)
@@ -153,12 +148,6 @@ def event_form(request, event_id=None):
         )
 
         if event_id is None:
-<<<<<<< HEAD
-            Event.new(title, description, scheduled_at, request.user, categories, venue)
-        else:
-            event = get_object_or_404(Event, pk=event_id)
-            event.update(title, description, scheduled_at, request.user, categories, venue)
-=======
             event = Event.objects.create(
                 title=title,
                 description=description,
@@ -177,7 +166,6 @@ def event_form(request, event_id=None):
             event.save()
             if categories:
                 event.categories.set(categories)
->>>>>>> main
 
         return redirect("events")
 
@@ -408,6 +396,7 @@ def buy_ticket(request, id):
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
         if success:
+            event.attendees.add(user)
             messages.success(request, "¡Ticket comprado!")
             return redirect("tickets")
         else:
@@ -754,29 +743,29 @@ def notification_create(request):
         event_id = request.POST.get("event_id")
         usuario_id = request.POST.get("usuario_id")
 
-        if not event_id:
+        # Validaciones
+        if destinatario == "todos" and not event_id:
             messages.error(request, "Debe seleccionar un evento.")
             return redirect("notification_create")
 
-        event = get_object_or_404(Event, id=event_id)
-
-        if destinatario == "usuario":
-            if not usuario_id:
-                messages.error(request, "Debe seleccionar un usuario.")
-                return redirect("notification_create")
+        if destinatario == "usuario" and not usuario_id:
+            messages.error(request, "Debe seleccionar un usuario.")
+            return redirect("notification_create")
 
         notification = Notification.objects.create(
             title=title,
             message=message,
-            event=event,
             priority=priority,
             created_at=timezone.now(),
         )
 
+        # Asignar destinatarios
         if destinatario == "todos":
+            event = get_object_or_404(Event, id=event_id)
             asistentes = event.attendees.all()
+            print("Asistentes para notificación:", asistentes)
             notification.users.set(asistentes)
-        elif destinatario == "usuario" and usuario_id:
+        elif destinatario == "usuario":
             usuario = get_object_or_404(User, pk=usuario_id)
             notification.users.set([usuario])
 

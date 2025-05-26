@@ -199,11 +199,7 @@ class Event(models.Model):
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
-<<<<<<< HEAD
             venue=venue,
-=======
-            venue=venue
->>>>>>> main
         )
         
         if categories:
@@ -211,24 +207,16 @@ class Event(models.Model):
 
         return True, event
 
-<<<<<<< HEAD
     def update(self, title=None, description=None, scheduled_at=None, organizer=None, categories=None, venue=None):
-=======
-    def update(self, title=None, description=None, scheduled_at=None, organizer=None, venue=None, categories=None):
->>>>>>> main
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
         self.venue = venue or self.venue
-<<<<<<< HEAD
-
-=======
         
         if categories:
             self.categories.set(categories)
             
->>>>>>> main
         self.save()
     
    
@@ -407,11 +395,7 @@ class Rating(models.Model):
         self.save()
         
         return True, None
-<<<<<<< HEAD
     
-=======
-
->>>>>>> main
 class Comment(models.Model):
     title = models.CharField(max_length=200)
     text = models.TextField()
@@ -467,9 +451,6 @@ class Notification(models.Model):
         max_length=10, choices=PRIORITY_CHOICES, default="LOW"
     )
     is_read = models.BooleanField(default=False)
-    event = models.ForeignKey(
-        "Event", on_delete=models.CASCADE, related_name="notifications"
-    )
     users = models.ManyToManyField(
         settings.AUTH_USER_MODEL, related_name="notifications"
     )
