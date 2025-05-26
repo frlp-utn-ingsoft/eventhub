@@ -170,8 +170,9 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
-    attendees = models.ManyToManyField(User, related_name="attended_events", blank=True)
-    categories = models.ManyToManyField(Category, related_name="events")
+    attendee = models.ForeignKey(User, on_delete=models.CASCADE, related_name="attended_events", null=True, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="events", null=True, blank=True)
+
     def __str__(self):
         return self.title
 
@@ -188,7 +189,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, venue, categories=None):
+    def new(cls, title, description, scheduled_at, organizer, venue, category=None):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -200,24 +201,21 @@ class Event(models.Model):
             scheduled_at=scheduled_at,
             organizer=organizer,
             venue=venue,
+            category=category
         )
-        
-        if categories:
-            event.categories.set(categories)
 
         return True, event
 
-    def update(self, title=None, description=None, scheduled_at=None, organizer=None, categories=None, venue=None):
+    def update(self, title=None, description=None, scheduled_at=None, organizer=None, venue=None, category=None):
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
         self.venue = venue or self.venue
-        
-        if categories:
-            self.categories.set(categories)
-            
+        self.category = category or self.category
+
         self.save()
+        return True, self
     
    
     def available_tickets(self):
