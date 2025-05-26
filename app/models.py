@@ -253,6 +253,7 @@ class Ticket(models.Model):
     ticket_code = models.CharField(max_length=100, unique=True, editable=False)
     quantity = models.PositiveIntegerField(default=1)
     type = models.CharField(max_length=10, choices=TICKET_TYPES, default='general')
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal('0.00'))
 
     def save(self, *args, **kwargs):
         if not self.ticket_code:

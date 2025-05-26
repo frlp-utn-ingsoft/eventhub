@@ -17,6 +17,9 @@ from .forms import VenueForm
 from .models import Rating, Rating_Form, User, Comment
 from decimal import Decimal, InvalidOperation
 import random, string
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
 
 def generate_coupon_code(length=8):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
@@ -672,29 +675,107 @@ def comment_edit(request, comment_id):
         "comment": comment,
         "next_url": next_url
     })
+    
+@csrf_exempt
+def validar_cupon(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            codigo = data.get("codigo", "").strip().upper()
+
+            now = timezone.now()
+            cupón = Coupon.objects.filter(
+                code=codigo,
+                active=True,
+                expiration_date__gte=now
+            ).first()
+
+            if cupón:
+                return JsonResponse({
+                    "valido": True,
+                    "descuento": float(cupón.discount_percent)
+                })
+            else:
+                return JsonResponse({
+                    "valido": False,
+                    "error": "Cupón inválido, expirado o no activo."
+                })
+
+        except Exception as e:
+            return JsonResponse({
+                "valido": False,
+                "error": "Error al procesar la solicitud."
+            }, status=400)
+
+    return JsonResponse({"error": "Método no permitido"}, status=405)
+
 
 @login_required
+
 def buy_ticket(request, event_id):
     event = get_object_or_404(Event, id=event_id)
-    
+    base_price = event.price
+    discount_amount = 0
+    total = 0
+    coupon_code = ''
+    coupon_error = None
+    applied_coupon = None
+
     if request.method == 'POST':
         form = TicketForm(request.POST)
+        coupon_code = request.POST.get('coupon_code', '').strip().upper()
+
         if form.is_valid():
-            ticket = form.save(commit=False)
-            ticket.user = request.user
-            ticket.event = event
-            ticket.save()
-            messages.success(request, f'¡Ticket comprado con éxito! Tu código es: {ticket.ticket_code}')
-            return redirect('ticket_detail', ticket_id=ticket.id)
-        
+            quantity = form.cleaned_data['quantity']
+            ticket_type = form.cleaned_data['type']
+
+            total = base_price * quantity
+
+            if total <= 0:
+                total = 0
+            else:
+              
+                if ticket_type.lower() == 'vip':
+                    total *= Decimal("1.3")
+                if coupon_code:
+                    now = timezone.now()
+                    try:
+                        applied_coupon = Coupon.objects.get(
+                            code=coupon_code,
+                            event=event,
+                            active=True,
+                            expiration_date__gte=now
+                        )
+                        discount_amount = total * (Decimal(applied_coupon.discount_percent) / Decimal("100"))
+
+                        total -= discount_amount
+                    except Coupon.DoesNotExist:
+                        coupon_error = "Cupón inválido, expirado o no activo para este evento."
+
+            if coupon_error:
+                messages.error(request, coupon_error)
+            else:
+                ticket = form.save(commit=False)
+                ticket.user = request.user
+                ticket.event = event
+                ticket.price = total
+                ticket.coupon_code = applied_coupon.code if applied_coupon else None  # si tienes este campo
+                ticket.save()
+                messages.success(request, f'¡Ticket comprado con éxito! Tu código es: {ticket.ticket_code}')
+                return redirect('ticket_detail', ticket_id=ticket.id)
     else:
         form = TicketForm()
-    
+
     return render(request, 'app/buy_ticket.html', {
         'form': form,
         'event': event,
-        "user_is_organizer": request.user.is_organizer
+        'total': total,
+        'discount_amount': discount_amount,
+        'coupon_code': coupon_code,
+        'coupon_error': coupon_error,
+        "user_is_organizer": request.user.is_organizer,
     })
+
 
 @login_required
 def ticket_detail(request, ticket_id):
@@ -718,10 +799,10 @@ def edit_ticket(request, ticket_id):
     time_difference = timezone.now() - ticket.buy_date
     if time_difference.total_seconds() > 1800:
         messages.error(request, 'Solo puedes editar el ticket dentro de los primeros 30 minutos después de la compra')
-        #return redirect('ticket_detail', ticket_id=ticket.id)
+        
     
     time_difference = timezone.now() - ticket.buy_date
-    can_edit = time_difference.total_seconds() <= 1800  # Si el ticket se compró en los últimos 30 minutos
+    can_edit = time_difference.total_seconds() <= 1800 
     
     if request.method == 'POST':
         form = TicketForm(request.POST, instance=ticket)
