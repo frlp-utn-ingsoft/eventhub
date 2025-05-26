@@ -119,21 +119,27 @@ def event_form(request, event_id=None):
     
     venues = Venue.objects.all()
     categories = Category.objects.filter(is_active=True)
+    
+    venues = Venue.objects.all()
+    event_categories = []
     event = {}
 
     if event_id is not None:
         event = get_object_or_404(Event, pk=event_id)
+        event_categories = [category.id for category in event.categories.all()]
 
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
+        
         venue_id = request.POST.get("venue")
-        category_id = request.POST.get("category")
         date = request.POST.get("date")
         time = request.POST.get("time")
+        categories = request.POST.getlist("categories")
+        venue = request.POST.getlist("venue")
+
 
         venue = get_object_or_404(Venue, pk=venue_id)
-        category = get_object_or_404(Category, pk=category_id) if category_id else None
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
 
@@ -142,21 +148,15 @@ def event_form(request, event_id=None):
         )
 
         if event_id is None:
-            success, event = Event.new(
+            event = Event.objects.create(
                 title=title,
                 description=description,
                 scheduled_at=scheduled_at,
                 organizer=request.user,
-                venue=venue,
-                category=category
+                venue=venue
             )
-            if not success:
-                return render(request, "app/event_form.html", {
-                    "event": event,
-                    "categories": categories,
-                    "venues": venues,
-                    "errors": event
-                })
+            if categories:
+                event.categories.set(categories)
         else:
             event = get_object_or_404(Event, pk=event_id)
             old_scheduled_at = event.scheduled_at
@@ -193,8 +193,11 @@ def event_form(request, event_id=None):
         {
             "event": event,
             "categories": categories,
+            
             "venues": venues,
-            "user_is_organizer": request.user.is_organizer
+            "event_categories": event_categories,
+            "user_is_organizer": request.user.is_organizer,
+            "venues": venues
         },
     )
 
