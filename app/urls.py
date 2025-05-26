@@ -38,6 +38,4 @@ urlpatterns = [
     path('tickets/<str:ticket_code>/edit/', views.update_ticket, name='update_ticket'),
     path('tickets/buy/<int:event_id>/', views.buy_ticket_from_event, name='buy_ticket_from_event'),
     path('organizer/tickets/', views.organizer_tickets_list, name='organizer_tickets_list'),
-
-
 ]
