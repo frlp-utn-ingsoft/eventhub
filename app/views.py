@@ -410,6 +410,21 @@ def ticket_update(request, ticket_id):
                     type_changed = original_type != new_type
                     quantity_diff = new_quantity - original_quantity
 
+                    # NUEVA VALIDACIÓN: Verificar límite de 4 tickets por usuario
+                    if quantity_diff > 0:  # Solo si está aumentando la cantidad
+                        # Calcular total de tickets del usuario para este evento (excluyendo el ticket actual)
+                        total_otros_tickets = Ticket.objects.filter(
+                            user=request.user,
+                            event=ticket.event
+                        ).exclude(pk=ticket.pk).aggregate(
+                            total=Sum('quantity')
+                        )['total'] or 0
+
+                        if total_otros_tickets + new_quantity > 4:
+                            messages.error(request, "No podés tener más de 4 entradas para este evento.")
+                            return redirect('ticket_update', ticket_id=ticket_id)
+
+                    # Verificar disponibilidad de tickets
                     if type_changed or quantity_diff > 0:
                         if type_changed:
                             available = ticket.event.get_available_tickets(new_type)
@@ -422,23 +437,28 @@ def ticket_update(request, ticket_id):
                                 messages.error(request, f"No hay suficientes entradas {new_type.lower()} disponibles")
                                 return redirect('ticket_update', ticket_id=ticket_id)
 
+                    # Calcular precios
                     price = ticket.event.general_price if new_type == Ticket.TicketType.GENERAL else ticket.event.vip_price
 
                     updated_ticket.subtotal = price * Decimal(new_quantity)
                     updated_ticket.taxes = updated_ticket.subtotal * Decimal('0.10')
                     updated_ticket.total = updated_ticket.subtotal + updated_ticket.taxes
 
+                    # Actualizar disponibilidad de tickets en el evento
                     if type_changed:
+                        # Devolver tickets del tipo original
                         if original_type == Ticket.TicketType.GENERAL:
                             ticket.event.general_tickets_available += original_quantity
                         else:
                             ticket.event.vip_tickets_available += original_quantity
 
+                        # Reservar tickets del nuevo tipo
                         if new_type == Ticket.TicketType.GENERAL:
                             ticket.event.general_tickets_available -= new_quantity
                         else:
                             ticket.event.vip_tickets_available -= new_quantity
                     else:
+                        # Solo cambió la cantidad, no el tipo
                         if new_type == Ticket.TicketType.GENERAL:
                             ticket.event.general_tickets_available -= quantity_diff
                         else:
@@ -457,11 +477,18 @@ def ticket_update(request, ticket_id):
     else:
         form = TicketForm(instance=ticket, event=ticket.event)
 
+    # Calcular total de tickets ya comprados por el usuario para este evento
+    total_ya_compradas = Ticket.objects.filter(
+        user=request.user,
+        event=ticket.event
+    ).aggregate(total=Sum('quantity'))['total'] or 0
+
     return render(request, 'app/ticket_update.html', {
         'form': form,
         'ticket': ticket,
         'now': timezone.now(),
-        'original_price': ticket.event.general_price if ticket.type == Ticket.TicketType.GENERAL else ticket.event.vip_price
+        'original_price': ticket.event.general_price if ticket.type == Ticket.TicketType.GENERAL else ticket.event.vip_price,
+        'total_ya_compradas': total_ya_compradas  # Agregar esta información al contexto
     })
 
 @login_required
