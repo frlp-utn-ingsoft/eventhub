@@ -163,12 +163,26 @@ class Category(models.Model):
 
 
 class Event(models.Model):
+    # Constants
+    ACTIVE = 'ACTIVE'
+    CANCELED = 'CANCELED'
+    REPROGRAMED = 'REPROGRAMED'
+    SOLD_OUT = 'SOLD_OUT'
+    FINISHED = 'FINISHED'
+    EVENT_STATES = [
+        (ACTIVE, 'ACTIVO'),
+        (CANCELED, 'CANCELADO'),
+        (REPROGRAMED, 'REPROGRAMADO'),
+        (SOLD_OUT, 'AGOTADO'),
+        (FINISHED, 'FINALIZADO')
+    ]
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    state = models.CharField(choices=EVENT_STATES, max_length=25, default="ACTIVE")
 
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
     attendees = models.ManyToManyField(User, related_name="attended_events", blank=True)
