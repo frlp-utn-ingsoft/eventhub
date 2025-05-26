@@ -84,7 +84,11 @@
               <label class="form-check-label" for="terms">Acepto los <a href="#" target="_blank" rel="noopener noreferrer">términos y condiciones</a> y la <a href="#" target="_blank" rel="noopener noreferrer">política de privacidad</a>.</label>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100">Confirmar compra</button>
+            {% if event.available_tickets > 0 %}
+              <button type="submit" class="btn btn-primary w-100">Confirmar compra</button>
+            {% else %}
+              <button type="button" class="btn btn-secondary w-100" disabled>Entradas agotadas</button>
+            {% endif %}
           </form>
         </div>
       </div>

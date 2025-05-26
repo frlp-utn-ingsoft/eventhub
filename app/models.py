@@ -287,6 +287,8 @@ class Ticket(models.Model):
             errors["quantity"] = "La cantidad debe ser un número entero válido"
         elif quantity < 1:
             errors["quantity"] = "La cantidad debe ser al menos 1"
+        elif event and quantity > event.available_tickets():
+            errors["quantity"] = f"No hay suficientes entradas disponibles. Solo quedan {event.available_tickets()} entradas."
         
         valid_types = [choice[0] for choice in cls.TICKETS_TYPE_CHOICES]
         if not type or type not in valid_types:
@@ -294,6 +296,8 @@ class Ticket(models.Model):
         
         if not event:
             errors["event"] = "Evento es requerido"
+        elif event.available_tickets() <= 0:
+            errors["event"] = "Lo sentimos, este evento ya no tiene entradas disponibles"
         
         if not user:
             errors["user"] = "Usuario es requerido"
