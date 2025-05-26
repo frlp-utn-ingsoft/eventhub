@@ -4,7 +4,7 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .forms import NotificationForm,TicketForm,RefundRequestForm,RatingForm,CommentForm, VenueForm, EventForm
+from .forms import NotificationForm,TicketForm,RefundRequestForm,RatingForm,CommentForm, VenueForm, EventForm, SurveyForm
 from .models import Event, User, Notification, User_Notification,Ticket, Rating, RefundRequest
 from datetime import timedelta
 from .models import (
@@ -18,6 +18,7 @@ from .models import (
     User,
     User_Notification,
     Venue,
+    SurveyResponse
 )
 from django.db.models import Count
 
@@ -388,7 +389,7 @@ def ticket_create(request, event_id):
             ticket.event = event
             ticket.save()
             messages.success(request, "Ticket creado exitosamente.", extra_tags='ticket')
-            return redirect("ticket_list")
+            return redirect("satisfaction_survey", ticket_id=ticket.id)
     else:
         form = TicketForm(user=request.user, event=event)
 
@@ -799,3 +800,32 @@ def venue_delete(request, venue_id):
     return redirect('organizator_comment')  # Redirige a la vista de los comentarios o al listado de eventos
 
 
+@login_required
+def satisfaction_survey(request, ticket_id):
+    ticket = get_object_or_404(Ticket, id=ticket_id, user=request.user)
+
+    if hasattr(ticket, 'surveyresponse'):
+        messages.info(request, "Ya completaste la encuesta.")
+        return redirect("ticket_list")
+
+    if request.method == 'POST':
+        form = SurveyForm(request.POST)
+        if form.is_valid():
+            survey = form.save(commit=False)
+            survey.ticket = ticket
+            survey.save()
+            messages.success(request, "Gracias por responder la encuesta.")
+            return redirect("ticket_list")
+    else:
+        form = SurveyForm(initial={'satisfaction': 0})
+
+    return render(request, "app/survey_form.html", {"form": form, "ticket": ticket})
+
+@login_required
+def survey_list(request):
+    if not request.user.is_organizer:
+        messages.error(request, "Solo los organizadores pueden ver las encuestas.")
+        return redirect("home")
+
+    surveys = SurveyResponse.objects.select_related("ticket", "ticket__event", "ticket__user")
+    return render(request, "app/survey_list.html", {"surveys": surveys})

@@ -27,6 +27,9 @@ urlpatterns = [
     path('tickets/<int:event_id>/create/', views.ticket_create, name="ticket_create"),
     path('tickets/<int:ticket_id>/edit/', views.ticket_update, name="ticket_update"),
     path('tickets/<int:ticket_id>/delete/', views.ticket_delete, name="ticket_delete"),
+    #tickets/encuesta
+    path("encuesta/<int:ticket_id>/", views.satisfaction_survey, name="satisfaction_survey"),
+    path("encuestas/", views.survey_list, name="survey_list"),
     #rating
     path('ratings/<int:rating_id>/edit/', views.rating_edit, name='rating_edit'),
     path('ratings/<int:rating_id>/delete/', views.rating_delete, name='rating_delete'),

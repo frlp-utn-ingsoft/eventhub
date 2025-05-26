@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+
+{% block title %}Encuestas de Satisfacción{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Encuestas de Satisfacción</h2>
+
+    <table class="table table-bordered mt-3">
+        <thead class="table-light">
+            <tr>
+                <th>Usuario</th>
+                <th>Evento</th>
+                <th>Satisfacción</th>
+                <th>Comentario</th>
+                <th>¿Recomendaría?</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for survey in surveys %}
+            <tr>
+                <td>{{ survey.ticket.user.username }}</td>
+                <td>{{ survey.ticket.event.title }}</td>
+                <td>
+                    {% include "components/star_rating.html" with name="readonly_{{ survey.id }}" selected=survey.satisfaction readonly=True %}
+                </td>
+                <td>{{ survey.issue|default:"-" }}</td>
+                <td>{{ survey.recommend|yesno:"Sí,No" }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5" class="text-center">No hay encuestas todavía.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
