@@ -213,7 +213,7 @@ class EventFormSubmissionTest(BaseEventTestCase):
 
         # Verificar que redirecciona a events
         self.assertEqual(response.status_code, 302)
-        #self.assertEqual(response.url, reverse("events")) 
+        self.assertEqual(response.url, reverse("events")) 
 
         # Verificar que se creó el evento
         self.assertTrue(Event.objects.filter(title="Nuevo Evento").exists())

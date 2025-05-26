@@ -348,7 +348,7 @@ def event_form(request, id=None):
             return redirect('event_detail', id=event.id)
 
         if success:
-            return redirect('event_detail', id=event_or_errors.id) # type: ignore
+            return redirect('event_detail', id=event_or_errors.id)
 
   
     event = None
