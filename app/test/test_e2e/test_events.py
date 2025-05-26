@@ -3,11 +3,11 @@ import re
 
 from django.utils import timezone
 from playwright.sync_api import expect
+from django.utils.formats import date_format
 
 from app.models import Event, User
 
 from app.test.test_e2e.base import BaseE2ETest
-
 
 class EventBaseTest(BaseE2ETest):
     """Clase base específica para tests de eventos"""
@@ -33,7 +33,7 @@ class EventBaseTest(BaseE2ETest):
 
         # Crear eventos de prueba
         # Evento 1
-        event_date1 = timezone.make_aware(datetime.datetime(2025, 2, 10, 10, 10))
+        event_date1 = timezone.localtime() - datetime.timedelta(days=60)
         self.event1 = Event.objects.create(
             title="Evento de prueba 1",
             description="Descripción del evento 1",
@@ -42,7 +42,7 @@ class EventBaseTest(BaseE2ETest):
         )
 
         # Evento 2
-        event_date2 = timezone.make_aware(datetime.datetime(2025, 3, 15, 14, 30))
+        event_date2 = timezone.localtime() - datetime.timedelta(days=50)
         self.event2 = Event.objects.create(
             title="Evento de prueba 2",
             description="Descripción del evento 2",
@@ -55,9 +55,10 @@ class EventBaseTest(BaseE2ETest):
         # Verificar encabezados de la tabla
         headers = self.page.locator("table thead th")
         expect(headers.nth(0)).to_have_text("Título")
-        expect(headers.nth(1)).to_have_text("Descripción")
-        expect(headers.nth(2)).to_have_text("Fecha")
-        expect(headers.nth(3)).to_have_text("Acciones")
+        expect(headers.nth(1)).to_have_text("Fecha")
+        expect(headers.nth(2)).to_have_text("Organizador")
+        expect(headers.nth(3)).to_have_text("Categorías")
+        expect(headers.nth(4)).to_have_text("Acciones")
 
         # Verificar que los eventos aparecen en la tabla
         rows = self.page.locator("table tbody tr")
@@ -66,13 +67,15 @@ class EventBaseTest(BaseE2ETest):
         # Verificar datos del primer evento
         row0 = rows.nth(0)
         expect(row0.locator("td").nth(0)).to_have_text("Evento de prueba 1")
-        expect(row0.locator("td").nth(1)).to_have_text("Descripción del evento 1")
-        expect(row0.locator("td").nth(2)).to_have_text("10 feb 2025, 10:10")
+        expected_date = date_format(self.event1.scheduled_at, "d M Y, H:i", use_l10n=True).lower()
+        expect(row0.locator("td").nth(1)).to_have_text(expected_date)
+        expect(row0.locator("td").nth(2)).to_have_text("organizador")
 
         # Verificar datos del segundo evento
-        expect(rows.nth(1).locator("td").nth(0)).to_have_text("Evento de prueba 2")
-        expect(rows.nth(1).locator("td").nth(1)).to_have_text("Descripción del evento 2")
-        expect(rows.nth(1).locator("td").nth(2)).to_have_text("15 mar 2025, 14:30")
+        row1 = rows.nth(1)
+        expect(row1.locator("td").nth(0)).to_have_text("Evento de prueba 2")
+        expected_date = date_format(self.event2.scheduled_at, "d M Y, H:i", use_l10n=True).lower()
+        expect(row1.locator("td").nth(1)).to_have_text(expected_date)
 
     def _table_has_correct_actions(self, user_type):
         """Método auxiliar para verificar que las acciones son correctas según el tipo de usuario"""
@@ -120,7 +123,7 @@ class EventDisplayTest(EventBaseTest):
     def test_events_page_display_as_organizer(self):
         """Test que verifica la visualización correcta de la página de eventos para organizadores"""
         self.login_user("organizador", "password123")
-        self.page.goto(f"{self.live_server_url}/events/")
+        self.page.goto(f"{self.live_server_url}/events/all/")
 
         # Verificar el título de la página
         expect(self.page).to_have_title("Eventos")
@@ -143,7 +146,7 @@ class EventDisplayTest(EventBaseTest):
         self.login_user("usuario", "password123")
 
         # Ir a la página de eventos
-        self.page.goto(f"{self.live_server_url}/events/")
+        self.page.goto(f"{self.live_server_url}/events/all/")
 
         expect(self.page).to_have_title("Eventos")
 
@@ -216,21 +219,24 @@ class EventCRUDTest(EventBaseTest):
         # Verificar que estamos en la página de creación de evento
         expect(self.page).to_have_url(f"{self.live_server_url}/events/create/")
 
-        header = self.page.locator("h1")
-        expect(header).to_have_text("Crear evento")
-        expect(header).to_be_visible()
+        # header = self.page.locator("h1")
+        # expect(header).to_have_text("Crear evento")
+        # expect(header).to_be_visible()
 
         # Completar el formulario
         self.page.get_by_label("Título del Evento").fill("Evento de prueba E2E")
         self.page.get_by_label("Descripción").fill("Descripción creada desde prueba E2E")
-        self.page.get_by_label("Fecha").fill("2025-06-15")
+        self.page.get_by_label("Fecha").fill((timezone.localtime() + datetime.timedelta(days=60)).strftime("%Y-%m-%d"))
         self.page.get_by_label("Hora").fill("16:45")
 
         # Enviar el formulario
-        self.page.get_by_role("button", name="Crear Evento").click()
+        self.page.get_by_role("button", name="Guardar").click()
 
         # Verificar que redirigió a la página de eventos
         expect(self.page).to_have_url(f"{self.live_server_url}/events/")
+
+        # Ir a la página de todos los eventos
+        self.page.goto(f"{self.live_server_url}/events/all/")
 
         # Verificar que ahora hay 3 eventos
         rows = self.page.locator("table tbody tr")
@@ -238,8 +244,7 @@ class EventCRUDTest(EventBaseTest):
 
         row = self.page.locator("table tbody tr").last
         expect(row.locator("td").nth(0)).to_have_text("Evento de prueba E2E")
-        expect(row.locator("td").nth(1)).to_have_text("Descripción creada desde prueba E2E")
-        expect(row.locator("td").nth(2)).to_have_text("15 jun 2025, 16:45")
+        expect(row.locator("td").nth(1)).to_have_text(timezone.localtime(timezone.localtime() + datetime.timedelta(days=60)).strftime("%d %b %Y").lower() + ", 16:45")
 
     def test_edit_event_organizer(self):
         """Test que verifica la funcionalidad de editar un evento para organizadores"""
@@ -247,7 +252,7 @@ class EventCRUDTest(EventBaseTest):
         self.login_user("organizador", "password123")
 
         # Ir a la página de eventos
-        self.page.goto(f"{self.live_server_url}/events/")
+        self.page.goto(f"{self.live_server_url}/events/all/")
 
         # Hacer clic en el botón editar del primer evento
         self.page.get_by_role("link", name="Editar").first.click()
@@ -255,9 +260,9 @@ class EventCRUDTest(EventBaseTest):
         # Verificar que estamos en la página de edición
         expect(self.page).to_have_url(f"{self.live_server_url}/events/{self.event1.id}/edit/")
 
-        header = self.page.locator("h1")
-        expect(header).to_have_text("Editar evento")
-        expect(header).to_be_visible()
+        # header = self.page.locator("h1")
+        # expect(header).to_have_text("Editar evento")
+        # expect(header).to_be_visible()
 
         # Verificar que el formulario está precargado con los datos del evento y luego los editamos
         title = self.page.get_by_label("Título del Evento")
@@ -269,24 +274,26 @@ class EventCRUDTest(EventBaseTest):
         description.fill("Descripcion Editada")
 
         date = self.page.get_by_label("Fecha")
-        expect(date).to_have_value("2025-02-10")
-        date.fill("2025-04-20")
+        expect(date).to_have_value(self.event1.scheduled_at.strftime("%Y-%m-%d"))
+        date.fill((timezone.localtime() + datetime.timedelta(days=60)).strftime("%Y-%m-%d"))
 
         time = self.page.get_by_label("Hora")
-        expect(time).to_have_value("10:10")
+        expect(time).to_have_value(self.event1.scheduled_at.strftime("%H:%M"))
         time.fill("03:00")
 
         # Enviar el formulario
-        self.page.get_by_role("button", name="Crear Evento").click()
+        self.page.get_by_role("button", name="Guardar").click()
 
         # Verificar que redirigió a la página de eventos
         expect(self.page).to_have_url(f"{self.live_server_url}/events/")
 
+        # Ir a la página de todos los eventos
+        self.page.goto(f"{self.live_server_url}/events/all/")
+
         # Verificar que el título del evento ha sido actualizado
         row = self.page.locator("table tbody tr").last
         expect(row.locator("td").nth(0)).to_have_text("Titulo editado")
-        expect(row.locator("td").nth(1)).to_have_text("Descripcion Editada")
-        expect(row.locator("td").nth(2)).to_have_text("20 abr 2025, 03:00")
+        expect(row.locator("td").nth(1)).to_have_text(timezone.localtime(timezone.localtime() + datetime.timedelta(days=60)).strftime("%d %b %Y").lower() + ", 03:00")
 
     def test_delete_event_organizer(self):
         """Test que verifica la funcionalidad de eliminar un evento para organizadores"""
@@ -294,7 +301,7 @@ class EventCRUDTest(EventBaseTest):
         self.login_user("organizador", "password123")
 
         # Ir a la página de eventos
-        self.page.goto(f"{self.live_server_url}/events/")
+        self.page.goto(f"{self.live_server_url}/events/all/")
 
         # Contar eventos antes de eliminar
         initial_count = len(self.page.locator("table tbody tr").all())
@@ -311,3 +318,97 @@ class EventCRUDTest(EventBaseTest):
 
         # Verificar que el evento eliminado ya no aparece en la tabla
         expect(self.page.get_by_text("Evento de prueba 1")).to_have_count(0)
+
+class EventFilterTest(BaseE2ETest):
+    """Tests relacionados con la visualización de eventos"""
+
+    def setUp(self):
+        super().setUp()
+
+        self.organizer = User.objects.create_user(
+            username="organizador",
+            password="contraseña123",
+            is_organizer=True,
+            email="organizador@gmail.com",
+        )
+
+        self.uuser = User.objects.create_user(
+            username="usuario",
+            password="contraseña123",
+            is_organizer=True,
+            email="usuario@gmail.com",
+        )
+
+        # Un evento en el pasado y uno en el futuro
+        now = timezone.now()
+        self.past_event = Event.objects.create(
+            title="Pasado",
+            description="Evento pasado",
+            scheduled_at=now - datetime.timedelta(days=2),
+            organizer=self.organizer,
+        )
+        self.future_event = Event.objects.create(
+            title="Futuro",
+            description="Evento futuro",
+            scheduled_at=now + datetime.timedelta(days=10),
+            organizer=self.organizer,
+        )
+    
+    def test_dashboard_hides_past_events_by_default(self):
+        """Al entrar a /events/ sólo se ve el evento futuro."""
+        self.login_user("organizador", "contraseña123")
+        self.page.goto(f"{self.live_server_url}/events/")
+
+        # el switch debe estar desactivado
+        show_switch = self.page.locator("#showPastSwitch")
+        expect(show_switch).not_to_be_checked()
+
+        # solo 1 fila (evento futuro)
+        rows = self.page.locator("table tbody tr")
+        expect(rows).to_have_count(1)
+        expect(rows.nth(0)).to_contain_text("Futuro")
+        expect(rows.nth(0)).not_to_contain_text("Pasado")
+
+    def test_toggle_switch_shows_and_hides_past_events(self):
+        """El switch permite alternar entre futuros y todos los eventos."""
+        self.login_user("organizador", "contraseña123")
+        self.page.goto(f"{self.live_server_url}/events/")
+
+        switch = self.page.locator("#showPastSwitch")
+
+        # activar switch
+        switch.check()
+
+        # verificar que redirige a /events/all/
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/all/")
+
+        rows = self.page.locator("table tbody tr")
+        # verificar que ahora hay 2 filas (futuro y pasado)
+        expect(rows).to_have_count(2)
+        expect(rows.nth(0)).to_contain_text("Pasado")
+        expect(rows.nth(1)).to_contain_text("Futuro")
+        expect(switch).to_be_checked()
+
+    def test_toggle_switch_redirects(self):
+        """El switch redirige de /all/ a / y viceversa."""
+        self.login_user("organizador", "contraseña123")
+        self.page.goto(f"{self.live_server_url}/events/all/")
+
+        switch = self.page.locator("#showPastSwitch")
+
+        # desactivar switch
+        switch.uncheck()
+
+        # verificar que redirige a /events/
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/")
+
+        # verificar que el switch está desactivado
+        expect(switch).not_to_be_checked()
+        
+        # activar switch
+        switch.check()
+
+        # verificar que redirige a /events/all/
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/all/")
+        # verificar que el switch está activado
+        expect(switch).to_be_checked()

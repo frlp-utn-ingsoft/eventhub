@@ -43,12 +43,76 @@ class BaseEventTestCase(TestCase):
             organizer=self.organizer,
         )
 
+        # Crear algunos eventos de prueba pasados
+        self.event3 = Event.objects.create(
+            title="Evento 3",
+            description="Descripción del evento 3",
+            scheduled_at=timezone.now() - datetime.timedelta(days=1),
+            organizer=self.organizer,
+        )
+
+        self.event4 = Event.objects.create(
+            title="Evento 4",
+            description="Descripción del evento 4",
+            scheduled_at=timezone.now() - datetime.timedelta(days=2),
+            organizer=self.organizer,
+        )
+
         # Cliente para hacer peticiones
         self.client = Client()
 
 
 class EventsListViewTest(BaseEventTestCase):
     """Tests para la vista de listado de eventos"""
+
+    def test_events_url_shows_only_future_regular_user(self):
+        """Test que verifica que la vista events muestra solo eventos futuros"""
+
+        # login con usuario regular
+        self.client.login(username="regular", password="password123")
+        resp = self.client.get(reverse("events"))
+        events_ctx = list(resp.context["events"])
+        self.assertEqual(len(events_ctx), 2)
+        self.assertIn(self.event1, events_ctx)
+        self.assertIn(self.event2, events_ctx)
+        self.assertNotIn(self.event3, events_ctx)
+        self.assertNotIn(self.event4, events_ctx)
+    
+    def test_events_url_shows_only_future_organizer(self):
+        """Test que verifica que la vista events muestra solo eventos futuros"""
+
+        # login con usuario organizador
+        self.client.login(username="organizador", password="password123")
+        resp = self.client.get(reverse("events"))
+        events_ctx = list(resp.context["events"])
+        self.assertEqual(len(events_ctx), 2)
+        self.assertIn(self.event1, events_ctx)
+        self.assertIn(self.event2, events_ctx)
+        self.assertNotIn(self.event3, events_ctx)
+        self.assertNotIn(self.event4, events_ctx)
+
+    def test_events_all_url_shows_past_and_future_regular_user(self):
+
+        # login con usuario regular
+        self.client.login(username="regular", password="password123")
+        resp = self.client.get(reverse("events_all"))
+        events_ctx = list(resp.context["events"])
+        self.assertEqual(len(events_ctx), 4)
+        self.assertIn(self.event1, events_ctx)
+        self.assertIn(self.event2, events_ctx)
+        self.assertIn(self.event3, events_ctx)
+        self.assertIn(self.event4, events_ctx)
+
+    def test_events_all_url_shows_past_and_future_organizer(self):
+        # login con usuario organizador
+        self.client.login(username="organizador", password="password123")
+        resp = self.client.get(reverse("events_all"))
+        events_ctx = list(resp.context["events"])
+        self.assertEqual(len(events_ctx), 4)
+        self.assertIn(self.event1, events_ctx)
+        self.assertIn(self.event2, events_ctx)
+        self.assertIn(self.event3, events_ctx)
+        self.assertIn(self.event4, events_ctx)
 
     def test_events_view_with_login(self):
         """Test que verifica que la vista events funciona cuando el usuario está logueado"""
@@ -210,11 +274,12 @@ class EventFormSubmissionTest(BaseEventTestCase):
         self.assertTrue(Event.objects.filter(title="Nuevo Evento").exists())
         evento = Event.objects.get(title="Nuevo Evento")
         self.assertEqual(evento.description, "Descripción del nuevo evento")
-        self.assertEqual(evento.scheduled_at.year, 2025)
-        self.assertEqual(evento.scheduled_at.month, 5)
-        self.assertEqual(evento.scheduled_at.day, 1)
-        self.assertEqual(evento.scheduled_at.hour, 14)
-        self.assertEqual(evento.scheduled_at.minute, 30)
+        scheduled_at = timezone.localtime(evento.scheduled_at)
+        self.assertEqual(scheduled_at.year, 2025)
+        self.assertEqual(scheduled_at.month, 5)
+        self.assertEqual(scheduled_at.day, 1)
+        self.assertEqual(scheduled_at.hour, 14)
+        self.assertEqual(scheduled_at.minute, 30)
         self.assertEqual(evento.organizer, self.organizer)
 
     def test_event_form_post_edit(self):
@@ -240,13 +305,15 @@ class EventFormSubmissionTest(BaseEventTestCase):
         # Verificar que el evento fue actualizado
         self.event1.refresh_from_db()
 
+
         self.assertEqual(self.event1.title, "Evento 1 Actualizado")
         self.assertEqual(self.event1.description, "Nueva descripción actualizada")
-        self.assertEqual(self.event1.scheduled_at.year, 2025)
-        self.assertEqual(self.event1.scheduled_at.month, 6)
-        self.assertEqual(self.event1.scheduled_at.day, 15)
-        self.assertEqual(self.event1.scheduled_at.hour, 16)
-        self.assertEqual(self.event1.scheduled_at.minute, 45)
+        scheduled_at = timezone.localtime(self.event1.scheduled_at)
+        self.assertEqual(scheduled_at.year, 2025)
+        self.assertEqual(scheduled_at.month, 6)
+        self.assertEqual(scheduled_at.day, 15)
+        self.assertEqual(scheduled_at.hour, 16)
+        self.assertEqual(scheduled_at.minute, 45)
 
 
 class EventDeleteViewTest(BaseEventTestCase):
