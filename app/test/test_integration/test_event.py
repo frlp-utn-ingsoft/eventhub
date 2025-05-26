@@ -5,7 +5,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from app.models import Event, User
+from app.models import Event, User, Venue
 
 
 class BaseEventTestCase(TestCase):
@@ -18,6 +18,13 @@ class BaseEventTestCase(TestCase):
             email="organizador@test.com",
             password="password123",
             is_organizer=True,
+        )
+
+        #Creacion de venue para los eventos
+        self.venue = Venue.objects.create(
+            name='Auditorio UTN',
+            address='Av. Siempreviva 742',
+            capacity=200
         )
 
         # Crear un usuario regular
@@ -34,6 +41,7 @@ class BaseEventTestCase(TestCase):
             description="Descripción del evento 1",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
+            venue=self.venue
         )
 
         self.event2 = Event.objects.create(
@@ -41,6 +49,7 @@ class BaseEventTestCase(TestCase):
             description="Descripción del evento 2",
             scheduled_at=timezone.now() + datetime.timedelta(days=2),
             organizer=self.organizer,
+            venue=self.venue
         )
 
         # Cliente para hacer peticiones
@@ -204,11 +213,14 @@ class EventFormSubmissionTest(BaseEventTestCase):
 
         # Verificar que redirecciona a events
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("events"))
+        self.assertEqual(response.url, reverse("events")) 
 
         # Verificar que se creó el evento
         self.assertTrue(Event.objects.filter(title="Nuevo Evento").exists())
         evento = Event.objects.get(title="Nuevo Evento")
+
+        self.assertEqual(response.url, reverse("event_detail", args=[evento.id])) 
+
         self.assertEqual(evento.description, "Descripción del nuevo evento")
         self.assertEqual(evento.scheduled_at.year, 2025)
         self.assertEqual(evento.scheduled_at.month, 5)
@@ -235,7 +247,7 @@ class EventFormSubmissionTest(BaseEventTestCase):
 
         # Verificar que redirecciona a events
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("events"))
+        self.assertEqual(response.url, reverse("event_detail", args=[self.event1.id])) 
 
         # Verificar que el evento fue actualizado
         self.event1.refresh_from_db()

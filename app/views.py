@@ -373,7 +373,6 @@ def event_form(request, id=None):
 
     categories = list(Category.objects.all())
 
-   
     total = len(categories)
     per_column = math.ceil(total / 3)
     total = len(categories)
