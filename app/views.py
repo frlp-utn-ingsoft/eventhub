@@ -10,6 +10,9 @@ from .forms import TicketForm, TicketFilterForm
 from django.http import Http404
 from decimal import Decimal
 from django.core.serializers import serialize
+from django.urls import reverse
+from django.conf import settings
+import pytz
 
 def register(request):
     if request.method == "POST":
@@ -74,44 +77,17 @@ def events(request):
 
 @login_required
 def event_detail(request, id):
-    event = get_object_or_404(Event, pk=id)
+    event = get_object_or_404(Event, id=id)
     comments = Comments.objects.filter(event=event).order_by('-created_at')
-
-    if request.method == 'POST':
-        title = request.POST.get('title', '').strip()
-        description = request.POST.get('description', '').strip()
-        errors = {}
-
-        if not title:
-            errors['title'] = "El título no puede estar vacío."
-        if not description:
-            errors['description'] = "La descripción no puede estar vacía."
-
-        if not errors:
-            Comments.objects.create(
-                title=title,
-                description=description,
-                user=request.user,
-                event=event
-            )
-            return redirect('event_detail', id=event.id)
-
-        # Si hay errores, los devolvemos al template
-        return render(request, 'app/event_detail.html', {
-            'event': event,
-            'comments': comments,
-            'errors': errors,
-            'title': title,
-            'description': description,
-            'user_is_organizer': event.organizer == request.user
-        })
-
-    # GET request normal
-    return render(request, 'app/event_detail.html', {
+    user_is_organizer = request.user.is_authenticated and request.user.is_organizer
+    context = {
         'event': event,
         'comments': comments,
-        'user_is_organizer': event.organizer == request.user
-    })
+        'user_is_organizer': user_is_organizer,
+        'demand_status': event.demand_status,
+        'tickets_sold': event.tickets_sold
+    }
+    return render(request, 'app/event_detail.html', context)
 
 
 @login_required
@@ -144,7 +120,8 @@ def event_form(request, id=None):
         location = Location.objects.filter(id=location_id).first() if location_id else None
         category_ids = request.POST.getlist("categories")
         categories = Category.objects.filter(id__in=category_ids)
-
+        price_general = request.POST.get("price_general")
+        price_vip = request.POST.get("price_vip")
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
@@ -159,6 +136,11 @@ def event_form(request, id=None):
             event.update(title, description, scheduled_at, request.user, location)
 
         if event:
+            if price_general is not None:
+                event.price_general = float(str(price_general).replace(',', '.'))
+            if price_vip is not None:
+                event.price_vip = float(str(price_vip).replace(',', '.'))
+            
             event.categories.set(categories)
             return redirect("events")
 
@@ -170,6 +152,15 @@ def event_form(request, id=None):
 
     if id is not None:
         event = get_object_or_404(Event, pk=id)
+        if event.price_general is not None:
+            event.price_general = float(str(event.price_general).replace(',', '.'))
+        if event.price_vip is not None:
+            event.price_vip = float(str(event.price_vip).replace(',', '.'))
+    else:
+        event = Event()
+
+    locations = Location.objects.all()
+    categories = Category.objects.all()
 
     return render(
         request,
@@ -527,7 +518,6 @@ def update_ticket(request, ticket_code):
 
 @login_required
 def buy_ticket_from_event(request, event_id):
-
     event = get_object_or_404(Event, id=event_id)
 
     if request.method == 'POST':
@@ -558,12 +548,16 @@ def buy_ticket_from_event(request, event_id):
     else:
         form = TicketForm(fixed_event=True, event_instance=event)
 
+    # Modificamos la estructura de event_prices para que sea un JSON válido
     event_prices = {
-            event.id: {
-        'general': float(event.price_general),
-        'vip': float(event.price_vip)
-    }
+        str(event.id): {
+            'general': float(event.price_general),
+            'vip': float(event.price_vip)
         }
+    }
 
-
-    return render(request, 'tickets/buy_ticket.html', {'form': form, 'event': event,'event_prices': event_prices})
+    return render(request, 'tickets/buy_ticket.html', {
+        'form': form, 
+        'event': event,
+        'event_prices': event_prices
+    })

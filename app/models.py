@@ -142,10 +142,42 @@ class Event(models.Model):
     categories = models.ManyToManyField(Category, through='EventCategory')
     price_general = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
     price_vip = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
+    tickets_sold = models.PositiveIntegerField(default=0)
 
     def __str__(self):
-        return self.title    
+        return self.title
+
+    def save(self, *args, **kwargs):
+        # Validar datos antes de guardar
+        self.full_clean()
+        # Asegurar que scheduled_at sea aware antes de guardar
+        if self.scheduled_at and not timezone.is_aware(self.scheduled_at):
+            self.scheduled_at = timezone.make_aware(self.scheduled_at)
+        super().save(*args, **kwargs)
     
+    @property
+    def tickets_left(self):
+        if not self.location:
+            return 0
+        return max(0, self.location.capacity - self.tickets_sold)
+
+    @property
+    def occupancy_percentage(self):
+        if not self.location or self.location.capacity == 0:
+            return 0.0
+        return min(100.0, round((self.tickets_sold / self.location.capacity) * 100, 1))
+
+    @property
+    def demand_status(self):
+        if not self.location:
+            return "Baja demanda"
+        percentage = self.occupancy_percentage
+        if percentage <= 10:
+            return "Baja demanda"
+        elif percentage >= 90:
+            return "Alta demanda"
+        return "Demanda normal"
+
     @classmethod
     def get_price_for_type(cls, type, price_general, price_vip):
         if type == 'vip':
@@ -181,6 +213,10 @@ class Event(models.Model):
         if len(errors.keys()) > 0:
             return False, errors
 
+        # Asegurar que scheduled_at sea aware
+        if not timezone.is_aware(scheduled_at):
+            scheduled_at = timezone.make_aware(scheduled_at)
+
         event = Event.objects.create(
             title=title,
             description=description,
@@ -196,10 +232,15 @@ class Event(models.Model):
     def update(self, title, description, scheduled_at, organizer, location=None, price_general=Decimal('0.00'), price_vip=Decimal('0.00')):
         self.title = title or self.title
         self.description = description or self.description
+        
+        # Asegurar que scheduled_at sea aware
+        if scheduled_at and not timezone.is_aware(scheduled_at):
+            scheduled_at = timezone.make_aware(scheduled_at)
         self.scheduled_at = scheduled_at or self.scheduled_at
+        
         self.organizer = organizer or self.organizer
         self.location = location if location is not None else self.location
-        self.price_general= price_general or self.price_general
+        self.price_general = price_general or self.price_general
         self.price_vip = price_vip or self.price_vip
 
         if not timezone.is_aware(scheduled_at):
@@ -344,12 +385,27 @@ class Ticket(models.Model):
         if not self.ticket_code:
             import uuid
             self.ticket_code = str(uuid.uuid4()).replace('-', '')[:20]
-        super().save(*args, **kwargs)
+        
+        # Actualizar el precio por ticket
         if self.event:
             if self.type == 'vip':
                 self.price_per_ticket = self.event.price_vip
             else:
                 self.price_per_ticket = self.event.price_general
+            
+            # Actualizar tickets vendidos
+            if not self.pk:  # Si es un nuevo ticket
+                self.event.tickets_sold += self.quantity
+                self.event.save()
+        
+        super().save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        # Restar tickets vendidos al eliminar
+        if self.event:
+            self.event.tickets_sold -= self.quantity
+            self.event.save()
+        super().delete(*args, **kwargs)
 
     @classmethod
     def validate(cls, user, event, quantity, ticket_type, card_type):
