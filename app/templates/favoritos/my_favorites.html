@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Eventos Favoritos{% endblock %}
+
+{% block content %}
+
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            <i class="text-danger me-2" aria-hidden="true"></i>
+            Mis Eventos Favoritos
+        </h1>
+        <a href="{% url 'events' %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left me-2" aria-hidden="true"></i>
+            Volver a Eventos
+        </a>
+    </div>
+
+    {% if user.favorite_events.all %}
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+            Tienes <strong>{{ user.favorite_events.count }}</strong> evento{{ user.favorite_events.count|pluralize }} favorito{{ user.favorite_events.count|pluralize }}.
+        </div>
+    {% endif %}
+
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Título</th>
+                <th>Descripción</th>
+                <th>Ubicación</th>
+                <th>Fecha</th>
+                <th>Categorías</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in user.favorite_events.all %}
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <i class="text-danger me-2" aria-hidden="true"></i>
+                            {{ event.title }}
+                        </div>
+                    </td>
+                    <td>{{ event.description }}</td>
+                    <td>{{ event.location }}</td>
+                    <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
+                    <td>
+                        <div class="d-flex flex-wrap gap-1">
+                            {% for cat in event.categories.all %}
+                                <span class="badge rounded-pill bg-light text-dark px-3 py-2">
+                                    {{ cat.name }}
+                                </span>
+                            {% empty %}
+                                <span class="text-muted">Sin categorías</span>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="hstack gap-1">
+                            <!-- Botón Ver detalle -->
+                            <a href="{% url 'event_detail' event.id %}"
+                               class="btn btn-sm btn-outline-primary"
+                               aria-label="Ver detalle"
+                               title="Ver detalle">
+                                <i class="bi bi-eye" aria-hidden="true"></i>
+                            </a>
+                            
+                            <!-- Botón Quitar de favoritos -->
+                            <a href="{% url 'toggle_favorite' event.id %}"
+                               class="btn btn-sm btn-danger"
+                               aria-label="Quitar de favoritos"
+                               title="Quitar de favoritos"
+                               onclick="return confirm('¿Quitar {{ event.title }} de favoritos?')">
+                                <i class="bi bi-heart-fill" aria-hidden="true"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-5">
+                        <div class="text-muted">
+                            <i class="bi bi-heart display-1 mb-3" aria-hidden="true"></i>
+                            <h4>No tienes eventos favoritos</h4>
+                            <p>Explora nuestros eventos y marca los que más te gusten como favoritos.</p>
+                            <a href="{% url 'events' %}" class="btn btn-primary mt-3">
+                                <i class="bi bi-search me-2" aria-hidden="true"></i>
+                                Explorar Eventos
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

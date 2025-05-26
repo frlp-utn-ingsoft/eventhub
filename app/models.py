@@ -6,7 +6,7 @@ from django.conf import settings
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
-    eventos_favoritos = models.ManyToManyField('Event', blank=True, related_name='favorited_by')
+    favorite_events = models.ManyToManyField('Event', blank=True, related_name='favorited_by')
 
     @classmethod
     def validate_new_user(cls, email, username, password, password_confirm):
@@ -30,15 +30,15 @@ class User(AbstractUser):
     
     def marcar_evento_favorito(self, evento):
         """Marca un evento como favorito"""
-        self.eventos_favoritos.add(evento)
+        self.favorite_events.add(evento)
     
     def desmarcar_evento_favorito(self, evento):
         """Desmarca un evento como favorito"""
-        self.eventos_favoritos.remove(evento)
+        self.favorite_events.remove(evento)
     
     def es_evento_favorito(self, evento):
         """Verifica si un evento es favorito del usuario"""
-        return self.eventos_favoritos.filter(id=evento.id).exists()
+        return self.favorite_events.filter(id=evento.id).exists()
 
 
 class Location(models.Model):
