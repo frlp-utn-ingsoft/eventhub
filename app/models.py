@@ -165,7 +165,9 @@ class Coupon(models.Model):
     code = models.CharField(max_length=10, unique=True, editable=False)
     discount_percent = models.PositiveSmallIntegerField()
     active = models.BooleanField(default=True)
+    organizer = models.ForeignKey(User, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    expiration_date = models.DateTimeField()
 
     def save(self, *args, **kwargs):
         if not self.code:

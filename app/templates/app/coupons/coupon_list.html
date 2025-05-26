@@ -3,31 +3,34 @@
 <div class="container mt-4">
     <h2>Cupones para "{{ event.title }}"</h2>
 
-    <a href="{% url 'coupon_create' event.id %}" class="btn btn-success mb-3">Crear nuevo cupón</a>
+    <a href="{% url 'coupon_form' event.id %}" class="btn btn-success mb-3">Crear nuevo cupón</a>
 
     {% if coupons %}
         <table class="table table-bordered">
-            <thead>
-                <tr>
-                    <th>Código</th>
-                    <th>Descuento (%)</th>
-                    <th>Creado</th>
-                    <th>Acciones</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for coupon in coupons %}
-                <tr>
-                    <td>{{ coupon.code }}</td>
-                    <td>{{ coupon.discount_percentage }}</td>
-                    <td>{{ coupon.created_at|date:"d/m/Y H:i" }}</td>
-                    <td>
-                        <a href="{% url 'coupon_edit' event.id coupon.id %}" class="btn btn-sm btn-primary">Editar</a>
-                        <a href="{% url 'coupon_delete' event.id coupon.id %}" class="btn btn-sm btn-danger">Eliminar</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
+           <thead>
+    <tr>
+        <th>Código</th>
+        <th>Descuento (%)</th>
+        <th>Vence</th>
+        <th>Creado</th>
+        <th>Acciones</th>
+    </tr>
+</thead>
+<tbody>
+    {% for coupon in coupons %}
+    <tr>
+        <td>{{ coupon.code }}</td>
+        <td>{{ coupon.discount_percent }}%</td>
+        <td>{{ coupon.expiration_date|date:"d/m/Y H:i" }}</td>
+        <td>{{ coupon.created_at|date:"d/m/Y H:i" }}</td>
+        <td>
+            <a href="{% url 'coupon_edit' event.id coupon.id %}" class="btn btn-sm btn-primary">Editar</a>
+            <a href="{% url 'coupon_delete' event.id coupon.id %}" class="btn btn-sm btn-danger">Eliminar</a>
+        </td>
+    </tr>
+    {% endfor %}
+</tbody>
+
         </table>
     {% else %}
         <p>No hay cupones para este evento.</p>

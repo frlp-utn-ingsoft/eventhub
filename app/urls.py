@@ -51,7 +51,7 @@ urlpatterns = [
     path("events/<int:event_id>/rating/<int:rating_id>/delete", views.event_eliminar_rating, name="event_eliminar_rating"),
     path("events/<int:event_id>/rating/<int:rating_id>/edit", views.event_editar_rating, name="event_editar_rating"),
     path('events/<int:event_id>/coupons/', views.coupon_list, name='coupon_list'),
-    path('events/<int:event_id>/coupons/create/', views.coupon_create, name='coupon_create'),
+    path('events/<int:event_id>/coupons/create/', views.coupon_form, name='coupon_form'),
     path('events/<int:event_id>/coupons/<int:coupon_id>/edit/', views.coupon_edit, name='coupon_edit'),
     path('events/<int:event_id>/coupons/<int:coupon_id>/delete/', views.coupon_delete, name='coupon_delete'),
 

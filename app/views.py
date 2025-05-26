@@ -14,9 +14,12 @@ from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
 from .models import Venue, Coupon
 from .forms import VenueForm
-from .models import Event, Rating, Rating_Form, User, Comment
+from .models import Rating, Rating_Form, User, Comment
 from decimal import Decimal, InvalidOperation
+import random, string
 
+def generate_coupon_code(length=8):
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
 def organizer_required(view_func):
     @wraps(view_func)
@@ -300,6 +303,7 @@ def event_delete(request, id):
     return redirect("events")
 
 ######################################################################################
+@organizer_required
 @login_required
 def event_form(request, id=None):
     user = request.user
@@ -307,7 +311,7 @@ def event_form(request, id=None):
     if not user.is_organizer:
         return redirect("events")
 
-    # Obtener todos los venues disponibles
+    
     venues = Venue.objects.all()
 
     if request.method == "POST":
@@ -324,12 +328,35 @@ def event_form(request, id=None):
         except InvalidOperation:
             price = Decimal('0.00')
 
-        # Parsear fecha y hora
+        
         year, month, day = date.split("-")
         hour, minutes = time.split(":")
         scheduled_at = timezone.make_aware(
             timezone.datetime(int(year), int(month), int(day), int(hour), int(minutes))
         )
+        
+        new_coupon_percentage = request.POST.get("new_coupon_percentage")
+        existing_coupon_id = request.POST.get("existing_coupon")
+
+        coupon_to_assign = None
+
+        if new_coupon_percentage:
+            try:
+                discount = Decimal(new_coupon_percentage)
+                if 0 < discount <= 100:
+                    coupon_to_assign = Coupon.objects.create(
+                        code=generate_coupon_code(),
+                        discount_percentage=discount,
+                        organizer=user
+                    )
+            except (InvalidOperation, ValueError):
+                pass  
+
+        elif existing_coupon_id:
+            try:
+                coupon_to_assign = Coupon.objects.get(id=existing_coupon_id, organizer=user)
+            except Coupon.DoesNotExist:
+                pass
 
         # Crear o actualizar el evento
         if id is None:
@@ -353,6 +380,11 @@ def event_form(request, id=None):
             event.price = price
 
             event.save()
+            
+            if coupon_to_assign:
+             coupon_to_assign.event = event
+             coupon_to_assign.save()
+
 
             return redirect('event_detail', id=event.id)
 
@@ -392,34 +424,63 @@ def event_form(request, id=None):
     return render(request, 'app/event_form.html', context)
 ########################################################################################
 @login_required
-@organizer_required
 def coupon_list(request, event_id):
     event = get_object_or_404(Event, id=event_id, organizer=request.user)
-    coupons = Coupon.objects.filter(event=event)
-    return render(request, "coupons/list.html", {"event": event, "coupons": coupons})
+    coupons = event.coupons.all().order_by('-created_at')
+    active_coupons_count = coupons.filter(active=True).count()
+    
+    context = {
+        'event': event,
+        'coupons': coupons,
+        'active_coupons_count': active_coupons_count,
+    }
+    return render(request, "app/coupons/coupon_list.html", context)
+
 
 @login_required
-def coupon_create(request, event_id):
+def coupon_form(request, event_id):
     event = get_object_or_404(Event, id=event_id, organizer=request.user)
 
     if request.method == "POST":
         discount_str = request.POST.get("discount_percentage", "").strip()
+        expiration_str = request.POST.get("expiration_date", "").strip()
+
         try:
-            discount = float(discount_str)
-            if not 0 < discount < 100:
-                raise ValueError("Porcentaje fuera de rango.")
-        except:
-            messages.error(request, "Por favor ingrese un porcentaje válido (1-99).")
-        else:
+            # Validar descuento
+            discount = int(discount_str)
+            if not 1 <= discount <= 100:
+                raise ValueError("El porcentaje debe estar entre 1 y 100.")
+
+            # Validar y convertir fecha
+            if not expiration_str:
+                raise ValueError("La fecha de expiración es obligatoria.")
+
+            naive_expiration = datetime.strptime(expiration_str, "%Y-%m-%dT%H:%M")
+            expiration = timezone.make_aware(naive_expiration)
+            
+            now = timezone.now()
+
+            if expiration <= now:
+                raise ValueError("La fecha de expiración debe ser futura.")
+
+            # Crear el cupón
             Coupon.objects.create(
                 event=event,
-                discount_percentage=discount,
-                created_by=request.user
+                discount_percent=discount,
+                expiration_date=expiration,
+                organizer=request.user,
             )
-            messages.success(request, "Cupón creado correctamente.")
+
+            messages.success(request, f"Cupón creado correctamente con {discount}% de descuento.")
             return redirect("coupon_list", event_id=event.id)
 
-    return render(request, "app/coupons/create.html", {"event": event})
+        except ValueError as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            messages.error(request, f"Error al crear el cupón: {e}")
+
+    return render(request, "app/coupons/coupon_form.html", {"event": event})
+
 
 @login_required
 def coupon_edit(request, event_id, coupon_id):
@@ -428,19 +489,30 @@ def coupon_edit(request, event_id, coupon_id):
 
     if request.method == "POST":
         discount_str = request.POST.get("discount_percentage", "").strip()
+        active_str = request.POST.get("active", "").strip()
+        
         try:
-            discount = float(discount_str)
-            if not 0 < discount < 100:
-                raise ValueError()
-        except:
-            messages.error(request, "Porcentaje inválido.")
-        else:
-            coupon.discount_percentage = discount
+            # Validar discount_percentage
+            discount = int(discount_str)
+            if not 1 <= discount <= 100:
+                raise ValueError("El porcentaje debe estar entre 1 y 100.")
+            
+            # Actualizar campos del modelo
+            coupon.discount_percent = discount
+            # Manejar el campo active (checkbox)
+            coupon.active = active_str == 'on' or active_str == '1' or active_str == 'true'
             coupon.save()
+            
             messages.success(request, "Cupón actualizado correctamente.")
             return redirect("coupon_list", event_id=event.id)
+            
+        except ValueError as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            messages.error(request, f"Error al actualizar: {e}")
 
-    return render(request, "app/coupons/edit.html", {"event": event, "coupon": coupon})
+    return render(request, "app/coupons/coupon_edit.html", {"event": event, "coupon": coupon})
+
 
 @login_required
 def coupon_delete(request, event_id, coupon_id):
@@ -448,12 +520,12 @@ def coupon_delete(request, event_id, coupon_id):
     coupon = get_object_or_404(Coupon, id=coupon_id, event=event)
 
     if request.method == "POST":
+        coupon_code = coupon.code  # Guardar para el mensaje
         coupon.delete()
-        messages.success(request, "Cupón eliminado.")
+        messages.success(request, f"Cupón {coupon_code} eliminado correctamente.")
         return redirect("coupon_list", event_id=event.id)
 
-    return render(request, "app/coupons/delete_confirm.html", {"event": event, "coupon": coupon})
-
+    return render(request, "app/coupons/coupon_delete.html", {"event": event, "coupon": coupon})
 ##################################################################################
 @login_required
 def notifications(request):
