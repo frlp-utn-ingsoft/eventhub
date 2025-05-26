@@ -73,7 +73,10 @@ def events(request):
     return render(
         request,
         "app/events.html",
-        {"events": events, "user_is_organizer": request.user.is_organizer},
+        {
+            "events": events, 
+            "user_is_organizer": request.user.is_organizer,
+        },
     )
 
 
@@ -907,3 +910,17 @@ def venue_edit(request, id):
             return redirect('venues')
 
     return render(request, "app/venue_edit_form.html", {"venue": venue})
+
+@login_required
+def toggle_favorite(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+    user = request.user
+    
+    if event.favorited_by.filter(id=user.id).exists():
+        event.favorited_by.remove(user)
+        messages.success(request, "Evento removido de favoritos")
+    else:
+        event.favorited_by.add(user)
+        messages.success(request, "Evento agregado a favoritos")
+    
+    return redirect('events')

@@ -172,6 +172,8 @@ class Event(models.Model):
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
     attendees = models.ManyToManyField(User, related_name="attended_events", blank=True)
     categories = models.ManyToManyField(Category, related_name="events")
+    favorited_by = models.ManyToManyField(User, related_name="favorite_events", blank=True)
+    
     def __str__(self):
         return self.title
 
