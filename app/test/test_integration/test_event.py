@@ -274,11 +274,12 @@ class EventFormSubmissionTest(BaseEventTestCase):
         self.assertTrue(Event.objects.filter(title="Nuevo Evento").exists())
         evento = Event.objects.get(title="Nuevo Evento")
         self.assertEqual(evento.description, "Descripción del nuevo evento")
-        self.assertEqual(evento.scheduled_at.year, 2025)
-        self.assertEqual(evento.scheduled_at.month, 5)
-        self.assertEqual(evento.scheduled_at.day, 1)
-        self.assertEqual(evento.scheduled_at.hour, 14)
-        self.assertEqual(evento.scheduled_at.minute, 30)
+        scheduled_at = timezone.localtime(evento.scheduled_at)
+        self.assertEqual(scheduled_at.year, 2025)
+        self.assertEqual(scheduled_at.month, 5)
+        self.assertEqual(scheduled_at.day, 1)
+        self.assertEqual(scheduled_at.hour, 14)
+        self.assertEqual(scheduled_at.minute, 30)
         self.assertEqual(evento.organizer, self.organizer)
 
     def test_event_form_post_edit(self):
@@ -304,13 +305,15 @@ class EventFormSubmissionTest(BaseEventTestCase):
         # Verificar que el evento fue actualizado
         self.event1.refresh_from_db()
 
+
         self.assertEqual(self.event1.title, "Evento 1 Actualizado")
         self.assertEqual(self.event1.description, "Nueva descripción actualizada")
-        self.assertEqual(self.event1.scheduled_at.year, 2025)
-        self.assertEqual(self.event1.scheduled_at.month, 6)
-        self.assertEqual(self.event1.scheduled_at.day, 15)
-        self.assertEqual(self.event1.scheduled_at.hour, 16)
-        self.assertEqual(self.event1.scheduled_at.minute, 45)
+        scheduled_at = timezone.localtime(self.event1.scheduled_at)
+        self.assertEqual(scheduled_at.year, 2025)
+        self.assertEqual(scheduled_at.month, 6)
+        self.assertEqual(scheduled_at.day, 15)
+        self.assertEqual(scheduled_at.hour, 16)
+        self.assertEqual(scheduled_at.minute, 45)
 
 
 class EventDeleteViewTest(BaseEventTestCase):

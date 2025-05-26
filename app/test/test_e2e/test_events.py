@@ -226,7 +226,7 @@ class EventCRUDTest(EventBaseTest):
         # Completar el formulario
         self.page.get_by_label("Título del Evento").fill("Evento de prueba E2E")
         self.page.get_by_label("Descripción").fill("Descripción creada desde prueba E2E")
-        self.page.get_by_label("Fecha").fill((timezone.now() + datetime.timedelta(days=60)).strftime("%Y-%m-%d"))
+        self.page.get_by_label("Fecha").fill((timezone.localtime() + datetime.timedelta(days=60)).strftime("%Y-%m-%d"))
         self.page.get_by_label("Hora").fill("16:45")
 
         # Enviar el formulario
@@ -244,7 +244,7 @@ class EventCRUDTest(EventBaseTest):
 
         row = self.page.locator("table tbody tr").last
         expect(row.locator("td").nth(0)).to_have_text("Evento de prueba E2E")
-        expect(row.locator("td").nth(1)).to_have_text(timezone.localtime(timezone.now() + datetime.timedelta(days=60)).strftime("%d %b %Y").lower() + ", 16:45")
+        expect(row.locator("td").nth(1)).to_have_text(timezone.localtime(timezone.localtime() + datetime.timedelta(days=60)).strftime("%d %b %Y").lower() + ", 16:45")
 
     def test_edit_event_organizer(self):
         """Test que verifica la funcionalidad de editar un evento para organizadores"""
@@ -275,7 +275,7 @@ class EventCRUDTest(EventBaseTest):
 
         date = self.page.get_by_label("Fecha")
         expect(date).to_have_value(self.event1.scheduled_at.strftime("%Y-%m-%d"))
-        date.fill((timezone.now() + datetime.timedelta(days=60)).strftime("%Y-%m-%d"))
+        date.fill((timezone.localtime() + datetime.timedelta(days=60)).strftime("%Y-%m-%d"))
 
         time = self.page.get_by_label("Hora")
         expect(time).to_have_value(self.event1.scheduled_at.strftime("%H:%M"))
@@ -293,7 +293,7 @@ class EventCRUDTest(EventBaseTest):
         # Verificar que el título del evento ha sido actualizado
         row = self.page.locator("table tbody tr").last
         expect(row.locator("td").nth(0)).to_have_text("Titulo editado")
-        expect(row.locator("td").nth(1)).to_have_text(timezone.localtime(timezone.now() + datetime.timedelta(days=60)).strftime("%d %b %Y").lower() + ", 03:00")
+        expect(row.locator("td").nth(1)).to_have_text(timezone.localtime(timezone.localtime() + datetime.timedelta(days=60)).strftime("%d %b %Y").lower() + ", 03:00")
 
     def test_delete_event_organizer(self):
         """Test que verifica la funcionalidad de eliminar un evento para organizadores"""
