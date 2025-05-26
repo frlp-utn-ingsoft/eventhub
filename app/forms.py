@@ -1,8 +1,10 @@
 
 from datetime import datetime
 from django import forms
-from .models import Event, Notification, RefundRequest, Ticket, User, Venue,Rating,Comment, Category
+from .models import Event, Notification, RefundRequest, Ticket, User, Venue,Rating,Comment, Category, SurveyResponse
 import re
+from django.db.models import Sum
+
 
 class NotificationForm(forms.ModelForm):
     event = forms.ModelChoiceField(
@@ -92,6 +94,14 @@ class NotificationForm(forms.ModelForm):
             
 
 class TicketForm(forms.ModelForm):
+
+    # Recibe como parametro el usuario y el evento (los cuales los utilizo en la feature del maximo de 4 entradas por evento)
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        self.event = kwargs.pop('event', None)
+        super().__init__(*args, **kwargs)
+    
+
     # Campos de la tarjeta, validaciones específicas en los métodos clean_* correspondientes
     card_name = forms.CharField(label="Nombre en la tarjeta", max_length=30, widget=forms.TextInput(attrs={'class': 'form-control','placeholder': 'Juan Peres'}))
     card_number = forms.CharField(label="Número de tarjeta", max_length=25, min_length=13, widget=forms.TextInput(attrs={'class': 'form-control','placeholder': '1234 5678 9012 3456'}))
@@ -122,18 +132,31 @@ class TicketForm(forms.ModelForm):
     widget=forms.TextInput(attrs={'class': 'form-control text-center', 'placeholder': '0'})
     )
 
+    # verifica que el usuario no exeda el maximo de 4 entradas en un mismo evento (ya sea en una sola compra o en varias)
     def clean_quantity(self):
         quantity = self.cleaned_data.get('quantity')
 
-        # Verificar si quantity es None o 0
         if quantity is None:
-            raise forms.ValidationError("No ha seleccionado la cantidad de tickets a comprar")
+            raise forms.ValidationError("No ha seleccionado la cantidad de tickets a comprar.")
 
-        # Validar que la cantidad no sea mayor a 120
         if quantity > 120:
             raise forms.ValidationError("La cantidad no puede ser mayor a 120.")
 
+        if self.user and self.event:
+            total_anteriores = Ticket.objects.filter(
+                user=self.user,
+                event=self.event
+            ).aggregate(total=Sum('quantity'))['total'] or 0
+
+            # Restar el valor original si se está editando un ticket existente
+            if self.instance and self.instance.pk:
+                total_anteriores -= self.instance.quantity
+
+            if total_anteriores + quantity > 4:
+                raise forms.ValidationError("No puede comprar más de 4 entradas para este evento.")
+
         return quantity
+
     
     def clean_card_name(self):
         name = self.cleaned_data.get('card_name')
@@ -373,3 +396,12 @@ class EventForm(forms.ModelForm):
         if not venue:
             raise forms.ValidationError("La ubicación es obligatoria.")
         return venue
+
+class SurveyForm(forms.ModelForm):
+    class Meta:
+        model = SurveyResponse
+        fields = ['satisfaction', 'issue', 'recommend']
+        widgets = {
+            'issue': forms.Textarea(attrs={'rows': 3}),
+            'recommend': forms.RadioSelect(choices=[(True, 'Sí'), (False, 'No')]),
+        }
