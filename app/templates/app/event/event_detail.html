@@ -6,28 +6,66 @@
         <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex justify-content-center align-items-center my-4">
                 <h1 class="me-2 mb-0">{{ event.title }}</h1>
+                <!-- Eliminé las etiquetas de estado del título -->
             </div>
             <div>
                 {% if user_is_organizer and request.user == event.organizer %}
+                {% comment %} Solo el usuario Organizador del evento puede hacerlo {% endcomment %}
                     <a href="{% url 'event_tickets' event.id %}" class="btn btn-primary">
                         <i class="bi bi-ticket-perforated me-2"></i>Gestionar entradas
                     </a>
-                    <a
-                        href="{% url 'event_edit' event.id %}"
-                        class="btn btn-outline-primary me-2"
-                    >
-                        <i class="bi bi-pencil me-1"></i>Editar
-                    </a>
+                    {% if event.status != 'canceled' and event.status != 'CANCELED' and event.status != 'finished' and event.status != 'FINISHED' and event.status != 'soldout' and event.status != 'SOLDOUT' %}
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <!-- Botón de Finalizar -->
+                        <form method="post" action="" onsubmit="return confirm('¿Seguro que deseas finalizar este evento?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="id" value="{{ event.id }}">
+                            <input type="hidden" name="finish_event" value="1">
+                            <button type="submit" class="btn btn-warning text-dark fw-bold me-2" id="finish-event-button">
+                                <i class="bi bi-flag me-1"></i> Finalizar
+                            </button>
+                        </form>
 
+                        <!-- Botón de Cancelar -->
+                        <form method="post" action="" onsubmit="return confirm('¿Seguro que deseas cancelar este evento?');">
+                            {% csrf_token %}
+                            <input type="hidden" name="id" value="{{ event.id }}">
+                            <input type="hidden" name="cancel_event" value="1">
+                            <button type="submit" class="btn btn-danger me-2" id="cancel-event-button">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar
+                            </button>
+                        </form>
+
+                        <!-- Botón de Editar -->
+                        <a href="{% url 'event_edit' event.id %}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil me-1"></i> Editar
+                        </a>
+                    </div>
+                    {% endif %}
                 {% else %}
-                    <a href="{% url 'ticket_create' event.id %}" class="btn btn-primary">
-                        <i class="bi bi-ticket-perforated me-2"></i>Comprar entradas
-                    </a>
+                    {% if event.status != 'canceled' and event.status != 'CANCELED' and event.status != 'finished' and event.status != 'FINISHED' and event.status != 'soldout' and event.status != 'SOLDOUT' %}
+                        <a href="{% url 'ticket_create' event.id %}" class="btn btn-primary">
+                            <i class="bi bi-ticket-perforated me-2"></i>Comprar entradas
+                        </a>
+                    {% else %}
+                        <button class="btn btn-secondary" disabled>
+                            <i class="bi bi-ticket-perforated me-2"></i>No disponible
+                        </button>
+                        <small class="d-block text-muted mt-1">
+                            {% if event.status == 'canceled' or event.status == 'CANCELED' %}
+                                Evento cancelado
+                            {% elif event.status == 'finished' or event.status == 'FINISHED' %}
+                                Evento finalizado
+                            {% elif event.status == 'soldout' or event.status == 'SOLDOUT' %}
+                                Entradas agotadas
+                            {% endif %}
+                        </small>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>
     </div>
-    
+
     <div class="row">
         <div class="card">
             <div class="card-body">
@@ -59,6 +97,27 @@
                         <div>
                             <h6 class="mb-0">Organizador</h6>
                             <p class="mb-0">{{ event.organizer }}</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-info-circle text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Estado</h6>
+                            <p class="mb-0 event-status" id="event-status-display">
+                                {% if event.status == 'finished' or event.status == 'FINISHED' %}
+                                    Finalizado
+                                {% elif event.status == 'canceled' or event.status == 'CANCELED' %}
+                                    Cancelado
+                                {% elif event.status == 'reprogramed' or event.status == 'REPROGRAMED' %}
+                                    Reprogramado
+                                {% elif event.status == 'soldout' or event.status == 'SOLDOUT' %}
+                                    Agotado
+                                {% elif event.status == 'active' or event.status == 'ACTIVE' %}
+                                    Activo
+                                {% endif %}
+                            </p>
                         </div>
                     </div>
                     <div class="d-flex align-items-center mb-3">

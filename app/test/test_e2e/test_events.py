@@ -1,6 +1,7 @@
 import datetime
 import re
 
+from django.test import TestCase
 from django.utils import timezone
 from playwright.sync_api import expect
 
@@ -414,3 +415,86 @@ class EventCRUDTest(EventBaseTest):
 
         # Verificar que el evento eliminado ya no aparece en la tabla
         expect(self.page.get_by_text("Evento de prueba 1")).to_have_count(0)
+
+
+class EventStatusTest(EventBaseTest):
+    """Estos tests se encargan especificamente de probar los estados de los eventos
+    y que se muestren correctamente en la vista de detalle del evento."""
+
+    def test_event_default_status_display(self):
+        """Verificando que el estado default del evento es correcto"""
+        # Iniciar sesión como organizador
+        self.login_user("organizador", "password123")
+
+        # Ir a la página de eventos
+        self.page.goto(f"{self.live_server_url}/events/")
+
+        # Hacer clic en el botón de detalle del evento
+        self.page.get_by_role("link", name="Ver Detalle").first.click()
+
+        # Verificar que estamos en la página de detalle del evento
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/{self.event1.id}/")
+
+        # Verificar que el estado del evento es "Pendiente" inicialmente
+        event_state = self.page.locator("#event-status-display")
+        expect(event_state).to_have_text("Activo")
+
+    def test_event_cancelled_status_display(self):
+        """Cancelando evento y verificando que el estado se muestra correctamente"""
+        # Iniciar sesión como organizador
+        self.login_user("organizador", "password123")
+
+        # Ir a la página de eventos
+        self.page.goto(f"{self.live_server_url}/events/")
+
+        # Hacer clic en el botón de detalle del evento
+        self.page.get_by_role("link", name="Ver Detalle").first.click()
+
+        # Verificar que estamos en la página de detalle del evento
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/{self.event1.id}/")
+
+        # Cambiar el estado del evento a "Cancelado"
+        cancel_button = self.page.locator("#cancel-event-button")
+        cancel_button.wait_for(state="visible")
+
+        # Primero configura el manejador para aceptar el diálogo
+        self.page.once("dialog", lambda dialog: dialog.accept())
+        # Luego haz clic en el botón
+        cancel_button.click()     
+
+        self.page.wait_for_url(f"{self.live_server_url}/events/{self.event1.id}/")
+
+        # Verificar que el estado del evento ahora es "Cancelado"
+        event_state = self.page.locator("#event-status-display")
+        event_state.wait_for(state="visible")
+        expect(event_state).to_have_text("Cancelado")
+
+    def test_event_finished_status_display(self):
+        """Finalizando evento y verificando que el estado se muestra correctamente"""
+        # Iniciar sesión como organizador
+        self.login_user("organizador", "password123")
+
+        # Ir a la página de eventos
+        self.page.goto(f"{self.live_server_url}/events/")
+
+        # Hacer clic en el botón de detalle del evento
+        self.page.get_by_role("link", name="Ver Detalle").first.click()
+
+        # Verificar que estamos en la página de detalle del evento
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/{self.event1.id}/")
+
+        # Cambiar el estado del evento a "Cancelado"
+        finish_button = self.page.locator("#finish-event-button")
+        finish_button.wait_for(state="visible")
+
+        # Primero configura el manejador para aceptar el diálogo
+        self.page.once("dialog", lambda dialog: dialog.accept())
+        # Luego haz clic en el botón
+        finish_button.click()     
+
+        self.page.wait_for_url(f"{self.live_server_url}/events/{self.event1.id}/")
+
+        # Verificar que el estado del evento ahora es "Cancelado"
+        event_state = self.page.locator("#event-status-display")
+        event_state.wait_for(state="visible")
+        expect(event_state).to_have_text("Finalizado")
