@@ -401,3 +401,6 @@ class RefundRequest(models.Model):
         except cls.DoesNotExist:
             return False, "Solicitud de reembolso no encontrada."
         
+    @classmethod
+    def has_pending_request(cls, user):
+        return cls.objects.filter(user=user, approved__isnull=True).exists()

@@ -566,6 +566,13 @@ def refund_request(request, ticket_code):
         reason = request.POST.get("reason")
         if not reason:
             return redirect("ticket_detail", ticket_code=ticket_code)
+        
+        # Verificamos si ya tiene una solicitud pendiente
+        if RefundRequest.has_pending_request(request.user):
+            return render(request, "app/refund_request.html", {
+                "ticket": ticket,
+                "errors": {"refund": "Usted ya tiene una solicitud de reembolso pendiente."}
+            })
 
         # Crear solicitud de reembolso
         refund = RefundRequest.new(
@@ -676,7 +683,11 @@ def refund_update(request, refund_id):
 @login_required
 def user_refund_list(request):
     refunds = RefundRequest.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'app/user_refund_list.html', {'refunds': refunds})
+    has_pending_refund = RefundRequest.objects.filter(user=request.user, approved=None).exists()
+    return render(request, 'app/user_refund_list.html', {
+        'refunds': refunds,
+        'has_pending_refund': has_pending_refund
+    })
 
 #///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
