@@ -24,9 +24,10 @@ class EventModelTest(TestCase):
             description="Descripción del evento de prueba",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
-            venue=self.venue1
+            venue=self.venue1,
+            category=self.category,
         )
-        self.event.categories.add(self.category)
+        
         Ticket.objects.create(event=self.event, user=self.user1, quantity=1, type="GENERAL")
         Ticket.objects.create(event=self.event, user=self.user2, quantity=1, type="VIP")
 
