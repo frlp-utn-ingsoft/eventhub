@@ -15,8 +15,9 @@ from django.urls import reverse_lazy
 from .models import Venue
 from .forms import VenueForm
 from .models import Event, Rating, Rating_Form, User, Comment
-import re
-
+from django.shortcuts import render
+from django.utils import timezone
+from .utils import countdown_timer
 
 def organizer_required(view_func):
     @wraps(view_func)
@@ -258,8 +259,6 @@ def event_detail(request, id):
             form = Rating_Form(instance=resena_existente)
         except Rating.DoesNotExist:
             form = Rating_Form()
-
-    
     
     is_organizer = request.user == event.organizer
 
@@ -269,11 +268,17 @@ def event_detail(request, id):
     else:
         tickets_sold = None
         demand_message = None
+        
+    timer_countdown = countdown_timer(event.scheduled_at)
+    completed = timer_countdown["completed"]
 
     return render(
         request, "app/event_detail.html", 
         { "event": event, 
-         "user_is_organizer": request.user == event.organizer, 
+         "timer_countdown": timer_countdown,
+         "event_completed": completed,
+         "user_is_organizer_of_the_event": request.user == event.organizer, 
+         "user_is_organizer": request.user.is_organizer,
          "comments": comments, 
          "ratings": ratings,
          "form": form,
@@ -299,12 +304,10 @@ def event_delete(request, id):
 
     return redirect("events")
 
+@organizer_required
 @login_required
 def event_form(request, id=None):
     user = request.user
-
-    if not user.is_organizer:
-        return redirect("events")
 
     # Obtener todos los venues disponibles
     venues = Venue.objects.all()
@@ -345,6 +348,13 @@ def event_form(request, id=None):
             event.venue = venue
             event.save()
 
+            users_to_notify = User.objects.filter(tickets__event=event).distinct()
+            
+            if len(users_to_notify) > 0:
+                title = "Evento Modificado"
+                message = "El evento ha sido modificado. Revisa el detalle del evento para mantenerte actualizado " + "<a href=/events/" + str(event.id) + ">aqui</a>"
+                Notification.new([user, *users_to_notify], event, title, message, "LOW")
+
             return redirect('event_detail', id=event.id)
 
         if success:
@@ -366,8 +376,12 @@ def event_form(request, id=None):
    
     total = len(categories)
     per_column = math.ceil(total / 3)
-    categories_chunks = [categories[i:i + per_column] for i in range(0, total, per_column)]
-
+    total = len(categories)
+    if total == 0:
+        categories_chunks = []
+    else:
+        per_column = math.ceil(total / 3)
+        categories_chunks = [categories[i:i + per_column] for i in range(0, total, per_column)]
     context = {
         'event': event,
         'categories': categories,

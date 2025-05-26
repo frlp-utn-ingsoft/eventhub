@@ -1,9 +1,9 @@
 import datetime
-
 from django.test import TestCase
 from django.utils import timezone
-
 from app.models import Event, User, Venue, Ticket
+from datetime import datetime, timedelta
+
 
 
 class EventModelTest(TestCase):

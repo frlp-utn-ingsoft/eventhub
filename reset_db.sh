@@ -1,7 +1,7 @@
 #!/bin/bash
 
-python_interpreter="python"
-#python_interpreter="python3"
+#python_interpreter="python"
+python_interpreter="python3"
 
 # 1. eliminar la base de datos del proyecto
 echo "==> Eliminando base de datos..."
