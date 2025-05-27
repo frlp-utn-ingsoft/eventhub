@@ -39,6 +39,7 @@ class PromedioBaseTest(BaseE2ETest):
             text="Me encantó",
         )
 
+
     def test_organizer_ve_promedio_y_estrellas(self):
         # Login vía interfaz
         self.login_user("organizador_test", "password123")
