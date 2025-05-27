@@ -406,6 +406,19 @@ class RefoundRequest(models.Model):
 
         return refound, None
     
+    def update(self, ticket_code, reason, details):
+        errors = RefoundRequest.validate(ticket_code, reason, details)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+        
+        self.ticket_code = ticket_code or self.ticket_code
+        self.reason = reason or self.reason
+        self.details = details or self.details
+        self.save()
+
+        return True, None
+    
     @classmethod
     def validate(cls, ticket_code, reason, details):
         errors = {}

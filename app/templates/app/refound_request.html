@@ -82,7 +82,7 @@
                 </div>
                 <form method="POST" action="" id="refound_form">
                   {% csrf_token %}
-                  <input type="hidden" name="id" id="refound_id">
+                  <input type="hidden" name="id" id="refound_id" value="{{ refound_id|default:'' }}">
                   <div class="mb-3">
                     <label for="ticketCode" class="form-label">Código de ticket</label>
                     <input type="text" class="form-control" name="ticketCode" id="ticketCode" placeholder="" value="{{ ticket_code|default:"" }}" required>
@@ -94,10 +94,10 @@
                   <div class="mb-3">
                     <label for="refundReason" class="form-label">Motivo del reembolso <span class="text-danger">*</span></label>
                     <select class="form-select" name="refundReason" id="refundReason" required>
-                      <option selected disabled selected hidden>Selecciona un motivo</option>
-                      <option value="Evento cancelado">Evento cancelado</option>
-                      <option value="Error en la compra">Error en la compra</option>
-                      <option value="Problemas personales">Problemas personales</option>
+                      <option disabled hidden {% if not reason %}selected{% endif %}>Selecciona un motivo</option>
+                      <option value="Evento cancelado" {% if reason == "Evento cancelado" %}selected{% endif %}>Evento cancelado</option>
+                      <option value="Error en la compra" {% if reason == "Error en la compra" %}selected{% endif %}>Error en la compra</option>
+                      <option value="Problemas personales" {% if reason == "Problemas personales" %}selected{% endif %}>Problemas personales</option>
                     </select>
                     {% if errors.reason %}
                       <div class="text-danger mt-1">{{ errors.reason }}</div>
@@ -165,6 +165,22 @@
     document.addEventListener('DOMContentLoaded', function () {
       const modal = new bootstrap.Modal(document.getElementById('refoundModal'));
       modal.show();
+
+      const deleteButton = document.getElementById('delete-button');
+      const sendButton = document.getElementById('send-button');
+      const form = document.getElementById('refound_form');
+
+      const isEdit = "{{ ticket_code|default:'' }}";
+
+      if (isEdit) {
+        deleteButton.classList.remove('d-none');
+        sendButton.textContent = "Editar Solicitud";
+        form.action = "{% url 'update_refound' %}";
+      } else {
+        deleteButton.classList.add('d-none');
+        sendButton.textContent = "Enviar Solicitud";
+        form.action = "{% url 'refound' %}";
+      }
     });
   </script>
 {% endif %}
