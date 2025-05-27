@@ -330,6 +330,15 @@ class Notification(models.Model):
 
         return notification
     
+    @classmethod
+    def notify_event_change(cls, event, current_user):
+        users_to_notify = User.objects.filter(tickets__event=event).distinct()
+        if len(users_to_notify) > 0:
+            title = "Evento Modificado"
+            message = "El evento ha sido modificado. Revisa el detalle del evento para mantenerte actualizado " + "<a href=/events/" + str(event.id) + ">aqui</a>"
+            return Notification.new([current_user, *users_to_notify], event, title, message, "LOW")
+        return None
+
     def update(self, users, event, title, message, priority):
         self.event = event
         self.title = title
@@ -340,10 +349,11 @@ class Notification(models.Model):
         
     def mark_as_read(self, user_id):
         notification_user = NotificationUser.objects.filter(notification=self, user_id=user_id).first()
-    
+
         if notification_user:
             notification_user.is_read = True
             notification_user.save()
+    
 
 class NotificationUser(models.Model):
     notification = models.ForeignKey(Notification, on_delete=models.CASCADE)
