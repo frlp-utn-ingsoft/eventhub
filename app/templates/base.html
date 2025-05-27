@@ -49,9 +49,13 @@
                             <li class="nav-item">
                                 {% navbar_link 'events' 'Eventos' %}
                             </li>
+                            <li class="nav-item">
+                                {% navbar_link 'my_favorites' 'Mis Favoritos' %}
+
+                            </li>
                             {% if user.is_organizer %}
                                 <li class="nav-item">
-                                {% navbar_link 'locations_list' 'Locaciones' %}
+                                {% navbar_link 'locations_list' 'Ubicaciones' %}
                             </li>
                             <li class="nav-item">
                                 {% navbar_link 'categories_list' 'Categorías' %}
