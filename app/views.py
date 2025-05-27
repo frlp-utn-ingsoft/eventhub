@@ -17,6 +17,7 @@ from .models import Event, Rating, Rating_Form, User, Comment
 from django.shortcuts import render
 from django.utils import timezone
 from .utils import countdown_timer
+import re
 
 def organizer_required(view_func):
     @wraps(view_func)
