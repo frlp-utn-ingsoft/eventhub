@@ -1,6 +1,5 @@
 from datetime import datetime
 from functools import wraps
-from . import views
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
@@ -18,11 +17,13 @@ from .forms import VenueForm
 from .models import Rating, Rating_Form, User, Comment
 from django.shortcuts import render
 from django.utils import timezone
-from .utils import countdown_timerfrom decimal import Decimal, InvalidOperation
+from .utils import countdown_timer
+from decimal import Decimal, InvalidOperation
 import random, string
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 import json
+from django.http import Http404
 
 def generate_coupon_code(length=8):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
@@ -267,8 +268,6 @@ def event_detail(request, id):
             form = Rating_Form(instance=resena_existente)
         except Rating.DoesNotExist:
             form = Rating_Form()
-
-    
     
     is_organizer = request.user == event.organizer
 
@@ -278,11 +277,17 @@ def event_detail(request, id):
     else:
         tickets_sold = None
         demand_message = None
+        
+        timer_countdown = countdown_timer(event.scheduled_at)
+        completed = timer_countdown["completed"]
 
     return render(
         request, "app/event_detail.html", 
         { "event": event, 
-         "user_is_organizer": request.user == event.organizer, 
+         "timer_countdown": timer_countdown,
+         "event_completed": completed,
+         "user_is_organizer_of_the_event": request.user == event.organizer, 
+         "user_is_organizer": request.user.is_organizer,
          "comments": comments, 
          "ratings": ratings,
          "form": form,
@@ -308,16 +313,11 @@ def event_delete(request, id):
 
     return redirect("events")
 
-######################################################################################
 @organizer_required
 @login_required
 def event_form(request, id=None):
     user = request.user
 
-    if not user.is_organizer:
-        return redirect("events")
-
-    
     venues = Venue.objects.all()
 
     if request.method == "POST":
@@ -325,8 +325,8 @@ def event_form(request, id=None):
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
-        category_ids = request.POST.getlist('categories')  # Lista de IDs
-        venue_id = request.POST.get("venue")  # Obtener el venue seleccionado
+        category_ids = request.POST.getlist('categories')
+        venue_id = request.POST.get("venue") 
         price_str = request.POST.get("price")
         
         try:
@@ -364,9 +364,9 @@ def event_form(request, id=None):
             except Coupon.DoesNotExist:
                 pass
 
-        # Crear o actualizar el evento
+      
         if id is None:
-            # Crear evento
+         
             venue = get_object_or_404(Venue, pk=venue_id) if venue_id else Venue.objects.first()
             if venue is None:
                 raise ValueError("No se ha proporcionado un lugar de celebración y no se dispone de un lugar de celebración por defecto.")
@@ -387,10 +387,13 @@ def event_form(request, id=None):
 
             event.save()
             
-            if coupon_to_assign:
-             coupon_to_assign.event = event
-             coupon_to_assign.save()
 
+            users_to_notify = User.objects.filter(tickets__event=event).distinct()
+            
+            if len(users_to_notify) > 0:
+                title = "Evento Modificado"
+                message = "El evento ha sido modificado. Revisa el detalle del evento para mantenerte actualizado " + "<a href=/events/" + str(event.id) + ">aqui</a>"
+                Notification.new([user, *users_to_notify], event, title, message, "LOW")
 
             return redirect('event_detail', id=event.id)
 
@@ -410,12 +413,15 @@ def event_form(request, id=None):
 
     categories = list(Category.objects.all())
 
-   
     total = len(categories)
     per_column = math.ceil(total / 3)
-    categories_chunks = [categories[i:i + per_column] for i in range(0, total, per_column)]
-
-    context = {
+    total = len(categories)
+    if total == 0:
+        categories_chunks = []
+    else:
+        per_column = math.ceil(total / 3)
+        categories_chunks = [categories[i:i + per_column] for i in range(0, total, per_column)]
+        context = {
         'event': event,
         'categories': categories,
         'categories_chunks': categories_chunks,
@@ -429,19 +435,29 @@ def event_form(request, id=None):
 
     return render(request, 'app/event_form.html', context)
 ########################################################################################
+
+
 @organizer_required
 @login_required
 def coupon_list(request, event_id):
-    event = get_object_or_404(Event, id=event_id, organizer=request.user)
+    try:
+        event = Event.objects.get(id=event_id)
+    except Event.DoesNotExist:
+        raise Http404("Evento no encontrado")
+
+    if event.organizer != request.user:
+        return render(request, 'app/access_denied.html', status=403)
+
     coupons = event.coupons.all().order_by('-created_at')
     active_coupons_count = coupons.filter(active=True).count()
-    
+
     context = {
         'event': event,
         'coupons': coupons,
         'active_coupons_count': active_coupons_count,
     }
     return render(request, "app/coupons/coupon_list.html", context)
+
 
 
 @organizer_required
@@ -795,10 +811,11 @@ def ticket_detail(request, ticket_id):
     return render(request, 'app/ticket_detail.html', {'ticket': ticket, "user_is_organizer": request.user.is_organizer})
 
 @login_required
+@organizer_required
 def edit_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
     
-    if request.user != ticket.user:
+    if request.user != ticket.event.organizer:
         messages.error(request, 'No tienes permiso para editar este ticket')
         return redirect('home')
     
@@ -827,14 +844,15 @@ def edit_ticket(request, ticket_id):
     })
 
 @login_required
+@organizer_required
 def delete_ticket(request, ticket_id):
     ticket = get_object_or_404(Ticket, id=ticket_id)
 
-    if request.user != ticket.user and not (request.user.is_organizer and request.user == ticket.event.organizer):
+    if request.user != ticket.event.organizer:
         messages.error(request, 'No tienes permiso para eliminar este ticket')
         return redirect('home')
     
-    if request.user == ticket.user:
+    if request.user == ticket.event.organizer:
         time_difference = timezone.now() - ticket.buy_date
         if time_difference.total_seconds() > 1800:
             messages.error(request, 'Solo puedes eliminar el ticket dentro de los primeros 30 minutos después de la compra')
@@ -933,15 +951,20 @@ def notification_form(request):
         message = request.POST.get("message")
         priority = request.POST.get("priority")
         event_id = request.POST.get("event")
-        event = get_object_or_404(Event, id=event_id)
+
+        event = None
+        if event_id != "":
+            event = get_object_or_404(Event, id=event_id)
+
         recipient_type = request.POST.get("recipient_type")
 
-        users = []
+        users_selected = []
         if recipient_type == "all_users":
             users = User.objects.all()
-        else:
+        
+        if recipient_type == "specific_user" and user_id != "":
             user = get_object_or_404(User, id=user_id)
-            users.append(user)
+            users_selected.append(user)
         
         validations_pass, errors = createNotificationValidations(users, event, title, message, priority)
         if validations_pass == False:
