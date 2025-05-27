@@ -434,15 +434,15 @@ def event_form(request, id=None):
     else:
         per_column = math.ceil(total / 3)
         categories_chunks = [categories[i:i + per_column] for i in range(0, total, per_column)]
-        context = {
-        'event': event,
-        'categories': categories,
-        'categories_chunks': categories_chunks,
-        'event_categories_ids': event_categories_ids,
-        'user_is_organizer': user.is_organizer,
-        'venues': venues, 
-        'event_venue': event_venue,
-        'price': getattr(event, 'price', 0.0) if event else 0.0,
+    context = {
+    'event': event,
+    'categories': categories,
+    'categories_chunks': categories_chunks,
+    'event_categories_ids': event_categories_ids,
+    'user_is_organizer': user.is_organizer,
+    'venues': venues, 
+    'event_venue': event_venue,
+    'price': getattr(event, 'price', 0.0) if event else 0.0,
 
     }
 

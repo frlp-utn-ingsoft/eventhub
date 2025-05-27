@@ -33,7 +33,8 @@ class EventModelTest(TestCase):
             description="Descripción del evento de prueba",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
-            venue = self.venue_mocked
+            venue = self.venue_mocked,
+            price=20000.00
         )
 
         """Test que verifica la creación correcta de eventos"""
@@ -93,7 +94,8 @@ class EventModelTest(TestCase):
             description="Descripción del evento",
             scheduled_at=scheduled_at,
             organizer=self.organizer,
-            venue = self.venue_mocked    
+            venue = self.venue_mocked,
+            price=20000.00
         )
 
         self.assertFalse(success)

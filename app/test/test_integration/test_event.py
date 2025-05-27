@@ -27,6 +27,7 @@ class BaseEventTestCase(TestCase):
             capacity=5000,
             country="ARG",  
             city="La Plata"
+            
         )
         
         # Crear un usuario regular
@@ -43,7 +44,8 @@ class BaseEventTestCase(TestCase):
             description="Descripción del evento 1",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
-            venue=self.venue
+            venue=self.venue,
+            price=100.00
         )
 
         self.event2 = Event.objects.create(
@@ -51,7 +53,8 @@ class BaseEventTestCase(TestCase):
             description="Descripción del evento 2",
             scheduled_at=timezone.now() + datetime.timedelta(days=2),
             organizer=self.organizer,
-            venue=self.venue
+            venue=self.venue,
+            price=100.00
         )
 
         # Cliente para hacer peticiones
@@ -208,7 +211,8 @@ class EventFormSubmissionTest(BaseEventTestCase):
             "description": "Descripción del nuevo evento",
             "date": "2025-05-01",
             "time": "14:30",
-            "venue":1
+            "venue":1,
+            "price": 150.00,
         }
         # Hacer petición POST a la vista event_form
         response = self.client.post(reverse("event_form"), event_data)
