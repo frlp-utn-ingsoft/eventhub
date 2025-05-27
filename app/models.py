@@ -3,7 +3,6 @@ from django.db import models
 from django.db.models import Sum
 from django.utils.crypto import get_random_string
 
-
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
     favorite_events = models.ManyToManyField(
@@ -231,6 +230,29 @@ class Refund(models.Model):
 
     def __str__(self):
         return self.ticket_code
+    
+    def validate(self):
+        errors = {}
+        # Reason no vacío
+        if not self.reason or not self.reason.strip():
+            errors["reason"] = "El motivo del reembolso es obligatorio."
+        # Sólo una solicitud activa (approved is None) por usuario
+        exists_active = Refund.objects.filter(
+            user=self.user,
+            approved__isnull=True
+        ).exclude(pk=self.pk).exists()
+        if exists_active:
+            errors["__all__"] = "Ya tienes una solicitud de reembolso en curso."
+
+        return errors
+    
+    def get_status_display(self):
+        if self.approved is None:
+            return "Pendiente"
+        elif self.approved is True:
+            return "Aprobado"
+        else:
+            return "Rechazado"
 
 
 class Comment(models.Model):
