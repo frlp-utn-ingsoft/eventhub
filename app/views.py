@@ -554,8 +554,26 @@ def buy_ticket_from_event(request, event_id):
         }
     }
 
-    return render(request, 'tickets/buy_ticket.html', {
-        'form': form, 
-        'event': event,
-        'event_prices': event_prices
-    })
+
+    return render(request, 'tickets/buy_ticket.html', {'form': form, 'event': event,'event_prices': event_prices})
+
+
+@login_required
+def toggle_favorite(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    user = request.user
+
+    if user.es_evento_favorito(event):
+        user.desmarcar_evento_favorito(event)
+        messages.success(request, f'"{event.title}" removido de favoritos')
+    else:
+        user.marcar_evento_favorito(event)
+        messages.success(request, f'"{event.title}" agregado a favoritos')
+
+    return redirect('events')
+
+
+@login_required
+def my_favorites(request):
+    """Vista para mostrar eventos favoritos del usuario"""
+    return render(request, 'favoritos/my_favorites.html')

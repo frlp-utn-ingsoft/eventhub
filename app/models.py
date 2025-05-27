@@ -11,6 +11,7 @@ from django.utils.dateparse import parse_datetime
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
+    favorite_events = models.ManyToManyField('Event', blank=True, related_name='favorited_by')
 
     @classmethod
     def validate_new_user(cls, email, username, password, password_confirm):
@@ -31,6 +32,18 @@ class User(AbstractUser):
             errors["password"] = "Las contraseñas no coinciden"
 
         return errors
+    
+    def marcar_evento_favorito(self, evento):
+        """Marca un evento como favorito"""
+        self.favorite_events.add(evento)
+    
+    def desmarcar_evento_favorito(self, evento):
+        """Desmarca un evento como favorito"""
+        self.favorite_events.remove(evento)
+    
+    def es_evento_favorito(self, evento):
+        """Verifica si un evento es favorito del usuario"""
+        return self.favorite_events.filter(id=evento.id).exists()
 
 
 class Location(models.Model):

@@ -53,6 +53,14 @@
                     <a href="{% url 'event_detail' event.id %}" class="btn btn-sm btn-outline-primary" aria-label="Ver Detalle">
                         <i class="bi bi-eye" aria-hidden="true"></i>
                     </a>
+                    <a href="{% url 'toggle_favorite' event.id %}"
+                            class="btn btn-sm {% if event in user.favorite_events.all %}btn-danger{% else %}btn-outline-danger{% endif %}">
+                            {% if event in user.favorite_events.all %}
+                             <i class="bi bi-heart-fill"></i>  <!-- Corazón lleno si es favorito -->
+                            {% else %}
+                              <i class="bi bi-heart"></i>       <!-- Corazón vacío si no es favorito -->
+                            {% endif %}
+                            </a>
                     {% if user.is_authenticated and user_is_organizer %}
                         <a href="{% url 'event_edit' event.id %}" class="btn btn-sm btn-outline-secondary" aria-label="Editar">
                             <i class="bi bi-pencil" aria-hidden="true"></i>
