@@ -6,40 +6,51 @@
         <div class="d-flex justify-content-between align-items-center">
             <div class="d-flex justify-content-center align-items-center my-4">
                 <h1 class="me-2 mb-0">{{ event.title }}</h1>
-                {% if event.category %}
-                    <div class="mx-3 align-self-center">
-                        <span class="badge badge-secondary bg-primary">{{ event.category.name }}</span>
-                    </div>
-                {% endif %}
+                <!-- Eliminé las etiquetas de estado del título -->
             </div>
             <div>
-                {% if user_is_organizer %}
-                    <a
-                        href="{% url 'event_edit' event.id %}"
-                        class="btn btn-outline-primary me-2"
-                    >
-                        <i class="bi bi-pencil me-1"></i>Editar
+                {% if user_is_organizer and request.user == event.organizer %}
+                {% comment %} Solo el usuario Organizador del evento puede hacerlo {% endcomment %}
+                    <a href="{% url 'event_tickets' event.id %}" class="btn btn-primary">
+                        <i class="bi bi-ticket-perforated me-2"></i>Gestionar entradas
                     </a>
+                {% else %}
+                    {% if event.status != 'canceled' and event.status != 'CANCELED' and event.status != 'finished' and event.status != 'FINISHED' and event.status != 'soldout' and event.status != 'SOLDOUT' %}
+                        <a href="{% url 'ticket_create' event.id %}" class="btn btn-primary">
+                            <i class="bi bi-ticket-perforated me-2"></i>Comprar entradas
+                        </a>
+                    {% else %}
+                        <button class="btn btn-secondary" disabled>
+                            <i class="bi bi-ticket-perforated me-2"></i>No disponible
+                        </button>
+                    {% endif %}
                 {% endif %}
             </div>
         </div>
     </div>
-    
+
     <div class="row">
         <div class="card">
-            <div class="card-body">
+            <div class="card-body position-relative" >
+                <!-- Estado colocado en la esquina superior derecha -->
+                <div class="position-absolute top-0 end-0 mt-3 me-3" id="event-status-display">
+    {% if event.status == 'finished' or event.status == 'FINISHED' %}
+        <span class="badge bg-secondary fs-6 py-2 px-3">Finalizado</span>
+    {% elif event.status == 'canceled' or event.status == 'CANCELED' %}
+        <span class="badge bg-danger fs-6 py-2 px-3">Cancelado</span>
+    {% elif event.status == 'reprogramed' or event.status == 'REPROGRAMED' %}
+        <span class="badge bg-warning text-dark fs-6 py-2 px-3">Reprogramado</span>
+    {% elif event.status == 'soldout' or event.status == 'SOLDOUT' %}
+        <span class="badge bg-secondary fs-6 py-2 px-3">Agotado</span>
+    {% elif event.status == 'active' or event.status == 'ACTIVE' %}
+        <span class="badge bg-success fs-6 py-2 px-3">Activo</span>
+    {% endif %}
+</div>
+
+                
                 <h5 class="card-title">Detalles del Evento</h5>
                 <p class="card-text">{{ event.description }}</p>
                 <div class="mt-4">
-                    <div class="d-flex align-items-center mb-3">
-                        <div class="bg-light rounded-circle p-2 me-3">
-                            <i class="bi bi-geo-alt-fill"></i>
-                        </div>
-                        <div>
-                            <h6 class="mb-0">Lugar del evento</h6>
-                            <p class="mb-0">{{ event.venue }}</p>
-                        </div>
-                    </div>
                     <div class="d-flex align-items-center mb-3">
                         <div class="bg-light rounded-circle p-2 me-3">
                             <i class="bi bi-calendar-event text-primary"></i>
@@ -51,6 +62,15 @@
                     </div>
                     <div class="d-flex align-items-center mb-3">
                         <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-geo-alt-fill text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Ubicación</h6>
+                            <p class="mb-0">{{ event.venue }}</p>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
                             <i class="bi bi-person text-primary"></i>
                         </div>
                         <div>
@@ -58,13 +78,64 @@
                             <p class="mb-0">{{ event.organizer }}</p>
                         </div>
                     </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-tag text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Categorías</h6>
+                            <div class="d-flex flex-wrap gap-2 mt-1">
+                                {% if event_categories %}
+                                    {% for category in event_categories %}
+                                        <span class="badge bg-primary">{{ category.name }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <p class="mb-0 text-muted">Sin categorías</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </div>
+                
+                <!-- Acciones en la esquina inferior derecha -->
+                {% if user_is_organizer and request.user == event.organizer %}
+                    {% if event.status != 'canceled' and event.status != 'CANCELED' and event.status != 'finished' and event.status != 'FINISHED' and event.status != 'soldout' and event.status != 'SOLDOUT' %}
+                    <div class="d-flex justify-content-end mt-4">
+                        <!-- Botón de Cancelar -->
+                        <form method="post" action="" onsubmit="return confirm('¿Seguro que deseas cancelar este evento?');" class="me-2">
+                            {% csrf_token %}
+                            <input type="hidden" name="id" value="{{ event.id }}">
+                            <input type="hidden" name="cancel_event" value="1">
+                            <button type="submit" class="btn btn-danger" id="cancel-event-button">
+                                <i class="bi bi-x-circle me-1"></i> Cancelar evento
+                            </button>
+                        </form>
+
+                        <!-- Botón de Finalizar -->
+                        <form method="post" action="" onsubmit="return confirm('¿Seguro que deseas finalizar este evento?');" class="me-2">
+                            {% csrf_token %}
+                            <input type="hidden" name="id" value="{{ event.id }}">
+                            <input type="hidden" name="finish_event" value="1">
+                            <button type="submit" class="btn btn-primary" id="finish-event-button">
+                                <i class="bi bi-flag me-1"></i> Finalizar evento
+                            </button>
+                        </form>
+
+                        <!-- Botón de Editar -->
+                        <a href="{% url 'event_edit' event.id %}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil me-1"></i> Editar
+                        </a>
+                    </div>
+                    {% endif %}
+                {% endif %}
             </div>
         </div>
     </div>
+    
+    <!-- Include comments section -->
+    {% include 'app/comments/comments_section.html' %}
     {% block extra_content %}
         {% include "app/rating/create_rating.html" %}
     {% endblock %}
 </div>
-
 {% endblock %}

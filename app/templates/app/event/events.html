@@ -9,19 +9,37 @@
         {% if user_is_organizer %}
             <a
                 href="{% url 'event_form' %}"
-                class="btn btn-primary"
+                class="btn btn-success"
             >
                 <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
                 Crear Evento
             </a>
         {% endif %}
     </div>
+    
+    <nav class="navbar navbar-light bg-light">
+        <form class="d-flex align-items-center gap-2" action="{% url 'event_filter' %}" method="GET">
+            {% csrf_token %}
+            <input class="form-control" name="search" type="text" placeholder="Busca un evento..." aria-label="Search" >
+            <button class="btn btn-outline-primary" type="submit" name="filter" value="all" >
+                Buscar
+            </button>
+            {% if user_is_organizer %}
+                <button class="btn {% if my_events %}btn-primary{% else %}btn-outline-primary{% endif %} flex-shrink-0" type="submit" name="filter" value="my_events">
+                    Mis eventos
+                </button>
+            {% endif %}
+        </form>
+    </nav>
+
     <table class="table">
         <thead>
             <tr>
                 <th>Título</th>
                 <th>Descripción</th>
                 <th>Fecha</th>
+                <th>Categorias</th>
+                <th>Lugar</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -32,6 +50,24 @@
                     <td>{{ event.description }}</td>
                     <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
                     <td>
+                        <div style="row">
+                        {% for category in event.categories.all %}
+                                <div class="align-self-center">
+                                    <span class="badge badge-secondary bg-primary">{{ category.name }}</span>
+                                </div>
+                                {% empty %}
+                                Sin categoría
+                        {% endfor %}
+                        </div>
+                    </td>
+                    <td>
+                        {% if event.venue%}
+                            {{ event.venue }}
+                        {% else %}
+                            Sin lugar de evento
+                        {% endif %}
+                    </td>
+                    <td>
                         <div class="hstack gap-1">
                             <a href="{% url 'event_detail' event.id %}"
                                class="btn btn-sm btn-outline-primary"
@@ -39,30 +75,34 @@
                                title="Ver detalle">
                                 <i class="bi bi-eye" aria-hidden="true"></i>
                             </a>
-                            {% if user_is_organizer %}
-                                <a href="{% url 'event_edit' event.id %}"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    aria-label="Editar"
-                                    title="Editar">
-                                    <i class="bi bi-pencil" aria-hidden="true"></i>
-                                </a>
-                                <form action="{% url 'event_delete' event.id %}" method="POST">
-                                    {% csrf_token %}
+                            {% if user_is_organizer and event.organizer == user %}
+                                {% if event.status != 'canceled' and event.status != 'CANCELED' and event.status != 'finished' and event.status != 'FINISHED' and event.status != 'soldout' and event.status != 'SOLDOUT' %}
+                                    <a href="{% url 'event_edit' event.id %}"
+                                        class="btn btn-sm btn-outline-secondary"
+                                        aria-label="Editar"
+                                        title="Editar">
+                                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                                    </a>
                                     <button class="btn btn-sm btn-outline-danger"
                                         title="Eliminar"
                                         type="submit"
                                         aria-label="Eliminar"
-                                        titile="Eliminar">
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#deleteModal{{ event.id }}"
+                                    >
                                         <i class="bi bi-trash" aria-hidden="true"></i>
                                     </button>
-                                </form>
+                                    {% with title_text="Eliminar evento: "|add:event.title %}
+                                        {% include "app/common/delete_modal.html" with object=event delete_url_name='event_delete' title=title_text message="¿Estás seguro de que deseas eliminar este evento?" %}
+                                    {% endwith %}
+                                {% endif %}
                             {% endif %}
                         </div>
                     </td>
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center">No hay eventos disponibles</td>
+                    <td colspan="7" class="text-center">No hay eventos disponibles</td>
                 </tr>
             {% endfor %}
         </tbody>

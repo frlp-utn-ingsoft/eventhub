@@ -1,0 +1,21 @@
+<!-- Modal de confirmación de eliminación -->
+<div class="modal fade" id="deleteModal{{ object.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ object.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+    <div class="modal-content">
+        <form method="POST" action="{% if delete_url_name == 'delete_comment' %}{% if event_id %}{% url delete_url_name event_id object.id %}{% else %}{% url 'delete_comment_organizer' object.id %}{% endif %}{% else %}{% url delete_url_name object.id %}{% endif %}">
+        {% csrf_token %}
+        <div class="modal-header">
+            <h5 class="modal-title" id="deleteModalLabel{{ object.id }}">{{ title }}</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+            {{ message }}
+        </div>
+        <div class="modal-footer">
+            <button type="submit" class="btn btn-danger">Eliminar</button>
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        </div>
+        </form>
+    </div>
+    </div>
+</div>

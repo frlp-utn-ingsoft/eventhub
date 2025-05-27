@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
+  <div style="border: 1px solid #ccc; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);">
+    <h1 class="mb-4 text-center">Eliminar Notificación</h1>
+    <p class="mb-3 text-center">¿Estás seguro de que quieres eliminar la notificación "{{ notification.title }}"?</p>
+    <form method="post" class="text-center">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-danger me-2">Eliminar</button>
+      <a href="{% url 'notification_detail' notification.pk %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
