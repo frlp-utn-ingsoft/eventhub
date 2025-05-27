@@ -39,9 +39,15 @@
                                 <i class="bi bi-pencil me-1"></i>Editar Evento
                             </a>
                         {% else %}
-                            <a href="{% url 'buy_ticket' event.id %}" class="btn btn-primary me-2">
-                                <i class="bi bi-ticket-perforated me-2"></i>Comprar Entrada
-                            </a>
+                            {% if event.available_tickets > 0 %}
+                                <a href="{% url 'buy_ticket' event.id %}" class="btn btn-primary me-2">
+                                    <i class="bi bi-ticket-perforated me-2"></i>Comprar Entrada
+                                </a>
+                            {% else %}
+                                <button class="btn btn-secondary me-2" disabled>
+                                    <i class="bi bi-ticket-perforated me-2"></i>Entradas Agotadas
+                                </button>
+                            {% endif %}
                         {% endif %}
                     </div>
                 </div>
