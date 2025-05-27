@@ -97,10 +97,23 @@ def events(request):
     else:
         events = events.order_by('scheduled_at')
 
-    return render(request, 'app/events.html', {
-        'events': events,
-        'user_is_organizer': request.user.is_authenticated and request.user.is_organizer,
-    })
+    events_with_comments = events.annotate(num_comment=Count('comment'))
+
+    for event in events:
+        if event.status == 'active' and event.scheduled_at < timezone.now():
+            event.status = 'finished'
+            event.save(update_fields=["status"])
+
+    return render(
+    request,
+    "app/events.html",
+    {
+        "events": events,
+        "events_with_comments": events_with_comments,
+        "user_is_organizer": request.user.is_authenticated and request.user.is_organizer,
+    },
+)
+
 
 @login_required
 def event_detail(request, event_id):
@@ -167,6 +180,7 @@ def event_delete(request, id):
 
 #modifique event_form
 @login_required
+@login_required
 def event_form(request, id=None):
     user = request.user
 
@@ -175,8 +189,10 @@ def event_form(request, id=None):
 
     if id:
         instance = get_object_or_404(Event, pk=id)
+        original_scheduled_at = instance.scheduled_at
     else:
         instance = None
+        original_scheduled_at = None
 
     if request.method == "POST":
         form = EventForm(request.POST, instance=instance)
@@ -184,6 +200,7 @@ def event_form(request, id=None):
         if form.is_valid():
             event = form.save(commit=False)
             event.organizer = request.user
+            
 
             # Combinar date y time desde POST para formar scheduled_at
             date = request.POST.get("date")
@@ -192,13 +209,19 @@ def event_form(request, id=None):
                 try:
                     y, m, d = map(int, date.split("-"))
                     h, mi = map(int, time.split(":"))
-                    event.scheduled_at = timezone.make_aware(datetime.datetime(y, m, d, h, mi))
+                    new_scheduled_at = timezone.make_aware(datetime.datetime(y, m, d, h, mi))
+                    event.scheduled_at = new_scheduled_at
                 except Exception:
                     form.add_error(None, "Fecha y hora inválidas.")
                     return render(request, "app/event_form.html", {
                         "form": form,
                         "user_is_organizer": request.user.is_organizer
                     })
+
+            # Lógica para definir el estado del evento
+            event.status = request.POST.get("status") or event.status  # Se puede editar manualmente desde el form
+            event.update_status(original_scheduled_at)  # Aplica lógica de reprogramado o activación
+
 
             event.save()
             form.save_m2m()
