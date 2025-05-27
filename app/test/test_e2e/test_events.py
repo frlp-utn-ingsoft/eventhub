@@ -337,7 +337,7 @@ class EventCRUDTest(EventBaseTest):
     def  test_notification_creation_on_event_update(self):
         """Test que verifica la creación de una notificación al actualizar un evento"""
         #Iniciamos como organizador
-        self.login_user("organizador", "password123"),
+        self.login_user("organizador", "password123")
         #Vamos a la pagina de eventos
         self.page.goto(f"{self.live_server_url}/events/")
         #Hacemos click en el boton de editar del primer evento
