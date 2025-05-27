@@ -72,15 +72,14 @@
     </div>
 </div>
 
-<!-- Script para validaciones y autodesaparición de mensajes -->
+
 <script>
-  // Setear fecha mínima en datetime-local
+
   const expirationDate = document.getElementById('expiration_date');
   const now = new Date();
   now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
   expirationDate.min = now.toISOString().slice(0, 16);
 
-  // Validaciones antes del envío
   document.querySelector('form').addEventListener('submit', function (e) {
     const discountInput = document.getElementById('discount_percentage');
     const expirationInput = document.getElementById('expiration_date');
@@ -103,7 +102,7 @@
     }
   });
 
-  // Desaparecer alertas automáticamente después de 4 segundos
+  
   setTimeout(function () {
     const alert = document.getElementById("alert-message");
     if (alert) {

@@ -370,7 +370,7 @@ def event_form(request, id=None):
             venue = get_object_or_404(Venue, pk=venue_id) if venue_id else Venue.objects.first()
             if venue is None:
                 raise ValueError("No se ha proporcionado un lugar de celebración y no se dispone de un lugar de celebración por defecto.")
-            success, event_or_errors = Event.new(title, description, scheduled_at, request.user, category_ids, venue, price)
+            success, event_or_errors = Event.new(title, description, scheduled_at, request.user, category_ids, venue, float(price))
             if not success:
                 errors = event_or_errors
                 
