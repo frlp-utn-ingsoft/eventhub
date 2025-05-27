@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load tz %}
 
 {% block title %}Eventos{% endblock %}
 
@@ -24,40 +25,35 @@
             <tr>
                 <th>Título</th>
                 <th>Descripción</th>
-                <th>Ubicacion</th>
                 <th>Fecha</th>
+                <th>Ubicación</th>
                 <th>Categorías</th>
                 <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
-            {% for event in events%}
-                <tr>
-                    <td>{{ event.title }}</td>
-                    <td>{{ event.description }}</td>
-                    <td>{{ event.location }}</td>
-                    <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
-                    <td>
-                        <div class="d-flex flex-wrap gap-1">
-                            {% for cat in event.categories.all %}
-                                <span class="badge rounded-pill bg-light text-dark px-3 py-2">
-                                    {{ cat.name }}
-                                </span>
-                            {% empty %}
-                                <span class="text-muted">Sin categorías</span>
-                            {% endfor %}
-                        </div>
-                    </td>
-                    <td>
-                        <div class="hstack gap-1">
-                            <a href="{% url 'event_detail' event.id %}"
-                               class="btn btn-sm btn-outline-primary"
-                               aria-label="Ver detalle"
-                               title="Ver detalle">
-                                <i class="bi bi-eye" aria-hidden="true"></i>
-                            </a>
-
-                            <a href="{% url 'toggle_favorite' event.id %}"
+            {% for event in events %}
+            <tr>
+                <td>{{ event.title }}</td>
+                <td>{{ event.description }}</td>
+                <td>{% if event.scheduled_at %}{{ event.scheduled_at|localtime|date:'d b Y, H:i' }}{% endif %}</td>
+                <td>{% if event.location %}{{ event.location.name }}{% else %}-{% endif %}</td>
+                <td>
+                    {% if event.categories.all %}
+                        {% for category in event.categories.all %}
+                            <span class="badge bg-secondary">{{ category.name }}</span>
+                        {% empty %}
+                            <span class="text-muted">Sin categorías</span>
+                        {% endfor %}
+                    {% else %}
+                        <span class="text-muted">Sin categorías</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <a href="{% url 'event_detail' event.id %}" class="btn btn-sm btn-outline-primary" aria-label="Ver Detalle">
+                        <i class="bi bi-eye" aria-hidden="true"></i>
+                    </a>
+                    <a href="{% url 'toggle_favorite' event.id %}"
                             class="btn btn-sm {% if event in user.favorite_events.all %}btn-danger{% else %}btn-outline-danger{% endif %}">
                             {% if event in user.favorite_events.all %}
                              <i class="bi bi-heart-fill"></i>  <!-- Corazón lleno si es favorito -->
@@ -65,31 +61,22 @@
                               <i class="bi bi-heart"></i>       <!-- Corazón vacío si no es favorito -->
                             {% endif %}
                             </a>
-                            
-                            {% if user_is_organizer %}
-                                <a href="{% url 'event_edit' event.id %}"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    aria-label="Editar"
-                                    title="Editar">
-                                    <i class="bi bi-pencil" aria-hidden="true"></i>
-                                </a>
-                                <form action="{% url 'event_delete' event.id %}" method="POST">
-                                    {% csrf_token %}
-                                    <button class="btn btn-sm btn-outline-danger"
-                                        title="Eliminar"
-                                        type="submit"
-                                        aria-label="Eliminar"
-                                        titile="Eliminar">
-                                        <i class="bi bi-trash" aria-hidden="true"></i>
-                                    </button>
-                                </form>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
+                    {% if user.is_authenticated and user_is_organizer %}
+                        <a href="{% url 'event_edit' event.id %}" class="btn btn-sm btn-outline-secondary" aria-label="Editar">
+                            <i class="bi bi-pencil" aria-hidden="true"></i>
+                        </a>
+                        <form action="{% url 'event_delete' event.id %}" method="POST" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="Eliminar">
+                                <i class="bi bi-trash" aria-hidden="true"></i>
+                            </button>
+                        </form>
+                    {% endif %}
+                </td>
+            </tr>
             {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center">No hay eventos disponibles</td>
+                    <td colspan="6" class="text-center">No hay eventos disponibles</td>
                 </tr>
             {% endfor %}
         </tbody>
