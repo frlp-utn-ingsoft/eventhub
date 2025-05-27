@@ -353,6 +353,9 @@ class RefundRequest(models.Model):
 
         if errors:
             return False, errors
+        
+        if cls.objects.filter(user=user, approved__isnull=True).exists():
+            return False, {"__all__": "Ya tienes una solicitud de reembolso activa."}
 
         refund = cls(
             ticket_code=ticket_code,

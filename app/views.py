@@ -20,6 +20,7 @@ from .models import (
     Venue,
 )
 from django.db.models import Count
+from django.utils.timezone import now
 
 def register(request):
     if request.method == "POST":
@@ -659,11 +660,19 @@ def create_refund(request):
     if request.method == 'POST':
         form = RefundRequestForm(request.POST)
         if form.is_valid():
-            refund = form.save(commit=False)
-            refund.user = request.user
-            refund.created_at = timezone.now()
-            refund.save()
-            return redirect('refund_list')  # Redirige a la lista de solicitudes de reembolso
+            success, result = RefundRequest.new(
+                ticket_code=form.cleaned_data['ticket_code'],
+                reason=form.cleaned_data['reason'],
+                user=request.user,
+                approved=None, # type: ignore
+                created_at=now()
+            )
+            if success:
+                return redirect('refund_list')
+            elif isinstance(result, dict):
+                form.add_error(None, result.get("__all__", "Error desconocido."))
+            else:
+                  form.add_error(None, "Ocurrió un error inesperado.")
     else:
         form = RefundRequestForm()
     return render(request, 'app/create_refund.html', {'form': form})
