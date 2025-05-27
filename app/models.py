@@ -136,8 +136,10 @@ class Event(models.Model):
     def update_status(self, original_date=None):
         if original_date and self.scheduled_at != original_date:
             self.status = "rescheduled"
+            self.save()
         elif not self.status:
             self.status = "active"
+            self.save()
 
     def update(self, title, description, scheduled_at, organizer, venue, status):
         self.title = title or self.title
