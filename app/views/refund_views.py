@@ -15,35 +15,45 @@ def refund_create(request):
     if request.method == "POST":
         ticket_code = request.POST.get("ticket_code")
         reason      = request.POST.get("reason", "").strip()
+        errors = []
 
-        # Validar ticket existente y perteneciente al usuario
+        # 1. Usuario no puede tener otra solicitud activa
+        if Refund.objects.filter(user=user, approved__isnull=True).exists():
+            errors.append("Ya tienes una solicitud de reembolso pendiente o en proceso.")
+
+        # 2. El ticket debe existir y pertenecer al usuario
         ticket = Ticket.objects.filter(user=user, ticket_code=ticket_code).first()
         if not ticket:
-            error = "Código de ticket inválido."
-        # Validar duplicado de refund
-        elif Refund.objects.filter(user=user, ticket_code=ticket_code).exists():
-            error = "Ya existe una solicitud de reembolso para este ticket."
+            errors.append("Código de ticket inválido.")
         else:
-            días_transcurridos = (timezone.now().date() - ticket.buy_date).days
-            if días_transcurridos > 30:
-                error = "No puedes solicitar reembolso de un ticket con más de 30 días de antigüedad."
+            # 3. No haber solicitado reembolso ya para este ticket
+            if Refund.objects.filter(user=user, ticket_code=ticket_code).exists():
+                errors.append("Ya existe una solicitud de reembolso para este ticket.")
+            # 4. Máximo 30 días de antigüedad
             else:
-                Refund.objects.create(
-                    ticket_code=ticket.ticket_code,
-                    reason=reason,
-                    user=user,
-                    event=ticket.event
-                )
-                return redirect("my_refunds")
+                días = (timezone.now().date() - ticket.buy_date).days
+                if días > 30:
+                    errors.append("No puedes solicitar reembolso de un ticket con más de 30 días de antigüedad.")
 
-        return render(request, "refund/refund_form.html", {
-            "user_tickets":  user_tickets,
-            "error":         error,
-            "selected_code": ticket_code,
-            "reason":        reason,
-        })
+        # Si hay errores, re-renderiza el formulario con todos ellos
+        if errors:
+            return render(request, "app/refund/refund_form.html", {
+                "user_tickets":  user_tickets,
+                "errors":        errors,
+                "selected_code": ticket_code,
+                "reason":        reason,
+            })
 
-    return render(request, "refund/refund_form.html", {
+        Refund.objects.create(
+            ticket_code=ticket.ticket_code,
+            reason=reason,
+            user=user,
+            event=ticket.event
+        )
+        return redirect("my_refunds")
+
+    # GET: formulario vacío
+    return render(request, "app/refund/refund_form.html", {
         "user_tickets": user_tickets
     })
 
@@ -53,7 +63,7 @@ def my_refunds(request):
     codes = {r.ticket_code for r in refunds}
     tickets = Ticket.objects.filter(ticket_code__in=codes)
     tickets_map = {t.ticket_code: t for t in tickets}
-    return render(request, "refund/my_refunds.html", {"refunds": refunds, "tickets_map": tickets_map})
+    return render(request, "app/refund/my_refunds.html", {"refunds": refunds, "tickets_map": tickets_map})
 
 @login_required
 def refund_edit(request, id):
@@ -68,7 +78,7 @@ def refund_edit(request, id):
         refund_obj.save()
         return redirect("my_refunds")
 
-    return render(request, "refund/refund_form.html", {"refund": refund_obj})
+    return render(request, "app/refund/refund_form.html", {"refund": refund_obj})
 
 @login_required
 def refund_delete(request, id):
@@ -134,6 +144,6 @@ def refund_requests_admin(request):
         "tickets_map": tickets_map,
     }
 
-    return render(request, "refund/refund_request_admin.html", 
+    return render(request, "app/refund/refund_request_admin.html", 
         context
     )
