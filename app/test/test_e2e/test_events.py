@@ -4,7 +4,7 @@ import re
 from django.utils import timezone
 from playwright.sync_api import expect
 
-from app.models import Event, User, Venue, Ticket
+from app.models import Event, User, Venue, Ticket, Category
 
 from app.test.test_e2e.base import BaseE2ETest
 
@@ -46,6 +46,11 @@ class EventBaseTest(BaseE2ETest):
             capacity=300,
             contact = "Maria Lopez",
         )
+        self.category = Category.objects.create( #con id=1
+            name="Rock",
+            is_active=True,
+            description="Rock y sus derivados",
+        )
 
         # Crear eventos de prueba
         # Evento 1
@@ -56,6 +61,7 @@ class EventBaseTest(BaseE2ETest):
             scheduled_at=event_date1,
             venue = self.venue1,
             organizer=self.organizer,
+            category=self.category,
         )
 
         # Evento 2
@@ -66,6 +72,7 @@ class EventBaseTest(BaseE2ETest):
             scheduled_at=event_date2,
             venue=self.venue1,
             organizer=self.organizer,
+            category=self.category,
         )
 
         # Crear ticket
@@ -351,9 +358,12 @@ class EventCRUDTest(EventBaseTest):
         description = self.page.get_by_label("Descripción")
         expect(description).to_have_value("Descripción del evento 1")
 
+        category = self.page.get_by_label("Categoría")
+        expect(category).to_have_value("1")
+
         date = self.page.get_by_label("Fecha")
         expect(date).to_have_value("2025-02-10")
-        date.fill("2025-04-20")
+        date.fill("2025-04-20") #Cambiamos la fecha
 
         time = self.page.get_by_label("Hora")
         expect(time).to_have_value("10:10")

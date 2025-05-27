@@ -183,7 +183,6 @@ def event_form(request, event_id=None):
                     priority="MEDIUM",
                 )
                 usuarios = User.objects.filter(tickets__event=event).distinct()
-                print(usuarios)
                 notification.users.set(usuarios)
                 notification.save()
         return redirect("events")
