@@ -44,6 +44,15 @@
                             {% endif %}
                         </div>
                     {% endif %}
+
+                    {% if event.ratings.exists %}
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-star-fill me-2 text-warning"></i>
+                        <span class="fw-bold">Calificación promedio:</span>
+                        <span class="ms-2">{{ event.get_average_rating|floatformat:1 }} / 5.0</span>
+                        <span class="ms-2 text-muted">({{ event.get_rating_count }} calificaciones)</span>
+                    </div>
+                    {% endif %}
                     
                     <div class="mt-4">
                         {% if user_is_organizer %}
