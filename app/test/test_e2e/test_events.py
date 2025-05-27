@@ -288,7 +288,7 @@ class EventCRUDTest(EventBaseTest):
         time.fill("03:00")
 
         # Enviar el formulario
-        self.page.get_by_role("button", name="Guardar Cambios").click()
+        self.page.get_by_role("button", name="Crear Evento").click()
 
         # Verificar que redirigió a la página de eventos
         expect(self.page).to_have_url(f"{self.live_server_url}/events/")

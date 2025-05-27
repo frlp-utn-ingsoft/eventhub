@@ -197,20 +197,10 @@ class Event(models.Model):
             errors["description"] = "Por favor ingrese una descripcion"
 
         return errors
-    
-    @classmethod
-    def convert_to_datetime(cls, value):
-        if isinstance(value, datetime):
-            return value  # ya es datetime, no parsear
-        if isinstance(value, str):
-            return parse_datetime(value)  # parsea string a datetime
-        return None  # o lanzar excepción si esperas siempre datetime o str
 
     @classmethod
     def new(cls, title, description, scheduled_at, organizer, location=None, price_general=Decimal('0.00'), price_vip=Decimal('0.00'), tickets_sold=0):
         errors = Event.validate(title, description, scheduled_at)
-
-        scheduled_at = cls.convert_to_datetime(scheduled_at)
 
         if len(errors.keys()) > 0:
             return False, errors
@@ -244,9 +234,6 @@ class Event(models.Model):
         self.location = location if location is not None else self.location
         self.price_general = price_general or self.price_general
         self.price_vip = price_vip or self.price_vip
-
-        if not timezone.is_aware(scheduled_at):
-            scheduled_at = timezone.make_aware(scheduled_at)
 
         self.save()
 
