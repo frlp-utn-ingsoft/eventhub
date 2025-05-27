@@ -229,6 +229,15 @@ class Event(models.Model):
 
         return self.venue.capacity - aux
 
+    def get_average_rating(self):
+        ratings = self.ratings.all()
+        if not ratings:
+            return 0
+        return sum(rating.rating for rating in ratings) / len(ratings)
+
+    def get_rating_count(self):
+        return self.ratings.count()
+
 class Ticket(models.Model):
     # Constants
     GENERAL = 'GENERAL'
