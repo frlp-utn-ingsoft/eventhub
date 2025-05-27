@@ -123,8 +123,7 @@ def event_form(request, event_id=None):
     
     venues = Venue.objects.all()
     categories = Category.objects.filter(is_active=True)
-    event_categories = []
-    event = {}
+    event = None
 
     if event_id is not None:
         event = get_object_or_404(Event, pk=event_id)
@@ -136,41 +135,79 @@ def event_form(request, event_id=None):
         category_id = request.POST.get("category")
         date = request.POST.get("date")
         time = request.POST.get("time")
-        categories = request.POST.getlist("categories")
 
-        venue = get_object_or_404(Venue, pk=venue_id)
-        category = get_object_or_404(Category, pk=category_id) if category_id else None
-        [year, month, day] = date.split("-")
-        [hour, minutes] = time.split(":")
+        if not all([title, description, venue_id, date, time]):
+            messages.error(request, "Todos los campos son obligatorios")
+            return render(request, "app/event_form.html", {
+                "event": event,
+                "categories": categories,
+                "venues": venues,
+                "user_is_organizer": request.user.is_organizer,
+                "data": request.POST
+            })
 
-        scheduled_at = timezone.make_aware(
-            datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
-        )
+        try:
+            venue = get_object_or_404(Venue, pk=venue_id)
+            category = get_object_or_404(Category, pk=category_id) if category_id else None
+            [year, month, day] = date.split("-")
+            [hour, minutes] = time.split(":")
 
-        if event_id is None:
-            success, event = Event.new(
-                title=title,
-                description=description,
-                scheduled_at=scheduled_at,
-                organizer=request.user,
-                venue=venue,
-                category=category
+            scheduled_at = timezone.make_aware(
+                datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
             )
-            if categories:
-                event.categories.set(categories)
-            messages.success(request, "Evento creado exitosamente")
-        else:
-            event = get_object_or_404(Event, pk=event_id)
-            event.title = title
-            event.description = description
-            event.scheduled_at = scheduled_at
-            event.venue = venue
-            event.save()
-            if categories:
-                event.categories.set(categories)
-            messages.success(request, "Evento actualizado exitosamente")
 
-        return redirect("events")
+            if event_id is None:
+                success, result = Event.new(
+                    title=title,
+                    description=description,
+                    scheduled_at=scheduled_at,
+                    organizer=request.user,
+                    venue=venue,
+                    category=category
+                )
+                if success:
+                    messages.success(request, "Evento creado exitosamente")
+                    return redirect("events")
+                else:
+                    messages.error(request, "Error al crear el evento")
+                    return render(request, "app/event_form.html", {
+                        "event": event,
+                        "categories": categories,
+                        "venues": venues,
+                        "user_is_organizer": request.user.is_organizer,
+                        "errors": result,
+                        "data": request.POST
+                    })
+            else:
+                success, result = event.update(
+                    title=title,
+                    description=description,
+                    scheduled_at=scheduled_at,
+                    venue=venue,
+                    category=category
+                )
+                if success:
+                    messages.success(request, "Evento actualizado exitosamente")
+                    return redirect("events")
+                else:
+                    messages.error(request, "Error al actualizar el evento")
+                    return render(request, "app/event_form.html", {
+                        "event": event,
+                        "categories": categories,
+                        "venues": venues,
+                        "user_is_organizer": request.user.is_organizer,
+                        "errors": result,
+                        "data": request.POST
+                    })
+        except (ValueError, TypeError):
+            messages.error(request, "Error en el formato de fecha y hora")
+            return render(request, "app/event_form.html", {
+                "event": event,
+                "categories": categories,
+                "venues": venues,
+                "user_is_organizer": request.user.is_organizer,
+                "data": request.POST
+            })
 
     return render(
         request,
@@ -179,7 +216,6 @@ def event_form(request, event_id=None):
             "event": event,
             "categories": categories,
             "venues": venues,
-            "event_categories": event_categories,
             "user_is_organizer": request.user.is_organizer,
         },
     )
