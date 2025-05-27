@@ -64,6 +64,13 @@ class VenueForm(forms.ModelForm):
             'country': 'País',
             'capacity': 'Capacidad',
         }
+    def clean_capacity(self):
+        capacity = self.cleaned_data.get('capacity')
+        if capacity is None:
+            raise forms.ValidationError("Este campo es obligatorio.")
+        if capacity < 1:
+            raise forms.ValidationError("La capacidad debe ser un número entero positivo.")
+        return capacity
     
 class Category(models.Model):
     name = models.CharField(max_length=40)
