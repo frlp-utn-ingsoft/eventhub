@@ -127,17 +127,18 @@ def event_form(request, event_id=None):
 
     if event_id is not None:
         event = get_object_or_404(Event, pk=event_id)
-        event_categories = [category.id for category in event.categories.all()]
 
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
         venue_id = request.POST.get("venue")
+        category_id = request.POST.get("category")
         date = request.POST.get("date")
         time = request.POST.get("time")
         categories = request.POST.getlist("categories")
 
         venue = get_object_or_404(Venue, pk=venue_id)
+        category = get_object_or_404(Category, pk=category_id) if category_id else None
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
 
@@ -146,12 +147,13 @@ def event_form(request, event_id=None):
         )
 
         if event_id is None:
-            event = Event.objects.create(
+            success, event = Event.new(
                 title=title,
                 description=description,
                 scheduled_at=scheduled_at,
                 organizer=request.user,
-                venue=venue
+                venue=venue,
+                category=category
             )
             if categories:
                 event.categories.set(categories)
@@ -394,7 +396,6 @@ def buy_ticket(request, id):
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
         if success:
-            event.attendees.add(user)
             messages.success(request, "¡Ticket comprado!")
             return redirect("tickets")
         else:
@@ -760,8 +761,7 @@ def notification_create(request):
         # Asignar destinatarios
         if destinatario == "todos":
             event = get_object_or_404(Event, id=event_id)
-            asistentes = event.attendees.all()
-            print("Asistentes para notificación:", asistentes)
+            asistentes = event.get_attendees()
             notification.users.set(asistentes)
         elif destinatario == "usuario":
             usuario = get_object_or_404(User, pk=usuario_id)

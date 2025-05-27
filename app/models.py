@@ -170,12 +170,15 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
-    attendees = models.ManyToManyField(User, related_name="attended_events", blank=True)
-    categories = models.ManyToManyField(Category, related_name="events")
     favorited_by = models.ManyToManyField(User, related_name="favorite_events", blank=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="events", null=True, blank=True)
     
     def __str__(self):
         return self.title
+
+    def get_attendees(self):
+        """Obtiene los usuarios inscriptos al evento a través de los tickets"""
+        return User.objects.filter(tickets__event=self).distinct()
 
     @classmethod
     def validate(cls, title, description, scheduled_at):
@@ -190,7 +193,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, venue, categories=None):
+    def new(cls, title, description, scheduled_at, organizer, venue, category=None):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -202,24 +205,21 @@ class Event(models.Model):
             scheduled_at=scheduled_at,
             organizer=organizer,
             venue=venue,
+            category=category
         )
-        
-        if categories:
-            event.categories.set(categories)
 
         return True, event
 
-    def update(self, title=None, description=None, scheduled_at=None, organizer=None, categories=None, venue=None):
+    def update(self, title=None, description=None, scheduled_at=None, organizer=None, venue=None, category=None):
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
         self.venue = venue or self.venue
-        
-        if categories:
-            self.categories.set(categories)
-            
+        self.category = category or self.category
+
         self.save()
+        return True, self
     
    
     def available_tickets(self):
@@ -291,6 +291,8 @@ class Ticket(models.Model):
             errors["quantity"] = "La cantidad debe ser un número entero válido"
         elif quantity < 1:
             errors["quantity"] = "La cantidad debe ser al menos 1"
+        elif event and quantity > event.available_tickets():
+            errors["quantity"] = f"No hay suficientes entradas disponibles. Solo quedan {event.available_tickets()} entradas."
         
         valid_types = [choice[0] for choice in cls.TICKETS_TYPE_CHOICES]
         if not type or type not in valid_types:
@@ -298,6 +300,8 @@ class Ticket(models.Model):
         
         if not event:
             errors["event"] = "Evento es requerido"
+        elif event.available_tickets() <= 0:
+            errors["event"] = "Lo sentimos, este evento ya no tiene entradas disponibles"
         
         if not user:
             errors["user"] = "Usuario es requerido"
