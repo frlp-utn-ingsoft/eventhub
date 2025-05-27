@@ -248,6 +248,19 @@ def my_events(request):
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
+    
+    #borrar después este bloque de try/except
+    try:
+        timer_countdown = countdown_timer(event.scheduled_at)
+        completed = timer_countdown.get("completed", True)
+    except Exception:
+        # En caso de error devolvemos un timer por defecto
+        timer_countdown = {
+            "completed": True,
+            "days": 0, "hours": 0, "minutes": 0, "seconds": 0
+        }
+        completed = True
+        
     comments = event.comments.all().order_by("-created_at") # type: ignore
     ratings = event.ratings.all().order_by("-fecha_creacion") # type: ignore
     cantidad_resenas = ratings.count()
