@@ -1,7 +1,7 @@
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.utils.timezone import localtime
-from .models import Event, Notification, Ticket
+from .models import Event, Notification, Ticket,User_Notification, User
 
 @receiver(pre_save, sender=Event)
 def detect_event_update(sender, instance, **kwargs):
@@ -67,3 +67,7 @@ def create_notification_on_event_update(sender, instance, created, **kwargs):
     user_ids = Ticket.objects.filter(event=instance).values_list("user_id", flat=True).distinct()
     notif.users.set(user_ids)
     notif.save()
+
+    users = User.objects.filter(id__in=user_ids)
+    for user in users:
+        User_Notification.objects.get_or_create(user=user, notification=notif)
