@@ -875,8 +875,10 @@ def request_refound(request):
     refounds = []
     tickets = Ticket.objects.filter(user=user)
     if user.is_organizer :
-        tickets_ids = Ticket.objects.filter(event__organizer=user).values_list('ticket_code', flat=True)
-        refounds = RefoundRequest.objects.filter(ticket_code__in=tickets_ids)
+        user_refounds = RefoundRequest.objects.filter(user_id=user)
+        tickets_users = Ticket.objects.filter(event__organizer=user).values_list('ticket_code', flat=True)
+        event_refounds = RefoundRequest.objects.filter(ticket_code__in=tickets_users)
+        refounds = (user_refounds | event_refounds).distinct()
     else:
         refounds = RefoundRequest.objects.filter(user_id= user.id )
 

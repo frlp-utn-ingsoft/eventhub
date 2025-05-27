@@ -149,7 +149,8 @@
       if(code){
         deleteButton.classList.remove('d-none')
         sendButton.textContent= "Editar Solicitud"
-        modalDetail.querySelector('#ticketCode').value = code;
+        const ticketSelect = modalDetail.querySelector('#ticketCode');
+        [...ticketSelect.options].forEach(option => {option.selected = option.value === code;});
         modalDetail.querySelector('#refundReason').value = reason;
         modalDetail.querySelector('#additionalDetails').value = additionalDetails;
         modalDetail.querySelector('#refound_id').value = inputId;
