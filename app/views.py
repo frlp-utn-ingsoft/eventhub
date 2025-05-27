@@ -348,12 +348,7 @@ def event_form(request, id=None):
             event.venue = venue
             event.save()
 
-            users_to_notify = User.objects.filter(tickets__event=event).distinct()
-            
-            if len(users_to_notify) > 0:
-                title = "Evento Modificado"
-                message = "El evento ha sido modificado. Revisa el detalle del evento para mantenerte actualizado " + "<a href=/events/" + str(event.id) + ">aqui</a>"
-                Notification.new([user, *users_to_notify], event, title, message, "LOW")
+            Notification.notify_event_change(event, user)
 
             return redirect('event_detail', id=event.id)
 
