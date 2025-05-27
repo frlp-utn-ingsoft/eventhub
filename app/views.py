@@ -118,7 +118,7 @@ def event_form(request, id=None):
         date = request.POST.get("date")
         time = request.POST.get("time")
         category_ids = request.POST.getlist("categories")
-        status = request.POST.get("status")
+        status = request.POST.get("status", 'activo')
         
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
