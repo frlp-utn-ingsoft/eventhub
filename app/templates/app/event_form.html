@@ -20,13 +20,22 @@
             <div class="col-md-6">
                 <label for="date" class="form-label fw-semibold">Fecha <span class="text-danger">*</span></label>
                 <input class="form-control" id="date" type="date" name="date"
-                    value="{{ event.scheduled_at|date:'Y-m-d' }}" required>
+                    value="{% if event.scheduled_at %}{{ event.scheduled_at|date:'Y-m-d' }}{% endif %}" required>
             </div>
             <div class="col-md-6">
                 <label for="time" class="form-label fw-semibold">Hora <span class="text-danger">*</span></label>
                 <input class="form-control" id="time" type="time" name="time"
-                    value="{{ event.scheduled_at|time:'H:i' }}" required>
+                    value="{% if event.scheduled_at %}{{ event.scheduled_at|time:'H:i' }}{% endif %}" required>
             </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="status" class="form-label fw-semibold">Estado del Evento <span class="text-danger">*</span></label>
+            <select class="form-select" id="status" name="status" required>
+                {% for key, value in event_status_choices %}
+                    <option value="{{ key }}" {% if event.status == key %}selected{% endif %}>{{ value }}</option>
+                {% endfor %}
+            </select>
         </div>
 
         <div>
@@ -38,7 +47,8 @@
                         <input class="form-check-input" type="checkbox" name="categories"
                             id="category_{{ category.id }}" value="{{ category.id }}" 
                             {% if event.pk and category in event.categories.all %}checked{% endif %}
-                        <label class="form-check-label" for="category_{{ category.id }}" />
+                        >
+                        <label class="form-check-label" for="category_{{ category.id }}" >
                             {{ category.name }}
                         </label>
                     </div>
