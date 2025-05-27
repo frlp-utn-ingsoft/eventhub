@@ -3,6 +3,8 @@ from django.db import models
 from decimal import Decimal
 import uuid
 from django.conf import settings
+from django.utils.dateparse import parse_datetime
+from datetime import datetime
 from django.utils import timezone
 from datetime import datetime
 from django.utils.dateparse import parse_datetime
