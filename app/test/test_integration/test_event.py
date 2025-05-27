@@ -34,6 +34,7 @@ class BaseEventTestCase(TestCase):
             description="Descripción del evento 1",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
+            status='activo',
         )
 
         self.event2 = Event.objects.create(
@@ -41,6 +42,7 @@ class BaseEventTestCase(TestCase):
             description="Descripción del evento 2",
             scheduled_at=timezone.now() + datetime.timedelta(days=2),
             organizer=self.organizer,
+            status='activo',
         )
 
         # Crear algunos eventos de prueba pasados
@@ -49,6 +51,7 @@ class BaseEventTestCase(TestCase):
             description="Descripción del evento 3",
             scheduled_at=timezone.now() - datetime.timedelta(days=1),
             organizer=self.organizer,
+            status='activo',
         )
 
         self.event4 = Event.objects.create(
@@ -56,6 +59,7 @@ class BaseEventTestCase(TestCase):
             description="Descripción del evento 4",
             scheduled_at=timezone.now() - datetime.timedelta(days=2),
             organizer=self.organizer,
+            status='activo',
         )
 
         # Cliente para hacer peticiones
@@ -261,6 +265,7 @@ class EventFormSubmissionTest(BaseEventTestCase):
             "description": "Descripción del nuevo evento",
             "date": "2025-05-01",
             "time": "14:30",
+            "status": "activo", 
         }
 
         # Hacer petición POST a la vista event_form
@@ -281,6 +286,7 @@ class EventFormSubmissionTest(BaseEventTestCase):
         self.assertEqual(scheduled_at.hour, 14)
         self.assertEqual(scheduled_at.minute, 30)
         self.assertEqual(evento.organizer, self.organizer)
+        self.assertEqual(evento.status, "activo") 
 
     def test_event_form_post_edit(self):
         """Test que verifica que se puede editar un evento existente mediante POST"""
@@ -293,6 +299,7 @@ class EventFormSubmissionTest(BaseEventTestCase):
             "description": "Nueva descripción actualizada",
             "date": "2025-06-15",
             "time": "16:45",
+            "status": "reprogramado",
         }
 
         # Hacer petición POST para editar el evento
@@ -314,6 +321,7 @@ class EventFormSubmissionTest(BaseEventTestCase):
         self.assertEqual(scheduled_at.day, 15)
         self.assertEqual(scheduled_at.hour, 16)
         self.assertEqual(scheduled_at.minute, 45)
+        self.assertEqual(self.event1.status, "reprogramado") 
 
 
 class EventDeleteViewTest(BaseEventTestCase):
