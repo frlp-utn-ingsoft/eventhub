@@ -508,8 +508,10 @@ def coupon_form(request, event_id):
 
         except ValueError as e:
             messages.error(request, str(e))
+            return redirect("coupon_form", event_id=event.id) 
         except Exception as e:
             messages.error(request, f"Error al crear el cupón: {e}")
+            return redirect("coupon_form", event_id=event.id) 
 
     return render(request, "app/coupons/coupon_form.html", {"event": event})
 
