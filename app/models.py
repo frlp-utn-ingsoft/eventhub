@@ -404,6 +404,23 @@ class RefundRequest(models.Model):
         except cls.DoesNotExist:
             return False, "Solicitud de reembolso no encontrada."
         
+
     @classmethod
     def has_pending_request(cls, user):
         return cls.objects.filter(user=user, approved__isnull=True).exists()
+
+class FavoriteEvent(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    event = models.ForeignKey('Event', on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+class Meta:
+    unique_together = ('user', 'event')  # evita duplicados
+
+
+class SurveyResponse(models.Model):
+    ticket = models.OneToOneField('Ticket', on_delete=models.CASCADE)
+    satisfaction = models.IntegerField()
+    issue = models.TextField(blank=True, null=True)
+    recommend = models.BooleanField()
+    submitted_at = models.DateTimeField(auto_now_add=True)
