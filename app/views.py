@@ -887,33 +887,38 @@ def request_refound(request):
         ticket_code= request.POST.get('ticketCode')
         reason= request.POST.get('refundReason')
         details= request.POST.get('additionalDetails')
-        refound=RefoundRequest.new(
-            ticket_code,
-            reason,
-            details,
-            user
-        )
-        return render(
-        request,
-        'app/refound_request.html',{
-            "user_is_organizer": user.is_organizer,
-            "refounds": refounds
-        }
-    )
+        refound, errors= RefoundRequest.new(ticket_code, reason, details, user)
+
+        if errors:
+            return render(
+                request,
+                'app/refound_request.html',{
+                    "user_is_organizer": user.is_organizer,
+                    "refounds": refounds,
+                    "errors": errors,
+                    "ticket_code": ticket_code,
+                    "details": details,
+                    "reason": reason,
+                    "show_modal": True
+                }
+            )
+        
+        return redirect("refound")
     return render(
         request,
         'app/refound_request.html',{
-            "user_is_organizer": user.is_organizer,
-            "refounds": refounds
+        "user_is_organizer": user.is_organizer,
+        "refounds": refounds,
         }
-    )
-
+    )   
+    
 @login_required
 def delete_refound(request):
     if request.method == 'POST':
         refound=get_object_or_404(RefoundRequest, pk=request.POST.get("id"))
         refound.delete()
         return redirect('refound')
+    return redirect("refound") 
 
 
 @login_required

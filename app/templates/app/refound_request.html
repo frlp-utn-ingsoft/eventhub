@@ -70,47 +70,55 @@
 
 <div class="modal fade" id="refoundModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog">
-      <div class="modal-content">
-          <div class="card">
-              <div class="card-header">
-                  <h5>Formulario Solicitud</h5>
-              </div>
-              <div class="card-body">
-                  <div class="alert alert-info" role="alert">
-                    <i class="bi bi-info-circle-fill me-2"></i>
-                    Puedes solicitar un reembolso hasta <strong>48 horas</strong> antes del evento. Una vez procesada la solicitud, el reembolso se realizará en un plazo de <strong>7 a 14 días hábiles</strong>.
-                  </div>
-          
-                  <form method="POST" action="" id="refound_form">
-                    {% csrf_token %}
-                    <input type="hidden" name="id" id="refound_id">
-                    <div class="mb-3">
-                      <label for="ticketCode" class="form-label">Código de ticket</label>
-                      <input type="text" class="form-control" name="ticketCode" id="ticketCode" placeholder="">
-                    </div>
-          
-                    <div class="mb-3">
-                      <label for="refundReason" class="form-label">Motivo del reembolso <span class="text-danger">*</span></label>
-                      <select class="form-select" name="refundReason" id="refundReason">
-                        <option selected disabled>Selecciona un motivo</option>
-                        <option value="Evento cancelado">Evento cancelado</option>
-                        <option value="Error en la compra">Error en la compra</option>
-                        <option value="Problemas personales">Problemas personales</option>
-                      </select>
-                    </div>
-          
-                    <div class="mb-3">
-                      <label for="additionalDetails" class="form-label">Detalles adicionales</label>
-                      <textarea class="form-control" name="additionalDetails" id="additionalDetails" rows="3" placeholder="Proporciona más información sobre tu solicitud de reembolso..."></textarea>
-                    </div>
-                    <button class="btn btn-danger d-none" id="delete-button" formaction="{% url 'delete_refound' %}">Eliminar</button>
-                    <button type="submit" class="btn btn-primary float-end" id="send-button"></button>
-                  </form>
+      <div class="modal-content h-100">
+        <div class="card">
+            <div class="card-header">
+                <h5>Formulario Solicitud</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info" role="alert">
+                  <i class="bi bi-info-circle-fill me-2"></i>
+                  Puedes solicitar un reembolso hasta <strong>48 horas</strong> antes del evento. Una vez procesada la solicitud, el reembolso se realizará en un plazo de <strong>7 a 14 días hábiles</strong>.
                 </div>
+                <form method="POST" action="" id="refound_form">
+                  {% csrf_token %}
+                  <input type="hidden" name="id" id="refound_id">
+                  <div class="mb-3">
+                    <label for="ticketCode" class="form-label">Código de ticket</label>
+                    <input type="text" class="form-control" name="ticketCode" id="ticketCode" placeholder="" value="{{ ticket_code|default:"" }}" required>
+                    {% if errors.ticket_code %}
+                      <div class="text-danger mt-1">{{ errors.ticket_code }}</div>
+                    {% endif %} 
+                  </div>
+        
+                  <div class="mb-3">
+                    <label for="refundReason" class="form-label">Motivo del reembolso <span class="text-danger">*</span></label>
+                    <select class="form-select" name="refundReason" id="refundReason" required>
+                      <option selected disabled selected hidden>Selecciona un motivo</option>
+                      <option value="Evento cancelado">Evento cancelado</option>
+                      <option value="Error en la compra">Error en la compra</option>
+                      <option value="Problemas personales">Problemas personales</option>
+                    </select>
+                    {% if errors.reason %}
+                      <div class="text-danger mt-1">{{ errors.reason }}</div>
+                    {% endif %}
+                  </div>
+        
+                  <div class="mb-3">
+                    <label for="additionalDetails" class="form-label">Detalles adicionales</label>
+                    <textarea class="form-control" name="additionalDetails" id="additionalDetails" rows="3" placeholder="Proporciona más información sobre tu solicitud de reembolso...">{{ details|default:"" }}</textarea>
+                    {% if errors.details %}
+                      <div class="text-danger mt-1">{{ errors.details }}</div>
+                    {% endif %}
+                  </div>
+                  <button class="btn btn-danger d-none" id="delete-button" formaction="{% url 'delete_refound' %}">Eliminar</button>
+                  <button type="submit" class="btn btn-primary float-end" id="send-button"></button>
+                </form>
               </div>
-          </div>
+            </div>
+        </div>
       </div>
-  </div>
+    </div>
 </div>
 
 <script>
@@ -152,4 +160,12 @@
   });
   </script>
 
+{% if show_modal %}
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const modal = new bootstrap.Modal(document.getElementById('refoundModal'));
+      modal.show();
+    });
+  </script>
+{% endif %}
 {% endblock%}
