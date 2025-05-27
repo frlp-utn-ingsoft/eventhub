@@ -40,6 +40,7 @@ class TicketForm(forms.ModelForm):
     ]
 
     QUANTITY_CHOICES = [
+        ('', 'Seleccionar'),
         (1, '1'),
         (2, '2'),
         (3, '3'),
@@ -54,7 +55,8 @@ class TicketForm(forms.ModelForm):
             'class': 'form-control'
         })
     )
-    quantity = TypedChoiceField(choices=QUANTITY_CHOICES, coerce=int, required=True, label="Cantidad de entradas", widget=forms.Select(attrs={'id': 'quantityInput'}))
+    quantity = TypedChoiceField(choices=QUANTITY_CHOICES, coerce=int, required=True, label="Cantidad de entradas", widget=forms.Select(attrs={'id': 'id_quantity',
+            'class': 'form-control'}))
 
     def clean_type(self):
         value = self.cleaned_data['type']
