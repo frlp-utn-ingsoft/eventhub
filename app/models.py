@@ -185,10 +185,15 @@ class Event(models.Model):
     state = models.CharField(choices=EVENT_STATES, max_length=25, default="ACTIVE")
 
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
-    attendees = models.ManyToManyField(User, related_name="attended_events", blank=True)
-    categories = models.ManyToManyField(Category, related_name="events")
+    favorited_by = models.ManyToManyField(User, related_name="favorite_events", blank=True)
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="events", null=True, blank=True)
+    
     def __str__(self):
         return self.title
+
+    def get_attendees(self):
+        """Obtiene los usuarios inscriptos al evento a través de los tickets"""
+        return User.objects.filter(tickets__event=self).distinct()
 
     @classmethod
     def validate(cls, title, description, scheduled_at):
@@ -203,7 +208,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, venue, categories=None):
+    def new(cls, title, description, scheduled_at, organizer, venue, category=None):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -214,11 +219,9 @@ class Event(models.Model):
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
-            venue=venue
+            venue=venue,
+            category=category
         )
-        
-        if categories:
-            event.categories.set(categories)
 
         return True, event
 
@@ -232,11 +235,10 @@ class Event(models.Model):
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
         self.venue = venue or self.venue
-        
-        if categories:
-            self.categories.set(categories)
-            
+        self.category = category or self.category
+
         self.save()
+        return True, self
     
    
     def available_tickets(self):
@@ -258,6 +260,15 @@ class Event(models.Model):
             self.state = self.SOLD_OUT
             self.save()
             return
+
+    def get_average_rating(self):
+        ratings = self.ratings.all()
+        if not ratings:
+            return 0
+        return sum(rating.rating for rating in ratings) / len(ratings)
+
+    def get_rating_count(self):
+        return self.ratings.count()
 
 class Ticket(models.Model):
     # Constants
@@ -320,6 +331,8 @@ class Ticket(models.Model):
             errors["quantity"] = "La cantidad debe ser un número entero válido"
         elif quantity < 1:
             errors["quantity"] = "La cantidad debe ser al menos 1"
+        elif event and quantity > event.available_tickets():
+            errors["quantity"] = f"No hay suficientes entradas disponibles. Solo quedan {event.available_tickets()} entradas."
         
         valid_types = [choice[0] for choice in cls.TICKETS_TYPE_CHOICES]
         if not type or type not in valid_types:
@@ -327,6 +340,8 @@ class Ticket(models.Model):
         
         if not event:
             errors["event"] = "Evento es requerido"
+        elif event.available_tickets() <= 0:
+            errors["event"] = "Lo sentimos, este evento ya no tiene entradas disponibles"
         
         if not user:
             errors["user"] = "Usuario es requerido"
@@ -426,7 +441,7 @@ class Rating(models.Model):
         self.save()
         
         return True, None
-
+    
 class Comment(models.Model):
     title = models.CharField(max_length=200)
     text = models.TextField()
@@ -482,9 +497,6 @@ class Notification(models.Model):
         max_length=10, choices=PRIORITY_CHOICES, default="LOW"
     )
     is_read = models.BooleanField(default=False)
-    event = models.ForeignKey(
-        "Event", on_delete=models.CASCADE, related_name="notifications"
-    )
     users = models.ManyToManyField(
         settings.AUTH_USER_MODEL, related_name="notifications"
     )

@@ -32,6 +32,15 @@
                         <span class="fw-bold">Capacidad:</span>
                         <span class="ms-2">{{ event.venue.capacity }} personas</span>
                     </div>
+
+                    {% if event.ratings.exists %}
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-star-fill me-2 text-warning"></i>
+                        <span class="fw-bold">Calificación promedio:</span>
+                        <span class="ms-2">{{ event.get_average_rating|floatformat:1 }} / 5.0</span>
+                        <span class="ms-2 text-muted">({{ event.get_rating_count }} calificaciones)</span>
+                    </div>
+                    {% endif %}
                     
                     <div class="mt-4">
                         {% if event.state != 'FINISHED' %}
@@ -42,9 +51,15 @@
                                 <i class="bi bi-pencil me-1"></i>Editar Evento
                             </a>
                         {% else %}
-                            <a href="{% url 'buy_ticket' event.id %}" class="btn btn-primary me-2">
-                                <i class="bi bi-ticket-perforated me-2"></i>Comprar Entrada
-                            </a>
+                            {% if event.available_tickets > 0 %}
+                                <a href="{% url 'buy_ticket' event.id %}" class="btn btn-primary me-2">
+                                    <i class="bi bi-ticket-perforated me-2"></i>Comprar Entrada
+                                </a>
+                            {% else %}
+                                <button class="btn btn-secondary me-2" disabled>
+                                    <i class="bi bi-ticket-perforated me-2"></i>Entradas Agotadas
+                                </button>
+                            {% endif %}
                         {% endif %}
                         {% endif %}
                         {% endif %}

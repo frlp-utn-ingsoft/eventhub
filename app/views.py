@@ -75,7 +75,10 @@ def events(request):
     return render(
         request,
         "app/events.html",
-        {"events": events, "user_is_organizer": request.user.is_organizer},
+        {
+            "events": events, 
+            "user_is_organizer": request.user.is_organizer,
+        },
     )
 
 
@@ -135,28 +138,25 @@ def event_form(request, event_id=None):
     if not user.is_organizer:
         return redirect("events")
     
-    categories = Category.objects.filter(is_active=True)
-    
     venues = Venue.objects.all()
+    categories = Category.objects.filter(is_active=True)
     event_categories = []
     event = {}
 
     if event_id is not None:
         event = get_object_or_404(Event, pk=event_id)
-        event_categories = [category.id for category in event.categories.all()]
 
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
-        
         venue_id = request.POST.get("venue")
+        category_id = request.POST.get("category")
         date = request.POST.get("date")
         time = request.POST.get("time")
         categories = request.POST.getlist("categories")
-        venue = request.POST.getlist("venue")
-
 
         venue = get_object_or_404(Venue, pk=venue_id)
+        category = get_object_or_404(Category, pk=category_id) if category_id else None
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
 
@@ -165,15 +165,17 @@ def event_form(request, event_id=None):
         )
 
         if event_id is None:
-            event = Event.objects.create(
+            success, event = Event.new(
                 title=title,
                 description=description,
                 scheduled_at=scheduled_at,
                 organizer=request.user,
-                venue=venue
+                venue=venue,
+                category=category
             )
             if categories:
                 event.categories.set(categories)
+            messages.success(request, "Evento creado exitosamente")
         else:
             event = get_object_or_404(Event, pk=event_id)
             #Marco como reprogamado el evento
@@ -186,6 +188,7 @@ def event_form(request, event_id=None):
             event.save()
             if categories:
                 event.categories.set(categories)
+            messages.success(request, "Evento actualizado exitosamente")
 
         return redirect("events")
 
@@ -195,10 +198,9 @@ def event_form(request, event_id=None):
         {
             "event": event,
             "categories": categories,
-            
             "venues": venues,
             "event_categories": event_categories,
-            "user_is_organizer": request.user.is_organizer
+            "user_is_organizer": request.user.is_organizer,
         },
     )
 
@@ -427,6 +429,7 @@ def buy_ticket(request, id):
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
         if success:
+            event.attendees.add(user)
             #GENERO UN CHEQUEO PARA VERIFICAR EL ESTADO DE SOLD OUT
             event.auto_update_state()
             messages.success(request, "¡Ticket comprado!")
@@ -775,29 +778,29 @@ def notification_create(request):
         event_id = request.POST.get("event_id")
         usuario_id = request.POST.get("usuario_id")
 
-        if not event_id:
+        # Validaciones
+        if destinatario == "todos" and not event_id:
             messages.error(request, "Debe seleccionar un evento.")
             return redirect("notification_create")
 
-        event = get_object_or_404(Event, id=event_id)
-
-        if destinatario == "usuario":
-            if not usuario_id:
-                messages.error(request, "Debe seleccionar un usuario.")
-                return redirect("notification_create")
+        if destinatario == "usuario" and not usuario_id:
+            messages.error(request, "Debe seleccionar un usuario.")
+            return redirect("notification_create")
 
         notification = Notification.objects.create(
             title=title,
             message=message,
-            event=event,
             priority=priority,
             created_at=timezone.now(),
         )
 
+        # Asignar destinatarios
         if destinatario == "todos":
-            asistentes = event.attendees.all()
+            event = get_object_or_404(Event, id=event_id)
+            asistentes = event.attendee.all()
+            print("Asistentes para notificación:", asistentes)
             notification.users.set(asistentes)
-        elif destinatario == "usuario" and usuario_id:
+        elif destinatario == "usuario":
             usuario = get_object_or_404(User, pk=usuario_id)
             notification.users.set([usuario])
 
@@ -939,3 +942,17 @@ def venue_edit(request, id):
             return redirect('venues')
 
     return render(request, "app/venue_edit_form.html", {"venue": venue})
+
+@login_required
+def toggle_favorite(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+    user = request.user
+    
+    if event.favorited_by.filter(id=user.id).exists():
+        event.favorited_by.remove(user)
+        messages.success(request, "Evento removido de favoritos")
+    else:
+        event.favorited_by.add(user)
+        messages.success(request, "Evento agregado a favoritos")
+    
+    return redirect('events')
