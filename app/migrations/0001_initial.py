@@ -143,6 +143,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(primary_key=True, serialize=False)),
                 ('approved', models.CharField(choices=[('pending', 'PENDIENTE'), ('approved', 'APROBADA'), ('denied', 'DENEGADA')], default='pending', max_length=255)),
+                ('approved', models.CharField(choices=[('pending', 'PENDIENTE'), ('approved', 'APROBADA'), ('denied', 'DENEGADA')], default='pending', max_length=255)),
                 ('approval_date', models.DateField(blank=True, default=None, null=True)),
                 ('ticket_code', models.TextField(max_length=50)),
                 ('reason', models.TextField(max_length=255)),

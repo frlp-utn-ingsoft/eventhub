@@ -54,6 +54,25 @@ class Venue(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.city}, {self.country}"
+
+class VenueForm(forms.ModelForm):
+    class Meta:
+        model = Venue
+        fields = '__all__'
+        labels = {
+            'name': 'Nombre del Lugar',
+            'address': 'Dirección',
+            'city': 'Ciudad',
+            'country': 'País',
+            'capacity': 'Capacidad',
+        }
+    def clean_capacity(self):
+        capacity = self.cleaned_data.get('capacity')
+        if capacity is None:
+            raise forms.ValidationError("Este campo es obligatorio.")
+        if capacity < 1:
+            raise forms.ValidationError("La capacidad debe ser un número entero positivo.")
+        return capacity
     
 class Category(models.Model):
     name = models.CharField(max_length=40)
