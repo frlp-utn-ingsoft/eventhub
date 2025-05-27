@@ -1,0 +1,44 @@
+.star-rating {
+    direction: rtl;
+    font-size: 1.8rem;
+    unicode-bidi: bidi-override;
+    display: inline-flex;
+}
+
+.star-rating input[type="radio"] {
+    display: none;
+}
+
+.star-rating label {
+    color: #ccc;
+    cursor: pointer;
+}
+
+.star-rating input[type="radio"]:checked ~ label,
+.star-rating label:hover,
+.star-rating label:hover ~ label {
+    color: gold;
+}
+.rating-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.rating-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.rating-buttons button {
+    background-color: transparent;
+    border: 1px solid #ccc;
+    padding: 0.3rem 0.5rem;
+    cursor: pointer;
+    border-radius: 4px;
+}
+
+.rating-buttons button:hover {
+    background-color: #f0f0f0;
+}

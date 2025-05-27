@@ -1,0 +1,101 @@
+{% comment %}
+app/templates/app/event/comments_section.html
+{% endcomment %}
+
+<div class="container mt-5">
+    <div class="card">
+        <div class="card-header">
+            <h5>Comentarios ({{ event.comments.count }})</h5>
+        </div>
+        <div class="card-body">
+            {% if event.comments.all %}
+                {% for comment in event.comments.all %}
+                    <div id="comment-{{ comment.id }}" class="d-flex mb-4">
+                        <div class="flex-grow-1">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <div class="d-flex align-items-start">
+                                    <i class="bi bi-person-circle fs-1 me-2"></i>
+                                    <div>
+                                        <div class="fw-bold">{{ comment.user.username }}</div>
+                                        <small class="text-muted">{{ comment.created_at|date:"d M Y, H:i" }}</small>
+                                    </div>
+                                </div>
+                                {% if user == comment.user or user == event.organizer %}
+                                <div class="dropdown">
+                                    <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="bi bi-three-dots-vertical"></i>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        {% if user == comment.user %}
+                                            <li>
+                                                <button type="button" 
+                                                        class="dropdown-item" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#editModal{{ comment.id }}">
+                                                    <i class="bi bi-pencil me-2"></i>Editar
+                                                </button>
+                                            </li>
+                                        {% endif %}
+                                        {% if user == comment.user or user == event.organizer %}
+                                            <li>
+                                                <button type="button" 
+                                                        class="dropdown-item text-danger" 
+                                                        data-bs-toggle="modal" 
+                                                        data-bs-target="#deleteModal{{ comment.id }}">
+                                                    <i class="bi bi-trash me-2"></i>Eliminar
+                                                </button>
+                                            </li>
+                                        {% endif %}
+                                    </ul>
+                                </div>
+                                {% endif %}
+                                
+                                <!-- Modales para este comentario -->
+                                {% if user == comment.user %}
+                                    {% include 'app/common/edit_comment_modal.html' %}
+                                {% endif %}
+                                {% if user == comment.user or user == event.organizer %}
+                                    {% with object=comment delete_url_name='delete_comment' title="Eliminar Comentario" message="¿Estás seguro de que deseas eliminar este comentario?" event_id=event.id %}
+                                        {% include 'app/common/delete_modal.html' %}
+                                    {% endwith %}
+                                {% endif %}
+                            </div>
+                            <h6 class="mb-2">{{ comment.title }}</h6>
+                            <p class="mb-0">{{ comment.text }}</p>
+                        </div>
+                    </div>
+                    {% if not forloop.last %}
+                        <hr>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No hay comentarios aún.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if user.is_authenticated %}
+        <div class="card mt-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">Dejar un comentario</h5>
+                <form method="POST" action="{% url 'add_comment' event.id %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Título del comentario *</label>
+                        <input type="text" class="form-control" id="title" name="title" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="text" class="form-label">Contenido del comentario *</label>
+                        <textarea class="form-control" id="text" name="text" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Publicar comentario</button>
+                </form>
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info mt-4">
+            <i class="bi bi-info-circle me-2"></i>
+            Necesitas <a href="{% url 'login' %}">iniciar sesión</a> para dejar un comentario.
+        </div>
+    {% endif %}
+</div>

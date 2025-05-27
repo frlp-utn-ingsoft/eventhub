@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="container mt-4">
+    <h2>Detalle de Notificación</h2>
+
+    <div class="card mt-3">
+        <div class="card-body">
+            <h5 class="card-title">{{ notification.title }}</h5>
+            <p class="card-text"><strong>Evento:</strong> {{ notification.event.title }}</p>
+            <p class="card-text">
+                <strong>Prioridad:</strong>
+                {% if notification.Priority == 'High' %}
+                    <span class="text-danger">Alta</span>
+                {% elif notification.Priority == 'Medium' %}
+                    <span class="text-primary">Normal</span>
+                {% else %}
+                    <span class="text-muted">Baja</span>
+                {% endif %}
+            </p>
+            <p class="card-text"><strong>Mensaje:</strong> {{ notification.massage }}</p>
+            <p class="card-text"><strong>Fecha de creación:</strong> {{ notification.created_at }}</p>
+            <p class="card-text"><strong>Leída:</strong> {{ notification.is_read|yesno:"Sí,No" }}</p>
+        </div>
+    </div>
+
+    <a href="{% url 'notification' %}" class="btn btn-secondary mt-3">Volver a la lista</a>
+</div>
+
+{% endblock %}
