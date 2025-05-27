@@ -108,7 +108,7 @@ def event_form(request, id=None):
 
 @login_required
 def events(request):
-    events = Event.objects.all().order_by("scheduled_at")
+    events = Event.objects.filter(scheduled_at__gt=timezone.now()).order_by("scheduled_at")
     return render(
         request,
         "app/event/events.html",
@@ -180,41 +180,40 @@ def event_delete(request, id):
 
     return redirect("events")
 
+def filter_events(events, user, query, is_my_events, is_past_events, is_available_events):
+    if is_my_events:
+        events = events.filter(organizer=user)
+
+    if not is_past_events:
+        events = events.filter(scheduled_at__gt=timezone.now())
+
+    # if is_available_events:
+        # TO DO: Implementar filtro para eventos disponibles
+        # events = ...
+
+    if query:
+        events = events.filter(
+            Q(title__icontains=query) |
+            Q(description__icontains=query) |
+            Q(venue__name__icontains=query)
+        )
+
+    events = events.order_by("scheduled_at")
+    return events
+
 @login_required
 def event_filter(request):
     query = request.GET.get('search', '')
-    filter_type = request.GET.get('filter', 'all')
-    events = []
-    my_events = False
+    is_my_events = 'my_events' in request.GET
+    is_past_events = 'past_events' in request.GET
+    is_available_events = 'available_events' in request.GET
+    events = Event.objects.all()
 
-    if (filter_type == "my_events"):
-        my_events = True
-        events = Event.objects.filter(organizer=request.user)
-        if query:
-            events.filter(
-                Q(title__icontains=query) |
-                Q(description__icontains=query) |
-                Q(venue__name__icontains=query)
-            )
-        events.order_by("scheduled_at")
-    
-    if (filter_type == "all"):
-        if query:
-            events = Event.objects.filter(
-                Q(title__icontains=query) |
-                Q(description__icontains=query) |
-                Q(venue__name__icontains=query)
-            )
-        else:
-            events = Event.objects.all()
+    filtered_events = filter_events(events, request.user, query, is_my_events, is_past_events, is_available_events)
+    context = {
+        'events': filtered_events,
+        "user": request.user,
+        'user_is_organizer': request.user.is_organizer
+    }
 
-    return render(
-        request,
-        "app/event/events.html",
-        {
-            "events": events, 
-            "user_is_organizer": request.user.is_organizer, 
-            "my_events": my_events,
-            "user": request.user
-        },
-    )
+    return render(request, "app/event/events.html", context)

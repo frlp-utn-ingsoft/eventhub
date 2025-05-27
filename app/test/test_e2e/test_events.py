@@ -61,6 +61,16 @@ class EventBaseTest(BaseE2ETest):
         expect(headers.nth(4)).to_have_text("Lugar")
         expect(headers.nth(5)).to_have_text("Acciones")
 
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
+
         # Verificar que los eventos aparecen en la tabla
         rows = self.page.locator("table tbody tr")
         expect(rows).to_have_count(2)
@@ -199,6 +209,35 @@ class EventPermissionsTest(EventBaseTest):
         create_button = self.page.get_by_role("link", name="Crear Evento")
         expect(create_button).to_have_count(0)
 
+    def test_button_filter_my_events(self):
+        """Test que verifica que el boton de filtro Mis eventos no es visible para el usuario regular y es visible para el usuario administrador"""
+        # Primero verificar como usuario normal
+        self.login_user("usuario", "password123")
+        self.page.goto(f"{self.live_server_url}/events/")
+
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+        checkbox = self.page.locator("#my_events")
+
+        # Verificar que NO existe la checkbox de "Mis Eventos"
+        expect(checkbox).to_have_count(0)
+
+        # Cerrar sesión
+        self.page.get_by_role("button", name="Salir").click()
+
+        # Iniciar sesión como usuario organizador
+        self.login_user("organizador", "password123")
+
+        # Ir a la página de eventos
+        self.page.goto(f"{self.live_server_url}/events/")
+
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#my_events")
+        # Verificar que existe la checkbox de "Mis Eventos"
+        expect(checkbox).to_have_count(1)
+
 
 class EventCRUDTest(EventBaseTest):
     """Tests relacionados con las operaciones CRUD (Crear, Leer, Actualizar, Eliminar) de eventos"""
@@ -238,6 +277,16 @@ class EventCRUDTest(EventBaseTest):
         # Verificar que redirigió a la página de eventos
         expect(self.page).to_have_url(f"{self.live_server_url}/events/")
 
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
+
         # Verificar que ahora hay 3 eventos
         rows = self.page.locator("table tbody tr")
         expect(rows).to_have_count(3)
@@ -254,6 +303,15 @@ class EventCRUDTest(EventBaseTest):
 
         # Ir a la página de eventos
         self.page.goto(f"{self.live_server_url}/events/")
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
 
         # Hacer clic en el botón editar del primer evento
         self.page.get_by_role("link", name="Editar").first.click()
@@ -289,6 +347,15 @@ class EventCRUDTest(EventBaseTest):
 
         # Verificar que redirigió a la página de eventos
         expect(self.page).to_have_url(f"{self.live_server_url}/events/")
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
 
         # Verificar que el título del evento ha sido actualizado
         row = self.page.locator("table tbody tr").last
@@ -303,6 +370,16 @@ class EventCRUDTest(EventBaseTest):
 
         # Ir a la página de eventos
         self.page.goto(f"{self.live_server_url}/events/")
+
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
 
         # Contar eventos antes de eliminar
         initial_count = len(self.page.locator("table tbody tr").all())
@@ -352,6 +429,16 @@ class EventStatusTest(EventBaseTest):
         # Ir a la página de eventos
         self.page.goto(f"{self.live_server_url}/events/")
 
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
+
         # Hacer clic en el botón de detalle del evento
         self.page.get_by_role("link", name="Ver Detalle").first.click()
 
@@ -370,6 +457,16 @@ class EventStatusTest(EventBaseTest):
         # Ir a la página de eventos
         self.page.goto(f"{self.live_server_url}/events/")
 
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
+
         # Hacer clic en el botón de detalle del evento
         self.page.get_by_role("link", name="Ver Detalle").first.click()
 
@@ -383,7 +480,7 @@ class EventStatusTest(EventBaseTest):
         # Primero configura el manejador para aceptar el diálogo
         self.page.once("dialog", lambda dialog: dialog.accept())
         # Luego haz clic en el botón
-        cancel_button.click()     
+        cancel_button.click()
 
         self.page.wait_for_url(f"{self.live_server_url}/events/{self.event1.id}/")
 
@@ -400,6 +497,16 @@ class EventStatusTest(EventBaseTest):
         # Ir a la página de eventos
         self.page.goto(f"{self.live_server_url}/events/")
 
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
+
         # Hacer clic en el botón de detalle del evento
         self.page.get_by_role("link", name="Ver Detalle").first.click()
 
@@ -413,7 +520,7 @@ class EventStatusTest(EventBaseTest):
         # Primero configura el manejador para aceptar el diálogo
         self.page.once("dialog", lambda dialog: dialog.accept())
         # Luego haz clic en el botón
-        finish_button.click()     
+        finish_button.click()
 
         self.page.wait_for_url(f"{self.live_server_url}/events/{self.event1.id}/")
 

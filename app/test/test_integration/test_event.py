@@ -349,3 +349,78 @@ class EventDeleteViewTest(BaseEventTestCase):
 
         # Verificar que el evento sigue existiendo
         self.assertTrue(Event.objects.filter(pk=self.event1.id).exists())
+
+
+class EventFilterIntegrationTest(BaseEventTestCase):
+    """Test de integración para la vista event_filter con filtros aplicados"""
+
+    def setUp(self):
+        super().setUp()
+
+        # Crear eventos adicionales para probar los filtros
+        self.past_event = Event.objects.create(
+            title="Evento Pasado",
+            description="Este evento ya ocurrió",
+            scheduled_at=timezone.now() - datetime.timedelta(days=3),
+            organizer=self.organizer,
+        )
+
+        self.other_organizer = User.objects.create_user(
+            username="otro",
+            email="otro@test.com",
+            password="password123",
+            is_organizer=True,
+        )
+
+        self.other_event = Event.objects.create(
+            title="Evento de otro organizador",
+            description="Evento creado por otra persona",
+            scheduled_at=timezone.now() + datetime.timedelta(days=4),
+            organizer=self.other_organizer,
+        )
+
+    def test_filter_my_events(self):
+        """Filtrar solo los eventos creados por el usuario logueado"""
+        self.client.login(username="organizador", password="password123")
+        response = self.client.get(reverse("event_filter"), {"my_events": True})
+
+        self.assertEqual(response.status_code, 200)
+        events = response.context["events"]
+        for event in events:
+            self.assertEqual(event.organizer, self.organizer)
+
+    def test_search_filter(self):
+        """Buscar eventos por texto"""
+        self.client.login(username="organizador", password="password123")
+        response = self.client.get(reverse("event_filter"), {"search": "Evento 1"})
+
+        self.assertEqual(response.status_code, 200)
+        events = response.context["events"]
+        self.assertIn(self.event1, events)
+        self.assertNotIn(self.event2, events)
+
+    def test_combined_filters(self):
+        """Aplicar múltiples filtros simultáneamente"""
+        self.client.login(username="organizador", password="password123")
+        response = self.client.get(
+            reverse("event_filter"), {"my_events": True, "search": "Evento 1"}
+        )
+
+        self.assertEqual(response.status_code, 200)
+        events = response.context["events"]
+
+        self.assertIn(self.event1, events)
+        for event in events:
+            self.assertEqual(event.organizer, self.organizer)
+
+    def test_no_filters_returns_all_future(self):
+        """Sin filtros aplicados, retorna eventos futuros"""
+        self.client.login(username="regular", password="password123")
+        response = self.client.get(reverse("event_filter"))
+
+        self.assertEqual(response.status_code, 200)
+        events = response.context["events"]
+        self.assertIn(self.event1, events)
+        self.assertIn(self.event2, events)
+        self.assertIn(self.other_event, events)
+        self.assertNotIn(self.past_event, events)
