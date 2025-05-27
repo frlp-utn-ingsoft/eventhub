@@ -5,6 +5,8 @@
   <h3 class="container mt-4">Comprar Entrada</h3>
 </div>
 
+{{ event_prices|json_script:"event-prices-data" }}
+
 <div class="container mt-4 mb-5">
   <div class="d-flex justify-content-center">
     <div class="row me-2">
@@ -47,13 +49,21 @@
               <div class="col-md-4 text-left fw-bold">{{ form.quantity.label }}</div>
               <div class="col-md-8">
                 {{ form.quantity }}
-                <div class="form-text">Disponibles: 120 entradas</div>
+                <div class="form-text">
+                  {% if event.location %}
+                    Disponibles: {{ event.tickets_left }} entradas
+                  {% else %}
+                    No hay información de capacidad disponible
+                  {% endif %}
+                </div>
               </div>
             </div>
 
             <div class="row mb-3">
               <div class="col-md-4 text-left fw-bold">{{ form.type.label }}</div>
-              <div class="col-md-8">{{ form.type }}</div>
+              <div class="col-md-8">
+                {{ form.type }}
+              </div>
             </div>
 
             <h4 class="mt-4">Método de pago</h4>
@@ -98,7 +108,6 @@
             </div>
           </form>
 
-
         </div>
       </div>
     </div>
@@ -116,8 +125,6 @@
         </div>
       </div>
 
-
-
       <div class="border mb-0 rounded card col-md-4 w-100">
         <div class="card-header p-3"><strong>Información importante</strong></div>
         <div class="card-body p-1">
@@ -132,7 +139,6 @@
     </div>
   </div>
 </div>
-
 
 <script>
   const termsCheckbox = document.getElementById('terms');
@@ -157,41 +163,78 @@
 </style>
 
 <script>
-  const eventPrices = {{ event_prices| safe }};
-  const eventSelect = document.getElementById("id_event");
-  const typeSelect = document.getElementById("typeSelect");
-  const quantityInput = document.getElementById("quantityInput");
+  document.addEventListener('DOMContentLoaded', function() {
+    try {
+      const eventPrices = JSON.parse(document.getElementById('event-prices-data').textContent);
+      const eventInput = document.getElementById("id_event");
+      const typeSelect = document.getElementById("id_type");
+      const quantityInput = document.getElementById("id_quantity");
 
-  const priceDisplay = document.getElementById("priceDisplay");
-  const quantityDisplay = document.getElementById("quantityDisplay");
-  const subtotalDisplay = document.getElementById("subtotalDisplay");
-  const taxDisplay = document.getElementById("taxDisplay");
-  const totalDisplay = document.getElementById("totalDisplay");
+      const priceDisplay = document.getElementById("priceDisplay");
+      const quantityDisplay = document.getElementById("quantityDisplay");
+      const subtotalDisplay = document.getElementById("subtotalDisplay");
+      const taxDisplay = document.getElementById("taxDisplay");
+      const totalDisplay = document.getElementById("totalDisplay");
 
-  function updateSummary() {
-    const eventId = eventSelect.value;
-    const type = typeSelect.value;
-    const quantity = parseInt(quantityInput.value) || 0;
+      function updateSummary() {
+        const eventId = eventInput?.value;
+        const type = typeSelect?.value || 'general';
+        const quantity = parseInt(quantityInput?.value) || 0;
 
-    if (!eventPrices[eventId]) return;
+        if (!eventId && eventPrices) {
+          const prices = Object.values(eventPrices)[0];
+          const price = prices[type];
+          
+          if (!price) return;
 
-    const price = eventPrices[eventId][type];
-    const subtotal = price * quantity;
-    const tax = subtotal * 0.10;
-    const total = subtotal + tax;
+          const subtotal = price * quantity;
+          const tax = subtotal * 0.10;
+          const total = subtotal + tax;
 
-    priceDisplay.textContent = `$${price.toFixed(2)}`;
-    quantityDisplay.textContent = quantity;
-    subtotalDisplay.textContent = `$${subtotal.toFixed(2)}`;
-    taxDisplay.textContent = `$${tax.toFixed(2)}`;
-    totalDisplay.textContent = `$${total.toFixed(2)}`;
-  }
+          priceDisplay.textContent = `$${price.toFixed(2)}`;
+          quantityDisplay.textContent = quantity;
+          subtotalDisplay.textContent = `$${subtotal.toFixed(2)}`;
+          taxDisplay.textContent = `$${tax.toFixed(2)}`;
+          totalDisplay.textContent = `$${total.toFixed(2)}`;
+          return;
+        }
 
-  [eventSelect, typeSelect, quantityInput].forEach(el => {
-    el.addEventListener("change", updateSummary);
-    el.addEventListener("input", updateSummary);
+        if (!eventId || !eventPrices[eventId] || !eventPrices[eventId][type]) {
+          priceDisplay.textContent = "$0.00";
+          quantityDisplay.textContent = "0";
+          subtotalDisplay.textContent = "$0.00";
+          taxDisplay.textContent = "$0.00";
+          totalDisplay.textContent = "$0.00";
+          return;
+        }
+
+        const price = eventPrices[eventId][type];
+        const subtotal = price * quantity;
+        const tax = subtotal * 0.10;
+        const total = subtotal + tax;
+
+        priceDisplay.textContent = `$${price.toFixed(2)}`;
+        quantityDisplay.textContent = quantity;
+        subtotalDisplay.textContent = `$${subtotal.toFixed(2)}`;
+        taxDisplay.textContent = `$${tax.toFixed(2)}`;
+        totalDisplay.textContent = `$${total.toFixed(2)}`;
+      }
+
+      if (typeSelect) {
+        typeSelect.addEventListener("change", updateSummary);
+      }
+      
+      if (quantityInput) {
+        quantityInput.addEventListener("change", updateSummary);
+        quantityInput.addEventListener("input", updateSummary);
+      }
+
+      updateSummary();
+    } catch (error) {
+      console.error('Error:', error);
+    }
   });
-
 </script>
+
 
 {% endblock %}

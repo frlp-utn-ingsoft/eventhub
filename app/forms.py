@@ -8,21 +8,33 @@ from django.core.validators import RegexValidator
 from datetime import datetime
 
 class TicketForm(forms.ModelForm):
-    card_number = forms.CharField(max_length=16, min_length=16, label="Número de tarjeta", validators=[RegexValidator(r'^\d{16}$', message="Debe contener exactamente 16 dígitos numéricos.")],
+    card_number = forms.CharField(
+        max_length=16, 
+        min_length=16, 
+        label="Número de tarjeta", 
+        validators=[RegexValidator(r'^\d{16}$', message="Debe contener exactamente 16 dígitos numéricos.")],
+        widget=forms.TextInput(attrs={'class': 'form-control'})
     )
-    card_cvv = forms.CharField(max_length=4, label="CVV", validators=[RegexValidator(r'^\d{3,4}$', message="Debe tener 3 o 4 dígitos numéricos.")],)
+    card_cvv = forms.CharField(
+        max_length=4, 
+        label="CVV", 
+        validators=[RegexValidator(r'^\d{3,4}$', message="Debe tener 3 o 4 dígitos numéricos.")],
+        widget=forms.TextInput(attrs={'class': 'form-control'})
+    )
 
-    # Select para mes (01 a 12)
     MONTH_CHOICES = [(f"{i:02}", f"{i:02}") for i in range(1, 13)]
-    expiry_month = forms.ChoiceField(choices=MONTH_CHOICES, label="Mes")
+    expiry_month = forms.ChoiceField(
+        choices=MONTH_CHOICES, 
+        label="Mes",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
 
-    # Select para año (desde el actual hasta +10 años)
     current_year = datetime.now().year
     YEAR_CHOICES = [(str(y)[-2:], str(y)) for y in range(current_year, current_year + 21)]
-    expiry_year = forms.ChoiceField(choices=YEAR_CHOICES)
+    expiry_year = forms.ChoiceField(choices=YEAR_CHOICES, widget=forms.Select(attrs={'class': 'form-control'}))
 
     TYPE_CHOICES = [
-        ('', 'Seleccione un tipo de entrada'),  # Valor vacío
+        ('', 'Seleccione un tipo de entrada'),
         ('general', 'General'),
         ('vip', 'VIP'),
     ]
@@ -33,8 +45,15 @@ class TicketForm(forms.ModelForm):
         (3, '3'),
         (4, '4'),
     ]
-
-    type = forms.ChoiceField(choices=TYPE_CHOICES, required=True, label="Tipo de entrada", widget=forms.Select(attrs={'id': 'typeSelect'}))
+    type = forms.ChoiceField(
+        choices=TYPE_CHOICES, 
+        required=True, 
+        label="Tipo de entrada", 
+        widget=forms.Select(attrs={
+            'id': 'id_type',
+            'class': 'form-control'
+        })
+    )
     quantity = TypedChoiceField(choices=QUANTITY_CHOICES, coerce=int, required=True, label="Cantidad de entradas", widget=forms.Select(attrs={'id': 'quantityInput'}))
 
     def clean_type(self):
@@ -45,15 +64,18 @@ class TicketForm(forms.ModelForm):
 
     class Meta:
         model = Ticket
-        fields = ['event', 'quantity', 'type', 'card_type']  # user y ticket_code se manejan automáticamente
+        fields = ['event', 'quantity', 'type', 'card_type']
         labels = {
             'event': 'Evento',
             'quantity': 'Cantidad de entradas',
             'type': 'Tipo de entrada',
             'card_type': 'Tipo de tarjeta',
         }
+        widgets = {
+            'event': forms.Select(attrs={'class': 'form-control'}),
+            'card_type': forms.Select(attrs={'class': 'form-control'})
+        }
 
-    
     def clean(self):
         cleaned_data = super().clean()
         event = cleaned_data.get('event')
@@ -85,7 +107,6 @@ class TicketForm(forms.ModelForm):
             year = cleaned_data.get('expiry_year')
 
             if month and year:
-                # Validamos si la tarjeta está vencida
                 now = datetime.now()
                 exp_year = 2000 + int(year)
                 exp_month = int(month)
@@ -101,7 +122,6 @@ class TicketForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
 
-        # Si estamos editando (el ticket ya existe), deshabilitamos algunos campos
         if self.instance and self.instance.pk:
             masked = '************' + self.instance.last4_card_number
             self.fields['card_number'].initial = masked
@@ -117,9 +137,8 @@ class TicketForm(forms.ModelForm):
             self.initial['event'] = self.instance.event.pk
 
         if fixed_event and event_instance:
-            # Quitamos el campo del formulario si el evento es fijo
             self.fields.pop('event')
-            self.event_instance = event_instance  # guardamos para mostrarlo en el template
+            self.event_instance = event_instance
         else:
             self.event_instance = None
 
@@ -134,4 +153,4 @@ class TicketFilterForm(forms.Form):
         user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
         if user:
-            self.fields['event'].queryset = Event.objects.filter(organizer=user) # type: ignore
+            self.fields['event'].queryset = Event.objects.filter(organizer=user)
