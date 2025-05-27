@@ -10,6 +10,8 @@ from django_countries.fields import CountryField
 from cities_light.models import City
 from decimal import Decimal
 import random, string
+from django.core.exceptions import ValidationError
+
 
 def save(method):
     def wrapper(self, *args, **kwargs):
@@ -205,6 +207,10 @@ class Coupon(models.Model):
 
     def __str__(self):
         return f'{self.code} - {self.discount_percent}% - Evento: {self.event.title}'
+    
+    def clean(self):
+        if self.expiration_date < timezone.now():
+            raise ValidationError("La fecha de expiración no puede ser en el pasado.")
     
 #comentarios
 class Comment(models.Model):
