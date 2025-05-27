@@ -1,5 +1,6 @@
 from datetime import datetime
 from functools import wraps
+from . import views
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
@@ -15,7 +16,9 @@ from django.urls import reverse_lazy
 from .models import Venue, Coupon
 from .forms import VenueForm
 from .models import Rating, Rating_Form, User, Comment
-from decimal import Decimal, InvalidOperation
+from django.shortcuts import render
+from django.utils import timezone
+from .utils import countdown_timerfrom decimal import Decimal, InvalidOperation
 import random, string
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -426,30 +429,19 @@ def event_form(request, id=None):
 
     return render(request, 'app/event_form.html', context)
 ########################################################################################
-from django.http import Http404
-
 @organizer_required
 @login_required
 def coupon_list(request, event_id):
-    try:
-        event = Event.objects.get(id=event_id)
-    except Event.DoesNotExist:
-        raise Http404("Evento no encontrado")
-
-    # Validar que el usuario sea organizador
-    if event.organizer != request.user:
-        return render(request, 'app/access_denied.html', status=403)  # O mostrar mensaje personalizado
-
+    event = get_object_or_404(Event, id=event_id, organizer=request.user)
     coupons = event.coupons.all().order_by('-created_at')
     active_coupons_count = coupons.filter(active=True).count()
-
+    
     context = {
         'event': event,
         'coupons': coupons,
         'active_coupons_count': active_coupons_count,
     }
     return render(request, "app/coupons/coupon_list.html", context)
-
 
 
 @organizer_required

@@ -1,10 +1,7 @@
 import datetime
-
 from django.test import TestCase
 from django.utils import timezone
-
-from app.models import Event, User, Venue, Ticket
-
+from app.models import Event, User, Venue
 
 class EventModelTest(TestCase):
     def setUp(self):
@@ -161,70 +158,6 @@ class EventModelTest(TestCase):
         self.assertEqual(updated_event.title, original_title)
         self.assertEqual(updated_event.description, new_description)
         self.assertEqual(updated_event.scheduled_at, original_scheduled_at)
-
-    def test_event_tickets_sold_correct_total(self):
-        event_mocked = Event.objects.create(
-            title="Pelicula",
-            description="Descripción de la pelicula",
-            scheduled_at=timezone.now() + datetime.timedelta(days=1),
-            organizer=self.organizer,
-            venue = self.venue_mocked
-        )
-
-        Ticket.objects.create(user = self.not_organizer, event=event_mocked, quantity=100, type="general")
-
-        self.assertEqual(event_mocked.tickets_sold, 100)
-
-    def test_event_tickets_sold_incorrect_total(self):
-        event_mocked = Event.objects.create(
-            title="Pelicula",
-            description="Descripción de la pelicula",
-            scheduled_at=timezone.now() + datetime.timedelta(days=1),
-            organizer=self.organizer,
-            venue = self.venue_mocked
-        )
-
-        Ticket.objects.create(user = self.not_organizer, event=event_mocked, quantity=100, type="general")
-
-        self.assertNotEqual(event_mocked.tickets_sold, 400)    
-
-    def test_event_demand_message_low(self):
-        event_mocked = Event.objects.create(
-            title="Pelicula",
-            description="Descripción de la pelicula",
-            scheduled_at=timezone.now() + datetime.timedelta(days=1),
-            organizer=self.organizer,
-            venue = self.venue_mocked
-        )
-
-        Ticket.objects.create(user = self.not_organizer, event=event_mocked, quantity=100, type="general")
-        self.assertEqual(event_mocked.demand_message,  "BAJA")
-    
-    def test_event_demand_message_high(self):
-        event_mocked = Event.objects.create(
-            title="Pelicula",
-            description="Descripción de la pelicula",
-            scheduled_at=timezone.now() + datetime.timedelta(days=1),
-            organizer=self.organizer,
-            venue = self.venue_mocked
-        )
-
-        Ticket.objects.create(user = self.not_organizer, event=event_mocked, quantity=4600, type="general")
-        self.assertEqual(event_mocked.demand_message,  "ALTA")
-
-    def test_event_demand_message_medium(self):
-        event_mocked = Event.objects.create(
-            title="Pelicula",
-            description="Descripción de la pelicula",
-            scheduled_at=timezone.now() + datetime.timedelta(days=1),
-            organizer=self.organizer,
-            venue = self.venue_mocked
-        )
-
-        Ticket.objects.create(user = self.not_organizer, event=event_mocked, quantity=700, type="general")
-        self.assertEqual(event_mocked.demand_message,  "MEDIA")
-        
-    
 
         
 

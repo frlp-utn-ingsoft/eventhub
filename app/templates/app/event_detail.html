@@ -6,7 +6,7 @@
         <div class="d-flex justify-content-between align-items-center">
             <h1 class="mb-4">{{ event.title }}</h1>
             <div>
-            {% if user_is_organizer %}
+            {% if user_is_organizer_of_the_event %}
                 <a
                     href="{% url 'event_edit' event.id %}"
                     class="btn btn-outline-primary me-2"
@@ -26,10 +26,43 @@
                         <div class="bg-light rounded-circle p-2 me-3">
                             <i class="bi bi-calendar-event text-primary"></i>
                         </div>
-                        <div>
-                            <h6 class="mb-0">Fecha y Hora</h6>
-                            <p class="mb-0">{{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
-                        </div>
+                        <div class="event-details">
+                            <h6 class="section-title mb-2">Fecha y Hora</h6>
+                            <p class="event-date mb-3">{{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
+                            {% if not user_is_organizer %}
+                                {% if not event_completed %}
+                                    <div class="countdown-section mt-3">
+                                        <h7 class="countdown-label mb-1">Cuenta Regresiva:</h7>
+                                        <div class="d-flex justify-content-center align-items-center bg-light p-3 rounded shadow-sm">
+                                            <div class="time-segment mx-2 text-center">
+                                            <span class="time-value" id="days">{{ timer_countdown.days|stringformat:"02d" }}</span>
+                                            <div class="time-label">Días</div>
+                                            </div>
+                                            <div class="separator mx-2">:</div>
+                                            <div class="time-segment mx-2 text-center">
+                                            <span class="time-value" id="hours">{{ timer_countdown.hours|stringformat:"02d" }}</span>
+                                            <div class="time-label">Hrs</div>
+                                            </div>
+                                            <div class="separator mx-2">:</div>
+                                            <div class="time-segment mx-2 text-center">
+                                            <span class="time-value" id="minutes">{{ timer_countdown.minutes|stringformat:"02d" }}</span>
+                                            <div class="time-label">Min</div>
+                                            </div>
+                                            <div class="separator mx-2">:</div>
+                                            <div class="time-segment mx-2 text-center">
+                                            <span class="time-value" id="seconds">{{ timer_countdown.seconds|stringformat:"02d" }}</span>
+                                            <div class="time-label">Seg</div>
+                                            </div>
+                                        </div>
+                                        </div>
+                                {% else %}
+                                    <div class="event-passed">
+                                        <h7 class="passed-message mb-3">Este concierto ya pasó, esperamos verte en el próximo. ¡Dejanos tus comentarios y reseñas!</h7>
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                            </div>
+
                     </div>
                     <div class="d-flex align-items-center mb-3">
                         <div class="bg-light rounded-circle p-2 me-3">
@@ -65,7 +98,7 @@
                     </div>
                     
 
-                    {% if rating_average is not None %}
+                    {% if user == event.organizer and rating_average is not None %}
                         <div class="d-flex align-items-center mb-3">
                             <div class="bg-light rounded-circle p-2 me-3">
                                 <i class="bi bi-star text-primary"></i>
@@ -77,7 +110,7 @@
                         </div>
                     {% endif %}
 
-                    {% if user_is_organizer %}
+                    {% if user_is_organizer_of_the_event %}
                     <div class="alert alert-info d-flex align-items-center" role="alert">
                         <div>
                             <i class="bi bi-receipt"></i> <strong>Entradas vendidas:</strong> {{ tickets_sold }}<br>
@@ -90,9 +123,13 @@
                              <i class="bi bi-ticket-perforated me-1"></i> Ver Cupones
                         </a>
                     {% endif %}
-                        <a href="{% url 'buy_ticket' event.id %}" class="btn btn-success">
-                            <i class="bi bi-cart-plus me-1"></i> Comprar
-                        </a>
+                        
+                    <div class="card-footer text-end"></div>
+                         {% if not event_completed %}
+                            <a href="{% url 'buy_ticket' event.id %}" class="btn btn-success">
+                                <i class="bi bi-cart-plus me-1"></i> Comprar
+                            </a>
+                        {% endif %}
                         <a href="{% url 'events' %}" class="btn btn-secondary">
                         Volver a Eventos
                         </a>
@@ -115,6 +152,73 @@
             {% include "app/comments/comment_form.html" %}       
         </div>
     </div>
+    <!-- CSS para estilo del countdown -->
+    <style>
+        #countdown {
+            font-family: 'Courier New', monospace;
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+        .time-segment {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .time-label {
+            font-size: 0.75em;
+            color: #555;
+        }
+        .separator {
+            font-size: 1.5em;
+            color: #333;
+        }
+    </style>
+    <script>
+        function updateTimer() {
+            let daysSpan = document.getElementById('days');
+            let hoursSpan = document.getElementById('hours');
+            let minutesSpan = document.getElementById('minutes');
+            let secondsSpan = document.getElementById('seconds');
 
+            let days = parseInt(daysSpan.textContent);
+            let hours = parseInt(hoursSpan.textContent);
+            let minutes = parseInt(minutesSpan.textContent);
+            let seconds = parseInt(secondsSpan.textContent);
+
+            if (seconds > 0) {
+            seconds--;
+            } else {
+            if (minutes > 0) {
+                minutes--;
+                seconds = 59;
+            } else {
+                if (hours > 0) {
+                hours--;
+                minutes = 59;
+                seconds = 59;
+                } else {
+                if (days > 0) {
+                    days--;
+                    hours = 23;
+                    minutes = 59;
+                    seconds = 59;
+                } else {
+                    // Timer terminó
+                    clearInterval(timerInterval);
+                }
+                }
+            }
+            }
+
+            // Actualizar los valores en la interfaz
+            daysSpan.textContent = (days < 10 ? '0' : '') + days;
+            hoursSpan.textContent = (hours < 10 ? '0' : '') + hours;
+            minutesSpan.textContent = (minutes < 10 ? '0' : '') + minutes;
+            secondsSpan.textContent = (seconds < 10 ? '0' : '') + seconds;
+        }
+
+        // Iniciar el temporizador
+        const timerInterval = setInterval(updateTimer, 1000);
+        </script>
 </div>
 {% endblock %}
