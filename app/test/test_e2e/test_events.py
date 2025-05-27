@@ -296,6 +296,56 @@ class EventCRUDTest(EventBaseTest):
         expect(row.locator("td").nth(1)).to_have_text("Descripción creada desde prueba E2E")
         expect(row.locator("td").nth(2)).to_have_text("15 jun 2025, 16:45")
 
+    def test_visibility_countdown_event(self):
+        """Test que verifica que el countdown del detalle de evento es visible para el usuario regular y no para el usuario organizador"""
+
+        event3 = Event.objects.create(
+            title="Evento de prueba 3",
+            description="Descripción del evento 3 con fecha futura",
+            scheduled_at=timezone.now() + datetime.timedelta(days=3, hours=3, minutes=30),
+            organizer=self.organizer,
+        )
+
+        # Iniciar sesión como usuario organizador
+        self.login_user("organizador", "password123")
+
+        # Ir a la página de detalle del evento 3
+        self.page.goto(f"{self.live_server_url}/events/{event3.id}")
+
+        # Seleccionar el div del countdown
+        countdown = self.page.locator("#div-countdown")
+
+        # Verificar que countdown no es visible para el organizador
+        expect(countdown, "El Contdown no debe ser visible para el organizador").to_have_count(0)
+
+        # Cerrar sesión
+        self.logout_user()
+
+        # Iniciar sesión como usuario normal
+        self.login_user("usuario", "password123")
+        self.page.goto(f"{self.live_server_url}/events/{event3.id}")
+        countdown = self.page.locator("#div-countdown")
+        # Verificar que countdown es visible para el usuario normal
+        expect(countdown, "El Contdown debe ser visible para el usuario normal").to_have_count(1)
+
+    def test_countdown_event(self):
+        """Test que verifica que el countdown del detalle de evento calcula bien el tiempo restante"""
+
+        event3 = Event.objects.create(
+            title="Evento de prueba 3",
+            description="Descripción del evento 3, comienza en 1 dia",
+            scheduled_at=timezone.now() + datetime.timedelta(days=1),
+            organizer=self.organizer,
+        )
+
+        # Iniciar sesión como usuario normal
+        self.login_user("usuario", "password123")
+        self.page.goto(f"{self.live_server_url}/events/{event3.id}")
+
+        h4_countdown = self.page.locator("h4#countdown")
+        # formato `${days}d ${hours}h ${minutes}m ${seconds}s`
+        expect(h4_countdown).to_have_text(re.compile(r"^0d 23h 59m"))
+
     def test_edit_event_organizer(self):
         """Test que verifica la funcionalidad de editar un evento para organizadores"""
         # Iniciar sesión como organizador
