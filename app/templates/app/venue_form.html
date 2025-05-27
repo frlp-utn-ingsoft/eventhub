@@ -1,4 +1,3 @@
-<!-- templates/venue_form.html -->
 {% extends 'base.html' %}
 {% load widget_tweaks %}
 
@@ -25,6 +24,8 @@
                                 País
                             {% elif field.name == 'city' %}
                                 Ciudad
+                            {% elif field.name == 'capacity' %}
+                                Capacidad
                             {% else %}
                                 {{ field.label|capfirst }}
                             {% endif %}
@@ -32,6 +33,8 @@
 
                         {% if field.name == 'country' or field.name == 'city' %}
                             {{ field|add_class:"form-select" }}
+                        {% elif field.name == 'capacity' %}
+                            {{ field|add_class:"form-control no-spinner" }}
                         {% else %}
                             {{ field|add_class:"form-control" }}
                         {% endif %}
@@ -52,4 +55,16 @@
         </div>
     </div>
 </div>
+
+<style>
+    input.no-spinner::-webkit-inner-spin-button,
+    input.no-spinner::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input.no-spinner {
+        -moz-appearance: textfield;
+    }
+</style>
 {% endblock %}

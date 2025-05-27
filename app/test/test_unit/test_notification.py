@@ -1,9 +1,10 @@
 from django.test import TestCase
-from app.models import Notification, User, Event, NotificationUser, Venue
+from app.models import Notification, User, Event, NotificationUser, Venue, Ticket, NotificationUser
 
 class NotificationModelTest(TestCase):
     def setUp(self):
         self.mocked_user = User.objects.create_user(username="testuser", password="12345")
+        self.mocked_organizer = User.objects.create_user(username="testorganizer", password="12345")
         self.mocked_venue = Venue.objects.create(
             name="Centro Cultural Recoleta",
             address="Junín 1930",
@@ -17,6 +18,13 @@ class NotificationModelTest(TestCase):
             scheduled_at="2025-12-01T10:00:00Z",
             organizer=self.mocked_user,
             venue=self.mocked_venue
+        )
+        self.mocked_ticket = Ticket.objects.create(
+            user=self.mocked_user,
+            event=self.event_mocked,
+            ticket_code=2,
+            quantity=2,  
+            type='vip'
         )
         
     def test_create_notification(self):
@@ -68,3 +76,17 @@ class NotificationModelTest(TestCase):
         notification_user = NotificationUser.objects.filter(notification=notification, user_id=mocked_user.pk).first()
 
         self.assertFalse(notification_user.is_read)
+
+    def test_notification_created_by_event_change(self):
+        expectedTitle = "Evento Modificado"
+        expectedMessage = "El evento ha sido modificado. Revisa el detalle del evento para mantenerte actualizado " + "<a href=/events/" + str(self.event_mocked.id) + ">aqui</a>"
+        expectedPriority = "LOW"
+
+        notification = Notification.notify_event_change(self.event_mocked, self.mocked_organizer)
+        notification_user = NotificationUser.objects.filter(notification=notification, user_id=self.mocked_user.pk).first()
+
+        self.assertEqual(expectedTitle, notification.title)
+        self.assertEqual(expectedMessage, notification.message)
+        self.assertEqual(expectedPriority, notification.priority)
+        self.assertEqual(self.event_mocked, notification.event)
+        self.assertEqual(self.mocked_user, notification_user.user)
