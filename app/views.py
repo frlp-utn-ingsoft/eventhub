@@ -74,7 +74,10 @@ def events(request):
     return render(
         request,
         "app/events.html",
-        {"events": events, "user_is_organizer": request.user.is_organizer},
+        {
+            "events": events, 
+            "user_is_organizer": request.user.is_organizer,
+        },
     )
 
 
@@ -120,6 +123,7 @@ def event_form(request, event_id=None):
     
     venues = Venue.objects.all()
     categories = Category.objects.filter(is_active=True)
+    event_categories = []
     event = {}
 
     if event_id is not None:
@@ -132,6 +136,7 @@ def event_form(request, event_id=None):
         category_id = request.POST.get("category")
         date = request.POST.get("date")
         time = request.POST.get("time")
+        categories = request.POST.getlist("categories")
 
         venue = get_object_or_404(Venue, pk=venue_id)
         category = get_object_or_404(Category, pk=category_id) if category_id else None
@@ -151,29 +156,19 @@ def event_form(request, event_id=None):
                 venue=venue,
                 category=category
             )
-            if not success:
-                return render(request, "app/event_form.html", {
-                    "event": event,
-                    "categories": categories,
-                    "venues": venues,
-                    "errors": event
-                })
+            if categories:
+                event.categories.set(categories)
+            messages.success(request, "Evento creado exitosamente")
         else:
             event = get_object_or_404(Event, pk=event_id)
-            success, event = event.update(
-                title=title,
-                description=description,
-                scheduled_at=scheduled_at,
-                venue=venue,
-                category=category
-            )
-            if not success:
-                return render(request, "app/event_form.html", {
-                    "event": event,
-                    "categories": categories,
-                    "venues": venues,
-                    "errors": event
-                })
+            event.title = title
+            event.description = description
+            event.scheduled_at = scheduled_at
+            event.venue = venue
+            event.save()
+            if categories:
+                event.categories.set(categories)
+            messages.success(request, "Evento actualizado exitosamente")
 
         return redirect("events")
 
@@ -184,7 +179,8 @@ def event_form(request, event_id=None):
             "event": event,
             "categories": categories,
             "venues": venues,
-            "user_is_organizer": request.user.is_organizer
+            "event_categories": event_categories,
+            "user_is_organizer": request.user.is_organizer,
         },
     )
 
@@ -401,6 +397,7 @@ def buy_ticket(request, id):
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
         if success:
+            event.attendees.add(user)
             messages.success(request, "¡Ticket comprado!")
             return redirect("tickets")
         else:
@@ -766,7 +763,8 @@ def notification_create(request):
         # Asignar destinatarios
         if destinatario == "todos":
             event = get_object_or_404(Event, id=event_id)
-            asistentes = event.get_attendees()
+            asistentes = event.attendee.all()
+            print("Asistentes para notificación:", asistentes)
             notification.users.set(asistentes)
         elif destinatario == "usuario":
             usuario = get_object_or_404(User, pk=usuario_id)
@@ -910,3 +908,17 @@ def venue_edit(request, id):
             return redirect('venues')
 
     return render(request, "app/venue_edit_form.html", {"venue": venue})
+
+@login_required
+def toggle_favorite(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+    user = request.user
+    
+    if event.favorited_by.filter(id=user.id).exists():
+        event.favorited_by.remove(user)
+        messages.success(request, "Evento removido de favoritos")
+    else:
+        event.favorited_by.add(user)
+        messages.success(request, "Evento agregado a favoritos")
+    
+    return redirect('events')
