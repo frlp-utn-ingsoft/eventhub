@@ -192,3 +192,51 @@ class EventModelTest(TestCase):
         event.favorited_by.remove(regular_user)
         self.assertFalse(event.favorited_by.filter(id=regular_user.id).exists())
 
+    def test_event_get_demand(self):
+        """Test que verifica el cálculo correcto de la demanda del evento"""
+        event = Event.objects.create(
+            title="Evento de prueba",
+            description="Descripción del evento de prueba",
+            scheduled_at=timezone.now() + datetime.timedelta(days=1),
+            organizer=self.organizer,
+            venue=self.venue
+        )
+
+        # Sin tickets! demanda deberia  ser 0 papurri
+        self.assertEqual(event.get_demand(), 0)
+
+        # Creaamos 50 tickets (para capacidad 100)
+        from app.models import Ticket
+        for i in range(50):
+            user = User.objects.create_user(
+                username=f"user_{i}",
+                email=f"user_{i}@test.com",
+                password="password123"
+            )
+            Ticket.objects.create(
+                user=user,
+                event=event,
+                type="general",
+                quantity=1
+            )
+
+        # Demanda debe ser 50%
+        self.assertEqual(event.get_demand(), 50)
+
+        # Creamos 50 tickets más (para capacidad 100)
+        for i in range(50, 100):
+            user = User.objects.create_user(
+                username=f"user_{i}",
+                email=f"user_{i}@test.com",
+                password="password123"
+            )
+            Ticket.objects.create(
+                user=user,
+                event=event,
+                type="general",
+                quantity=1
+            )
+
+        # Demanda debe ser 100%
+        self.assertEqual(event.get_demand(), 100)
+
