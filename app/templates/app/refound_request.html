@@ -84,8 +84,15 @@
                   {% csrf_token %}
                   <input type="hidden" name="id" id="refound_id" value="{{ refound_id|default:'' }}">
                   <div class="mb-3">
-                    <label for="ticketCode" class="form-label">Código de ticket</label>
-                    <input type="text" class="form-control" name="ticketCode" id="ticketCode" placeholder="" value="{{ ticket_code|default:"" }}" required>
+                    <label for="ticketCode" class="form-label">Seleccione el Ticket <span class="text-danger">*</span></label>
+                    <select class="form-select" name="ticketCode" id="ticketCode" required>
+                      <option disabled hidden {% if not ticket_code %}selected{% endif %}>Selecciona un código</option>
+                      {% for ticket in tickets %}
+                        <option value="{{ ticket.ticket_code }}" {% if ticket_code == ticket.ticket_code %}selected{% endif %}>
+                          {{ ticket.ticket_code }} - {{ ticket.event.title }}
+                        </option>
+                      {% endfor %}
+                    </select>
                     {% if errors.ticket_code %}
                       <div class="text-danger mt-1">{{ errors.ticket_code }}</div>
                     {% endif %} 

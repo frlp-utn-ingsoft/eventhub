@@ -873,6 +873,7 @@ def event_editar_rating(request, event_id, rating_id):
 def request_refound(request):
     user = request.user
     refounds = []
+    tickets = Ticket.objects.filter(user=user)
     if user.is_organizer :
         refounds = RefoundRequest.objects.all()
     else:
@@ -890,6 +891,7 @@ def request_refound(request):
                 'app/refound_request.html',{
                     "user_is_organizer": user.is_organizer,
                     "refounds": refounds,
+                    "tickets": tickets,
                     "errors": errors,
                     "ticket_code": ticket_code,
                     "details": details,
@@ -904,6 +906,7 @@ def request_refound(request):
         'app/refound_request.html',{
         "user_is_organizer": user.is_organizer,
         "refounds": refounds,
+        "tickets": tickets
         }
     )   
     
