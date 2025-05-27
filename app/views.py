@@ -1,10 +1,13 @@
 import datetime
+from django.db.models import BooleanField, ExpressionWrapper, Q
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 from .forms import NotificationForm,TicketForm,RefundRequestForm,RatingForm,CommentForm, VenueForm, EventForm
+from .models import Event, User, Notification, User_Notification,Ticket, Rating, RefundRequest, FavoriteEvent
+from .forms import NotificationForm,TicketForm,RefundRequestForm,RatingForm,CommentForm, VenueForm, EventForm, SurveyForm
 from .models import Event, User, Notification, User_Notification,Ticket, Rating, RefundRequest
 from datetime import timedelta
 from .models import (
@@ -18,6 +21,7 @@ from .models import (
     User,
     User_Notification,
     Venue,
+    SurveyResponse
 )
 from django.db.models import Count
 
@@ -74,12 +78,24 @@ def home(request):
 
 @login_required
 def events(request):
-    show_past = request.GET.get("show_past") == "1"  # Checkbox marcada
+    show_past = request.GET.get("show_past") == "1"
+    now = timezone.now()
 
-    if show_past:
-        events = Event.objects.all().order_by("scheduled_at")
+    events = Event.objects.all()
+    if not show_past:
+        events = events.filter(scheduled_at__gte=now)
+
+    if request.user.is_authenticated:
+        favorites = FavoriteEvent.objects.filter(user=request.user).values_list('event_id', flat=True)
+        # Anotamos cuáles son favoritos
+        events = events.annotate(
+            is_favorite=ExpressionWrapper(
+                Q(id__in=favorites),
+                output_field=BooleanField()
+            )
+        ).order_by('-is_favorite', 'scheduled_at')  # favoritos arriba
     else:
-        events = Event.objects.filter(scheduled_at__gte=timezone.now()).order_by("scheduled_at")
+        events = events.order_by('scheduled_at')
 
     events_with_comments = events.annotate(num_comment=Count('comment'))
 
@@ -94,9 +110,10 @@ def events(request):
     {
         "events": events,
         "events_with_comments": events_with_comments,
-        "user_is_organizer": request.user.is_organizer,
+        "user_is_organizer": request.user.is_authenticated and request.user.is_organizer,
     },
 )
+
 
 @login_required
 def event_detail(request, event_id):
@@ -403,7 +420,7 @@ def ticket_create(request, event_id):
             ticket.event = event
             ticket.save()
             messages.success(request, "Ticket creado exitosamente.", extra_tags='ticket')
-            return redirect("ticket_list")
+            return redirect("satisfaction_survey", ticket_id=ticket.id)
     else:
         form = TicketForm(user=request.user, event=event)
 
@@ -581,6 +598,13 @@ def refund_request(request, ticket_code):
         reason = request.POST.get("reason")
         if not reason:
             return redirect("ticket_detail", ticket_code=ticket_code)
+        
+        # Verificamos si ya tiene una solicitud pendiente
+        if RefundRequest.has_pending_request(request.user):
+            return render(request, "app/refund_request.html", {
+                "ticket": ticket,
+                "errors": {"refund": "Usted ya tiene una solicitud de reembolso pendiente."}
+            })
 
         # Crear solicitud de reembolso
         refund = RefundRequest.new(
@@ -691,7 +715,11 @@ def refund_update(request, refund_id):
 @login_required
 def user_refund_list(request):
     refunds = RefundRequest.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'app/user_refund_list.html', {'refunds': refunds})
+    has_pending_refund = RefundRequest.objects.filter(user=request.user, approved=None).exists()
+    return render(request, 'app/user_refund_list.html', {
+        'refunds': refunds,
+        'has_pending_refund': has_pending_refund
+    })
 
 #///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -814,3 +842,40 @@ def venue_delete(request, venue_id):
     return redirect('organizator_comment')  # Redirige a la vista de los comentarios o al listado de eventos
 
 
+def toggle_favorite(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    favorite, created = FavoriteEvent.objects.get_or_create(user=request.user, event=event)
+    if not created:
+        favorite.delete()
+    return redirect('events')
+
+
+@login_required
+def satisfaction_survey(request, ticket_id):
+    ticket = get_object_or_404(Ticket, id=ticket_id, user=request.user)
+
+    if hasattr(ticket, 'surveyresponse'):
+        messages.info(request, "Ya completaste la encuesta.")
+        return redirect("ticket_list")
+
+    if request.method == 'POST':
+        form = SurveyForm(request.POST)
+        if form.is_valid():
+            survey = form.save(commit=False)
+            survey.ticket = ticket
+            survey.save()
+            messages.success(request, "Gracias por responder la encuesta.")
+            return redirect("ticket_list")
+    else:
+        form = SurveyForm(initial={'satisfaction': 0})
+
+    return render(request, "app/survey_form.html", {"form": form, "ticket": ticket})
+
+@login_required
+def survey_list(request):
+    if not request.user.is_organizer:
+        messages.error(request, "Solo los organizadores pueden ver las encuestas.")
+        return redirect("home")
+
+    surveys = SurveyResponse.objects.select_related("ticket", "ticket__event", "ticket__user")
+    return render(request, "app/survey_list.html", {"surveys": surveys})

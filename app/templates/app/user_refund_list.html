@@ -3,9 +3,13 @@
 {% block content %}
   <h2>Mis Solicitudes de Reembolso</h2>
 
-  <a href="{% url 'create_refund' %}" class="btn btn-primary" style="margin-bottom: 20px;">
-    Solicitar nuevo reembolso
-  </a>
+  {% if has_pending_refund %}
+    <p style="color: red;"><strong>Ya tienes una solicitud de reembolso pendiente. Debes esperar a que sea procesada antes de solicitar otra.</strong></p>
+  {% else %}
+    <a href="{% url 'create_refund' %}" class="btn btn-primary" style="margin-bottom: 20px;">
+      Solicitar nuevo reembolso
+    </a>
+  {% endif %}
 
   {% if refunds %}
     <table>
