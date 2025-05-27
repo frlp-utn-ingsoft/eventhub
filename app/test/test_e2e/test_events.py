@@ -58,7 +58,8 @@ class EventBaseTest(BaseE2ETest):
         expect(headers.nth(1)).to_have_text("Fecha")
         expect(headers.nth(2)).to_have_text("Organizador")
         expect(headers.nth(3)).to_have_text("Categorías")
-        expect(headers.nth(4)).to_have_text("Acciones")
+        expect(headers.nth(4)).to_have_text("Estado")
+        expect(headers.nth(5)).to_have_text("Acciones") 
 
         # Verificar que los eventos aparecen en la tabla
         rows = self.page.locator("table tbody tr")
@@ -291,7 +292,10 @@ class EventCRUDTest(EventBaseTest):
         self.page.goto(f"{self.live_server_url}/events/all/")
 
         # Verificar que el título del evento ha sido actualizado
-        row = self.page.locator("table tbody tr").last
+        # se recarga el evento para verificar el estado actualizado
+        self.event1.refresh_from_db() 
+        
+        row = self.page.locator(f"//tr[contains(td[1], 'Titulo editado')]")
         expect(row.locator("td").nth(0)).to_have_text("Titulo editado")
         expect(row.locator("td").nth(1)).to_have_text(timezone.localtime(timezone.localtime() + datetime.timedelta(days=60)).strftime("%d %b %Y").lower() + ", 03:00")
 
