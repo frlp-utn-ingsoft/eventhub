@@ -30,7 +30,7 @@ class User(AbstractUser):
             errors["password"] = "Las contraseñas no coinciden"
 
         return errors
-
+    
 
 class Category(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -131,7 +131,7 @@ class Event(models.Model):
 
         return True, None
 
-    def update(self, title=None, description=None, scheduled_at=None, organizer=None, category=None, venue=None):
+    def update(self, title=None, description=None, scheduled_at=None, venue=None, organizer=None):
         title = title if title is not None else self.title
         description = description if description is not None else self.description
         scheduled_at = scheduled_at if scheduled_at is not None else self.scheduled_at
@@ -145,8 +145,6 @@ class Event(models.Model):
         self.scheduled_at = scheduled_at
         if organizer is not None:
             self.organizer = organizer
-        if category is not None:
-            self.category = category
         if venue is not None:
             self.venue = venue
 
