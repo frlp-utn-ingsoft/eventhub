@@ -27,15 +27,7 @@ pip install -r requirements.txt
 ```
 
 ## Iniciar la Base de Datos
-```
-rm app/migrations/0*.py
-```
-```
-python manage.py makemigrations app
-```
-```
-python manage.py migrate
-```
+
 ```
 python manage.py migrate
 ```
