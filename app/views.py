@@ -578,8 +578,3 @@ def my_favorites(request):
     # No necesitas pasar favorite_events porque ya está disponible 
     # en el template como user.favorite_events.all
     return render(request, 'favoritos/my_favorites.html')
-    return render(request, 'tickets/buy_ticket.html', {
-        'form': form, 
-        'event': event,
-        'event_prices': event_prices
-    })
