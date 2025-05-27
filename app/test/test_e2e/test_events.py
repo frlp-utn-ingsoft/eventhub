@@ -429,6 +429,16 @@ class EventStatusTest(EventBaseTest):
         # Ir a la página de eventos
         self.page.goto(f"{self.live_server_url}/events/")
 
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
+
         # Hacer clic en el botón de detalle del evento
         self.page.get_by_role("link", name="Ver Detalle").first.click()
 
@@ -447,6 +457,16 @@ class EventStatusTest(EventBaseTest):
         # Ir a la página de eventos
         self.page.goto(f"{self.live_server_url}/events/")
 
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
+
         # Hacer clic en el botón de detalle del evento
         self.page.get_by_role("link", name="Ver Detalle").first.click()
 
@@ -460,7 +480,7 @@ class EventStatusTest(EventBaseTest):
         # Primero configura el manejador para aceptar el diálogo
         self.page.once("dialog", lambda dialog: dialog.accept())
         # Luego haz clic en el botón
-        cancel_button.click()     
+        cancel_button.click()
 
         self.page.wait_for_url(f"{self.live_server_url}/events/{self.event1.id}/")
 
@@ -477,6 +497,16 @@ class EventStatusTest(EventBaseTest):
         # Ir a la página de eventos
         self.page.goto(f"{self.live_server_url}/events/")
 
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
+
         # Hacer clic en el botón de detalle del evento
         self.page.get_by_role("link", name="Ver Detalle").first.click()
 
@@ -490,7 +520,7 @@ class EventStatusTest(EventBaseTest):
         # Primero configura el manejador para aceptar el diálogo
         self.page.once("dialog", lambda dialog: dialog.accept())
         # Luego haz clic en el botón
-        finish_button.click()     
+        finish_button.click()
 
         self.page.wait_for_url(f"{self.live_server_url}/events/{self.event1.id}/")
 
