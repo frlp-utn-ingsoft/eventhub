@@ -110,27 +110,39 @@ def event_form(request, id=None):
         return redirect("events")
 
     categories = Category.objects.filter(is_active=True)
-
+    event_status_choices = Event.EVENT_STATUS_CHOICES
+    
     if request.method == "POST":
         title = request.POST.get("title")
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
         category_ids = request.POST.getlist("categories")
-
+        status = request.POST.get("status")
+        
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
 
         scheduled_at = timezone.make_aware(
             datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
         )
-
+        
         if id is None:
-            event = Event.objects.create( title=title, description=description, scheduled_at=scheduled_at, organizer=request.user)
-            event.categories.set(category_ids)
+            success, errors = Event.new(
+                title=title,
+                description=description,
+                scheduled_at=scheduled_at,
+                organizer=request.user,
+                status=status
+            )
+            if success:
+                event = Event.objects.get(title=title, organizer=request.user, scheduled_at=scheduled_at)
+                event.categories.set(category_ids)
+            else:
+                pass
         else:
             event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user)
+            event.update(title, description, scheduled_at, request.user, status)
             event.categories.set(category_ids)
 
         return redirect("events")
@@ -146,6 +158,7 @@ def event_form(request, id=None):
             "event": event,
             "categories": categories,
             "user_is_organizer": request.user.is_organizer,
+            "event_status_choices": event_status_choices,
         },
     )
 
@@ -154,8 +167,11 @@ def event_form(request, id=None):
 def event_form_view(request, id):
     categories = Category.objects.filter(is_active=True)
     event = get_object_or_404(Event, pk=id)
+    event_status_choices = Event.EVENT_STATUS_CHOICES
 
     return render(request, "event_form.html", {
         "event": event,
         "categories": categories,
+        "event_status_choices": event_status_choices,
+        "user_is_organizer": request.user.is_organizer,
     })
