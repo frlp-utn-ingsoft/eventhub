@@ -52,6 +52,18 @@ class Venue(models.Model):
 
     def __str__(self):
         return f"{self.name} - {self.city}, {self.country}"
+
+class VenueForm(forms.ModelForm):
+    class Meta:
+        model = Venue
+        fields = '__all__'
+        labels = {
+            'name': 'Nombre del Lugar',
+            'address': 'Dirección',
+            'city': 'Ciudad',
+            'country': 'País',
+            'capacity': 'Capacidad',
+        }
     
 class Category(models.Model):
     name = models.CharField(max_length=40)

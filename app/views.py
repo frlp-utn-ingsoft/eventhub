@@ -12,8 +12,7 @@ from django.db.models import Count
 import math
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from .models import Venue
-from .forms import VenueForm
+from .models import Venue, VenueForm
 from .models import Event, Rating, Rating_Form, User, Comment
 from django.shortcuts import render
 from django.utils import timezone
