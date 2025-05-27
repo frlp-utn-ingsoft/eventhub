@@ -170,8 +170,9 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
+    favorited_by = models.ManyToManyField(User, related_name="favorite_events", blank=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="events", null=True, blank=True)
-
+    
     def __str__(self):
         return self.title
 
