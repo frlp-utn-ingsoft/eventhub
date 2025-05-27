@@ -33,12 +33,11 @@
                         <span class="ms-2">{{ event.venue.capacity }} personas</span>
                     </div>
                     {% if user_is_organizer %}
-                        {% widthratio event.tickets.count event.venue.capacity 100 as porcentaje_ocupacion %}
                         <div class="d-flex align-items-center mb-3">
                             <i class="bi bi-receipt me-2 text-primary"></i>
                             <span class="fw-bold">Entradas vendidas:</span>
                             <span class="ms-2">{{ event.tickets.count }}</span>
-                            {% if porcentaje_ocupacion|floatformat:2 > 90 %}
+                            {% if event.get_demand > 90 %}
                                 <span class="badge bg-danger ms-2">Alta demanda</span>
                             {% else %}
                                 <span class="badge bg-secondary ms-2">Baja demanda</span>
