@@ -22,7 +22,7 @@
     <div class="mb-3">
       <label for="ticket_code" class="form-label">Código del ticket</label>
       <select name="ticket_code" id="ticket_code" class="form-select" required>
-        <option value="" disabled {% if not selected_code %}selected{% endif %}>Selecciona tu ticket…</option>
+        <option value="" id="ticket_code" disabled {% if not selected_code %}selected{% endif %}>Selecciona tu ticket…</option>
         {% for ticket in user_tickets %}
           <option value="{{ ticket.ticket_code }}"
                   {% if ticket.ticket_code == selected_code %}selected{% endif %}>

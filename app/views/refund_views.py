@@ -17,23 +17,18 @@ def refund_create(request):
         reason      = request.POST.get("reason", "").strip()
         errors = []
 
-        # 1. Usuario no puede tener otra solicitud activa
+        # Usuario no puede tener otra solicitud activa
         if Refund.objects.filter(user=user, approved__isnull=True).exists():
             errors.append("Ya tienes una solicitud de reembolso pendiente o en proceso.")
 
-        # 2. El ticket debe existir y pertenecer al usuario
+        # El ticket debe existir y pertenecer al usuario
         ticket = Ticket.objects.filter(user=user, ticket_code=ticket_code).first()
         if not ticket:
             errors.append("Código de ticket inválido.")
         else:
-            # 3. No haber solicitado reembolso ya para este ticket
+            # No haber solicitado reembolso ya para este ticket
             if Refund.objects.filter(user=user, ticket_code=ticket_code).exists():
                 errors.append("Ya existe una solicitud de reembolso para este ticket.")
-            # 4. Máximo 30 días de antigüedad
-            else:
-                días = (timezone.now().date() - ticket.buy_date).days
-                if días > 30:
-                    errors.append("No puedes solicitar reembolso de un ticket con más de 30 días de antigüedad.")
 
         # Si hay errores, re-renderiza el formulario con todos ellos
         if errors:
@@ -69,7 +64,8 @@ def my_refunds(request):
 def refund_edit(request, id):
     refund_obj = get_object_or_404(Refund, id=id, user=request.user)
 
-    if refund_obj.approved:  # Ya la vio un organizer
+    # Sólo puede editarse si no ha sido aprobado o rechazado
+    if refund_obj is not None:
         return redirect("my_refunds")
 
     if request.method == "POST":
@@ -107,7 +103,7 @@ def approve_refund_request(request, pk):
         refund_obj.approved = True
         refund_obj.aproval_date = timezone.now()
         refund_obj.save()
-        messages.success(request, "✅ Reembolso aprobado exitosamente.")
+        messages.success(request, "Reembolso aprobado exitosamente.")
     return redirect('refunds_admin')
 
 @login_required
