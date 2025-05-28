@@ -6,9 +6,32 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from app.models import Category, Event, Rating, Ticket, Venue
+from app.models import Category, Event, Rating, Ticket, Venue, Notification, User
 from app.views.rating_views import create_rating
 
+
+def handle_notification_on_reprogramate(event, title, categories, venue, description, scheduled_at, user):
+    # Si la fecha cambia, poner estado reprogramado
+    # Se que medio patata programming pero no se me ocurre otra forma
+    fecha_anterior = event.scheduled_at
+    if fecha_anterior != scheduled_at:
+        event.update(title, categories, venue, description, scheduled_at, user, status='reprogramed')
+
+
+        # Notifico a los usarios de los cambios realizados
+        # Crear la notificación
+        notification = Notification.objects.create(
+        title="El evento ha sido reprogramado",
+        massage=f"El evento '{event.title}' ha sido reprogramado. Nueva fecha y hora: {scheduled_at.strftime('%d/%m/%Y %H:%M')}.",
+        event=event,
+        Priority='High',
+        )
+
+        # Obtener los usuarios con tickets para el evento
+        addressee_users = User.objects.filter(tickets__event=event).distinct()
+        notification.addressee.set(addressee_users)
+    else:
+        event.update(title, categories, venue, description, scheduled_at, user)
 
 @login_required
 def event_form(request, id=None):
@@ -78,13 +101,7 @@ def event_form(request, id=None):
                 messages.error(request, 'No tienes permiso para editar este evento.')
                 return redirect("events")
             
-            # Si la fecha cambia, poner estado reprogramado
-            # Se que medio patata programming pero no se me ocurre otra forma
-            fecha_anterior = event.scheduled_at
-            if fecha_anterior != scheduled_at:
-                event.update(title, categories, venue, description, scheduled_at, request.user, status='reprogramed')
-            else:
-                event.update(title, categories, venue, description, scheduled_at, request.user)
+            handle_notification_on_reprogramate(event, title, categories, venue, description, scheduled_at, request.user)
 
         return redirect("events")
 
