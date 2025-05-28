@@ -21,6 +21,17 @@
                         <span class="ms-2">{{ event.scheduled_at|date:"d/m/Y H:i" }}</span>
                     </div>
                     
+                    {% if not user_is_organizer %}
+                    <!-- Cuenta regresiva del evento -->
+                    <div class="alert alert-info mb-4" id="countdown-container">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-clock me-2"></i>
+                            <span class="fw-bold me-2">Tiempo restante:</span>
+                            <span id="countdown-timer" class="fw-bold text-primary"></span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
                     <div class="d-flex align-items-center mb-3">
                         <i class="bi bi-geo-alt me-2 text-primary"></i>
                         <span class="fw-bold">Lugar:</span>
@@ -217,4 +228,50 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if not user_is_organizer %}
+<script>
+    // Cuenta regresiva del evento
+    function updateCountdown() {
+        const eventDate = new Date("{{ event.scheduled_at|date:'Y-m-d\TH:i:s' }}");
+        const now = new Date();
+        const timeLeft = eventDate.getTime() - now.getTime();
+        
+        const countdownElement = document.getElementById('countdown-timer');
+        const countdownContainer = document.getElementById('countdown-container');
+        
+        if (timeLeft > 0) {
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+            
+            let countdownText = '';
+            if (days > 0) {
+                countdownText += `${days}d `;
+            }
+            if (hours > 0 || days > 0) {
+                countdownText += `${hours}h `;
+            }
+            if (minutes > 0 || hours > 0 || days > 0) {
+                countdownText += `${minutes}m `;
+            }
+            countdownText += `${seconds}s`;
+            
+            countdownElement.textContent = countdownText;
+            countdownContainer.className = 'alert alert-info mb-4';
+        } else {
+            countdownElement.textContent = '¡El evento ya comenzó!';
+            countdownContainer.className = 'alert alert-success mb-4';
+        }
+    }
+    
+    // Actualizar cada segundo
+    setInterval(updateCountdown, 1000);
+    // Ejecutar inmediatamente
+    updateCountdown();
+</script>
+{% endif %}
 {% endblock %}
