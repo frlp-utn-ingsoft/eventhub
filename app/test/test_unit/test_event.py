@@ -1,5 +1,6 @@
 import datetime
 
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
 
@@ -170,3 +171,43 @@ class EventModelTest(TestCase):
         self.assertEqual(updated_event.title, original_title)
         self.assertEqual(updated_event.description, new_description)
         self.assertEqual(updated_event.scheduled_at, original_scheduled_at)
+
+class UserModelTest(TestCase):
+    
+    def setUp(self):
+        self.organizer = User.objects.create_user(
+            username="organizador_test",
+            email="organizador@example.com",
+            password="password123",
+            is_organizer=True,
+        )
+        
+    def test_favorite_user_event_status_related(self):
+        """Test que verifica el comportamiento de los favoritos de eventos del usuario dependiendo del estado del evento"""
+        
+        # Crear eventos con diferentes estados
+        event_active = Event.objects.create(
+            title="Evento Activo",
+            description="Descripción del evento activo",
+            scheduled_at=timezone.now() + datetime.timedelta(days=1),
+            organizer=self.organizer,
+            status="active",
+        )
+        
+        event_canceled = Event.objects.create(
+            title="Evento Cancelado",
+            description="Descripción del evento cancelado",
+            scheduled_at=timezone.now() - datetime.timedelta(days=2),
+            organizer=self.organizer,
+            status="canceled",
+        )
+        
+        # El usuario agrega el evento activo a favoritos y debe estar en la lista de favoritos
+        self.organizer.add_favorite_event(event_active)
+        self.assertIn(event_active, self.organizer.favorite_events.all())
+        
+        # El usuario intenta agregar el evento cancelado a favoritos
+        # Debe lanzar ValidationError
+        with self.assertRaises(ValidationError):
+            self.organizer.add_favorite_event(event_canceled)
+        self.assertNotIn(event_canceled, self.organizer.favorite_events.all())

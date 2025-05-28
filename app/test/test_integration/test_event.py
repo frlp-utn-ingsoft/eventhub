@@ -49,7 +49,6 @@ class BaseEventTestCase(TestCase):
         # Verificar que el organizador es una instancia válida de User
         self.assertIsInstance(self.organizer, User)
 
-
 class EventsListViewTest(BaseEventTestCase):
     """Tests para la vista de listado de eventos"""
 
@@ -94,7 +93,6 @@ class EventsListViewTest(BaseEventTestCase):
         # Verificar que redirecciona al login
         self.assertEqual(response.status_code, 302)
         self.assertTrue(response.headers["Location"].startswith("/accounts/login/"))
-
 
 class EventDetailViewTest(BaseEventTestCase):
     """Tests para la vista de detalle de un evento"""
@@ -160,7 +158,7 @@ class EventFormViewTest(BaseEventTestCase):
 
         # Verificar que redirecciona a events
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("events"))
+        self.assertEqual(response.url, reverse("events")) # type: ignore
 
     def test_event_form_view_without_login(self):
         """Test que verifica que la vista event_form redirige a login cuando el usuario no está logueado"""
@@ -169,7 +167,7 @@ class EventFormViewTest(BaseEventTestCase):
 
         # Verificar que redirecciona al login
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.url.startswith("/accounts/login/"))
+        self.assertTrue(response.url.startswith("/accounts/login/")) # type: ignore
 
     def test_event_form_edit_existing(self):
         """Test que verifica que se puede editar un evento existente"""
@@ -177,13 +175,12 @@ class EventFormViewTest(BaseEventTestCase):
         self.client.login(username="organizador", password="password123")
 
         # Hacer petición a la vista event_form para editar evento existente
-        response = self.client.get(reverse("event_edit", args=[self.event1.id]))
+        response = self.client.get(reverse("event_edit", args=[self.event1.id])) # type: ignore
 
         # Verificar respuesta
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "app/event/event_form.html")
-        self.assertEqual(response.context["event"].id, self.event1.id)
-
+        self.assertEqual(response.context["event"].id, self.event1.id) # type: ignore
 
 class EventFormSubmissionTest(BaseEventTestCase):
     """Tests para la creación y edición de eventos mediante POST"""
@@ -240,7 +237,7 @@ class EventFormSubmissionTest(BaseEventTestCase):
         # Datos para actualizar el evento
         new_scheduled_at = timezone.make_aware(datetime.datetime(2025, 6, 15, 16, 45))
         updated_data = {
-            "id": str(self.event1.id),  # este campo es importante
+            "id": str(self.event1.id),  # este campo es importante # type: ignore
             "title": "Evento 1 Actualizado",
             "description": "Nueva descripción actualizada",
             "date": new_scheduled_at.strftime("%Y-%m-%d"),
@@ -248,11 +245,11 @@ class EventFormSubmissionTest(BaseEventTestCase):
         }
 
         # Hacer petición POST para editar el evento
-        response = self.client.post(reverse("event_edit", args=[self.event1.id]), updated_data)
+        response = self.client.post(reverse("event_edit", args=[self.event1.id]), updated_data) # type: ignore
 
         # Verificar que redirecciona a events
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("events"))
+        self.assertEqual(response.url, reverse("events")) # type: ignore
 
         # Verificar que el evento fue actualizado
         self.event1.refresh_from_db()
@@ -265,7 +262,6 @@ class EventFormSubmissionTest(BaseEventTestCase):
         self.assertEqual(self.event1.scheduled_at.hour, 19)
         self.assertEqual(self.event1.scheduled_at.minute, 45)
 
-
 class EventDeleteViewTest(BaseEventTestCase):
     """Tests para la eliminación de eventos"""
 
@@ -275,16 +271,16 @@ class EventDeleteViewTest(BaseEventTestCase):
         self.client.login(username="organizador", password="password123")
 
         # Verificar que el evento existe antes de eliminar
-        self.assertTrue(Event.objects.filter(pk=self.event1.id).exists())
+        self.assertTrue(Event.objects.filter(pk=self.event1.id).exists()) # type: ignore
 
         # Hacer una petición POST para eliminar el evento
-        response = self.client.post(reverse("event_delete", args=[self.event1.id]))
+        response = self.client.post(reverse("event_delete", args=[self.event1.id])) # type: ignore
 
         # Verificar que redirecciona a la página de eventos
         self.assertRedirects(response, reverse("events"))
 
         # Verificar que el evento ya no existe
-        self.assertFalse(Event.objects.filter(pk=self.event1.id).exists())
+        self.assertFalse(Event.objects.filter(pk=self.event1.id).exists()) # type: ignore
 
     def test_event_delete_with_regular_user(self):
         """Test que verifica que un usuario regular no puede eliminar un evento"""
@@ -292,16 +288,16 @@ class EventDeleteViewTest(BaseEventTestCase):
         self.client.login(username="regular", password="password123")
 
         # Verificar que el evento existe antes de intentar eliminarlo
-        self.assertTrue(Event.objects.filter(pk=self.event1.id).exists())
+        self.assertTrue(Event.objects.filter(pk=self.event1.id).exists()) # type: ignore
 
         # Hacer una petición POST para intentar eliminar el evento
-        response = self.client.post(reverse("event_delete", args=[self.event1.id]))
+        response = self.client.post(reverse("event_delete", args=[self.event1.id])) # type: ignore
 
         # Verificar que redirecciona a la página de eventos sin eliminar
         self.assertRedirects(response, reverse("events"))
 
         # Verificar que el evento sigue existiendo
-        self.assertTrue(Event.objects.filter(pk=self.event1.id).exists())
+        self.assertTrue(Event.objects.filter(pk=self.event1.id).exists()) # type: ignore
 
     def test_event_delete_with_get_request(self):
         """Test que verifica que la vista redirecciona si se usa GET en lugar de POST"""
@@ -309,13 +305,13 @@ class EventDeleteViewTest(BaseEventTestCase):
         self.client.login(username="organizador", password="password123")
 
         # Hacer una petición GET para intentar eliminar el evento
-        response = self.client.get(reverse("event_delete", args=[self.event1.id]))
+        response = self.client.get(reverse("event_delete", args=[self.event1.id])) # type: ignore
 
         # Verificar que redirecciona a la página de eventos
         self.assertRedirects(response, reverse("events"))
 
         # Verificar que el evento sigue existiendo
-        self.assertTrue(Event.objects.filter(pk=self.event1.id).exists())
+        self.assertTrue(Event.objects.filter(pk=self.event1.id).exists()) # type: ignore
 
     def test_event_delete_nonexistent_event(self):
         """Test que verifica el comportamiento al intentar eliminar un evento inexistente"""
@@ -337,17 +333,17 @@ class EventDeleteViewTest(BaseEventTestCase):
     def test_event_delete_without_login(self):
         """Test que verifica que la vista redirecciona a login si el usuario no está autenticado"""
         # Verificar que el evento existe antes de intentar eliminarlo
-        self.assertTrue(Event.objects.filter(pk=self.event1.id).exists())
+        self.assertTrue(Event.objects.filter(pk=self.event1.id).exists()) # type: ignore
 
         # Hacer una petición POST sin iniciar sesión
-        response = self.client.post(reverse("event_delete", args=[self.event1.id]))
+        response = self.client.post(reverse("event_delete", args=[self.event1.id])) # type: ignore
 
         # Verificar que redirecciona al login
         self.assertEqual(response.status_code, 302)
-        self.assertTrue(response.url.startswith("/accounts/login/"))
+        self.assertTrue(response.url.startswith("/accounts/login/")) # type: ignore
 
         # Verificar que el evento sigue existiendo
-        self.assertTrue(Event.objects.filter(pk=self.event1.id).exists())
+        self.assertTrue(Event.objects.filter(pk=self.event1.id).exists()) # type: ignore
 
 class EventFavoriteTest(BaseEventTestCase):
     """Tests para la funcionalidad de marcar eventos como favoritos"""

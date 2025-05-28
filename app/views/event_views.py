@@ -2,6 +2,7 @@ import datetime
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -127,25 +128,25 @@ def event_detail(request, id):
     ratings = Rating.objects.filter(event=event)
     has_ticket = Ticket.objects.filter(event=event, user=request.user).exists()
 
-    # Verificacion de favoritos
-    if request.method == "POST" and request.POST.get("toggle_favorite") == "1":
-        # Se consulta si el usuario ya tiene el evento como favorito
-        if event in request.user.favorite_events.all():
-            # Si ya es favorito, le dejamos eliminarlo eliminamos
-            request.user.favorite_events.remove(event)
-            messages.success(request, 'Evento eliminado de favoritos.')
-            return redirect("event_detail", id=event.id) # type: ignore
-        else:
-            # Caso contrario, consultamos el estado del evento
-            # Si conincide con alguno de los estados que no se permite marcarlo como favorito
-            if event.status == 'canceled' or event.status == 'finished' or event.status == 'soldout':
-                messages.error(request, 'No puedes marcar un evento cancelado como favorito.')
-                return redirect("event_detail", id=event.id)# type: ignore
-            else:
-                # Si no, lo agregamos a favoritos
-                request.user.favorite_events.add(event)
-                messages.success(request, 'Evento agregado a favoritos.')
-                return redirect("event_detail", id=event.id) # type: ignore
+    # # Verificacion de favoritos
+    # if request.method == "POST" and request.POST.get("toggle_favorite") == "1":
+    #     # Se consulta si el usuario ya tiene el evento como favorito
+    #     if event in request.user.favorite_events.all():
+    #         # Si ya es favorito, le dejamos eliminarlo eliminamos
+    #         request.user.favorite_events.remove(event)
+    #         messages.success(request, 'Evento eliminado de favoritos.')
+    #         return redirect("event_detail", id=event.id) # type: ignore
+    #     else:
+    #         # Caso contrario, consultamos el estado del evento
+    #         # Si conincide con alguno de los estados que no se permite marcarlo como favorito
+    #         if event.status == 'canceled' or event.status == 'finished' or event.status == 'soldout':
+    #             messages.error(request, 'No puedes marcar un evento cancelado como favorito.')
+    #             return redirect("event_detail", id=event.id)# type: ignore
+    #         else:
+    #             # Si no, lo agregamos a favoritos
+    #             request.user.favorite_events.add(event)
+    #             messages.success(request, 'Evento agregado a favoritos.')
+    #             return redirect("event_detail", id=event.id) # type: ignore
                   
 
     # Procesar acciones POST (cancelar/finalizar) SOLO si el usuario es organizador y dueño
@@ -232,3 +233,19 @@ def event_filter(request):
             "user": request.user
         },
     )
+
+@login_required
+def event_favorite(request, id):
+    event = get_object_or_404(Event, pk=id)
+    user = request.user
+    if event in user.favorite_events.all():
+        user.favorite_events.remove(event)
+        messages.success(request, "Evento eliminado de favoritos.")
+    else:
+        # Aquí puedes usar el método add_favorite_event para validar el estado
+        try:
+            user.add_favorite_event(event)
+            messages.success(request, "Evento agregado a favoritos.")
+        except ValidationError as e:
+            messages.error(request, str(e))
+    return redirect("event_detail", id=event.id) # type: ignore
