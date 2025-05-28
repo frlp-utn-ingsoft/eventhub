@@ -997,7 +997,8 @@ def satisfaction_survey(request, ticket_id):
             })
     
     return render(request, "app/satisfaction_survey.html", {
-        "ticket": ticket
+        "ticket": ticket,
+        "event": ticket.event
     })
 
 

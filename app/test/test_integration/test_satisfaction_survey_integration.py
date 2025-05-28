@@ -129,7 +129,7 @@ class SatisfactionSurveyIntegrationTest(TestCase):
         
         # Debe mostrar el formulario con errores
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Este campo es obligatorio')
+        self.assertContains(response, 'Debes seleccionar')
 
     def test_satisfaction_survey_duplicate_prevention(self):
         """Test prevención de encuestas duplicadas"""
@@ -207,7 +207,7 @@ class SatisfactionSurveyIntegrationTest(TestCase):
         # Simular compra de ticket (esto debería redirigir a encuesta)
         # Nota: Este test depende de la implementación de buy_ticket
         response = self.client.post(
-            reverse('buy-ticket', kwargs={'id': self.event.id}),
+            reverse('buy_ticket', kwargs={'id': self.event.id}),
             data={'quantity': 1, 'type': 'GENERAL'}
         )
         
@@ -288,4 +288,4 @@ class SatisfactionSurveyIntegrationTest(TestCase):
         # Verificar mensaje de éxito
         self.assertEqual(response.status_code, 200)
         # Verificar que se muestra algún mensaje de confirmación
-        self.assertContains(response, 'gracias') 
+        self.assertContains(response, 'Gracias') 
