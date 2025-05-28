@@ -5,27 +5,41 @@ from django.contrib import admin
 from . import views
 
 urlpatterns = [
+    # User / Session
     path("admin/", admin.site.urls),
     path("", views.home, name="home"),
     path("accounts/register/", views.register, name="register"),
     path("accounts/logout/", LogoutView.as_view(), name="logout"),
     path("accounts/login/", views.login_view, name="login"),
+
+    # Events
     path("events/", views.events, name="events"),
     path("events/create/", views.event_form, name="event_form"),
+    path("events/<int:event_id>/edit/", views.event_form, name="event_edit"),
+    path("events/<int:event_id>/", views.event_detail, name="event_detail"),
+    path("events/<int:event_id>/delete/", views.event_delete, name="event_delete"),
+
+    # Tickets
     path("events/<int:id>/buy-ticket/", views.buy_ticket, name="buy_ticket"),
     path("tickets/", views.tickets, name="tickets"),
     path("tickets/<int:id>/", views.ticket_detail, name="ticket_detail"),
     path("tickets/<int:id>/delete/", views.ticket_delete, name="ticket_delete"),
     path("tickets/<int:id>/edit/", views.ticket_edit, name="ticket_edit"),
-    path("events/<int:event_id>/edit/", views.event_form, name="event_edit"),
-    path("events/<int:event_id>/", views.event_detail, name="event_detail"),
-    path("events/<int:event_id>/delete/", views.event_delete, name="event_delete"),
+    
+    # Discounts
+    path("is-valid-code", views.is_valid_code, name="is_valid_code"),
+
+    # Ratings
     path("events/<int:event_id>/ratings/create/", views.create_rating, name="create_rating"),
     path("ratings/<int:rating_id>/edit/", views.edit_rating, name="edit_rating"),
     path("ratings/<int:rating_id>/delete/", views.delete_rating, name="delete_rating"),
+
+    # Comments
     path("events/<int:event_id>/comment/", views.add_comment, name="add_comment"),
     path("events/<int:event_id>/comment/<int:comment_id>/delete/", views.delete_comment, name="delete_comment"),
     path("events/<int:event_id>/comment/<int:comment_id>/update/", views.update_comment, name="update_comment"),
+
+    # Notifications
     path("notifications/", views.notification_list, name="notification_list"),
     path("notifications/create/", views.notification_create, name="notification_create"),
     path("notifications/<int:notification_id>/edit/", views.notification_edit, name="notification_edit"),

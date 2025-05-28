@@ -3,11 +3,15 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Event, User, Ticket, Comment, Notification, Venue
+from .models import Event, User, Ticket, Comment, Notification, Venue, Discount
 from django.contrib import messages
 from django.db.models import Q
 import uuid
-
+from urllib.parse import unquote
+from django.http import JsonResponse
+from django.views.decorators.http import require_POST
+from urllib.parse import unquote
+import json
 
 from .models import Event, User, Ticket, RefundRequest, Rating, Category
 
@@ -383,6 +387,51 @@ def view_refund_request(request, id):
     #verificar si la solicitud de reembolso ya fue aprobada o rechazada
     return render(request, "app/view_refund_request.html", {"refund": refund})
 
+
+@login_required
+@require_POST
+def is_valid_code(request):
+    """Valida que el código esté en formato correcto, exista y esté activo"""
+
+    code = request.body.decode('utf-8').strip('"')
+    errors = {}
+    
+    # Validaciones básicas
+    if not isinstance(code, str):
+        errors["code"] = "El código debe ser una cadena de texto."
+    elif len(code) != 8:
+        errors["code"] = "El código debe tener exactamente 8 caracteres."
+    
+    if errors:
+        return JsonResponse({
+            "errors": errors,
+            "isValidCode": False,
+        })
+    
+    try:
+        discount = Discount.objects.get(code=code)
+        print("MULTIPLIER:",  discount.multiplier)
+        print("DISCOUNT:",  discount, "\n\n\n")
+        
+        return JsonResponse({
+            "message": "Código validado correctamente",
+            "isValidCode": True,
+            "multiplier": float(discount.multiplier),
+            "code": discount.code
+        })
+        
+    except Discount.DoesNotExist:
+        return JsonResponse({
+            "errors": {"code": "El código ingresado no existe."},
+            "isValidCode": False,
+        })
+    
+    except Exception as e:
+        return JsonResponse({
+            "errors": {"code": "Ocurrió un error al validar el código."},
+            "isValidCode": False,
+        })
+            
 @login_required
 def buy_ticket(request, id):
     event = get_object_or_404(Event, pk=id)
@@ -397,7 +446,24 @@ def buy_ticket(request, id):
         type = request.POST.get("type")
         user = request.user
 
-        success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
+        discount_data = None
+        discount_str = request.POST.get("discount", "{}")
+        try:
+            discount_str = unquote(request.POST.get("discount", "{}"))
+            discount_data = json.loads(discount_str)
+            discount_info = discount_data.get("discount", {})
+            
+            discount_code = discount_info.get("code")
+            discount_multiplier = discount_info.get("multiplier")
+        except json.JSONDecodeError:
+            print("Error al decodificar el JSON de descuento")
+            discount_data = None
+
+        discount_code = discount_data.get("discount", {}).get("code")
+
+        discount = Discount.objects.get(code=discount_code)
+
+        success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user, discount=discount)
 
         if success:
             messages.success(request, "¡Ticket comprado!")

@@ -43,9 +43,9 @@
             <div class="mb-3">
               <label for="quantity" class="form-label">Cantidad de entradas</label>
               <div class="input-group">
-                <button type="button" class="btn btn-outline-secondary" onclick="decrementQuantity()">-</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="decrementQuantity()"><i class="bi bi-dash"></i></button>
                 <input type="number" name="quantity" id="quantity" class="form-control text-center" value="1" min="1" max="5" onchange="setQuantity()">
-                <button type="button" class="btn btn-outline-secondary" onclick="incrementQuantity()">+</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="incrementQuantity()"><i class="bi bi-plus"></i></button>
               </div>
               <div class="form-text">{{ event.available_tickets }} entradas disponibles</div>
             </div>
@@ -84,6 +84,8 @@
               <label class="form-check-label" for="terms">Acepto los <a href="#" target="_blank" rel="noopener noreferrer">términos y condiciones</a> y la <a href="#" target="_blank" rel="noopener noreferrer">política de privacidad</a>.</label>
             </div>
 
+            <input type="hidden" id="discount" name="discount" value="">
+
             {% if event.available_tickets > 0 %}
               <button type="submit" class="btn btn-primary w-100">Confirmar compra</button>
             {% else %}
@@ -103,10 +105,30 @@
           <p class="mb-1">Cantidad: <span class="float-end" id="summary__quantity">1</span></p>
           <p class="mb-1">Subtotal: <span class="float-end" id="summary__subtotal">45.99</span></p>
           <p class="mb-1">Impuestos (10%): <span class="float-end" id="summary__taxes">4.59</span></p>
+
+          <button type="button" class="mt-4 btn btn-link p-0 text-decoration-none" id="discount-toggle">Tengo un código de descuento</button>
+            
           <hr>
+          
           <p class="fw-bold">Total: <span class="float-end" id="total">50.58</span></p>
+          <p id="discounted-price" class="fw-bold" style="display: none;">
+            Total con descuento: <span id="final-price" class="float-end">$80.00</span>
+          </p>
         </div>
       </div>
+
+      <div class="card mb-3 d-none" id="discount-card">
+        <div class="card-body">
+          <p id="discount-message"></p>
+            <label for="discount-code" class="card-title">Código de descuento</label>
+            <input type="text" name="discount-code" id="discount-code" placeholder="UTN-FRLP" maxlength="8" class="form-control">
+              
+            <button type="button" id="verify-code" name="verify-discount" class="mt-3 btn btn-outline-primary float-end">Aplicar</button>
+            <div class="clearfix"></div>
+         
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-body">
           <h6 class="card-title">Información importante</h6>
@@ -225,6 +247,114 @@
   }
 </script>
 
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const discountToggle = document.getElementById('discount-toggle');
+    const discountCard = document.getElementById('discount-card');
+        
+    discountToggle.addEventListener('click', function() {
+      discountCard.classList.toggle('d-none');
+    });
+  });
+</script>
+
+<script>
+  document.getElementById('verify-code').addEventListener('click', function() {
+    const code = document.getElementById('discount-code').value;
+    const totalElement = document.getElementById('total');
+
+    console.log('Código a enviar:',code);
+
+    const totalPrice = parseFloat(totalElement.textContent);
+
+    const discountMessage = document.getElementById('discount-message');
+      
+    fetch('http://127.0.0.1:8000/is-valid-code', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': '{{ csrf_token }}',
+      },
+      body: JSON.stringify(encodeURIComponent(code))
+    })
+
+    .then(response => response.json())
+
+    .then(data => {
+      console.log("DATA:", data)
+
+      if (data.isValidCode) {
+        const discountedPrice = totalPrice * data.multiplier;
+        const finalPriceElement = document.getElementById('final-price')
+        const discountMessage = document.getElementById('discount-message');
+
+        discountedPriceElement = document.getElementById('discounted-price')
+        finalPriceElement.textContent = discountedPrice.toFixed(2);
+
+        const discount = {
+          code: data.code,
+          multiplier: data.multiplier
+        };
+
+        //________Seteo del descuento en el input oculto_____________________
+        document.getElementById('discount').value = JSON.stringify({ discount });
+
+        discountedPriceElement.classList.add('d-block');
+
+        discountMessage.className = '';
+        discountMessage.innerText = '';
+
+        
+        discountMessage.innerHTML = `<i class="bi bi-check-circle-fill me-2"></i> ${data.message || '¡Código aplicado correctamente!'}`;
+        discountMessage.classList.add('alert', 'alert-success', 'mb-3', 'd-block');
+
+      } else {
+        setErrorDiscountMessage(data.errors.code)
+      }
+    })
+
+    .catch(error => {
+        console.error('Error:', error);
+    });
+  });
+</script>
+
+<script>
+  function setErrorDiscountMessage(message) {
+    const discountMessage = document.getElementById('discount-message');
+
+    discountMessage.className = '';
+    discountMessage.innerText = '';
+    discountMessage.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i> ${message || 'Código no válido'}`;
+
+    discountMessage.classList.remove('alert-success', 'alert-danger', 'd-none');
+    discountMessage.classList.add('alert', 'alert-danger', 'mb-3');
+          
+    discountMessage.style.display = 'block';
+        
+    document.querySelector('#discounted-price').style.display = 'none';
+  }
+</script>
+
+<script>
+  function setSuccesDiscountMessage(message) {
+    const discountMessage = document.getElementById('discount-message');
+
+    discountMessage.innerText = '';
+
+
+    discountMessage.classList.remove('alert-success', 'alert-danger', 'd-none');
+    if (!discountMessage.classList.contains('alert', 'alert-danger', 'mb-3')) {
+      discountMessage.classList.add('alert', 'alert-danger', 'mb-3');
+        
+      discountMessage.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i> ${message || 'Código no válido'}`;
+          
+      discountMessage.style.display = 'block';
+        
+      document.querySelector('#discounted-price').style.display = 'none';
+    }
+  }
+</script>
 
 <!-- CUSTOM STYLES -->
 <style>
