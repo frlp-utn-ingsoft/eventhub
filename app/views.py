@@ -1090,8 +1090,12 @@ def event_editar_rating(request, event_id, rating_id):
 def request_refound(request):
     user = request.user
     refounds = []
+    tickets = Ticket.objects.filter(user=user)
     if user.is_organizer :
-        refounds = RefoundRequest.objects.all()
+        user_refounds = RefoundRequest.objects.filter(user_id=user)
+        tickets_users = Ticket.objects.filter(event__organizer=user).values_list('ticket_code', flat=True)
+        event_refounds = RefoundRequest.objects.filter(ticket_code__in=tickets_users)
+        refounds = (user_refounds | event_refounds).distinct()
     else:
         refounds = RefoundRequest.objects.filter(user_id= user.id )
 
@@ -1099,45 +1103,84 @@ def request_refound(request):
         ticket_code= request.POST.get('ticketCode')
         reason= request.POST.get('refundReason')
         details= request.POST.get('additionalDetails')
-        refound=RefoundRequest.new(
-            ticket_code,
-            reason,
-            details,
-            user
-        )
-        return render(
-        request,
-        'app/refound_request.html',{
-            "user_is_organizer": user.is_organizer,
-            "refounds": refounds
-        }
-    )
+        refound, errors= RefoundRequest.new(ticket_code, reason, details, user)
+
+        if errors:
+            return render(
+                request,
+                'app/refound_request.html',{
+                    "user_is_organizer": user.is_organizer,
+                    "refounds": refounds,
+                    "tickets": tickets,
+                    "errors": errors,
+                    "ticket_code": ticket_code,
+                    "details": details,
+                    "reason": reason,
+                    "show_modal": True
+                }
+            )
+        
+        return redirect("refound")
     return render(
         request,
         'app/refound_request.html',{
-            "user_is_organizer": user.is_organizer,
-            "refounds": refounds
+        "user_is_organizer": user.is_organizer,
+        "refounds": refounds,
+        "tickets": tickets
         }
-    )
-
+    )   
+    
 @login_required
 def delete_refound(request):
     if request.method == 'POST':
         refound=get_object_or_404(RefoundRequest, pk=request.POST.get("id"))
         refound.delete()
         return redirect('refound')
+    return redirect("refound") 
 
 
 @login_required
 def update_refound(request):
+    refound=get_object_or_404(RefoundRequest, pk=request.POST.get("id"))
+    if refound.user_id != request.user and not request.user.is_organizer:
+        return redirect(request.META.get("HTTP_REFERER", "/"))
+    
+    user = request.user
+    refounds = []
+    if user.is_organizer :
+        refounds = RefoundRequest.objects.all()
+    else:
+        refounds = RefoundRequest.objects.filter(user_id= user.id )
+    
     if request.method == 'POST':
-        refound=get_object_or_404(RefoundRequest, pk=request.POST.get("id"))
-        refound.ticket_code = request.POST.get('ticketCode')
-        refound.reason = request.POST.get('refundReason')
-        refound.details = request.POST.get('additionalDetails')
-        refound.save()
-    return redirect('refound')
+        ticket_code = request.POST.get('ticketCode')
+        reason = request.POST.get('refundReason')
+        details = request.POST.get('additionalDetails')
+        success, errors = refound.update(ticket_code, reason, details)
 
+        if errors:
+            return render(
+                request,
+                'app/refound_request.html',{
+                    "user_is_organizer": user.is_organizer,
+                    "refounds": refounds,
+                    "refound_id": refound.id,
+                    "errors": errors,
+                    "ticket_code": ticket_code,
+                    "details": details,
+                    "reason": reason,
+                    "show_modal": True
+                }
+            )
+        
+        return redirect("refound")
+    return render(
+        request,
+        'app/refound_request.html',{
+        "user_is_organizer": user.is_organizer,
+        "refounds": refounds,
+        }
+    ) 
 
 @login_required
 @organizer_required
