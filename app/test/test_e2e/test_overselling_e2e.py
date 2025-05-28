@@ -3,6 +3,7 @@ from django.utils import timezone
 from playwright.sync_api import expect
 from django.db import transaction
 from typing import cast
+import time
 
 from app.models import Event, User, Venue, Ticket
 from app.test.test_e2e.base import BaseE2ETest
@@ -14,18 +15,19 @@ class OversellingPreventionTest(BaseE2ETest):
     def setUp(self):
         super().setUp()
 
+        sufijo = str(int(time.time() * 1000))
         # Crear usuario organizador
         self.organizer = User.objects.create_user(
-            username="organizador",
-            email="organizador@example.com",
+            username=f"organizador_{sufijo}",
+            email=f"organizador_{sufijo}@example.com",
             password="password123",
             is_organizer=True,
         )
 
         # Crear usuario regular
         self.regular_user = User.objects.create_user(
-            username="usuario",
-            email="usuario@example.com",
+            username=f"usuario_{sufijo}",
+            email=f"usuario_{sufijo}@example.com",
             password="password123",
             is_organizer=False,
         )
