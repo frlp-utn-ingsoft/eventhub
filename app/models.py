@@ -1,5 +1,6 @@
 from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Sum
 from django.utils.crypto import get_random_string
@@ -10,7 +11,13 @@ class User(AbstractUser):
         "Event",
         related_name="favorited_by",
         blank=True,
-    )  # Un usuario puede tener múltiples eventos favoritos. Un evento puede ser marcado como favorito por múltiples usuarios
+    )
+
+    def add_favorite_event(self, event):
+        """Agrega un evento a favoritos solo si su estado es válido."""
+        if event.status.lower() in ['canceled', 'finished', 'soldout']:
+            raise ValidationError("No se puede agregar un evento cancelado, finalizado o agotado a favoritos.")
+        self.favorite_events.add(event)
 
     @classmethod
     def validate_new_user(cls, email, username, password, password_confirm):

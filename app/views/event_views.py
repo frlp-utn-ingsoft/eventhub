@@ -2,6 +2,7 @@ import datetime
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import ValidationError
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
@@ -140,8 +141,6 @@ def event_detail(request, id):
     
         # Llamar a la función `handle_rating` para manejar la calificación
     rating_saved = create_rating(request, event)
-
-    # Si la calificación se guardó correctamente, actualizar las calificaciones
     if rating_saved:
         ratings = Rating.objects.filter(event=event)
     event_categories = event.categories.all() if event else []
@@ -250,3 +249,33 @@ def event_filter(request):
     }
 
     return render(request, "app/event/events.html", context)
+
+@login_required
+def event_favorite(request, id):
+    event = get_object_or_404(Event, pk=id)
+    user = request.user
+    if event in user.favorite_events.all():
+        user.favorite_events.remove(event)
+        messages.success(request, "Evento eliminado de favoritos.")
+    else:
+        # Aquí puedes usar el método add_favorite_event para validar el estado
+        try:
+            user.add_favorite_event(event)
+            messages.success(request, "Evento agregado a favoritos.")
+        except ValidationError as e:
+            messages.error(request, str(e))
+    return redirect("event_detail", id=event.id) # type: ignore
+
+@login_required
+def favorite_events(request):
+    user = request.user
+    events = user.favorite_events.all().order_by("scheduled_at")
+    return render(
+        request,
+        "app/event/favorite_events.html",
+        {
+            "events": events,
+            "user_is_organizer": user.is_organizer,
+            "user": user
+        },
+    )
