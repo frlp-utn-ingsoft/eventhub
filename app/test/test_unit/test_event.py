@@ -129,30 +129,56 @@ class EventModelTest(TestCase):
         self.assertEqual(updated_event.venue, self.venue)
     
     
-    def test_notification_created_on_event_update(self):
-        """Test que verifica si se notifica a los usuarios con ticket del evento cuando cambia la fecha o el lugar"""
-        # Simular cambio de fecha y lugar
-        old_scheduled_at = self.event.scheduled_at
-        old_venue = self.event.venue
-        new_scheduled_at = old_scheduled_at + datetime.timedelta(days=2)
-        new_venue = self.venue2
 
-        self.event.scheduled_at = new_scheduled_at
-        self.event.venue = new_venue
-        self.event.save()
+    def test_event_get_demand(self):
+        """Test que verifica el cálculo correcto de la demanda del evento"""
+        event = Event.objects.create(
+            title="Evento de prueba",
+            description="Descripción del evento de prueba",
+            scheduled_at=timezone.now() + datetime.timedelta(days=1),
+            organizer=self.organizer,
+            venue=self.venue
+        )
 
-        # Lógica de notificación
-        if old_scheduled_at != new_scheduled_at or old_venue != new_venue:
-            notification = Notification.objects.create(
-                title="Evento Modificado",
-                message=f"El evento '{self.event.title}' ha sido modificado. Fecha: {new_scheduled_at} y lugar: {new_venue.name}.",
-                priority="MEDIUM",
+        # Sin tickets! demanda deberia  ser 0 papurri
+        self.assertEqual(event.get_demand(), 0)
+
+        # Creaamos 50 tickets (para capacidad 100)
+        from app.models import Ticket
+        for i in range(50):
+            user = User.objects.create_user(
+                username=f"user_{i}",
+                email=f"user_{i}@test.com",
+                password="password123"
             )
-            usuarios = User.objects.filter(tickets__event=self.event).distinct()
-            notification.users.set(usuarios)
-            notification.save()
+            Ticket.objects.create(
+                user=user,
+                event=event,
+                type="general",
+                quantity=1
+            )
 
         # Verificar que la notificación esté en cada usuario con ticket
         for usuario in usuarios:
             self.assertIn(notification, usuario.notifications.all())
         
+        # Demanda debe ser 50%
+        self.assertEqual(event.get_demand(), 50)
+
+        # Creamos 50 tickets más (para capacidad 100)
+        for i in range(50, 100):
+            user = User.objects.create_user(
+                username=f"user_{i}",
+                email=f"user_{i}@test.com",
+                password="password123"
+            )
+            Ticket.objects.create(
+                user=user,
+                event=event,
+                type="general",
+                quantity=1
+            )
+
+        # Demanda debe ser 100%
+        self.assertEqual(event.get_demand(), 100)
+

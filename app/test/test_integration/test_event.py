@@ -149,6 +149,38 @@ class EventDetailViewTest(BaseEventTestCase):
         # Verificar respuesta
         self.assertEqual(response.status_code, 404)
 
+    def test_event_get_demand(self):
+        """Test de integración que  verifica que la vista event_detail muestra la demanda del evento correctamente y si es alta o baja"""
+        # Login como organizador
+        self.client.login(username="organizador", password="password123")
+
+        # Demanda baja (sin tickets)
+        response = self.client.get(reverse("event_detail", args=[self.event1.id]))
+        self.assertContains(response, "Baja demanda")
+
+        # Crear 91 tickets para superar el 90% de ocupación (capacidad 100)
+        for i in range(91):
+            user = User.objects.create_user(
+                username=f"user_{i}",
+                email=f"user_{i}@test.com",
+                password="password123"
+            )
+            Ticket.objects.create(
+                user=user,
+                event=self.event1,
+                type="general",
+                quantity=1
+            )
+
+        
+        response = self.client.get(reverse("event_detail", args=[self.event1.id]))
+        ##Verificar que la cantidad de entradas vendidas es correcta == 91
+        self.assertContains(response, "Entradas vendidas:")
+        self.assertContains(response, "91")
+        # Demanda alta 
+        self.assertContains(response, "Alta demanda")
+    
+
 
 class EventFormViewTest(BaseEventTestCase):
     """Tests para la vista del formulario de eventos"""
