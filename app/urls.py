@@ -55,4 +55,8 @@ urlpatterns = [
     path("venues/create/", views.venue_form, name="venue_form"),
     path("venues/<int:id>/delete/", views.venue_delete, name="venue_delete"),
     path("venues/<int:id>/edit/", views.venue_edit, name="venue_edit"),
+
+    # Satisfaction Survey
+    path("tickets/<int:ticket_id>/survey/", views.satisfaction_survey, name="satisfaction_survey"),
+    path("events/<int:event_id>/survey-results/", views.survey_results, name="survey_results"),
 ]

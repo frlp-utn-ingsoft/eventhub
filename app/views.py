@@ -3,13 +3,10 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Event, User, Ticket, Comment, Notification, Venue
+from .models import Event, User, Ticket, Comment, Notification, Venue, RefundRequest, Rating, Category, SatisfactionSurvey
 from django.contrib import messages
 from django.db.models import Q
 import uuid
-
-
-from .models import Event, User, Ticket, RefundRequest, Rating, Category
 
 
 def is_organizer(user):
@@ -431,7 +428,8 @@ def buy_ticket(request, id):
 
         if success:
             messages.success(request, "¡Ticket comprado!")
-            return redirect("tickets")
+            # Redirigir a la encuesta de satisfacción con el ID del ticket
+            return redirect("satisfaction_survey", ticket_id=result.id)
         else:
             messages.error(request, "Error al comprar el ticket")
             return render(
@@ -903,10 +901,9 @@ def venues(request):
 def venue_delete(request, id):
     if request.user.is_organizer:     
         venue = get_object_or_404(Venue, pk=id)
-
         venue.delete()
 
-        return redirect("venues")
+    return redirect("venues")
 
 @login_required
 def venue_edit(request, id):
@@ -953,3 +950,79 @@ def toggle_favorite(request, event_id):
         messages.success(request, "Evento agregado a favoritos")
     
     return redirect('events')
+
+@login_required
+def satisfaction_survey(request, ticket_id):
+    """Vista para mostrar y procesar la encuesta de satisfacción"""
+    ticket = get_object_or_404(Ticket, pk=ticket_id, user=request.user)
+    
+    # Verificar si ya existe una encuesta para este ticket
+    if SatisfactionSurvey.objects.filter(ticket=ticket).exists():
+        messages.info(request, "Ya has completado la encuesta para este ticket.")
+        return redirect("tickets")
+    
+    if request.method == "POST":
+        overall_satisfaction = request.POST.get("overall_satisfaction")
+        purchase_experience = request.POST.get("purchase_experience")
+        would_recommend = request.POST.get("would_recommend")
+        comments = request.POST.get("comments", "")
+        
+        # Convertir would_recommend a booleano
+        would_recommend_bool = would_recommend == "yes"
+        
+        # Validar y crear la encuesta
+        success, result = SatisfactionSurvey.new(
+            ticket=ticket,
+            user=request.user,
+            event=ticket.event,
+            overall_satisfaction=int(overall_satisfaction) if overall_satisfaction else None,
+            purchase_experience=purchase_experience,
+            would_recommend=would_recommend_bool,
+            comments=comments
+        )
+        
+        if success:
+            messages.success(request, "¡Gracias por completar la encuesta de satisfacción!")
+            return redirect("tickets")
+        else:
+            messages.error(request, "Error al enviar la encuesta. Por favor, revisa los datos.")
+            return render(request, "app/satisfaction_survey.html", {
+                "ticket": ticket,
+                "errors": result,
+                "data": request.POST
+            })
+    
+    return render(request, "app/satisfaction_survey.html", {
+        "ticket": ticket,
+        "event": ticket.event
+    })
+
+
+@login_required
+def survey_results(request, event_id):
+    """Vista para ver los resultados de las encuestas de un evento (solo organizadores)"""
+    event = get_object_or_404(Event, pk=event_id)
+    
+    # Verificar que el usuario sea el organizador del evento
+    if request.user != event.organizer:
+        messages.error(request, "No tienes permiso para ver estos resultados.")
+        return redirect("events")
+    
+    surveys = SatisfactionSurvey.objects.filter(event=event).select_related('user', 'ticket')
+    
+    # Calcular estadísticas
+    total_surveys = surveys.count()
+    if total_surveys > 0:
+        avg_satisfaction = sum(s.overall_satisfaction for s in surveys) / total_surveys
+        recommend_percentage = (surveys.filter(would_recommend=True).count() / total_surveys) * 100
+    else:
+        avg_satisfaction = 0
+        recommend_percentage = 0
+    
+    return render(request, "app/survey_results.html", {
+        "event": event,
+        "surveys": surveys,
+        "total_surveys": total_surveys,
+        "avg_satisfaction": round(avg_satisfaction, 1),
+        "recommend_percentage": round(recommend_percentage, 1)
+    })

@@ -47,6 +47,9 @@
                             <a href="{% url 'event_edit' event.id %}" class="btn btn-outline-primary me-2">
                                 <i class="bi bi-pencil me-1"></i>Editar Evento
                             </a>
+                            <a href="{% url 'survey_results' event.id %}" class="btn btn-outline-info me-2">
+                                <i class="bi bi-bar-chart me-1"></i>Ver Encuestas
+                            </a>
                         {% else %}
                             {% if event.available_tickets > 0 %}
                                 <a href="{% url 'buy_ticket' event.id %}" class="btn btn-primary me-2">
