@@ -3,13 +3,10 @@ from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
-from .models import Event, User, Ticket, Comment, Notification, Venue
+from .models import Event, User, Ticket, Comment, Notification, Venue, RefundRequest, Rating, Category, SatisfactionSurvey
 from django.contrib import messages
 from django.db.models import Q
 import uuid
-
-
-from .models import Event, User, Ticket, RefundRequest, Rating, Category
 
 
 def is_organizer(user):
@@ -71,6 +68,8 @@ def home(request):
 def events(request):
     current_time = timezone.now()
     events = Event.objects.filter(scheduled_at__gt=current_time).order_by("scheduled_at")
+    for ev in events:
+        ev.auto_update_state()  # Actualizar el estado de cada evento
     return render(
         request,
         "app/events.html",
@@ -110,6 +109,22 @@ def event_delete(request, event_id):
 
     return redirect("events")
 
+@login_required
+def event_canceled(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+
+    user = request.user
+    if not user.is_organizer:
+        return redirect("events")
+
+    if request.method == "POST":
+        event = get_object_or_404(Event, pk=event_id)
+        event.state = Event.CANCELED
+        event.save()
+        return redirect("events")
+
+    return redirect("events")
+
 
 @login_required
 def event_form(request, event_id=None):
@@ -117,10 +132,10 @@ def event_form(request, event_id=None):
 
     if not user.is_organizer:
         return redirect("events")
-    
+
     venues = Venue.objects.all()
     categories = Category.objects.filter(is_active=True)
-    event = None
+    event = None # Inicializa event para que siempre exista
 
     if event_id is not None:
         event = get_object_or_404(Event, pk=event_id)
@@ -153,6 +168,7 @@ def event_form(request, event_id=None):
                 datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
             )
 
+            #Logica de Creacion 
             if event_id is None:
                 success, result = Event.new(
                     title=title,
@@ -163,12 +179,14 @@ def event_form(request, event_id=None):
                     category=category
                 )
                 if success:
+                    # El evento se crea exitosamente
                     messages.success(request, "Evento creado exitosamente")
                     return redirect("events")
                 else:
-                    messages.error(request, "Error al crear el evento")
+                    # Manejo de errores para la creacion
+                    messages.error(request, f"Error al crear el evento: {result}") # Mensaje corregido
                     return render(request, "app/event_form.html", {
-                        "event": event,
+                        "event": event, # event aqui es None, o el original si es edición fallida
                         "categories": categories,
                         "venues": venues,
                         "user_is_organizer": request.user.is_organizer,
@@ -179,12 +197,13 @@ def event_form(request, event_id=None):
                 old_scheduled_at = event.scheduled_at
                 old_venue = event.venue
                 success, result = event.update(
-                    title=title,
-                    description=description,
-                    scheduled_at=scheduled_at,
-                    venue=venue,
+                    title = title,
+                    description = description,
+                    scheduled_at = scheduled_at,
+                    venue = venue,
                     category=category
                 )
+
                 if success:
                     messages.success(request, "Evento actualizado exitosamente")
                     if old_scheduled_at != scheduled_at or old_venue != venue:
@@ -199,24 +218,64 @@ def event_form(request, event_id=None):
                     return redirect("events")
 
                 else:
-                    messages.error(request, "Error al actualizar el evento")
-                    return render(request, "app/event_form.html", {
-                        "event": event,
-                        "categories": categories,
-                        "venues": venues,
-                        "user_is_organizer": request.user.is_organizer,
-                        "errors": result,
-                        "data": request.POST
-                    })
-        except (ValueError, TypeError):
-            messages.error(request, "Error en el formato de fecha y hora")
+                    messages.error(request, f"Error al actualizar el evento: {result}")
+                    return render(
+                        request, "app/event_form.html",{
+                            "event": event,
+                            "categories": categories, # Estas son las categorías para el formulario
+                            "venues": venues,
+                            "user_is_organizer": request.user.is_organizer,
+                            "errors": result,
+                            "data": request.POST
+                        })
+        except (ValueError, TypeError) as e: # Captura errores de formato de fecha/hora o get_object_or_404
+            messages.error(request, f"Error en el formato de datos o al encontrar el recurso: {e}")
             return render(request, "app/event_form.html", {
                 "event": event,
-                "categories": categories,
+                "categories": categories, # Estas son las categorías generales, no las seleccionadas
                 "venues": venues,
                 "user_is_organizer": request.user.is_organizer,
                 "data": request.POST
             })
+
+    # Si la solicitud no es POST, se muestra el formulario vacío o pre-llenado
+    else:
+        # Aquí puedes pre-llenar el formulario si 'event' existe (modo edición)
+        initial_data = {}
+        if event:
+            # Asegúrate de formatear la fecha/hora para el input HTML (datetime-local)
+            if event.scheduled_at:
+                # Si scheduled_at es un campo DateTimeField aware (con USE_TZ=True),
+                # es mejor usar `isoformat` o `strftime` con el formato correcto.
+                # Ejemplo para input type="datetime-local": "YYYY-MM-DDTHH:MM"
+                initial_scheduled_at = event.scheduled_at.astimezone(timezone.get_current_timezone()).strftime("%Y-%m-%dT%H:%M")
+            else:
+                initial_scheduled_at = ""
+
+            initial_category_id = event.category.id if event.category else ""
+            # Si event.categories es ManyToMany, necesitarías:
+            # initial_category_ids = [c.id for c in event.categories.all()]
+
+            initial_data = {
+                "title": event.title,
+                "description": event.description,
+                "venue": event.venue.id if event.venue else "",
+                "category": initial_category_id, # Para un solo select
+                # "category": initial_category_ids, # Para un multi-select
+                "date": event.scheduled_at.strftime("%Y-%m-%d") if event.scheduled_at else "",
+                "time": event.scheduled_at.strftime("%H:%M") if event.scheduled_at else "",
+                # 'scheduled_at' es mejor para un input type="datetime-local"
+                "scheduled_at_datetime_local": initial_scheduled_at,
+            }
+
+        return render(request, "app/event_form.html", {
+            "event": event,
+            "categories": categories,
+            "venues": venues,
+            "user_is_organizer": request.user.is_organizer,
+            "data": initial_data # Pasar los datos iniciales
+        })
+
 
     return render(
         request,
@@ -246,6 +305,19 @@ def refund_form(request, id):
                 "error": "Todos los campos son obligatorios.",
                 "data": request.POST
             })
+        
+        #Validacion para evitar que haya solicitudes de reembolso duplicadas
+        existing_request = RefundRequest.objects.filter(
+            user=request.user,
+            ticket_code=ticket_code,
+            approval__isnull=True,  # Reembolso todavia pendientes
+        ).first()
+
+        if existing_request:
+            return render(request, "app/refund_form.html",{
+                "error": "Ya tienes una solicitud de reembolso pendiente.",
+                "data": request.POST
+            })
 
         # Crear la solicitud de reembolso con estado pendiente
         RefundRequest.objects.create(
@@ -262,13 +334,12 @@ def refund_form(request, id):
         notification = Notification.objects.create(
             title="Solicitud de Reembolso Enviada",
             message=f"Tu solicitud de reembolso para el evento: '{ticket.event.title}' ha sido enviada y está en proceso de revisión.",
-            priority="MEDIUM",
-            event=ticket.event
+            priority="MEDIUM"
         )
         notification.users.add(request.user)
         notification.save()
 
-        return redirect("events")
+        return redirect("tickets")
 
     return render(request, "app/refund_form.html", {"ticket": ticket})
 
@@ -277,7 +348,6 @@ def refund_form(request, id):
 def refund_edit_form(request, id):
     refund_request = get_object_or_404(RefundRequest, pk=id)
 
-    
     if request.method == "POST":
         ticket_code_uuid = uuid.UUID(refund_request.ticket_code)
         ticket = Ticket.objects.get(ticket_code=ticket_code_uuid, user=refund_request.user)
@@ -309,8 +379,7 @@ def refund_edit_form(request, id):
         notification = Notification.objects.create(
             title="Solicitud de Reembolso Enviada",
             message=f"Tu solicitud de reembolso para el evento: '{ticket.event.title}' ha sido enviada y está en proceso de revisión.",
-            priority="MEDIUM",
-            event=ticket.event
+            priority="MEDIUM"
         )
         notification.users.add(request.user)
         notification.save()
@@ -442,8 +511,11 @@ def buy_ticket(request, id):
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
         if success:
+            #GENERO UN CHEQUEO PARA VERIFICAR EL ESTADO DE SOLD OUT
+            event.auto_update_state()
             messages.success(request, "¡Ticket comprado!")
-            return redirect("tickets")
+            # Redirigir a la encuesta de satisfacción con el ID del ticket
+            return redirect("satisfaction_survey", ticket_id=result.id)
         else:
             messages.error(request, "Error al comprar el ticket")
             return render(
@@ -807,8 +879,7 @@ def notification_create(request):
         # Asignar destinatarios
         if destinatario == "todos":
             event = get_object_or_404(Event, id=event_id)
-            asistentes = event.attendee.all()
-            print("Asistentes para notificación:", asistentes)
+            asistentes = event.get_attendees()
             notification.users.set(asistentes)
         elif destinatario == "usuario":
             usuario = get_object_or_404(User, pk=usuario_id)
@@ -916,10 +987,9 @@ def venues(request):
 def venue_delete(request, id):
     if request.user.is_organizer:     
         venue = get_object_or_404(Venue, pk=id)
-
         venue.delete()
 
-        return redirect("venues")
+    return redirect("venues")
 
 @login_required
 def venue_edit(request, id):
@@ -952,3 +1022,93 @@ def venue_edit(request, id):
             return redirect('venues')
 
     return render(request, "app/venue_edit_form.html", {"venue": venue})
+
+@login_required
+def toggle_favorite(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+    user = request.user
+    
+    if event.favorited_by.filter(id=user.id).exists():
+        event.favorited_by.remove(user)
+        messages.success(request, "Evento removido de favoritos")
+    else:
+        event.favorited_by.add(user)
+        messages.success(request, "Evento agregado a favoritos")
+    
+    return redirect('events')
+
+@login_required
+def satisfaction_survey(request, ticket_id):
+    """Vista para mostrar y procesar la encuesta de satisfacción"""
+    ticket = get_object_or_404(Ticket, pk=ticket_id, user=request.user)
+    
+    # Verificar si ya existe una encuesta para este ticket
+    if SatisfactionSurvey.objects.filter(ticket=ticket).exists():
+        messages.info(request, "Ya has completado la encuesta para este ticket.")
+        return redirect("tickets")
+    
+    if request.method == "POST":
+        overall_satisfaction = request.POST.get("overall_satisfaction")
+        purchase_experience = request.POST.get("purchase_experience")
+        would_recommend = request.POST.get("would_recommend")
+        comments = request.POST.get("comments", "")
+        
+        # Convertir would_recommend a booleano
+        would_recommend_bool = would_recommend == "yes"
+        
+        # Validar y crear la encuesta
+        success, result = SatisfactionSurvey.new(
+            ticket=ticket,
+            user=request.user,
+            event=ticket.event,
+            overall_satisfaction=int(overall_satisfaction) if overall_satisfaction else None,
+            purchase_experience=purchase_experience,
+            would_recommend=would_recommend_bool,
+            comments=comments
+        )
+        
+        if success:
+            messages.success(request, "¡Gracias por completar la encuesta de satisfacción!")
+            return redirect("tickets")
+        else:
+            messages.error(request, "Error al enviar la encuesta. Por favor, revisa los datos.")
+            return render(request, "app/satisfaction_survey.html", {
+                "ticket": ticket,
+                "errors": result,
+                "data": request.POST
+            })
+    
+    return render(request, "app/satisfaction_survey.html", {
+        "ticket": ticket,
+        "event": ticket.event
+    })
+
+
+@login_required
+def survey_results(request, event_id):
+    """Vista para ver los resultados de las encuestas de un evento (solo organizadores)"""
+    event = get_object_or_404(Event, pk=event_id)
+    
+    # Verificar que el usuario sea el organizador del evento
+    if request.user != event.organizer:
+        messages.error(request, "No tienes permiso para ver estos resultados.")
+        return redirect("events")
+    
+    surveys = SatisfactionSurvey.objects.filter(event=event).select_related('user', 'ticket')
+    
+    # Calcular estadísticas
+    total_surveys = surveys.count()
+    if total_surveys > 0:
+        avg_satisfaction = sum(s.overall_satisfaction for s in surveys) / total_surveys
+        recommend_percentage = (surveys.filter(would_recommend=True).count() / total_surveys) * 100
+    else:
+        avg_satisfaction = 0
+        recommend_percentage = 0
+    
+    return render(request, "app/survey_results.html", {
+        "event": event,
+        "surveys": surveys,
+        "total_surveys": total_surveys,
+        "avg_satisfaction": round(avg_satisfaction, 1),
+        "recommend_percentage": round(recommend_percentage, 1)
+    })

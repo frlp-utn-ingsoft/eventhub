@@ -21,7 +21,7 @@ def seed():
     print("Datos de 'Venue' sembrados exitosamente")
 
     # Category
-    success, newCategory = Category.new(
+    success,newCategory=Category.new(
         name="Pop",
         description="Género musical popular caracterizado por canciones con melodías y ritmos marcados, a menudo con instrumentos eléctricos y amplificación, y dirigido a un público amplio.",
         is_active=True
@@ -58,7 +58,7 @@ def seed():
         scheduled_at=event_date,
         organizer=newUser,
         venue=newVenue,
-        category=newCategory
+        category=newCategory,
     )
     print("Datos de 'Event' sembrados exitosamente")
 

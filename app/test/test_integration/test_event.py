@@ -1,16 +1,12 @@
-import datetime
-import time
-
-from django.test import Client, TestCase
+from django.test import TestCase, Client
 from django.urls import reverse
 from django.utils import timezone
+from app.models import Event, Venue, Category,Ticket, Notification
+from django.contrib.auth import get_user_model
+User = get_user_model()
+import datetime
 
-from app.models import Event, User, Venue, Category, Notification, Ticket
-
-
-class BaseEventTestCase(TestCase):
-    """Clase base con la configuración común para todos los tests de eventos"""
-
+class EventStateIntegrationTest(TestCase):
     def setUp(self):
         # Crear un usuario organizador
         self.organizer = User.objects.create_user(
@@ -46,16 +42,23 @@ class BaseEventTestCase(TestCase):
             organizer=self.organizer,
             venue = self.venue1,
         )
-        
-        # Creamos categorias
-        self.category = Category.objects.create(name="Conferencia", is_active=True)
-        
-        # Usuarios con Tickets para el evento 1
+        self.client = Client()
+        self.user = User.objects.create_user(username='organizer', password='testpass', is_organizer=True)
+        self.venue = Venue.objects.create(name="Test Venue", adress="Test Adress", capacity=100)
+        self.category = Category.objects.create(name="Music", is_active=True)
+
+        self.event = Event.objects.create(
+            title="Test Event",
+            description="Test Description",
+            scheduled_at=timezone.now() + datetime.timedelta(days=2),
+            organizer=self.organizer,
+            venue=self.venue
+        )
+     # Usuarios con Tickets para el evento 1
         Ticket.objects.create(user=self.regular_user1, event=self.event1, quantity=1, type="GENERAL")
         Ticket.objects.create(user=self.regular_user2, event=self.event1, quantity=1, type="GENERAL")
 
-        # Cliente para hacer peticiones
-        self.client = Client()
+     
 
 
 class EventsListViewTest(BaseEventTestCase):
@@ -120,6 +123,15 @@ class EventDetailViewTest(BaseEventTestCase):
         self.assertTemplateUsed(response, "app/event_detail.html")
         self.assertIn("event", response.context)
         self.assertEqual(response.context["event"].id, self.event1.id)
+            organizer=self.user,
+            venue=self.venue
+        )
+        self.event.categories.add(self.category)  # Relación M2M
+
+        self.event_id = self.event.id  # Se accede después de crear
+        self.venue_id = self.venue.id
+
+        self.client.login(username='organizer', password='testpass')
 
     def test_event_detail_view_without_login(self):
         """Test que verifica que la vista event_detail redirige a login cuando el usuario no está logueado"""
@@ -383,3 +395,55 @@ class EventDeleteViewTest(BaseEventTestCase):
 
         # Verificar que el evento sigue existiendo
         self.assertTrue(Event.objects.filter(pk=self.event1.id).exists())
+
+    def test_toggle_favorite_view(self):
+        """Test que verifica la vista de toggle_favorite"""
+        # Login como usuario regular
+        self.client.login(username="regular", password="password123")
+        
+        # Intentar marcar un evento como favorito
+        response = self.client.get(f'/events/{self.event1.id}/toggle-favorite/')
+        self.assertEqual(response.status_code, 302)  # Redirección
+        
+        # Verificar que el evento fue agregado a favoritos
+        self.assertTrue(self.event1.favorited_by.filter(id=self.regular_user.id).exists())
+        
+        # Intentar quitar el evento de favoritos
+        response = self.client.get(f'/events/{self.event1.id}/toggle-favorite/')
+        self.assertEqual(response.status_code, 302)  # Redirección
+        
+        # Verificar que el evento fue quitado de favoritos
+        self.assertFalse(self.event1.favorited_by.filter(id=self.regular_user.id).exists())
+
+    def test_favorite_button_not_visible_for_organizer(self):
+        """Test que verifica que el botón de favorito no es visible para organizadores"""
+        # Login como organizador
+        self.client.login(username="organizador", password="password123")
+        
+        # Obtener la página de eventos
+        response = self.client.get('/events/')
+        self.assertEqual(response.status_code, 200)
+        
+        # Verificar que el botón de favorito no está en la respuesta
+        self.assertNotContains(response, 'toggle-favorite')
+        
+    def test_event_reprograms_when_date_changes(self):
+        new_date = (timezone.now() + datetime.timedelta(days=5)).date().strftime('%Y-%m-%d')
+        new_time = '15:00'
+
+        response = self.client.post(reverse('event_edit', args=[self.event_id]), {
+            'title': self.event.title,
+            'description': self.event.description,
+            'date': new_date,
+            'time': new_time,
+            'venue': str(self.venue_id),
+            'categories': [self.category.id]
+        })
+
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.state, Event.REPROGRAMED)
+
+    def test_event_canceled_view_sets_state_correctly(self):
+        response = self.client.post(reverse('event_canceled', args=[self.event_id]))
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.state, Event.CANCELED)
