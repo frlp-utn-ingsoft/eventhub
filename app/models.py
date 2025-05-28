@@ -5,7 +5,7 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
-from django.core.exceptions import ValidationError, IntegrityError
+from django.core.exceptions import ValidationError
 
 class Venue(models.Model):
     # Atributes
@@ -236,7 +236,6 @@ class Discount(models.Model):
         unique=True,
         editable=False,
         blank=True,
-        null=True,
         verbose_name='Código'
     )
     
@@ -315,8 +314,6 @@ class Discount(models.Model):
 
             return True, discount
         
-        except IntegrityError:
-            return False, {'error': 'El código ya existe'}
         except ValidationError as e:
             return False, e.message_dict
         except Exception as e:
@@ -358,12 +355,9 @@ class Discount(models.Model):
             
             return True, self
         
-        except IntegrityError:
-            return False, {"error": "Error de integridad, posiblemente el código ya existe"}
+
         except Exception as e:
             return False, {"error": f"Error al actualizar el descuento: {str(e)}"}
-
-
 
 
 class Ticket(models.Model):
@@ -410,6 +404,7 @@ class Ticket(models.Model):
 
     discount = models.ForeignKey(
         Discount,
+        null=True,
         on_delete=models.CASCADE,
         related_name='discounts'
     )
