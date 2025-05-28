@@ -21,7 +21,7 @@ def seed():
     print("Datos de 'Venue' sembrados exitosamente")
 
     # Category
-    newCategory=Category.new(
+    success,newCategory=Category.new(
         name="Pop",
         description="Género musical popular caracterizado por canciones con melodías y ritmos marcados, a menudo con instrumentos eléctricos y amplificación, y dirigido a un público amplio.", 
         is_active=True
@@ -57,11 +57,10 @@ def seed():
         description="La banda mexicana formada por Jesús Navarro, Julio Ramírez y Bibi Marín regresa al país en el marco de su gira mundial 'Panorama Tour'",
         scheduled_at=event_date,
         organizer=newUser,
-        venue=newVenue
+        venue=newVenue,
+        category=newCategory,
     )
-    newEvent.categories.set(newCategory)
-    print("Datos de 'Event' sembrados exitosamente")
-
+   
     # Notification
     Notification.objects.create(
         title="Quedan 24hs para que comience el evento. No te lo pierdas!",

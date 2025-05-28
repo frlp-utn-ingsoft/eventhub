@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Encuesta de Satisfacción{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="bi bi-clipboard-check me-2"></i>Encuesta de Satisfacción
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-success mb-4">
+                        <i class="bi bi-check-circle me-2"></i>
+                        <strong>¡Compra exitosa!</strong> Has adquirido {{ ticket.quantity }} entrada(s) {{ ticket.type }} para <strong>{{ ticket.event.title }}</strong>.
+                    </div>
+
+                    <p class="mb-4">
+                        Nos gustaría conocer tu experiencia de compra. Tu opinión nos ayuda a mejorar nuestro servicio.
+                    </p>
+
+                    {% if errors %}
+                        <div class="alert alert-danger">
+                            <ul class="mb-0">
+                                {% for field, error in errors.items %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <!-- Satisfacción general -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-star me-1"></i>¿Qué tan satisfecho estás con tu experiencia de compra? *
+                            </label>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="overall_satisfaction" 
+                                               id="satisfaction1" value="1"
+                                               {% if data.overall_satisfaction == "1" %}checked{% endif %}>
+                                        <label class="form-check-label" for="satisfaction1">
+                                            1 - Muy insatisfecho
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="overall_satisfaction" 
+                                               id="satisfaction2" value="2"
+                                               {% if data.overall_satisfaction == "2" %}checked{% endif %}>
+                                        <label class="form-check-label" for="satisfaction2">
+                                            2 - Insatisfecho
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="overall_satisfaction" 
+                                               id="satisfaction3" value="3"
+                                               {% if data.overall_satisfaction == "3" %}checked{% endif %}>
+                                        <label class="form-check-label" for="satisfaction3">
+                                            3 - Neutro
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="overall_satisfaction" 
+                                               id="satisfaction4" value="4"
+                                               {% if data.overall_satisfaction == "4" %}checked{% endif %}>
+                                        <label class="form-check-label" for="satisfaction4">
+                                            4 - Satisfecho
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="overall_satisfaction" 
+                                               id="satisfaction5" value="5"
+                                               {% if data.overall_satisfaction == "5" %}checked{% endif %}>
+                                        <label class="form-check-label" for="satisfaction5">
+                                            5 - Muy satisfecho
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Experiencia de compra -->
+                        <div class="mb-4">
+                            <label for="purchase_experience" class="form-label fw-bold">
+                                <i class="bi bi-cart me-1"></i>¿Cómo fue tu experiencia de compra? *
+                            </label>
+                            <select class="form-select" id="purchase_experience" name="purchase_experience" required>
+                                <option value="">Selecciona una opción...</option>
+                                <option value="muy_facil" {% if data.purchase_experience == "muy_facil" %}selected{% endif %}>Muy fácil</option>
+                                <option value="facil" {% if data.purchase_experience == "facil" %}selected{% endif %}>Fácil</option>
+                                <option value="normal" {% if data.purchase_experience == "normal" %}selected{% endif %}>Normal</option>
+                                <option value="dificil" {% if data.purchase_experience == "dificil" %}selected{% endif %}>Difícil</option>
+                                <option value="muy_dificil" {% if data.purchase_experience == "muy_dificil" %}selected{% endif %}>Muy difícil</option>
+                            </select>
+                        </div>
+
+                        <!-- Recomendación -->
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">
+                                <i class="bi bi-heart me-1"></i>¿Recomendarías este evento a otros? *
+                            </label>
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="would_recommend" 
+                                               id="recommend_yes" value="yes"
+                                               {% if data.would_recommend == "yes" %}checked{% endif %}>
+                                        <label class="form-check-label" for="recommend_yes">
+                                            <i class="bi bi-hand-thumbs-up text-success me-1"></i>Sí
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="would_recommend" 
+                                               id="recommend_no" value="no"
+                                               {% if data.would_recommend == "no" %}checked{% endif %}>
+                                        <label class="form-check-label" for="recommend_no">
+                                            <i class="bi bi-hand-thumbs-down text-danger me-1"></i>No
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Comentarios adicionales -->
+                        <div class="mb-4">
+                            <label for="comments" class="form-label fw-bold">
+                                <i class="bi bi-chat-text me-1"></i>Comentarios adicionales (opcional)
+                            </label>
+                            <textarea class="form-control" id="comments" name="comments" rows="4" 
+                                      placeholder="¿Hay algo más que te gustaría compartir sobre tu experiencia?"
+                                      maxlength="500">{{ data.comments|default:"" }}</textarea>
+                            <div class="form-text">Máximo 500 caracteres</div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'tickets' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="bi bi-arrow-left me-1"></i>Omitir encuesta
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-send me-1"></i>Enviar encuesta
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Información del ticket -->
+            <div class="card mt-4 shadow-sm">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-ticket-perforated me-2"></i>Detalles de tu compra
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Evento:</strong> {{ ticket.event.title }}</p>
+                            <p><strong>Fecha:</strong> {{ ticket.event.scheduled_at|date:"d/m/Y H:i" }}</p>
+                            <p><strong>Lugar:</strong> {{ ticket.event.venue.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Cantidad:</strong> {{ ticket.quantity }} entrada(s)</p>
+                            <p><strong>Tipo:</strong> {{ ticket.get_type_display }}</p>
+                            <p><strong>Código:</strong> {{ ticket.ticket_code }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

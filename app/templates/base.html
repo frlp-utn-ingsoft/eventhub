@@ -1,4 +1,5 @@
 {% load navbar_link %}
+{% load static %}
 
 <!DOCTYPE html>
 <html lang="es">
@@ -18,6 +19,7 @@
         rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
     >
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
     <meta
         name="viewport"
         content="width=device-width, initial-scale=1"
@@ -106,6 +108,17 @@
     {% if messages %}
     <div class="container mt-3">
         {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
             <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -115,6 +128,9 @@
     {% endif %}
 
     {% block content %}
+    {% endblock %}
+
+    {% block extra_js %}
     {% endblock %}
 </body>
 <script
