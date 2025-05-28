@@ -5,6 +5,11 @@ from django.core.validators import MinValueValidator
 from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .models import Ticket, Rating
+
 
 class Venue(models.Model):
     # Atributes
@@ -163,6 +168,7 @@ class Category(models.Model):
 
 
 class Event(models.Model):
+    id = models.AutoField(primary_key=True)
     # Constants
     ACTIVE = 'ACTIVE'
     CANCELED = 'CANCELED'
@@ -186,6 +192,7 @@ class Event(models.Model):
 
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="events", null=True, blank=True)
+
 
     def __str__(self):
         return self.title
@@ -410,20 +417,20 @@ class Rating(models.Model):
         return f"{self.title} - {self.event.title}"
 
     @classmethod
-    def validate(cls, score, comment):
+    def validate(cls, rating, text):
         errors = {}
         
-        if not 1 <= score <= 5:
-            errors["score"] = "La calificación debe estar entre 1 y 5"
+        if not 1 <= rating <= 5:
+            errors["rating"] = "La calificación debe estar entre 1 y 5"
             
-        if len(comment) > 500:
-            errors["comment"] = "El comentario no puede tener más de 500 caracteres"
+        if len(text) > 500:
+            errors["text"] = "El comentario no puede tener más de 500 caracteres"
             
         return errors
 
     @classmethod
-    def new(cls, event, user, score, comment=""):
-        errors = cls.validate(score, comment)
+    def new(cls, event, user, rating, text=""):
+        errors = cls.validate(rating, text)
         
         if len(errors.keys()) > 0:
             return False, errors
@@ -431,20 +438,20 @@ class Rating(models.Model):
         rating = cls.objects.create(
             event=event,
             user=user,
-            score=score,
-            comment=comment
+            rating=rating,
+            text=text
         )
         
         return True, rating
 
-    def update(self, score, comment):
-        errors = self.validate(score, comment)
+    def update(self, rating, text):
+        errors = self.validate(rating, text)
         
         if len(errors.keys()) > 0:
             return False, errors
             
-        self.score = score
-        self.comment = comment
+        self.rating = rating
+        self.text = text
         self.save()
         
         return True, None
