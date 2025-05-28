@@ -86,7 +86,6 @@ class EventModelTest(TestCase):
             description="Test Description",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
-            venue=self.venue
             venue=self.venue,
         )
 
@@ -95,7 +94,6 @@ class EventModelTest(TestCase):
             description=new_description,
             scheduled_at=new_scheduled_at,
             organizer=self.organizer,
-            venue=self.venue
             venue=self.venue,
         )
         event.auto_update_state()

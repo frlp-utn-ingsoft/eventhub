@@ -58,9 +58,6 @@ class EventStateIntegrationTest(TestCase):
         Ticket.objects.create(user=self.regular_user1, event=self.event1, quantity=1, type="GENERAL")
         Ticket.objects.create(user=self.regular_user2, event=self.event1, quantity=1, type="GENERAL")
 
-     
-
-
 class EventsListViewTest(BaseEventTestCase):
     """Tests para la vista de listado de eventos"""
 
@@ -123,9 +120,8 @@ class EventDetailViewTest(BaseEventTestCase):
         self.assertTemplateUsed(response, "app/event_detail.html")
         self.assertIn("event", response.context)
         self.assertEqual(response.context["event"].id, self.event1.id)
-            organizer=self.user,
-            venue=self.venue
-        )
+           
+        
         self.event.categories.add(self.category)  # Relación M2M
 
         self.event_id = self.event.id  # Se accede después de crear

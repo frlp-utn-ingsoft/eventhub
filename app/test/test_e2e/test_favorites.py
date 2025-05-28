@@ -55,32 +55,48 @@ class EventFavoriteE2ETest(BaseE2ETest):
     def test_favorite_functionality(self):
         """Test e2e que verifica la funcionalidad completa de favoritos"""
         # Login como usuario regular
-        self.page.goto(f"{self.live_server_url}/accounts/login/")
-        self.page.fill('input[name="username"]', "usuario_fav")
-        self.page.fill('input[name="password"]', "password123")
-        self.page.click('button[type="submit"]')
+        self.login_user("usuario_fav", "password123")
         
-        # Ir a la página de eventos
+        # Ir a la página de eventos y esperar a que cargue
         self.page.goto(f"{self.live_server_url}/events/")
+        self.page.wait_for_load_state("networkidle")
         
-        # Verificar que el botón de favorito está visible
+        # Verificar que estamos en la página correcta
+        expect(self.page).to_have_title("Eventos")
+        
+        # Verificar que el evento existe en la página
+        event_title = self.page.get_by_text("Evento de prueba fav")
+        expect(event_title).to_be_visible()
+        
+        # Buscar el botón de favorito usando el ID del evento
         favorite_button = self.page.locator(f'[href="/events/{self.event.id}/toggle-favorite/"]')
+        
+        # Esperar explícitamente a que el botón esté visible
+        favorite_button.wait_for(state="visible", timeout=5000)
         expect(favorite_button).to_be_visible()
+        
+        # Verificar que la estrella está vacía inicialmente
+        star_icon = favorite_button.locator("i.bi-star")
+        expect(star_icon).to_be_visible()
         
         # Marcar el evento como favorito
         favorite_button.click()
+        self.page.wait_for_load_state("networkidle")
         
         # Verificar que aparece el mensaje de éxito
-        expect(self.page.locator('.alert-success')).to_contain_text("Evento agregado a favoritos")
+        success_message = self.page.locator('.alert-success')
+        expect(success_message).to_contain_text("Evento agregado a favoritos")
         
         # Verificar que la estrella está llena
-        expect(self.page.locator(f'[href="/events/{self.event.id}/toggle-favorite/"] i.bi-star-fill')).to_be_visible()
+        filled_star = favorite_button.locator("i.bi-star-fill")
+        expect(filled_star).to_be_visible()
         
         # Quitar el evento de favoritos
         favorite_button.click()
+        self.page.wait_for_load_state("networkidle")
         
         # Verificar que aparece el mensaje de éxito
-        expect(self.page.locator('.alert-success')).to_contain_text("Evento removido de favoritos")
+        expect(success_message).to_contain_text("Evento removido de favoritos")
         
-        # Verificar que la estrella está vacía
-        expect(self.page.locator(f'[href="/events/{self.event.id}/toggle-favorite/"] i.bi-star')).to_be_visible() 
+        # Verificar que la estrella está vacía nuevamente
+        expect(star_icon).to_be_visible() 
