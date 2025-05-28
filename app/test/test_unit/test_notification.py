@@ -1,5 +1,6 @@
 from django.test import TestCase
 from app.models import Notification, User, Event, NotificationUser, Venue, Ticket, NotificationUser
+from app.validations.notifications import createNotificationValidations
 
 class NotificationModelTest(TestCase):
     def setUp(self):
@@ -90,3 +91,86 @@ class NotificationModelTest(TestCase):
         self.assertEqual(expectedPriority, notification.priority)
         self.assertEqual(self.event_mocked, notification.event)
         self.assertEqual(self.mocked_user, notification_user.user)
+
+class TestCreateNotificationValidations(TestCase):
+    def setUp(self):
+        self.valid_data = {
+            "user_ids": [1],
+            "event_id": 1,
+            "title": "Título válido",
+            "message": "Mensaje válido",
+            "priority": "LOW"
+        }
+
+    def test_valid_data(self):
+        valid, errors = createNotificationValidations(**self.valid_data)
+        self.assertTrue(valid)
+        self.assertEqual(errors, {})
+
+    def test_empty_title(self):
+        data = self.valid_data.copy()
+        data["title"] = "   "
+        valid, errors = createNotificationValidations(**data)
+        self.assertFalse(valid)
+        self.assertIn("title", errors)
+
+    def test_title_too_long(self):
+        data = self.valid_data.copy()
+        data["title"] = "a" * 51
+        valid, errors = createNotificationValidations(**data)
+        self.assertFalse(valid)
+        self.assertIn("title", errors)
+
+    def test_empty_message(self):
+        data = self.valid_data.copy()
+        data["message"] = "   "
+        valid, errors = createNotificationValidations(**data)
+        self.assertFalse(valid)
+        self.assertIn("message", errors)
+
+    def test_message_too_long(self):
+        data = self.valid_data.copy()
+        data["message"] = "a" * 101
+        valid, errors = createNotificationValidations(**data)
+        self.assertFalse(valid)
+        self.assertIn("message", errors)
+
+    def test_empty_priority(self):
+        data = self.valid_data.copy()
+        data["priority"] = ""
+        valid, errors = createNotificationValidations(**data)
+        self.assertFalse(valid)
+        self.assertIn("priority", errors)
+
+    def test_invalid_priority(self):
+        data = self.valid_data.copy()
+        data["priority"] = "URGENT"
+        valid, errors = createNotificationValidations(**data)
+        self.assertFalse(valid)
+        self.assertIn("priority", errors)
+
+    def test_empty_user_ids(self):
+        data = self.valid_data.copy()
+        data["user_ids"] = []
+        valid, errors = createNotificationValidations(**data)
+        self.assertFalse(valid)
+        self.assertIn("user", errors)
+
+    def test_missing_event_id(self):
+        data = self.valid_data.copy()
+        data["event_id"] = None
+        valid, errors = createNotificationValidations(**data)
+        self.assertFalse(valid)
+        self.assertIn("event", errors)
+
+    def test_multiple_errors(self):
+        data = {
+            "user_ids": [],
+            "event_id": None,
+            "title": " " * 5,
+            "message": "",
+            "priority": "URGENT"
+        }
+        valid, errors = createNotificationValidations(**data)
+        self.assertFalse(valid)
+        self.assertEqual(len(errors), 5)

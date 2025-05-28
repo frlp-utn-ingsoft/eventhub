@@ -3,6 +3,7 @@ def createNotificationValidations(user_ids, event_id, title, message, priority):
     errors = {}
     validations_pass = True
 
+    title = title.strip()
     if title == "":
         errors["title"] = "Por favor ingrese un titulo"
 
@@ -10,6 +11,7 @@ def createNotificationValidations(user_ids, event_id, title, message, priority):
     if len(title) > titleMaxLen:
         errors["title"] = "Maximo " + str(titleMaxLen) + " caracteres"
 
+    message = message.strip()
     if message == "":
         errors["message"] = "Por favor ingrese un mensaje"
 
