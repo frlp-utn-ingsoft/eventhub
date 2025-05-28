@@ -55,11 +55,14 @@ class EventDemandE2ETest(BaseE2ETest):
 
         # Verificar que se muestra la información de demanda
         demand_info = self.page.locator('.demand-info')
-        ticket_info = self.page.locator('.ticket-info')
+        tickets_sold_info = self.page.locator('.ticket-info:has-text("Tickets vendidos")')
+        tickets_available_info = self.page.locator('.ticket-info:has-text("Tickets disponibles")')
+        
         expect(demand_info).to_contain_text('Estado de demanda')
         expect(demand_info).to_contain_text('Baja demanda')
-        expect(ticket_info).to_contain_text('Tickets vendidos')
-        expect(ticket_info).to_contain_text('0')
+        expect(tickets_sold_info).to_contain_text('Tickets vendidos')
+        expect(tickets_sold_info).to_contain_text('0')
+        expect(tickets_available_info).to_contain_text('Tickets disponibles')
 
         # Vender algunas entradas
         for _ in range(90):
@@ -81,8 +84,8 @@ class EventDemandE2ETest(BaseE2ETest):
         # Verificar que la información se actualizó
         expect(demand_info).to_contain_text('Estado de demanda')
         expect(demand_info).to_contain_text('Alta demanda')
-        expect(ticket_info).to_contain_text('Tickets vendidos')
-        expect(ticket_info).to_contain_text('90')
+        expect(tickets_sold_info).to_contain_text('Tickets vendidos')
+        expect(tickets_sold_info).to_contain_text('90')
 
     def test_regular_user_cannot_see_demand_info(self):
         """Test que verifica que un usuario regular no puede ver la información de demanda"""
@@ -106,11 +109,14 @@ class EventDemandE2ETest(BaseE2ETest):
 
         # Verificar estado inicial
         demand_info = self.page.locator('.demand-info')
-        ticket_info = self.page.locator('.ticket-info')
+        tickets_sold_info = self.page.locator('.ticket-info:has-text("Tickets vendidos")')
+        tickets_available_info = self.page.locator('.ticket-info:has-text("Tickets disponibles")')
+        
         expect(demand_info).to_contain_text('Estado de demanda')
         expect(demand_info).to_contain_text('Baja demanda')
-        expect(ticket_info).to_contain_text('Tickets vendidos')
-        expect(ticket_info).to_contain_text('0')
+        expect(tickets_sold_info).to_contain_text('Tickets vendidos')
+        expect(tickets_sold_info).to_contain_text('0')
+        expect(tickets_available_info).to_contain_text('Tickets disponibles')
 
         # Simular compra de entradas
         for _ in range(25):
@@ -132,5 +138,5 @@ class EventDemandE2ETest(BaseE2ETest):
         # Verificar que la información se actualizó
         expect(demand_info).to_contain_text('Estado de demanda')
         expect(demand_info).to_contain_text('Demanda normal')
-        expect(ticket_info).to_contain_text('Tickets vendidos')
-        expect(ticket_info).to_contain_text('25') 
+        expect(tickets_sold_info).to_contain_text('Tickets vendidos')
+        expect(tickets_sold_info).to_contain_text('25') 

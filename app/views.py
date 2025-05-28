@@ -147,7 +147,8 @@ def event_form(request, id=None):
                 event.price_vip = float(str(price_vip).replace(',', '.'))
             
             event.categories.set(categories)
-            event.tickets_available = int(tickets_available)
+            event.tickets_available = int(tickets_available) if tickets_available is not None else 0
+
             event.save()
         return redirect('events')
 
@@ -388,6 +389,7 @@ def read_notification(request, notification_user_id):
 def read_all_notifications(request):
     NotificationXUser.objects.filter(user=request.user, is_read=False).update(is_read=True)
     return redirect('list_notifications')
+
 def edit_comment(request, comment_id):
     comment = get_object_or_404(Comments, pk=comment_id, user=request.user)
 

@@ -236,6 +236,7 @@ class EventCRUDTest(EventBaseTest):
         self.page.get_by_label("Hora").fill("16:45")
         self.page.get_by_label("Precio General").fill("100.00")
         self.page.get_by_label("Precio VIP").fill("200.00")
+        self.page.get_by_label("Cantidad de entradas").fill("1000")
 
         # Enviar el formulario
         self.page.get_by_role("button", name="Crear Evento").click()
