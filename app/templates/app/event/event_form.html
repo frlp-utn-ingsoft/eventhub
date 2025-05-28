@@ -5,8 +5,18 @@
 {% include "app/category/category_modal.html" %}
 
 <div class="container mt-5">
+
     <div class="row">
         <div class="col-md-8 offset-md-2">
+            {% if errors %}
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                {% for e in errors %}
+                    <li>{{ e }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
             <h1 class="mb-4">
                 {% if event.id %}
                     Editar evento
@@ -19,6 +29,16 @@
                 <div class="card-body">
                     <form action="{% url 'event_form' %}" method="POST">
                         {% csrf_token %}
+
+                        {% if messages %}
+                            <div class="alert alert-info">
+                                <ul class="mb-0">
+                                    {% for message in messages %}
+                                        <li>{{ message }}</li>
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                        {% endif %}
                         {% if event.id %}
                             <input class="form-control"
                                 id="id"
@@ -31,7 +51,6 @@
                                 <label for="title" class="form-label">Título del Evento</label>
                                 <input class="form-control"
                                     id="title"
-                                    required=""
                                     type="text"
                                     value="{{ event.title }}"
                                     name="title" />
@@ -69,14 +88,13 @@
                                     class="form-control"
                                     id="description"
                                     name="description"
-                                    rows="4"
-                                    required="">{{ event.description }}</textarea>
+                                    rows="4">{{ event.description }}</textarea>
                             </div>
                             <div class="d-flex flex-row gap-2 mt-3">
                                 <div>
                                     <label for="venue" class="form-label">Lugar</label>
-                                    <select class="form-select" aria-label="Default select venue" name="venue">
-                                        <option value="" disabled selected>Seleccionar lugar</option>
+                                    <select class="form-select" aria-label="Default select venue" name="venue" id="venue_id">
+                                        <option value="" id="venue_id" disabled selected>Seleccionar lugar</option>
                                         {% for venue in venues %}
                                             <option value="{{ venue.id }}"
                                                 {% if event.venue and event.venue.id == venue.id %}selected{% endif %}>
@@ -98,7 +116,6 @@
                                     <input
                                         class="form-control"
                                         id="date"
-                                        required=""
                                         type="date"
                                         value="{{ event.scheduled_at|date:'Y-m-d'}}"
                                         name="date" />
@@ -108,7 +125,6 @@
                                     <input
                                         class="form-control"
                                         id="time"
-                                        required=""
                                         type="time"
                                         value="{{ event.scheduled_at|date:'H:i' }}"
                                         name="time" />
