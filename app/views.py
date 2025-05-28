@@ -253,8 +253,7 @@ def refund_form(request, id):
         notification = Notification.objects.create(
             title="Solicitud de Reembolso Enviada",
             message=f"Tu solicitud de reembolso para el evento: '{ticket.event.title}' ha sido enviada y está en proceso de revisión.",
-            priority="MEDIUM",
-            event=ticket.event
+            priority="MEDIUM"
         )
         notification.users.add(request.user)
         notification.save()
@@ -268,7 +267,6 @@ def refund_form(request, id):
 def refund_edit_form(request, id):
     refund_request = get_object_or_404(RefundRequest, pk=id)
 
-    
     if request.method == "POST":
         ticket_code_uuid = uuid.UUID(refund_request.ticket_code)
         ticket = Ticket.objects.get(ticket_code=ticket_code_uuid, user=refund_request.user)
@@ -300,8 +298,7 @@ def refund_edit_form(request, id):
         notification = Notification.objects.create(
             title="Solicitud de Reembolso Enviada",
             message=f"Tu solicitud de reembolso para el evento: '{ticket.event.title}' ha sido enviada y está en proceso de revisión.",
-            priority="MEDIUM",
-            event=ticket.event
+            priority="MEDIUM"
         )
         notification.users.add(request.user)
         notification.save()
@@ -433,7 +430,6 @@ def buy_ticket(request, id):
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
         if success:
-            event.attendees.add(user)
             messages.success(request, "¡Ticket comprado!")
             return redirect("tickets")
         else:
@@ -799,8 +795,7 @@ def notification_create(request):
         # Asignar destinatarios
         if destinatario == "todos":
             event = get_object_or_404(Event, id=event_id)
-            asistentes = event.attendee.all()
-            print("Asistentes para notificación:", asistentes)
+            asistentes = event.get_attendees()
             notification.users.set(asistentes)
         elif destinatario == "usuario":
             usuario = get_object_or_404(User, pk=usuario_id)
