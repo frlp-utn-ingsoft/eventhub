@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.db.models import Sum
@@ -169,13 +170,25 @@ class Event(models.Model):
         return self.title
 
     @classmethod
-    def validate(cls, title, categories, venue, description, scheduled_at):
+    def validate(cls, title, categories, venue, description, scheduled_at, status=None):
         errors = {}
-        if title == "":
+        if title is None or title.strip() == "":
             errors["title"] = "Por favor ingrese un titulo"
 
-        if description == "":
+        if description is None or description.strip() == "":
             errors["description"] = "Por favor ingrese una descripcion"
+            
+        if scheduled_at is None:
+            errors["scheduled_at"] = "La fecha y hora programadas son requeridas"
+        
+        if scheduled_at and scheduled_at < timezone.now():
+            errors["scheduled_at"] = "La fecha y hora programadas deben ser en el futuro"
+            
+        if venue is None:
+            errors["venue"] = "El lugar del evento es requerido"
+            
+        if status is not None and status not in dict(cls.STATUS_CHOICES):
+            errors["status"] = "El estado del evento no es válido"
 
         return errors
 
@@ -196,9 +209,11 @@ class Event(models.Model):
         return True, None
 
     def update(self, title, categories, venue, description, scheduled_at, organizer, status=None):
+        errors = Event.validate(title, categories, venue, description, scheduled_at)
+        
         if hasattr(self, "status") and self.status == "canceled":
             # Si el evento está cancelado, no se puede editar
-            raise ValueError("No se puede editar un evento cancelado.")
+            return "No se puede editar un evento cancelado.", errors
         self.title = title or self.title
         self.description = description or self.description
         self.venue = venue or self.venue
@@ -208,10 +223,11 @@ class Event(models.Model):
             self.status = status
         if categories is not None:
             if isinstance(categories, models.Manager):
-                raise ValueError("Error updating event.categories")
+                return "Error updating event.categories", errors
             self.save()
             self.categories.set(categories)
         self.save()
+        return True, None
 
 
 class Refund(models.Model):

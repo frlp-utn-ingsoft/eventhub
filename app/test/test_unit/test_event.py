@@ -3,7 +3,7 @@ import datetime
 from django.test import TestCase
 from django.utils import timezone
 
-from app.models import Event, User
+from app.models import Event, User, Venue
 from app.views.event_views import filter_events
 
 
@@ -55,6 +55,15 @@ class EventModelTest(TestCase):
             password="password123",
             is_organizer=True,
         )
+        
+        self.venue = Venue.objects.create(
+            user=self.organizer,
+            name="Sala de eventos",
+            address="Calle Falsa 123",
+            city="Ciudad",
+            capacity=100,
+            contact="12345"
+        )
 
     def test_event_creation(self):
         event = Event.objects.create(
@@ -77,7 +86,7 @@ class EventModelTest(TestCase):
         errors = Event.validate(
             title="Título válido",
             categories=[],
-            venue=None,
+            venue=self.venue,
             description="Descripción válida",
             scheduled_at=scheduled_at,
         )
@@ -89,7 +98,7 @@ class EventModelTest(TestCase):
         errors = Event.validate(
             title="",
             categories=[],
-            venue=None,
+            venue=self.venue,
             description="Descripción válida",
             scheduled_at=scheduled_at,
         )
@@ -103,7 +112,7 @@ class EventModelTest(TestCase):
         errors = Event.validate(
             title="Título válido",
             categories=[],
-            venue=None,
+            venue=self.venue,
             description="",
             scheduled_at=scheduled_at,
         )
@@ -113,13 +122,14 @@ class EventModelTest(TestCase):
     def test_event_new_with_valid_data(self):
         """Test que verifica la creación de eventos con datos válidos"""
         scheduled_at = timezone.now() + datetime.timedelta(days=2)
+        
         success, errors = Event.new(
             title="Nuevo evento",
             description="Descripción del nuevo evento",
             scheduled_at=scheduled_at,
             organizer=self.organizer,
             categories=[],
-            venue=None,
+            venue=self.venue,
         )
 
         self.assertTrue(success)
@@ -142,7 +152,7 @@ class EventModelTest(TestCase):
             scheduled_at=scheduled_at,
             organizer=self.organizer,
             categories=[],
-            venue=None,
+            venue=self.venue,
         )
 
         self.assertFalse(success)
@@ -171,7 +181,7 @@ class EventModelTest(TestCase):
             scheduled_at=new_scheduled_at,
             organizer=self.organizer,
             categories=[],
-            venue=None,
+            venue=self.venue,
         )
 
         # Recargar el evento desde la base de datos
