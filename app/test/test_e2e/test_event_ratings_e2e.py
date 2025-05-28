@@ -123,8 +123,9 @@ class EventRatingsDisplayTest(EventRatingsBaseTest):
         # Ir a la página de detalle del evento
         self.page.goto(f"{self.live_server_url}/events/{self.event.id}/")
 
-        # Verificar que se muestra el promedio de ratings
+        # Esperar a que la sección de ratings esté visible
         rating_section = self.page.locator(".event-ratings")
+        rating_section.wait_for(state="visible", timeout=5000)
         expect(rating_section).to_be_visible()
         
         # Verificar que el promedio es correcto (5.0)
