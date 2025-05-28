@@ -240,7 +240,7 @@ class Event(models.Model):
 
         return True, event
 
-    def update(self, title=None, description=None, scheduled_at=None, organizer=None, venue=None, categories=None):
+    def update(self, title=None, description=None, scheduled_at=None, organizer=None, venue=None, category=None):
         #VERIFICO SI LA FECHA FUE CAMBIADA
         if scheduled_at and scheduled_at != self.scheduled_at:
             self.state = self.REPROGRAMED
