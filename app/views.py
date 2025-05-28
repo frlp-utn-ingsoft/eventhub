@@ -193,9 +193,9 @@ def event_form(request, event_id=None):
                             message=f"El evento '{event.title}' ha sido actualizado. Fecha: {scheduled_at} y lugar: {venue.name}.",
                             priority="MEDIUM",
                         )
-                    usuarios = User.objects.filter(tickets__event=event).distinct()
-                    notification.users.set(usuarios)
-                    notification.save()
+                        usuarios = User.objects.filter(tickets__event=event).distinct()
+                        notification.users.set(usuarios)
+                        notification.save()
                     return redirect("events")
 
                 else:
@@ -442,7 +442,6 @@ def buy_ticket(request, id):
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
         if success:
-            event.attendees.add(user)
             messages.success(request, "¡Ticket comprado!")
             return redirect("tickets")
         else:
