@@ -463,6 +463,7 @@ def coupon_list(request, event_id):
         'event': event,
         'coupons': coupons,
         'active_coupons_count': active_coupons_count,
+        'user_is_organizer': request.user.is_authenticated and request.user.is_organizer,
     }
     return render(request, "app/coupons/coupon_list.html", context)
 
@@ -513,7 +514,11 @@ def coupon_form(request, event_id):
             messages.error(request, f"Error al crear el cupón: {e}")
             return redirect("coupon_form", event_id=event.id) 
 
-    return render(request, "app/coupons/coupon_form.html", {"event": event})
+    return render(request, "app/coupons/coupon_form.html", {
+    "event": event,
+    "user_is_organizer": request.user.is_authenticated and request.user.is_organizer
+    })
+
 
 
 @login_required

@@ -185,6 +185,7 @@ class Event(models.Model):
         self.save()
 
 class Coupon(models.Model):
+    id = models.AutoField(primary_key=True)
     event = models.ForeignKey('Event', on_delete=models.CASCADE, related_name='coupons')
     code = models.CharField(max_length=10, unique=True, editable=False)
     discount_percent = models.PositiveSmallIntegerField()
