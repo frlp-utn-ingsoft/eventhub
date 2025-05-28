@@ -136,8 +136,10 @@ class Event(models.Model):
     def update_status(self, original_date=None):
         if original_date and self.scheduled_at != original_date:
             self.status = "rescheduled"
+            self.save()
         elif not self.status:
             self.status = "active"
+            self.save()
 
     def update(self, title, description, scheduled_at, organizer, venue, status):
         self.title = title or self.title
@@ -374,6 +376,9 @@ class RefundRequest(models.Model):
 
         if errors:
             return False, errors
+        
+        if cls.objects.filter(user=user, approved__isnull=True).exists():
+            return False, {"__all__": "Ya tienes una solicitud de reembolso activa."}
 
         refund = cls(
             ticket_code=ticket_code,
