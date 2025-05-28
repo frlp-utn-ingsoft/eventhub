@@ -15,7 +15,7 @@
                         <i class="bi bi-ticket-perforated me-2"></i>Gestionar entradas
                     </a>
                 {% else %}
-                    {% if event.status != 'canceled' and event.status != 'CANCELED' and event.status != 'finished' and event.status != 'FINISHED' and event.status != 'soldout' and event.status != 'SOLDOUT' %}
+                    {% if event.status != 'canceled' and event.status != 'CANCELED' and event.status != 'finished' and event.status != 'FINISHED' and event.status != 'soldout' and event.status != 'SOLDOUT' and not user_is_organizer %}
                     <div class="d-flex justify-content-between align-items-center gap-4">
                         <div class="d-flex d-inline-block justify-content-between align-items-center gap-1 d-none"
                             id="div-countdown">

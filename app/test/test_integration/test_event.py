@@ -190,7 +190,7 @@ class EventFormSubmissionTest(BaseEventTestCase):
     """Tests para la creación y edición de eventos mediante POST"""
 
     def test_event_form_post_create(self):
-        """Test que verifica que se puede crear un evento mediante POST"""
+        """Test que verifica que se puede crear un evento mediante POST con fecha dinámica"""
         # Login con usuario organizador
         self.client.login(username="organizador", password="password123")
 
@@ -204,14 +204,19 @@ class EventFormSubmissionTest(BaseEventTestCase):
             user=self.organizer
         )
 
-        # Crear datos para el evento
+        # Usar una fecha/hora futura
+        future_dt = timezone.now() + datetime.timedelta(days=2, hours=3)
+        date_str = future_dt.date().isoformat()      # 'YYYY-MM-DD'
+        time_str = future_dt.time().strftime("%H:%M")  # 'HH:MM'
+
+        # Datos para el evento
         event_data = {
             "title": "Nuevo Evento",
             "description": "Descripción del nuevo evento",
-            "date": "2025-05-01",
-            "time": "14:30",
-            "venue": venue.pk,  # Usar el ID del venue creado
-            "organizer": self.organizer.pk  # Asegurar que el organizador es un User válido
+            "date": date_str,
+            "time": time_str,
+            "venue": venue.pk,
+            "organizer": self.organizer.pk
         }
 
         # Hacer petición POST a la vista event_form
@@ -219,52 +224,63 @@ class EventFormSubmissionTest(BaseEventTestCase):
 
         # Verificar que redirecciona a events
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.headers["Location"], reverse("events"))
+        self.assertEqual(response['Location'], reverse("events"))
 
         # Verificar que se creó el evento
         self.assertTrue(Event.objects.filter(title="Nuevo Evento").exists())
         evento = Event.objects.get(title="Nuevo Evento")
+
+        # La descripción y relaciones
         self.assertEqual(evento.description, "Descripción del nuevo evento")
-        self.assertEqual(evento.scheduled_at.year, 2025)
-        self.assertEqual(evento.scheduled_at.month, 5)
-        scheduled_local = localtime(evento.scheduled_at)
-        self.assertEqual(scheduled_local.hour, 14)
-        self.assertEqual(evento.scheduled_at.minute, 30)
         self.assertEqual(evento.organizer, self.organizer)
-        self.assertEqual(evento.venue, venue)  # Verificar que el venue es correcto
+        self.assertEqual(evento.venue, venue)
+
+        # Verificar la fecha y hora programadas
+        # Comparamos año, mes, día, hora y minuto con el objeto future_dt
+        scheduled = localtime(evento.scheduled_at)
+        self.assertEqual(scheduled.date(), future_dt.date())
+        self.assertEqual(scheduled.hour, future_dt.hour)
+        self.assertEqual(scheduled.minute, future_dt.minute)
 
     def test_event_form_post_edit(self):
-        """Test que verifica que se puede editar un evento existente mediante POST"""
+        """Test que verifica que se puede editar un evento existente mediante POST con fecha dinámica"""
         # Login con usuario organizador
         self.client.login(username="organizador", password="password123")
 
+        # Elegimos una nueva fecha/hora basada en timezone.now()
+        future_dt = timezone.now() + datetime.timedelta(days=5, hours=4, minutes=15)
+        date_str = future_dt.date().isoformat()          # 'YYYY-MM-DD'
+        time_str = future_dt.time().strftime("%H:%M")    # 'HH:MM'
+
         # Datos para actualizar el evento
-        new_scheduled_at = timezone.make_aware(datetime.datetime(2025, 6, 15, 16, 45))
         updated_data = {
-            "id": str(self.event1.id),  # este campo es importante
+            "id": str(self.event1.id),
             "title": "Evento 1 Actualizado",
             "description": "Nueva descripción actualizada",
-            "date": new_scheduled_at.strftime("%Y-%m-%d"),
-            "time": new_scheduled_at.strftime("%H:%M"),
+            "date": date_str,
+            "time": time_str,
         }
 
         # Hacer petición POST para editar el evento
-        response = self.client.post(reverse("event_edit", args=[self.event1.id]), updated_data)
+        response = self.client.post(
+            reverse("event_edit", args=[self.event1.id]),
+            updated_data
+        )
 
         # Verificar que redirecciona a events
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response.url, reverse("events"))
+        self.assertEqual(response['Location'], reverse("events"))
 
-        # Verificar que el evento fue actualizado
+        # Recargar modelo desde BD y verificar cambios
         self.event1.refresh_from_db()
-
         self.assertEqual(self.event1.title, "Evento 1 Actualizado")
         self.assertEqual(self.event1.description, "Nueva descripción actualizada")
-        self.assertEqual(self.event1.scheduled_at.year, 2025)
-        self.assertEqual(self.event1.scheduled_at.month, 6)
-        self.assertEqual(self.event1.scheduled_at.day, 15)
-        self.assertEqual(self.event1.scheduled_at.hour, 19)
-        self.assertEqual(self.event1.scheduled_at.minute, 45)
+
+        # Comprobamos scheduled_at usando hora local
+        scheduled = localtime(self.event1.scheduled_at)
+        self.assertEqual(scheduled.date(), future_dt.date())
+        self.assertEqual(scheduled.hour, future_dt.hour)
+        self.assertEqual(scheduled.minute, future_dt.minute)
 
 
 class EventDeleteViewTest(BaseEventTestCase):
