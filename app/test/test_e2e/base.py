@@ -49,3 +49,7 @@ class BaseE2ETest(StaticLiveServerTestCase):
         self.page.get_by_label("Usuario").fill(username)
         self.page.get_by_label("Contraseña").fill(password)
         self.page.click("button[type='submit']")
+
+    def logout_user(self):
+        self.page.goto(f"{self.live_server_url}/events/")
+        self.page.get_by_role("button", name="Salir").click()
