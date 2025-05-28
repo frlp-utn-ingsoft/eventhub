@@ -6,7 +6,7 @@ import unittest
 import time
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from app.models import Event  # ajusta 'app' por el nombre correcto de tu app
+from app.models import Event  
 
 User = get_user_model()
 
@@ -97,7 +97,7 @@ class TestFavoritosE2E(unittest.TestCase):
         try:
             self.login()
             driver.get(f"{self.base_url}/events")
-            print("🔄 Cargando lista de eventos...")
+            print("Cargando lista de eventos...")
             print("URL actual:", driver.current_url)
 
             def obtener_boton_favorito():
@@ -120,7 +120,7 @@ class TestFavoritosE2E(unittest.TestCase):
 
             boton_favorito = obtener_boton_favorito()
             clase_despues_click = boton_favorito.get_attribute("class")
-            print("🌟 Clase después de marcar favorito:", clase_despues_click)
+            print("Clase después de marcar favorito:", clase_despues_click)
             self.assertNotEqual(clase_inicial, clase_despues_click)
 
             # Click para desmarcar favorito
@@ -129,10 +129,10 @@ class TestFavoritosE2E(unittest.TestCase):
 
             boton_favorito = obtener_boton_favorito()
             clase_final = boton_favorito.get_attribute("class")
-            print("🔁 Clase final (debería ser igual a inicial):", clase_final)
+            print("Clase final (debería ser igual a inicial):", clase_final)
             self.assertEqual(clase_final, clase_inicial)
 
-            print("✅ Test de favoritos completado con éxito")
+            print("✅Test de favoritos completado con éxito")
 
         except Exception as e:
             print("❌ Error durante el test:", e)
@@ -143,3 +143,4 @@ class TestFavoritosE2E(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+#Utilizo emojis para a la hora de debuggear, ver correctamente el error
