@@ -1,14 +1,16 @@
-from django.test import TestCase, Client
-from django.urls import reverse
+from django.test import TestCase
 from django.contrib.auth import get_user_model
+from django.urls import reverse
 from app.models import Event, Venue, Rating
-from decimal import Decimal
+from django.utils import timezone
+from django.contrib.messages import get_messages
+import datetime
 
 User = get_user_model()
 
-class EventRatingIntegrationTests(TestCase):
+class EventRatingsIntegrationTest(TestCase):
     def setUp(self):
-        # Crear usuarios
+        # Crear usuario organizador
         self.organizer = User.objects.create_user(
             username='organizador',
             email='organizador@test.com',
@@ -16,12 +18,12 @@ class EventRatingIntegrationTests(TestCase):
             is_organizer=True
         )
         
+        # Crear usuarios normales
         self.user1 = User.objects.create_user(
             username='usuario1',
             email='usuario1@test.com',
             password='testpass123'
         )
-        
         self.user2 = User.objects.create_user(
             username='usuario2',
             email='usuario2@test.com',
@@ -38,141 +40,189 @@ class EventRatingIntegrationTests(TestCase):
         )
         
         # Crear evento
+        event_date = timezone.make_aware(datetime.datetime(2025, 2, 10, 10, 10))
         self.event = Event.objects.create(
             title='Test Event',
             description='Test Description',
-            scheduled_at='2024-12-31 20:00:00',
+            scheduled_at=event_date,
             organizer=self.organizer,
             venue=self.venue
         )
-        
-        # Crear cliente HTTP
-        self.client = Client()
-        
-        # Obtener el ID del evento después de crearlo
-        self.event_id = Event.objects.get(title='Test Event').pk
-        self.event_detail_url = reverse('event_detail', kwargs={'event_id': self.event_id})
 
-    def test_organizer_can_see_average_rating_in_event_detail(self):
-        """Test que verifica que el organizador puede ver el promedio de calificaciones en el detalle del evento"""
-        # Crear algunas calificaciones
-        Rating.objects.create(
-            event=self.event,
-            user=self.user1,
-            rating=5,
-            title='Excelente evento',
-            text='Muy bueno'
-        )
-        Rating.objects.create(
-            event=self.event,
-            user=self.user2,
-            rating=3,
-            title='Evento regular',
-            text='Podría mejorar'
+    def test_create_rating_flow(self):
+        """Test que verifica el flujo completo de creación de un rating"""
+        # 1. Verificar estado inicial
+        self.assertEqual(self.event.get_average_rating(), 0)
+        self.assertEqual(self.event.get_rating_count(), 0)
+        
+        # 2. Crear rating
+        rating_data = {
+            'title': 'Excelente evento',
+            'text': 'Muy buena organización',
+            'rating': 5
+        }
+        
+        # Simular login
+        self.client.login(username='usuario1', password='testpass123')
+        
+        # Crear rating a través de la vista
+        response = self.client.post(
+            reverse('create_rating', args=[self.event.id]),
+            rating_data
         )
         
-        # Iniciar sesión como organizador
-        self.client.force_login(self.organizer)
+        # 3. Verificar redirección
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('event_detail', args=[self.event.id]))
         
-        # Obtener la página de detalle del evento
-        response = self.client.get(self.event_detail_url)
+        # 4. Verificar que el rating se creó correctamente
+        rating = Rating.objects.get(event=self.event, user=self.user1)
+        self.assertEqual(rating.title, rating_data['title'])
+        self.assertEqual(rating.text, rating_data['text'])
+        self.assertEqual(rating.rating, rating_data['rating'])
         
-        # Verificar que la respuesta es exitosa
-        self.assertEqual(response.status_code, 200)
-        
-        # Verificar que el promedio se muestra en la página
-        self.assertContains(response, 'Calificación promedio:')
-        self.assertContains(response, '4.0 / 5.0')
-        self.assertContains(response, '(2 calificaciones)')
-        
-        # Verificar que se muestran todas las calificaciones individuales
-        self.assertContains(response, 'Excelente evento')
-        self.assertContains(response, 'Evento regular')
-        self.assertContains(response, '5')
-        self.assertContains(response, '3')
+        # 5. Verificar que el promedio se actualizó
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.get_average_rating(), 5.0)
+        self.assertEqual(self.event.get_rating_count(), 1)
 
-    def test_average_rating_updates_after_new_rating(self):
-        """Test que verifica que el promedio se actualiza correctamente después de agregar una nueva calificación"""
-        # Iniciar sesión como usuario1
-        self.client.force_login(self.user1)
-        
-        # Crear una calificación inicial
-        Rating.objects.create(
+    def test_edit_rating_flow(self):
+        """Test que verifica el flujo completo de edición de un rating"""
+        # 1. Crear rating inicial
+        rating = Rating.objects.create(
             event=self.event,
             user=self.user1,
-            rating=4,
             title='Buen evento',
-            text='Me gustó'
+            text='Regular',
+            rating=3
         )
         
-        # Iniciar sesión como organizador
-        self.client.force_login(self.organizer)
+        # 2. Verificar estado inicial
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.get_average_rating(), 3.0)
         
-        # Verificar el promedio inicial
-        response = self.client.get(self.event_detail_url)
-        self.assertContains(response, '4.0 / 5.0')
-        self.assertContains(response, '(1 calificaciones)')
+        # 3. Editar rating
+        new_rating_data = {
+            'title': 'Excelente evento',
+            'text': 'Muy buena organización',
+            'rating': 5
+        }
         
-        # Iniciar sesión como usuario2
-        self.client.force_login(self.user2)
+        # Simular login
+        self.client.login(username='usuario1', password='testpass123')
         
-        # Crear una nueva calificación
-        Rating.objects.create(
-            event=self.event,
-            user=self.user2,
-            rating=5,
-            title='Excelente',
-            text='Superó mis expectativas'
+        # Editar rating a través de la vista
+        response = self.client.post(
+            reverse('edit_rating', args=[rating.id]),
+            new_rating_data
         )
         
-        # Volver a iniciar sesión como organizador
-        self.client.force_login(self.organizer)
+        # 4. Verificar redirección
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('event_detail', args=[self.event.id]))
         
-        # Verificar que el promedio se actualizó
-        response = self.client.get(self.event_detail_url)
-        self.assertContains(response, '4.5 / 5.0')
-        self.assertContains(response, '(2 calificaciones)')
+        # 5. Verificar que el rating se actualizó
+        rating.refresh_from_db()
+        self.assertEqual(rating.title, new_rating_data['title'])
+        self.assertEqual(rating.text, new_rating_data['text'])
+        self.assertEqual(rating.rating, new_rating_data['rating'])
+        
+        # 6. Verificar que el promedio se actualizó
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.get_average_rating(), 5.0)
 
-    def test_average_rating_updates_after_rating_deletion(self):
-        """Test que verifica que el promedio se actualiza correctamente después de eliminar una calificación"""
-        # Crear dos calificaciones
+    def test_delete_rating_flow(self):
+        """Test que verifica el flujo completo de eliminación de un rating"""
+        # 1. Crear dos ratings
         rating1 = Rating.objects.create(
             event=self.event,
             user=self.user1,
-            rating=5,
-            title='Excelente',
-            text='Muy bueno'
+            title='Buen evento',
+            text='Regular',
+            rating=3
         )
-        Rating.objects.create(
+        rating2 = Rating.objects.create(
             event=self.event,
             user=self.user2,
-            rating=3,
-            title='Regular',
-            text='Normal'
+            title='Excelente',
+            text='Muy bueno',
+            rating=5
         )
         
-        # Iniciar sesión como organizador
-        self.client.force_login(self.organizer)
+        # 2. Verificar estado inicial
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.get_average_rating(), 4.0)
+        self.assertEqual(self.event.get_rating_count(), 2)
         
-        # Verificar el promedio inicial
-        response = self.client.get(self.event_detail_url)
-        self.assertContains(response, '4.0 / 5.0')
-        self.assertContains(response, '(2 calificaciones)')
+        # 3. Eliminar rating
+        # Simular login
+        self.client.login(username='usuario1', password='testpass123')
         
-        # Eliminar una calificación
-        rating1.delete()
+        # Eliminar rating a través de la vista
+        response = self.client.get(reverse('delete_rating', args=[rating1.id]))
         
-        # Verificar que el promedio se actualizó
-        response = self.client.get(self.event_detail_url)
-        self.assertContains(response, '3.0 / 5.0')
-        self.assertContains(response, '(1 calificaciones)')
+        # 4. Verificar redirección
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, reverse('event_detail', args=[self.event.id]))
+        
+        # 5. Verificar que el rating se eliminó
+        self.assertFalse(Rating.objects.filter(id=rating1.id).exists())
+        
+        # 6. Verificar que el promedio se actualizó
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.get_average_rating(), 5.0)
+        self.assertEqual(self.event.get_rating_count(), 1)
 
-    def test_no_ratings_message_displayed(self):
-        """Test que verifica que se muestra el mensaje correcto cuando no hay calificaciones"""
-        # Iniciar sesión como organizador
-        self.client.force_login(self.organizer)
+    def test_rating_permissions(self):
+        """Test que verifica los permisos y reglas de negocio de los ratings"""
+        # 1. Verificar que el organizador no puede calificar su propio evento
+        self.client.login(username='organizador', password='testpass123')
+        response = self.client.get(reverse('create_rating', args=[self.event.id]))
+        self.assertEqual(response.status_code, 302)  # Redirección
         
-        # Verificar que no se muestra el promedio
-        response = self.client.get(self.event_detail_url)
-        self.assertNotContains(response, 'Calificación promedio:')
-        self.assertContains(response, 'No hay reseñas todavía. ¡Sé el primero en dejar una!')
+        # Obtener mensajes de la respuesta
+        messages = list(get_messages(response.wsgi_request))
+        self.assertTrue(any('organizadores no pueden calificar sus propios eventos' in str(msg) for msg in messages))
+        
+        # 2. Verificar que un usuario no puede calificar dos veces el mismo evento
+        # Primera calificación
+        self.client.login(username='usuario1', password='testpass123')
+        Rating.objects.create(
+            event=self.event,
+            user=self.user1,
+            title='Primera calificación',
+            rating=4
+        )
+        
+        # Intentar segunda calificación
+        response = self.client.get(reverse('create_rating', args=[self.event.id]))
+        self.assertEqual(response.status_code, 302)  # Redirección
+        
+        # Obtener mensajes de la respuesta
+        messages = list(get_messages(response.wsgi_request))
+        self.assertTrue(any('Ya has calificado este evento' in str(msg) for msg in messages))
+        
+        # 3. Verificar que un usuario no puede editar la calificación de otro
+        rating = Rating.objects.create(
+            event=self.event,
+            user=self.user2,
+            title='Calificación de otro usuario',
+            rating=3
+        )
+        
+        # Intentar editar como usuario1
+        self.client.login(username='usuario1', password='testpass123')
+        response = self.client.post(
+            reverse('edit_rating', args=[rating.id]),
+            {'title': 'Intento de edición', 'rating': 5}
+        )
+        self.assertEqual(response.status_code, 302)  # Redirección
+        
+        # Obtener mensajes de la respuesta
+        messages = list(get_messages(response.wsgi_request))
+        self.assertTrue(any('No tienes permiso para editar esta reseña' in str(msg) for msg in messages))
+        
+        # 4. Verificar que un usuario no puede eliminar la calificación de otro
+        response = self.client.get(reverse('delete_rating', args=[rating.id]))
+        self.assertEqual(response.status_code, 302)  # Redirección
+        self.assertTrue(Rating.objects.filter(id=rating.id).exists())  # El rating sigue existiendo
