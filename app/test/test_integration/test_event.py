@@ -5,7 +5,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
 
-from app.models import Event, User
+from app.models import Event, User, Venue
 
 
 class BaseEventTestCase(TestCase):
@@ -28,12 +28,22 @@ class BaseEventTestCase(TestCase):
             is_organizer=False,
         )
 
+        # Crear un venue para las pruebas
+        self.venue = Venue.objects.create(
+            name="Venue de prueba",
+            adress="Dirección de prueba",
+            city="Ciudad de prueba",
+            capacity=100,
+            contact="contacto@prueba.com"
+        )
+
         # Crear algunos eventos de prueba
         self.event1 = Event.objects.create(
             title="Evento 1",
             description="Descripción del evento 1",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
+            venue=self.venue
         )
 
         self.event2 = Event.objects.create(
@@ -41,6 +51,7 @@ class BaseEventTestCase(TestCase):
             description="Descripción del evento 2",
             scheduled_at=timezone.now() + datetime.timedelta(days=2),
             organizer=self.organizer,
+            venue=self.venue
         )
 
         # Cliente para hacer peticiones
@@ -197,6 +208,7 @@ class EventFormSubmissionTest(BaseEventTestCase):
             "description": "Descripción del nuevo evento",
             "date": "2025-05-01",
             "time": "14:30",
+            "venue": self.venue.id
         }
 
         # Hacer petición POST a la vista event_form
@@ -216,6 +228,7 @@ class EventFormSubmissionTest(BaseEventTestCase):
         self.assertEqual(evento.scheduled_at.hour, 14)
         self.assertEqual(evento.scheduled_at.minute, 30)
         self.assertEqual(evento.organizer, self.organizer)
+        self.assertEqual(evento.venue, self.venue)
 
     def test_event_form_post_edit(self):
         """Test que verifica que se puede editar un evento existente mediante POST"""
@@ -228,6 +241,7 @@ class EventFormSubmissionTest(BaseEventTestCase):
             "description": "Nueva descripción actualizada",
             "date": "2025-06-15",
             "time": "16:45",
+            "venue": self.venue.id
         }
 
         # Hacer petición POST para editar el evento
@@ -247,6 +261,7 @@ class EventFormSubmissionTest(BaseEventTestCase):
         self.assertEqual(self.event1.scheduled_at.day, 15)
         self.assertEqual(self.event1.scheduled_at.hour, 16)
         self.assertEqual(self.event1.scheduled_at.minute, 45)
+        self.assertEqual(self.event1.venue, self.venue)
 
 
 class EventDeleteViewTest(BaseEventTestCase):
@@ -331,3 +346,35 @@ class EventDeleteViewTest(BaseEventTestCase):
 
         # Verificar que el evento sigue existiendo
         self.assertTrue(Event.objects.filter(pk=self.event1.id).exists())
+
+    def test_toggle_favorite_view(self):
+        """Test que verifica la vista de toggle_favorite"""
+        # Login como usuario regular
+        self.client.login(username="regular", password="password123")
+        
+        # Intentar marcar un evento como favorito
+        response = self.client.get(f'/events/{self.event1.id}/toggle-favorite/')
+        self.assertEqual(response.status_code, 302)  # Redirección
+        
+        # Verificar que el evento fue agregado a favoritos
+        self.assertTrue(self.event1.favorited_by.filter(id=self.regular_user.id).exists())
+        
+        # Intentar quitar el evento de favoritos
+        response = self.client.get(f'/events/{self.event1.id}/toggle-favorite/')
+        self.assertEqual(response.status_code, 302)  # Redirección
+        
+        # Verificar que el evento fue quitado de favoritos
+        self.assertFalse(self.event1.favorited_by.filter(id=self.regular_user.id).exists())
+
+    def test_favorite_button_not_visible_for_organizer(self):
+        """Test que verifica que el botón de favorito no es visible para organizadores"""
+        # Login como organizador
+        self.client.login(username="organizador", password="password123")
+        
+        # Obtener la página de eventos
+        response = self.client.get('/events/')
+        self.assertEqual(response.status_code, 200)
+        
+        # Verificar que el botón de favorito no está en la respuesta
+        self.assertNotContains(response, 'toggle-favorite')
+        

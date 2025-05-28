@@ -1,0 +1,190 @@
+{% extends "base.html" %} {% block title %} Notificaciones {% endblock %}
+{%block content %}
+<div class="container">
+    <h1>Crear Notificación</h1>
+    {% if messages %}
+        <div class="mt-3">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                 {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+        </div>
+    {% endif %}
+    <div class="row mt-4 pb-4">
+        <!-- Formulario -->
+        <div class="col-md-8 card p-4">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="titulo" class="form-label"
+                        >Título de la notificación *</label
+                    >
+                    <input
+                        type="text"
+                        class="form-control"
+                        id="titulo"
+                        name="title"
+                        placeholder="Ej: Cambio de horario del evento"
+                        required
+                    />
+                </div>
+
+                <div class="mb-3">
+                    <label for="mensaje" class="form-label">Mensaje *</label>
+                    <textarea
+                        class="form-control"
+                        id="mensaje"
+                        name="message"
+                        rows="4"
+                        placeholder="Escribe el contenido de la notificación..."
+                        required
+                    ></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label for="evento" class="form-label"
+                        >Evento relacionado *</label
+                    >
+                    <select
+                        class="form-select"
+                        id="evento"
+                        name="event_id"
+                        required
+                    >
+                        <option selected disabled>Selecciona un evento</option>
+                        {% for evento in eventos %}
+                        <option value="{{ evento.id }}">
+                            {{ evento.title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Destinatarios *</label>
+                    <div class="form-check">
+                        <input
+                            class="form-check-input"
+                            type="radio"
+                            name="destinatario"
+                            id="todos"
+                            value="todos"
+                            checked
+                        />
+                        <label class="form-check-label" for="todos">
+                            Todos los asistentes del evento
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input
+                            class="form-check-input"
+                            type="radio"
+                            name="destinatario"
+                            id="usuario-especifico"
+                            value="usuario"
+                        />
+                        <label
+                            class="form-check-label"
+                            for="usuario-especifico"
+                        >
+                            Usuario específico
+                        </label>
+                    </div>
+                    <select
+                        class="form-select"
+                        id="usuario"
+                        name="usuario_id"
+                        disabled
+                    >
+                        <option selected disabled>Selecciona un usuario</option>
+                        {% for usuario in usuarios %}
+                        <option value="{{ usuario.id }}">
+                            {{ usuario.username }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label for="prioridad" class="form-label">Prioridad</label>
+                    <select class="form-select" id="prioridad" name="priority">
+                        <option value="LOW">Baja</option>
+                        <option value="MEDIUM">Media</option>
+                        <option value="HIGH">Alta</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary">
+                    Enviar Notificación
+                </button>
+            </form>
+        </div>
+
+        <!-- Consejos -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">Consejos</div>
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item">
+                        💡 Usa títulos claros y concisos para captar la
+                        atención.
+                    </li>
+                    <li class="list-group-item">
+                        💡 Incluye toda la información relevante en el mensaje.
+                    </li>
+                    <li class="list-group-item">
+                        💡 Usa la prioridad alta solo para notificaciones
+                        urgentes.
+                    </li>
+                    <li class="list-group-item">
+                        💡 Considera enviar por correo electrónico las
+                        notificaciones importantes.
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const todosRadio = document.getElementById("todos");
+    const usuarioRadio = document.getElementById("usuario-especifico");
+    const usuarioSelect = document.getElementById("usuario");
+
+    function toggleUsuarioSelect() {
+        usuarioSelect.disabled = !usuarioRadio.checked;
+        if (!usuarioRadio.checked) {
+            usuarioSelect.value = "";
+        }
+    }
+
+    todosRadio.addEventListener("change", toggleUsuarioSelect);
+    usuarioRadio.addEventListener("change", toggleUsuarioSelect);
+    
+    document.querySelector("form").addEventListener("submit", function (e) {
+        const eventoSelect = document.getElementById("evento");
+        const eventoSeleccionado = eventoSelect.value;
+        const destinatario = document.querySelector('input[name="destinatario"]:checked').value;
+        const usuarioSeleccionado = usuarioSelect.value;
+    
+        // Validar que se seleccione un evento
+        if (!eventoSeleccionado || eventoSeleccionado === "Selecciona un evento") {
+            alert("Por favor, seleccioná un evento.");
+            eventoSelect.focus();
+            e.preventDefault();
+            return;
+        }
+    
+        // Validar que si se elige usuario específico, se seleccione uno
+        if (destinatario === "usuario" && (!usuarioSeleccionado || usuarioSeleccionado === "Selecciona un usuario")) {
+            alert("Por favor, seleccioná un usuario específico.");
+            usuarioSelect.focus();
+            e.preventDefault();
+            return;
+        }
+    });
+
+</script>
+{% endblock %}

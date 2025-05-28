@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Detalle de notificación{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">{{ notification.title }}</h5>
+            {% if notification.priority == "LOW" %}
+                <span class="badge bg-success">Baja</span>
+            {% elif notification.priority == "MEDIUM" %}
+                <span class="badge bg-warning text-dark">Media</span>
+            {% else %}
+                <span class="badge bg-danger">Alta</span>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <p class="card-text">{{ notification.message }}</p>
+        </div>
+        <div class="card-footer text-muted">
+            Creada el {{ notification.created_at|date:"d/m/Y H:i" }}
+        </div>
+    </div>
+
+    <a class="btn btn-outline-secondary mt-3" href="{% url 'notification_list' %}">
+        ← Volver a la lista
+    </a>
+</div>
+{% endblock %}

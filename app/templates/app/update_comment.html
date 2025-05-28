@@ -1,0 +1,36 @@
+<!-- filepath: c:\Users\ivija\OneDrive\Escritorio\eventhub\app\templates\app\update_comment.html -->
+{% extends 'base.html' %} {% block content %}
+<div class="container mt-5">
+    <h3>Editar Comentario</h3>
+    <form method="post" action="{% url 'update_comment' event_id comment.id %}">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="title" class="form-label">Título</label>
+            <input
+                type="text"
+                class="form-control"
+                id="title"
+                name="title"
+                value="{{ comment.title }}"
+                required
+            />
+        </div>
+        <div class="mb-3">
+            <label for="text" class="form-label">Comentario</label>
+            <textarea
+                class="form-control"
+                id="text"
+                name="text"
+                rows="3"
+                required
+            >
+{{ comment.text }}</textarea
+            >
+        </div>
+        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        <a href="{% url 'event_detail' event_id %}" class="btn btn-secondary"
+            >Cancelar</a
+        >
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load to_validity_class %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="mb-4">
+                {% if category.id %}
+                    Editar categoría
+                {% else %}
+                    Crear categoría
+                {% endif %}
+            </h1>
+
+            <div class="card">
+                <div class="card-body">
+                    <form action="{% if category.id %}{% url 'category_edit' category.id %}{% else %}{% url 'category_form' %}{% endif %}" method="POST">
+                        {% csrf_token %}
+                        <div class="vstack gap-3">
+                            <div>
+                                <label for="name" class="form-label">Nombre</label>
+                                <input class="form-control {{ errors|to_validity_class:'name' }}"
+                                    id="name"
+                                    required
+                                    type="text"
+                                    value="{{ data.name }}"
+                                    name="name" />
+                                <div class="invalid-feedback">{{ errors.name }}</div>
+                            </div>
+                            <div>
+                                <label for="description" class="form-label">Descripción</label>
+                                <textarea
+                                    class="form-control {{ errors|to_validity_class:'description' }}"
+                                    id="description"
+                                    name="description"
+                                    rows="4"
+                                    required>{{ data.description }}</textarea>
+                                <div class="invalid-feedback">{{ errors.description }}</div>
+                            </div>
+                            <div class="form-check">
+                                <input type="checkbox"
+                                    class="form-check-input {{ errors|to_validity_class:'is_active' }}"
+                                    id="is_active"
+                                    name="is_active"
+                                    {% if data.is_active %}checked{% endif %}>
+                                <label class="form-check-label" for="is_active">
+                                    Categoría activa
+                                </label>
+                                <div class="invalid-feedback">{{ errors.is_active }}</div>
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    {% if category.id %}
+                                        Guardar cambios
+                                    {% else %}
+                                        Crear categoría
+                                    {% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+{% if ticket.is_recent_purchase %}
+  <div class="container my-5">
+    <div class="row">
+      <!-- Columna izquierda: Formulario de compra -->
+      <div class="col-md-8">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title">{{ ticket.event.title }}</h5>
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-light rounded-circle p-2 me-3">
+                  <i class="bi bi-calendar-event text-primary"></i>
+              </div>
+              <div>
+                  <h6 class="mb-0">Fecha y Hora</h6>
+                  <p class="mb-0">{{ ticket.event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
+              </div>
+            </div>
+
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-light rounded-circle p-2 me-3">
+                  <i class="bi bi-geo-alt text-primary"></i>
+              </div>
+              <div>
+                  <h6 class="mb-0">Ubicación</h6>
+                  <p class="mb-0">{{ ticket.event.venue }} - {{ ticket.event.venue.adress }}, {{ ticket.event.venue.city }}</p>
+              </div>
+            </div>
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-light rounded-circle p-2 me-3">
+                  <i class="bi bi-person text-primary"></i>
+              </div>
+              <div>
+                  <h6 class="mb-0">Organizador</h6>
+                  <p class="mb-0">{{ ticket.event.organizer }}</p>
+              </div>
+            </div>
+
+            <form method="POST" action="{% url 'ticket_edit' ticket.id %}">
+              {% csrf_token %}
+
+              <div class="mb-3">
+                <label for="quantity" class="form-label">Cantidad de entradas</label>
+                <div class="input-group">
+                  <button type="button" class="btn btn-outline-secondary" onclick="decrementQuantity()">-</button>
+                  <input type="number" name="quantity" id="quantity" class="form-control text-center" value="{{ticket.quantity}}" min="1" max="5" onchange="setQuantity()">
+                  <button type="button" class="btn btn-outline-secondary" onclick="incrementQuantity()">+</button>
+                </div>
+                <div class="form-text">{{ ticket.event.available_tickets }} entradas disponibles</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="type" class="form-label">Tipo de entrada</label>
+                
+                <select name="type" id="type" class="form-select" required>
+                  <option value="GENERAL" data-price="45.99">Entrada General</option>
+                  <option value="VIP" data-price="89.99">Entrada VIP</option>
+                </select>
+              </div>
+
+              <div id="card-form" class="container d-none">
+                  <h6 class="mt-4">Método de pago</h6>
+                  <div class="mb-3">
+                    <label for="card_number" class="form-label">Número de tarjeta</label>
+                    <input type="text" id="card_number" name="card_number" class="form-control" placeholder="1234 5678 9012 3456">
+                  </div>
+                  <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="expiry" class="form-label">Fecha de expiración</label>
+                        <input type="text" id="expiry" name="expiry" class="form-control" placeholder="MM/AA">
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="cvv" class="form-label">CVV</label>
+                        <input type="text" id="cvv" name="cvv" class="form-control" placeholder="123">
+                    </div>
+                  </div>
+                  <div class="mb-3">
+                    <label for="card_name" class="form-label">Nombre en la tarjeta</label>
+                    <input type="text" id="card_name" name="card_name" class="form-control" placeholder="Juan Pérez">
+                  </div>
+              </div>
+              <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" id="terms" required>
+                <label class="form-check-label" for="terms">Acepto los <a href="#" target="_blank" rel="noopener noreferrer">términos y condiciones</a> y la <a href="#" target="_blank" rel="noopener noreferrer">política de privacidad</a>.</label>
+              </div>
+
+              <button type="submit" class="btn btn-primary w-100">Confirmar compra</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Columna derecha: Resumen e información -->
+      <div class="col-md-4">
+        <div class="card mb-3">
+          <div class="card-body">
+            <h6 class="card-title">Resumen de compra</h6>
+            <p class="mb-1">Precio por entrada: <span class="float-end" id="summary__ticket-price">45.99</span></p>
+            <p class="mb-1">Cantidad: <span class="float-end" id="summary__quantity">{{ ticket.quantity }}</span></p>
+            <p class="mb-1">Subtotal: <span class="float-end" id="summary__subtotal">45.99</span></p>
+            <p class="mb-1">Impuestos (10%): <span class="float-end" id="summary__taxes">4.59</span></p>
+            <hr>
+            <p class="fw-bold">Total: <span class="float-end" id="total">50.58</span></p>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-body">
+            <h6 class="card-title">Información importante</h6>
+            <ul class="small ps-3 mb-0">
+              <li>Las entradas son personales e intransferibles.</li>
+              <li>Puedes solicitar un reembolso hasta 24 horas antes del evento.</li>
+              <li>Recibirás tu entrada en tu correo electrónico.</li>
+              <li>Presenta tu entrada digital o impresa el día del evento.</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- SCRIPTS -->
+  <script>
+    const originalTicketType = "{{ ticket.type }}";
+    const originalQuantity = parseFloat("{{ ticket.quantity }}") || 1;
+    let originalPrice = 0;
+
+    function initOriginalPrice() {
+      const basePrice = originalTicketType === "VIP" ? 89.99 : 45.99;
+      const subtotal = (basePrice * originalQuantity).toFixed(2);
+      const taxes = (subtotal * 0.1).toFixed(2);
+      originalPrice = (parseFloat(subtotal) + parseFloat(taxes)).toFixed(2);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      initOriginalPrice();
+      
+      const typeSelect = document.getElementById('type');
+      const quantityInput = document.getElementById('quantity');
+
+      typeSelect.value = originalTicketType;
+      quantityInput.value = originalQuantity;
+
+      updateUI();
+    });
+
+    function updateUI() {
+      const selectedOption = document.getElementById('type').selectedOptions[0];
+      const price = selectedOption.getAttribute('data-price');
+      const quantity = document.getElementById('quantity').value;
+      
+
+      document.getElementById('summary__ticket-price').textContent = price;
+      document.getElementById('summary__quantity').textContent = quantity;
+      
+      const subtotal = (price * quantity).toFixed(2);
+      document.getElementById('summary__subtotal').textContent = subtotal;
+      
+      const taxes = (subtotal * 0.1).toFixed(2);
+      document.getElementById('summary__taxes').textContent = taxes;
+      
+      const total = (parseFloat(subtotal) + parseFloat(taxes)).toFixed(2);
+      document.getElementById('total').textContent = total;
+      
+
+      const cardForm = document.getElementById('card-form');
+
+      const cardNumberInput = document.getElementById('card_number');
+      const expiryInput = document.getElementById('expiry');
+      const cvvInput = document.getElementById('cvv');
+      const cardNameInput = document.getElementById('card_name');
+
+      if (parseFloat(total) > parseFloat(originalPrice)) {
+        cardForm.classList.remove('d-none');
+
+        cardNumberInput.required = true;
+        expiryInput.required = true;
+        cvvInput.required = true;
+        cardNameInput.required = true;
+      } else {
+        cardForm.classList.add('d-none');
+
+        cardNumberInput.required = false;
+        expiryInput.required = false;
+        cvvInput.required = false;
+        cardNameInput.required = false;
+      }
+    }
+
+    document.getElementById('type').addEventListener('change', updateUI);
+    
+    function adjustQuantity(change) {
+      const input = document.getElementById('quantity');
+      const newValue = parseInt(input.value) + change;
+      const max = parseInt(input.max);
+      const min = parseInt(input.min) || 1;
+      
+      if (newValue >= min && newValue <= max) {
+        input.value = newValue;
+        updateUI();
+      }
+    }
+
+    window.incrementQuantity = () => adjustQuantity(1);
+    window.decrementQuantity = () => adjustQuantity(-1);
+  </script>
+
+
+  <!-- CUSTOM STYLES -->
+  <style>
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    input[type=number] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+  </style>
+{% else %}
+  <div class="container my-5">
+    <div class="row">
+      <div class="card mb-4">
+        <h1 class="text-center">No puedes editar esta entrada</h1>
+
+        <p class="text-center">Han pasado más de 30 minutos luego de su compra</p>
+      </div>
+    </div>        
+  </div>
+{% endif %}
+
+{% endblock %}

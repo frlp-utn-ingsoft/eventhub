@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <h1 class="mb-4">
+                Editar una Ubicación
+            </h1>
+
+            <div class="card">
+                <div class="card-body">
+                    {% if error %}
+                    <div class="alert alert-danger mt-3" role="alert">
+                        {{ error }}
+                    </div>
+                    {% endif %}
+                    <form action="{% url 'venue_edit' venue.id %}" method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="form-group mb-3">
+                            <label for="name" class="form-label">Nombre de la ubicación *</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ venue.name }}"  placeholder="Ej: Estadio Nacional" required>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="adress" class="form-label">Dirección *</label>
+                            <input type="text" class="form-control" id="adress" name="adress" value="{{ venue.adress }}"
+                                   placeholder="Ej: Av. Grecia 2001" required>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="city" class="form-label">Ciudad *</label>
+                            <input type="text" class="form-control" id="city" name="city" value="{{ venue.city }}"
+                                   placeholder="Chascomús" required>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="capacity" class="form-label">Capacidad (número de personas) *</label>
+                            <input type="number" class="form-control" id="capacity" name="capacity" min="1" value="{{ venue.capacity }}"
+                                   placeholder="Ej: 1000" required>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="contact" class="form-label">Contacto *</label>
+                            <textarea class="form-control" id="contact" name="contact" placeholder="Describe las características principales de la ubicación..." 
+                                rows="4"></textarea>
+                        </div>
+                        
+                        <div class="d-flex justify-content-end">
+                            <button type="submit" class="btn btn-primary">Editar Ubicación</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const contact = "{{ venue.contact }}";
+        if (contact) {
+            document.getElementById('contact').value = contact;
+        }
+    });
+</script>
+{% endblock %}
