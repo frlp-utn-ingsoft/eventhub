@@ -400,7 +400,8 @@ def buy_ticket(request, id):
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
         if success:
-            event.attendees.add(user)
+            event.attendee = user
+            event.save()
             messages.success(request, "¡Ticket comprado!")
             return redirect("tickets")
         else:
