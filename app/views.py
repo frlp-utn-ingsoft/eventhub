@@ -225,6 +225,7 @@ def refund_form(request, id):
         #Validacion para evitar que haya solicitudes de reembolso duplicadas
         existing_request = RefundRequest.objects.filter(
             user=request.user,
+            ticket_code=ticket_code,
             approval__isnull=True,  # Reembolso todavia pendientes
         ).first()
 
@@ -255,7 +256,7 @@ def refund_form(request, id):
         notification.users.add(request.user)
         notification.save()
 
-        return redirect("events")
+        return redirect("tickets")
 
     return render(request, "app/refund_form.html", {"ticket": ticket})
 
@@ -429,7 +430,6 @@ def buy_ticket(request, id):
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
         if success:
-            event.attendees.add(user)
             #GENERO UN CHEQUEO PARA VERIFICAR EL ESTADO DE SOLD OUT
             event.auto_update_state()
             messages.success(request, "¡Ticket comprado!")
