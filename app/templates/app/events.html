@@ -36,16 +36,6 @@
                         >
                             <i class="bi bi-eye" aria-hidden="true"></i>
                         </a>
-                        {% if not user_is_organizer %}
-                        <a
-                            href="{% url 'toggle_favorite' event.id %}"
-                            class="btn btn-sm {% if request.user in event.favorited_by.all %}btn-warning{% else %}btn-outline-warning{% endif %}"
-                            aria-label="{% if request.user in event.favorited_by.all %}Quitar de favoritos{% else %}Agregar a favoritos{% endif %}"
-                            title="{% if request.user in event.favorited_by.all %}Quitar de favoritos{% else %}Agregar a favoritos{% endif %}"
-                        >
-                            <i class="bi bi-star{% if request.user in event.favorited_by.all %}-fill{% endif %}" aria-hidden="true"></i>
-                        </a>
-                        {% endif %}
                         {% if user_is_organizer %}
                         {% if event.state != 'FINISHED' %}
                         <a
