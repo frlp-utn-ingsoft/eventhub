@@ -12,15 +12,10 @@ class EventRatingsBaseTest(BaseE2ETest):
     def setUp(self):
         super().setUp()
 
-        # Crear usuario organizador
-        self.organizer = User.objects.create_user(
-            username="organizador",
-            email="organizador@example.com",
-            password="password123",
-            is_organizer=True,
-        )
+        # Usar el usuario organizador ya creado en BaseE2ETest
+        self.organizer = User.objects.get(username="organizador")
 
-        # Crear usuarios regulares para calificar
+        # Crear dos usuarios regulares distintos para calificar
         self.user1 = User.objects.create_user(
             username="usuario1",
             email="usuario1@example.com",
@@ -30,18 +25,12 @@ class EventRatingsBaseTest(BaseE2ETest):
         self.user2 = User.objects.create_user(
             username="usuario2",
             email="usuario2@example.com",
-            password="password123",
+            password="password456",
             is_organizer=False,
         )
 
-        # Crear venue de prueba
-        self.venue = Venue.objects.create(
-            name="Venue de prueba",
-            adress="Calle Falsa 123",
-            city="Ciudad",
-            capacity=100,
-            contact="123456789"
-        )
+        # Usar el venue ya creado en BaseE2ETest
+        self.venue = Venue.objects.get(name="Venue de prueba")
 
         # Crear evento de prueba
         event_date = timezone.make_aware(datetime.datetime(2025, 2, 10, 10, 10))
@@ -117,8 +106,8 @@ class EventRatingsDisplayTest(EventRatingsBaseTest):
             user=self.user1
         )
 
-        # Iniciar sesión como usuario regular
-        self.login_user("usuario2", "password123")
+        # Iniciar sesión como usuario regular (usuario2)
+        self.login_user("usuario2", "password456")
 
         # Ir a la página de detalle del evento
         self.page.goto(f"{self.live_server_url}/events/{self.event.id}/")
@@ -157,5 +146,5 @@ class EventRatingsInteractionTest(EventRatingsBaseTest):
 
         # Verificar que se muestra el mensaje de error
         error_message = self.page.get_by_text("Los organizadores no pueden calificar sus propios eventos.")
-        expect(error_message).to_be_visible()
+        expect(error_message.first).to_be_visible()
 
