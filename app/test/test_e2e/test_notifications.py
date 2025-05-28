@@ -6,7 +6,7 @@ class NotificationBaseTest(BaseE2ETest):
     def setUp(self):
         super().setUp()
 
-        self.mocked_user = User.objects.create_user(username="regular", password="password123")
+        self.mocked_user = User.objects.create_user(username="regular", password="password123", is_organizer=False)
         self.mocked_organizer_user = User.objects.create_user(username="admin", password="password123", is_organizer=True)
         self.mocked_venue = Venue.objects.create(
             name="Centro Cultural Recoleta",
@@ -72,7 +72,7 @@ class NotificationDisplayTest(NotificationBaseTest):
         mark_all_btn = self.page.locator("a.btn.btn-outline-primary", has_text="Marcar todas como leídas")
         expect(mark_all_btn).to_be_visible()
 
-class NotificationCRUDTest(NotificationBaseTest):
+class NotificationByEventChangeTest(NotificationBaseTest):
     def test_create_notification_by_event_change(self):
         self.login_user("admin", "password123")
 
@@ -105,5 +105,8 @@ class NotificationCRUDTest(NotificationBaseTest):
 
         self.page.goto(f"{self.live_server_url}/notifications/")
         
-        row = self.page.locator("tbody tr td").filter(has_text="Evento Modificado")
-        expect(row).to_be_visible()
+        notification_title = self.page.locator("tbody tr td").filter(has_text="Evento Modificado")
+        expect(notification_title).to_be_visible()
+
+        notification_priority = self.page.locator("tbody tr td").filter(has_text="Baja").nth(1)
+        expect(notification_priority).to_be_visible()

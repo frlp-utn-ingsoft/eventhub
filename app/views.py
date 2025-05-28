@@ -350,7 +350,7 @@ def event_form(request, id=None):
         
         year, month, day = date.split("-")
         hour, minutes = time.split(":")
-        scheduled_at = timezone.make_aware(
+        new_scheduled_at = timezone.make_aware(
             timezone.datetime(int(year), int(month), int(day), int(hour), int(minutes))
         )
         
@@ -383,25 +383,26 @@ def event_form(request, id=None):
             venue = get_object_or_404(Venue, pk=venue_id) if venue_id else Venue.objects.first()
             if venue is None:
                 raise ValueError("No se ha proporcionado un lugar de celebración y no se dispone de un lugar de celebración por defecto.")
-            success, event_or_errors = Event.new(title, description, scheduled_at, request.user, category_ids, venue, float(price))
+            success, event_or_errors = Event.new(title, description, new_scheduled_at, request.user, category_ids, venue, float(price))
             if not success:
                 errors = event_or_errors
                 
         else:
             event = get_object_or_404(Event, pk=id)
-            event.update(title, description, scheduled_at, request.user)
+            old_venue = event.venue
+            old_scheduled_at = event.scheduled_at
+            event.update(title, description, new_scheduled_at, request.user)
             categories = Category.objects.filter(id__in=category_ids)
             event.categories.set(categories)
-            venue = get_object_or_404(Venue, pk=venue_id) if venue_id else Venue.objects.first()
-            if venue is None:
+            new_venue = get_object_or_404(Venue, pk=venue_id) if venue_id else Venue.objects.first()
+            if new_venue is None:
                 raise ValueError("No se ha proporcionado un lugar de celebración y no se dispone de un lugar de celebración por defecto.")
-            event.venue = venue
+            event.venue = new_venue
             event.price = price
-
             event.save()
             
-
-            Notification.notify_event_change(event, user)
+            if old_venue.pk != new_venue.pk or new_scheduled_at.strftime("%Y-%m-%d %H:%M") != old_scheduled_at.strftime("%Y-%m-%d %H:%M"):
+                Notification.notify_event_change(event, user)
 
             return redirect('event_detail', id=event.id)
 
