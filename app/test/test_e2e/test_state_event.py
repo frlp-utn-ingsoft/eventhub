@@ -50,8 +50,7 @@ class EventE2ETest(TestCase):
             # No se envía 'status' para probar que se asigne 'active' por defecto
         }
         response = self.client.post(self.event_create_url, create_event_data)
-        print(response.status_code)
-        print(response.content.decode()) 
+        
         self.assertEqual(response.status_code, 302)  # Redirect después de crear
 
         event = Event.objects.get(title="Evento de prueba")
