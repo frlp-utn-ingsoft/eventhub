@@ -73,10 +73,7 @@ def events(request):
     return render(
         request,
         "app/events.html",
-        {
-            "events": events, 
-            "user_is_organizer": request.user.is_organizer,
-        },
+        {"events": events, "user_is_organizer": request.user.is_organizer},
     )
 
 
@@ -161,8 +158,6 @@ def event_form(request, event_id=None):
                 "data": request.POST
             })
 
-        # Este bloque try debe empezar aquí para envolver la lógica de parsing de fecha
-        # y la obtención de objetos que pueden fallar (get_object_or_404).
         try:
             venue = get_object_or_404(Venue, pk=venue_id)
             category = get_object_or_404(Category, pk=category_id) if category_id else None
@@ -173,7 +168,7 @@ def event_form(request, event_id=None):
                 datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
             )
 
-            #Logica de Creacion o Actualizacion
+            #Logica de Creacion 
             if event_id is None:
                 success, result = Event.new(
                     title=title,
@@ -198,15 +193,9 @@ def event_form(request, event_id=None):
                         "errors": result,
                         "data": request.POST
                     })
-            else: # Este 'else' pertenece al 'if event_id is None:'
-                # Lógica para actualizar un evento existente
-                # event ya está cargado al inicio de la función si event_id no es None
-                # event = get_object_or_404(Event, pk=event_id) # Esta línea es redundante aquí, ya se cargó
-
-                if scheduled_at != event.scheduled_at:
-                    event.state = Event.REPROGRAMED # Asegúrate que Event.REPROGRAMED esté definido
-
-                # Ahora se actualiza el evento con la logica del incoming change
+            else:
+                old_scheduled_at = event.scheduled_at
+                old_venue = event.venue
                 success, result = event.update(
                     title = title,
                     description = description,
@@ -214,26 +203,20 @@ def event_form(request, event_id=None):
                     venue = venue,
                     category=category
                 )
-                # La condición 'if categories:' aquí es de tu código 'current',
-                # pero 'category' arriba es un solo objeto.
-                # Si `event.update` no maneja 'categories.set()' y esperas múltiples,
-                # esto debe adaptarse. Si 'category' es un solo objeto Category, la línea
-                # `event.categories.set(categories)` no tiene sentido aquí.
-                # Asumo que `category` es el objeto Category único seleccionado.
-                # Si la asignación de categorías es ManyToMany, necesitarás `category_ids` y `event.categories.set(Category.objects.filter(pk__in=category_ids))`
-                # Si tu modelo Event tiene un ForeignKey a Category (single category), la línea `event.categories.set(categories)` es incorrecta.
-                # Si el campo 'category' en Event.new y event.update es un ForeignKey a Category, entonces `category=category` está bien.
-                # Si es ManyToMany, el `event.update` no debería tener 'category' y necesitarías `event.categories.set(categories_from_ids)`
-                # para la actualización, de forma similar a como se hace en la creación si Event.new no lo maneja.
-
-                # Dejo la línea de tu código tal cual, asumiendo que "categories" se refiere a una lista/queryset válido si es ManyToMany.
-                # Pero si `category` es un solo objeto Category, esta línea no debería ir aquí
-                if categories: # Esto es ambiguo con `category=category`
-                    event.categories.set(categories) # Esto sugiere que `categories` es un QuerySet/lista de objetos Category
 
                 if success:
                     messages.success(request, "Evento actualizado exitosamente")
+                    if old_scheduled_at != scheduled_at or old_venue != venue:
+                        notification = Notification.objects.create(
+                            title="Evento Modificado",
+                            message=f"El evento '{event.title}' ha sido actualizado. Fecha: {scheduled_at} y lugar: {venue.name}.",
+                            priority="MEDIUM",
+                        )
+                        usuarios = User.objects.filter(tickets__event=event).distinct()
+                        notification.users.set(usuarios)
+                        notification.save()
                     return redirect("events")
+
                 else:
                     messages.error(request, f"Error al actualizar el evento: {result}")
                     return render(

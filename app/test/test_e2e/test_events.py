@@ -4,7 +4,7 @@ import re
 from django.utils import timezone
 from playwright.sync_api import expect
 
-from app.models import Event, User, Venue, Category
+from app.models import Event, User, Venue, Category, Ticket, Category
 
 from app.test.test_e2e.base import BaseE2ETest
 
@@ -31,13 +31,25 @@ class EventBaseTest(BaseE2ETest):
             is_organizer=False,
         )
 
-        # Crear un venue para las pruebas
-        self.venue = Venue.objects.create(
-            name="Venue de prueba",
-            adress="Dirección de prueba",
-            city="Ciudad de prueba",
-            capacity=100,
-            contact="contacto@prueba.com"
+        # Crear una sala de eventos
+        self.venue1 = Venue.objects.create(  # Este venue tiene id=1 (Asi recuperamos desde la pag los venues!)
+            name="Auditorio Principal",
+            adress="Calle Falsa 123",
+            city="Ciudad Autonoma de Buenos Aires",
+            capacity=500,
+            contact = "Juan Perez",
+        )
+        self.venue2 = Venue.objects.create(  #Con id=2
+            name="Sala Principal",
+            adress="Avenida Siempre Viva 456",
+            city="Ciudad Autonoma de Buenos Aires",
+            capacity=300,
+            contact = "Maria Lopez",
+        )
+        self.category = Category.objects.create( #con id=1
+            name="Rock",
+            is_active=True,
+            description="Rock y sus derivados",
         )
 
         # Crear una categoría para las pruebas
@@ -50,13 +62,15 @@ class EventBaseTest(BaseE2ETest):
         # Crear eventos de prueba
         # Evento 1
         event_date1 = timezone.make_aware(datetime.datetime(2025, 2, 10, 10, 10))
-        self.event1 = Event.objects.create(
+        self.event1 = Event.objects.create( #Evento con venue id=1
             title="Evento de prueba 1",
             description="Descripción del evento 1",
             scheduled_at=event_date1,
+            venue = self.venue1,
             organizer=self.organizer,
             venue=self.venue,
             category=self.category
+            category=self.category,
         )
 
         # Evento 2
@@ -65,10 +79,16 @@ class EventBaseTest(BaseE2ETest):
             title="Evento de prueba 2",
             description="Descripción del evento 2",
             scheduled_at=event_date2,
+            venue=self.venue1,
             organizer=self.organizer,
             venue=self.venue,
             category=self.category
+            category=self.category,
         )
+
+        # Crear ticket
+        Ticket.objects.create(user=self.regular_user, event=self.event1, quantity=1, type="GENERAL")
+
 
     def _table_has_event_info(self):
         """Método auxiliar para verificar que la tabla tiene la información correcta de eventos"""
@@ -312,6 +332,7 @@ class EventCRUDTest(EventBaseTest):
 
         # Esperar a que la redirección se complete
         self.page.wait_for_load_state("networkidle")
+        self.page.get_by_role("button", name="Crear Evento").click()
 
         # Verificar que redirigió a la página de eventos
         expect(self.page).to_have_url(f"{self.live_server_url}/events/")
@@ -346,35 +367,53 @@ class EventCRUDTest(EventBaseTest):
         # Verificar que el evento eliminado ya no aparece en la tabla
         expect(self.page.get_by_text("Evento de prueba 1")).to_have_count(0)
 
-    def test_favorite_functionality(self):
-        """Test e2e que verifica la funcionalidad completa de favoritos"""
-        # Login como usuario regular
-        self.page.goto(f"{self.live_server_url}/accounts/login/")
-        self.page.fill('input[name="username"]', "usuario")
-        self.page.fill('input[name="password"]', "password123")
-        self.page.click('button[type="submit"]')
-        
-        # Ir a la página de eventos
+    def  test_notification_creation_on_event_update(self):
+        """Test que verifica la creación de una notificación al actualizar un evento"""
+        #Iniciamos como organizador
+        self.login_user("organizador", "password123")
+        #Vamos a la pagina de eventos
         self.page.goto(f"{self.live_server_url}/events/")
+        #Hacemos click en el boton de editar del primer evento
+        self.page.get_by_role("link", name="Editar").first.click()
+        #Verificamos que estamos en la pagina de edicion
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/{self.event1.id}/edit/")
+        #Verificamos que el formulario esta precargado con los datos del evento y luego lo editamos con fecha y lugar
+        title = self.page.get_by_label("Título del Evento")
+        expect(title).to_have_value("Evento de prueba 1")
+
+        description = self.page.get_by_label("Descripción")
+        expect(description).to_have_value("Descripción del evento 1")
+
+        category = self.page.get_by_label("Categoría")
+        expect(category).to_have_value("1")
+
+        date = self.page.get_by_label("Fecha")
+        expect(date).to_have_value("2025-02-10")
+        date.fill("2025-04-20") #Cambiamos la fecha
+
+        time = self.page.get_by_label("Hora")
+        expect(time).to_have_value("10:10")
+
+        venue = self.page.get_by_label("Lugar")
+        expect(venue).to_have_value("1")
+        venue.select_option(value="2") ##Cambiamos el venue a 2
         
-        # Verificar que el botón de favorito está visible
-        favorite_button = self.page.locator(f'[href="/events/{self.event1.id}/toggle-favorite/"]')
-        expect(favorite_button).to_be_visible()
-        
-        # Marcar el evento como favorito
-        favorite_button.click()
-        
-        # Verificar que aparece el mensaje de éxito
-        expect(self.page.locator('.alert-success')).to_contain_text("Evento agregado a favoritos")
-        
-        # Verificar que la estrella está llena
-        expect(self.page.locator(f'[href="/events/{self.event1.id}/toggle-favorite/"] i.bi-star-fill')).to_be_visible()
-        
-        # Quitar el evento de favoritos
-        favorite_button.click()
-        
-        # Verificar que aparece el mensaje de éxito
-        expect(self.page.locator('.alert-success')).to_contain_text("Evento removido de favoritos")
-        
-        # Verificar que la estrella está vacía
-        expect(self.page.locator(f'[href="/events/{self.event1.id}/toggle-favorite/"] i.bi-star')).to_be_visible()
+        #Hacemos click en el boton de guardar cambios
+        self.page.get_by_role("button", name="Guardar Cambios").click()
+        self.page.goto(f"{self.live_server_url}/events/")
+        #Salimos del usuario organizador
+        self.page.get_by_role("button", name="Salir").click()
+        #Iniciamos sesion como usuario normal
+        self.login_user("usuario", "password123")
+        #Vamos a la pagina de eventos
+        self.page.goto(f"{self.live_server_url}/events/")
+        #Verificamos que redirigió a la pagina de eventos
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/")
+        #Vamos a la pagina de notificaciones
+        self.page.goto(f"{self.live_server_url}/notifications/")
+        #Verificamos que existe una notificacion con el texto "Evento modificado"
+        notification = self.page.get_by_text("Evento modificado")
+        expect(notification).to_be_visible()
+
+
+

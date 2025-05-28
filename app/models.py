@@ -185,9 +185,8 @@ class Event(models.Model):
     state = models.CharField(choices=EVENT_STATES, max_length=25, default="ACTIVE")
 
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
-    favorited_by = models.ManyToManyField(User, related_name="favorite_events", blank=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="events", null=True, blank=True)
-    
+
     def __str__(self):
         return self.title
 

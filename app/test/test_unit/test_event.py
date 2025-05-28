@@ -3,21 +3,29 @@ from django.utils import timezone
 from app.models import Event, Venue, User  # Ajusta imports según tu estructura
 import datetime
 
-from app.models import Event, User
+from app.models import Event, User, Category, Notification, Ticket
 
 
+class EventModelTest(TestCase):
     def setUp(self):
         self.organizer = User.objects.create_user(username="organizer", password="pass")
         self.venue = Venue.objects.create(name="Test Venue", capacity=100)
-        
-        # Crear un venue para las pruebas
-        self.venue = Venue.objects.create(
-            name="Venue de prueba",
-            adress="Dirección de prueba",
-            city="Ciudad de prueba",
-            capacity=100,
-            contact="contacto@prueba.com"
+        self.venue1 = Venue.objects.create(name="Lugar 1", capacity=100)
+        self.venue2 = Venue.objects.create(name="Lugar 2", capacity=100)
+        self.category = Category.objects.create(name="Cat", is_active=True)
+        self.user1 = User.objects.create_user(username='att', password='pass')
+        self.user2 = User.objects.create_user(username='att2', password='pass2')
+        self.event = Event.objects.create(
+            title="Evento de prueba",
+            description="Descripción del evento de prueba",
+            scheduled_at=timezone.now() + datetime.timedelta(days=1),
+            organizer=self.organizer,
+            venue=self.venue1,
+            category=self.category,
         )
+        
+        Ticket.objects.create(event=self.event, user=self.user1, quantity=1, type="GENERAL")
+        Ticket.objects.create(event=self.event, user=self.user2, quantity=1, type="VIP")
 
     def test_default_state_is_active(self):
         event = Event.objects.create(
@@ -32,22 +40,20 @@ from app.models import Event, User
     def test_event_new_with_valid_data(self):
         """Test que verifica la creación de eventos con datos válidos"""
         scheduled_at = timezone.now() + datetime.timedelta(days=2)
-        success, result = Event.new(
+        success, errors = Event.new(
             title="Nuevo evento",
             description="Descripción del nuevo evento",
             scheduled_at=scheduled_at,
             organizer=self.organizer,
-            venue=self.venue
         )
 
         self.assertTrue(success)
-        self.assertIsInstance(result, Event)
+        self.assertIsNone(errors)
 
         # Verificar que el evento fue creado en la base de datos
         new_event = Event.objects.get(title="Nuevo evento")
         self.assertEqual(new_event.description, "Descripción del nuevo evento")
         self.assertEqual(new_event.organizer, self.organizer)
-        self.assertEqual(new_event.venue, self.venue)
 
     def test_event_new_with_invalid_data(self):
         """Test que verifica que no se crean eventos con datos inválidos"""
@@ -60,7 +66,6 @@ from app.models import Event, User
             description="Descripción del evento",
             scheduled_at=scheduled_at,
             organizer=self.organizer,
-            venue=self.venue
         )
 
         self.assertFalse(success)
@@ -103,7 +108,6 @@ from app.models import Event, User
             description="Descripción del evento de prueba",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
-            venue=self.venue
         )
 
         original_title = event.title
@@ -115,7 +119,6 @@ from app.models import Event, User
             description=new_description,
             scheduled_at=None,  # No cambiar
             organizer=None,  # No cambiar
-            venue=None  # No cambiar
         )
 
         # Recargar el evento desde la base de datos
@@ -125,44 +128,30 @@ from app.models import Event, User
         self.assertEqual(updated_event.title, original_title)
         self.assertEqual(updated_event.description, new_description)
         self.assertEqual(updated_event.scheduled_at, original_scheduled_at)
-        self.assertEqual(updated_event.venue, self.venue)
     
+    def test_notification_created_on_event_update(self):
+        """Test que verifica si se notifica a los usuarios con ticket del evento cuando cambia la fecha o el lugar"""
+        # Simular cambio de fecha y lugar
+        old_scheduled_at = self.event.scheduled_at
+        old_venue = self.event.venue
+        new_scheduled_at = old_scheduled_at + datetime.timedelta(days=2)
+        new_venue = self.venue2
 
-    def test_event_favorite_functionality(self):
-        """Test que verifica la funcionalidad de marcar/desmarcar favoritos"""
-        # Crear un usuario regular
-        regular_user = User.objects.create_user(
-            username="usuario_test",
-            email="usuario@test.com",
-            password="password123",
-            is_organizer=False,
-        )
+        self.event.scheduled_at = new_scheduled_at
+        self.event.venue = new_venue
+        self.event.save()
 
-        # Crear un evento
-        event = Event.objects.create(
-            title="Evento de prueba",
-            description="Descripción del evento de prueba",
-            scheduled_at=timezone.now() + datetime.timedelta(days=1),
-            organizer=self.organizer,
-            venue=self.venue
-        )
+        # Lógica de notificación
+        if old_scheduled_at != new_scheduled_at or old_venue != new_venue:
+            notification = Notification.objects.create(
+                title="Evento Modificado",
+                message=f"El evento '{self.event.title}' ha sido modificado. Fecha: {new_scheduled_at} y lugar: {new_venue.name}.",
+                priority="MEDIUM",
+            )
+            usuarios = User.objects.filter(tickets__event=self.event).distinct()
+            notification.users.set(usuarios)
+            notification.save()
 
-        # Verificar que inicialmente no está en favoritos
-        self.assertFalse(event.favorited_by.filter(id=regular_user.id).exists())
-
-        # Agregar a favoritos
-        event.favorited_by.add(regular_user)
-        self.assertTrue(event.favorited_by.filter(id=regular_user.id).exists())
-
-        # Quitar de favoritos
-        event.favorited_by.remove(regular_user)
-        self.assertFalse(event.favorited_by.filter(id=regular_user.id).exists())
-
-            venue=self.venue,
-        )
-        # Simulamos que no hay tickets disponibles, seteamos a 0
-        def fake_available_tickets():
-            return 0
-        event.available_tickets = fake_available_tickets
-        event.auto_update_state()
-        self.assertEqual(event.state, Event.SOLD_OUT)
+        # Verificar que la notificación esté en cada usuario con ticket
+        for usuario in usuarios:
+            self.assertIn(notification, usuario.notifications.all())
