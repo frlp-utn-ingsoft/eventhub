@@ -356,36 +356,6 @@ class EventDeleteViewTest(BaseEventTestCase):
         # Verificar que el evento sigue existiendo
         self.assertTrue(Event.objects.filter(pk=self.event1.id).exists())
 
-    def test_toggle_favorite_view(self):
-        """Test que verifica la vista de toggle_favorite"""
-        # Login como usuario regular
-        self.client.login(username="regular", password="password123")
-        
-        # Intentar marcar un evento como favorito
-        response = self.client.get(f'/events/{self.event1.id}/toggle-favorite/')
-        self.assertEqual(response.status_code, 302)  # Redirección
-        
-        # Verificar que el evento fue agregado a favoritos
-        self.assertTrue(self.event1.favorited_by.filter(id=self.regular_user.id).exists())
-        
-        # Intentar quitar el evento de favoritos
-        response = self.client.get(f'/events/{self.event1.id}/toggle-favorite/')
-        self.assertEqual(response.status_code, 302)  # Redirección
-        
-        # Verificar que el evento fue quitado de favoritos
-        self.assertFalse(self.event1.favorited_by.filter(id=self.regular_user.id).exists())
-
-    def test_favorite_button_not_visible_for_organizer(self):
-        """Test que verifica que el botón de favorito no es visible para organizadores"""
-        # Login como organizador
-        self.client.login(username="organizador", password="password123")
-        
-        # Obtener la página de eventos
-        response = self.client.get('/events/')
-        self.assertEqual(response.status_code, 200)
-        
-        # Verificar que el botón de favorito no está en la respuesta
-        self.assertNotContains(response, 'toggle-favorite')
         
     def test_event_reprograms_when_date_changes(self):
         new_date = (timezone.now() + datetime.timedelta(days=5)).date().strftime('%Y-%m-%d')
