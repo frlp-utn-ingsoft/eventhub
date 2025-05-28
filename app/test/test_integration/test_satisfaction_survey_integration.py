@@ -88,7 +88,7 @@ class SatisfactionSurveyIntegrationTest(TestCase):
         form_data = {
             'overall_satisfaction': 5,
             'purchase_experience': 'facil',
-            'would_recommend': True,
+            'would_recommend': 'yes',
             'comments': 'Excelente experiencia de compra'
         }
         
@@ -207,7 +207,7 @@ class SatisfactionSurveyIntegrationTest(TestCase):
         # Simular compra de ticket (esto debería redirigir a encuesta)
         # Nota: Este test depende de la implementación de buy_ticket
         response = self.client.post(
-            reverse('buy_ticket', kwargs={'event_id': self.event.id}),
+            reverse('buy-ticket', kwargs={'id': self.event.id}),
             data={'quantity': 1, 'type': 'GENERAL'}
         )
         
@@ -274,7 +274,7 @@ class SatisfactionSurveyIntegrationTest(TestCase):
         form_data = {
             'overall_satisfaction': 4,
             'purchase_experience': 'normal',
-            'would_recommend': True,
+            'would_recommend': 'yes',
             'comments': 'Buena experiencia'
         }
         
@@ -288,4 +288,4 @@ class SatisfactionSurveyIntegrationTest(TestCase):
         # Verificar mensaje de éxito
         self.assertEqual(response.status_code, 200)
         # Verificar que se muestra algún mensaje de confirmación
-        self.assertContains(response, 'gracias', case_sensitive=False) 
+        self.assertContains(response, 'gracias') 
