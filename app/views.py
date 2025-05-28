@@ -666,6 +666,12 @@ def delete_refund(request, refund_id):
 
 @login_required
 def create_refund(request):
+    # Chequeo rápido: si ya hay una solicitud pendiente, bloqueo creación
+    pending = RefundRequest.objects.filter(user=request.user, approved__isnull=True).exists()
+    if pending:
+        messages.error(request, "Ya tienes una solicitud de reembolso pendiente. Debes esperar a que sea procesada antes de solicitar otra.")
+        return redirect('user_refund_list')  # O a donde quieras que vaya el usuario
+
     if request.method == 'POST':
         form = RefundRequestForm(request.POST)
         if form.is_valid():
@@ -673,7 +679,7 @@ def create_refund(request):
                 ticket_code=form.cleaned_data['ticket_code'],
                 reason=form.cleaned_data['reason'],
                 user=request.user,
-                approved=None, # type: ignore
+                approved=None,  # type: ignore
                 created_at=now()
             )
             if success:
@@ -681,7 +687,7 @@ def create_refund(request):
             elif isinstance(result, dict):
                 form.add_error(None, result.get("__all__", "Error desconocido."))
             else:
-                  form.add_error(None, "Ocurrió un error inesperado.")
+                form.add_error(None, "Ocurrió un error inesperado.")
     else:
         form = RefundRequestForm()
     return render(request, 'app/create_refund.html', {'form': form})

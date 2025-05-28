@@ -1,22 +1,35 @@
-import pytest
-from app.models import User  # Importa tu User personalizado
-from playwright.sync_api import sync_playwright
+from django.test import TestCase
+from django.urls import reverse
+from django.contrib.auth import get_user_model
+from app.models import RefundRequest
+from django.utils.timezone import now
 
-@pytest.mark.django_db
-def test_refund_creation_block_if_pending_e2e(live_server):
-    # Crear usuario con contraseña
-    User.objects.create_user(username='jano_user', password='123456789')
+User = get_user_model()
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+class RefundE2ETest(TestCase):
 
-        page.goto(f"{live_server.url}/accounts/login/")
+    def setUp(self):
+        self.user = User.objects.create_user(username='gordo', password='123456')
+        self.client.login(username='gordo', password='123456')
 
-        page.fill('input[name="username"]', 'jano_user')
-        page.fill('input[name="password"]', '123456789')
-        page.click('button[type="submit"]')
 
-        page.wait_for_load_state("networkidle")
+        RefundRequest.objects.create(
+            user=self.user,
+            ticket_code="33cf3697-81e5-420f-ac9a-2374e3fb1f61",
+            reason='Solicitud pendiente',
+            approved=None,
+            created_at=now()
+        )
 
-        assert "/events" in page.url, f"Expected to be in /events but current URL is {page.url}"
+    def test_no_permitir_crear_solicitud_si_hay_pendiente(self):
+        response = self.client.post(
+            reverse('create_refund'),
+            data={
+                'ticket_code': "33cf3697-81e5-420f-ac9a-2374e3fb1f62",
+                'reason': 'Intento crear otra',
+            },
+            follow=True
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ya tienes una solicitud de reembolso pendiente")
+        self.assertEqual(RefundRequest.objects.filter(user=self.user).count(), 1)
