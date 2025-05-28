@@ -313,14 +313,13 @@ class Ticket(models.Model):
             return False, errors
 
         try:
+            # Siempre crear un ticket nuevo, sin agrupar por usuario/evento
             ticket = cls.objects.create(
                 quantity=quantity,
                 type=type,
                 event=event,
                 user=user
             )
-
-            print(ticket)
             return True, ticket
         except Exception as e:
             return False, {"error": f"Error al crear ticket: {str(e)}"}
