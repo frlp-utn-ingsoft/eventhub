@@ -5,6 +5,41 @@ from django.test import TestCase
 from django.utils import timezone
 
 from app.models import Event, User
+from app.views.event_views import filter_events
+
+
+def create_mocked_events(self):
+    # Crear algunos eventos de prueba
+    Event.objects.create(
+        title="Evento 1",
+        description="Descripción del evento 1 con palabra camello",
+        scheduled_at=timezone.now() + datetime.timedelta(days=1),
+        organizer=self.organizer,
+    )
+    Event.objects.create(
+        title="Evento 2",
+        description="Descripción del evento 2",
+        scheduled_at=timezone.now() + datetime.timedelta(days=2),
+        organizer=self.organizer,
+    )
+    Event.objects.create(
+        title="Evento 3",
+        description="Descripción del evento 3",
+        scheduled_at=timezone.now() + datetime.timedelta(days=3),
+        organizer=self.organizer,
+    )
+    Event.objects.create(
+        title="Evento 4",
+        description="Evento creado por otra persona",
+        scheduled_at=timezone.now() + datetime.timedelta(days=3),
+        organizer=self.organizer,
+    )
+    Event.objects.create(
+        title="Evento 5",
+        description="Evento creado por otra persona",
+        scheduled_at=timezone.now() + datetime.timedelta(days=3),
+        organizer=self.other_user,
+    )
 
 
 class EventModelTest(TestCase):
@@ -12,6 +47,12 @@ class EventModelTest(TestCase):
         self.organizer = User.objects.create_user(
             username="organizador_test",
             email="organizador@example.com",
+            password="password123",
+            is_organizer=True,
+        )
+        self.other_user = User.objects.create_user(
+            username="other_organizador_test",
+            email="other_organizador@example.com",
             password="password123",
             is_organizer=True,
         )
@@ -172,6 +213,29 @@ class EventModelTest(TestCase):
         self.assertEqual(updated_event.description, new_description)
         self.assertEqual(updated_event.scheduled_at, original_scheduled_at)
 
+    def test_event_filter_search_title(self):
+        """Test que verifica que la funcion de filtrado de eventos hace search por titulo correctamente"""
+        create_mocked_events(self)
+        events = Event.objects.all()
+        filtered_events = filter_events(events, self.organizer, "Evento 2", None, None, None)
+        self.assertEqual(filtered_events[0].title, "Evento 2")
+
+    def test_event_filter_search_description(self):
+        """Test que verifica que la funcion de filtrado de eventos hace search por palabra en descripcion correctamente"""
+        create_mocked_events(self)
+        events = Event.objects.all()
+        filtered_events = filter_events(events, self.organizer, "camello", None, None, None)
+        self.assertEqual(filtered_events[0].title, "Evento 1")
+
+    def test_event_filter_my_events(self):
+        """Test que verifica que la funcion de filtrado de eventos filtra correctamente los eventos del usuario"""
+        create_mocked_events(self)
+        events = Event.objects.all()
+        filtered_events = filter_events(events, self.organizer, None, True, None, None)
+        # El evento 5 fue creado por otro usuario, por lo que no debe aparecer en los eventos filtrados
+        event5 = any(event.title == "Evento 5" for event in filtered_events)
+        self.assertEqual(event5, False)
+
 class UserModelTest(TestCase):
     
     def setUp(self):
@@ -211,3 +275,4 @@ class UserModelTest(TestCase):
         with self.assertRaises(ValidationError):
             self.organizer.add_favorite_event(event_canceled)
         self.assertNotIn(event_canceled, self.organizer.favorite_events.all())
+   
