@@ -106,7 +106,7 @@
           <p class="mb-1">Subtotal: <span class="float-end" id="summary__subtotal">45.99</span></p>
           <p class="mb-1">Impuestos (10%): <span class="float-end" id="summary__taxes">4.59</span></p>
 
-          <button type="button" class="mt-4 btn btn-link p-0 text-decoration-none" id="discount-toggle">Tengo un código de descuento</button>
+          <button type="button" class="mt-4 btn btn-link p-0 text-decoration-none" name="discount-toggle" id="discount-toggle">Tengo un código de descuento</button>
             
           <hr>
           
@@ -123,7 +123,7 @@
             <label for="discount-code" class="card-title">Código de descuento</label>
             <input type="text" name="discount-code" id="discount-code" placeholder="UTN-FRLP" maxlength="8" class="form-control">
               
-            <button type="button" id="verify-code" name="verify-discount" class="mt-3 btn btn-outline-primary float-end">Aplicar</button>
+            <button type="button" id="verify-discount" name="verify-discount" class="mt-3 btn btn-outline-primary float-end">Aplicar</button>
             <div class="clearfix"></div>
          
         </div>
@@ -259,7 +259,7 @@
 </script>
 
 <script>
-  document.getElementById('verify-code').addEventListener('click', function() {
+  document.getElementById('verify-discount').addEventListener('click', function() {
     const code = document.getElementById('discount-code').value;
     const totalElement = document.getElementById('total');
 
@@ -269,7 +269,7 @@
 
     const discountMessage = document.getElementById('discount-message');
       
-    fetch('http://127.0.0.1:8000/is-valid-code', {
+    fetch('/is-valid-code', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
