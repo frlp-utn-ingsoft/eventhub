@@ -4,8 +4,7 @@
 {% block content %}
 <div class="container">
     <h2>Comprar Ticket para {{ event.title }}</h2>
-    
-    
+
     <div class="card mb-4">
         <div class="card-body">
             <h6 class="mb-0">Fecha y Hora</h6>
@@ -13,121 +12,223 @@
             <p><strong>Lugar:</strong> {{ event.venue.name }}</p>
         </div>
     </div>
-    
 
-    
     <form method="post" class="mt-4">
         {% csrf_token %}
-        
-        
+
         <div class="card mb-4">
-        <div class="card-header">Detalles del Ticket</div>
-        <div class="card-body">
-         <div class="row">
-
-
-             <div class="col-md-6 mb-3">
-                <label for="{{ form.quantity.id_for_label }}">Cantidad</label>
-                    <div class="input-group">
-                    {{ form.quantity|add_class:"form-control" }}
-                    </div>
+            <div class="card-header">Detalles del Ticket</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.quantity.id_for_label }}">Cantidad</label>
+                        <div class="input-group">
+                            {{ form.quantity|add_class:"form-control" }}
+                        </div>
                     </div>
                     <div class="col-md-6 mb-3">
-                    <label for="{{ form.type.id_for_label }}">Tipo</label>
-                    <div class="input-group">
-                    {{ form.type|add_class:"form-control" }}
+                        <label for="{{ form.type.id_for_label }}">Tipo</label>
+                        <div class="input-group">
+                            {{ form.type|add_class:"form-control" }}
+                        </div>
+                    </div>
                 </div>
-            </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        
+                        <div class="mb-3">
+                               <label for="coupon_code" class="form-label">Código de descuento</label>
+                                      <input type="text" id="coupon_code" name="coupon_code" class="form-control" placeholder="Ingresá tu cupón">
+                              <button type="button" id="validateCoupon" class="btn btn-outline-primary mt-2">Validar cupón</button>
+                          <div id="couponMessage" class="form-text text-success"></div>
+                            </div>
+                        {% if coupon_error %}
+                            <small class="text-danger">{{ coupon_error }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="row mt-3">
+                    <div class="col-md-12">
+                        <h6>Resumen:</h6>
+                        <ul class="list-unstyled">
+                            <li>Subtotal: <strong>$<span id="subtotal">0.00</span></strong></li>
+                            <li>Descuento: <strong>- $<span id="descuento">0.00</span></strong></li>
+                            <li>Total a pagar: <strong>$<span id="total">0.00</span></strong></li>
+                        </ul>
+                    </div>
+                </div>
+
             </div>
         </div>
-     </div>
 
-        
-        
         <div class="card mb-4">
-        <div class="card-header">Información de Pago</div>
-        <div class="card-body">
-        
-        <div class="row">
-           
-            <div class="col-md-6 mb-3">
-                {{ form.card_number.label_tag }}
-                <div class="input-group">
-                    {{ form.card_number|add_class:"form-control" }}
-                </div>
-                {% if form.card_number.errors %}
-                    <div class="text-danger small mt-1">
-                        {{ form.card_number.errors|striptags }}
+            <div class="card-header">Información de Pago</div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.card_number.label_tag }}
+                        <div class="input-group">
+                            {{ form.card_number|add_class:"form-control" }}
+                        </div>
                     </div>
-                {% endif %}
-            </div>
-            
-            <div class="col-md-6 mb-3">
-                {{ form.card_holder.label_tag }}
-                <div class="input-group">
-                    {{ form.card_holder|add_class:"form-control" }}
-                </div>
-                {% if form.card_holder.errors %}
-                    <div class="text-danger small mt-1">
-                        {{ form.card_holder.errors|striptags }}
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-        
-        <div class="row">
-            
-            <div class="col-md-6 mb-3">
-                {{ form.expiration_date.label_tag }}
-                <div class="input-group">
-                    {{ form.expiration_date|add_class:"form-control" }}
-                </div>
-                {% if form.expiration_date.errors %}
-                    <div class="text-danger small mt-1">
-                        {{ form.expiration_date.errors|striptags }}
-                    </div>
-                {% endif %}
-            </div>
-            
-            <div class="col-md-6 mb-3">
-                {{ form.cvc.label_tag }}
-                <div class="input-group">
-                    {{ form.cvc|add_class:"form-control" }}
-                </div>
-                {% if form.cvc.errors %}
-                    <div class="text-danger small mt-1">
-                        {{ form.cvc.errors|striptags }}
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-</div>
 
-        
+                    <div class="col-md-6 mb-3">
+                        {{ form.card_holder.label_tag }}
+                        <div class="input-group">
+                            {{ form.card_holder|add_class:"form-control" }}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        {{ form.expiration_date.label_tag }}
+                        <div class="input-group">
+                            {{ form.expiration_date|add_class:"form-control" }}
+                        </div>
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+                        {{ form.cvc.label_tag }}
+                        <div class="input-group">
+                            {{ form.cvc|add_class:"form-control" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <footer class="mt-4">
             <div class="d-flex justify-content-between">
                 <a href="{% url 'event_detail' event.id %}" class="btn btn-secondary">Volver al Evento</a>
                 <button type="submit" class="btn btn-primary" id="buyButton">
                     Comprar Ticket
                 </button>
-                
             </div>
         </footer>
-
     </form>
+
     <script>
+   
+    const precioBase = parseFloat("{{ event.price|default:0|floatformat:2|safe }}".replace(",", "."));
+    const eventoGratis = precioBase <= 0;
+    
+   
+    window.descuentoBackend = parseFloat("{{ discount_amount|default:0|floatformat:2|safe }}".replace(",", ".")) || 0;
+
+    function calcularTotal() {
+        const cantidad = parseInt(document.getElementById('id_quantity').value) || 0;
+        const tipo = document.getElementById('id_type').value;
+        const cupon = document.getElementById('coupon_code')?.value.trim() || "";
+
+        let subtotal = precioBase * cantidad;
+        let descuento = 0;
+
+        if (tipo.toLowerCase() === 'vip') {
+            subtotal *= 1.3;
+        }
+
+        if (eventoGratis || subtotal <= 0) {
+            subtotal = 0;
+            descuento = 0;
+        } else {
+          
+            if (cupon && window.descuentoBackend > 0) {
+                descuento = subtotal * (window.descuentoBackend / 100);
+            }
+        }
+
+        const total = subtotal - descuento;
+
+    
+        document.getElementById('subtotal').innerText = subtotal.toFixed(2);
+        document.getElementById('descuento').innerText = descuento.toFixed(2);
+        document.getElementById('total').innerText = total.toFixed(2);
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        
+        document.getElementById("id_quantity").addEventListener("input", calcularTotal);
+        document.getElementById("id_type").addEventListener("change", calcularTotal);
+        document.getElementById("coupon_code")?.addEventListener("input", () => {
+            
+            if (!document.getElementById('coupon_code').value.trim()) {
+                window.descuentoBackend = 0;
+                calcularTotal();
+                document.getElementById("couponMessage").textContent = "";
+                document.getElementById("couponMessage").classList.remove("text-success", "text-danger");
+            }
+        });
+
+       
+        document.getElementById("validateCoupon").addEventListener("click", function () {
+            const cuponInput = document.getElementById("coupon_code");
+            const codigo = cuponInput.value.trim();
+
+            if (!codigo) {
+                const mensaje = document.getElementById("couponMessage");
+                mensaje.textContent = "Por favor ingresá un código.";
+                mensaje.classList.remove("text-success");
+                mensaje.classList.add("text-danger");
+                window.descuentoBackend = 0;
+                calcularTotal();
+                return;
+            }
+
+            fetch("{% url 'validar_cupon' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+                body: JSON.stringify({ codigo: codigo }),
+            })
+            .then(response => response.json())
+            .then(data => {
+                const mensaje = document.getElementById("couponMessage");
+                if (data.valido) {
+                    mensaje.textContent = `Cupón válido: ${data.descuento}% de descuento aplicado.`;
+                    mensaje.classList.remove("text-danger");
+                    mensaje.classList.add("text-success");
+                    window.descuentoBackend = data.descuento;
+                } else {
+                    mensaje.textContent = data.error || "Cupón no válido.";
+                    mensaje.classList.remove("text-success");
+                    mensaje.classList.add("text-danger");
+                    window.descuentoBackend = 0;
+                }
+                calcularTotal();
+            })
+            .catch(error => {
+                console.error("Error al validar el cupón:", error);
+                const mensaje = document.getElementById("couponMessage");
+                mensaje.textContent = "Error de validación.";
+                mensaje.classList.remove("text-success");
+                mensaje.classList.add("text-danger");
+                window.descuentoBackend = 0;
+                calcularTotal();
+            });
+        });
+
         document.getElementById("buyButton").addEventListener("click", function (e) {
             const quantityInput = document.getElementById("id_quantity");
             const quantity = parseInt(quantityInput.value);
-    
+
             if (isNaN(quantity) || quantity < 1) {
-                e.preventDefault(); // Evita que se envíe el formulario
+                e.preventDefault();
                 alert("Debe seleccionar al menos un ticket.");
                 quantityInput.focus();
             }
         });
-    </script>
-    
+
+     
+        calcularTotal();
+    });
+</script>
+
+
+
 </div>
 {% endblock %}

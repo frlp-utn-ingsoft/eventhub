@@ -21,7 +21,8 @@ class NotificationBaseTest(BaseE2ETest):
             description="Test description",
             scheduled_at="2025-12-01T10:00:00Z",
             organizer=self.mocked_organizer_user,
-            venue=self.mocked_venue
+            venue=self.mocked_venue,
+            price=100.00
         )
 
         self.mocked_notification = Notification.new(
@@ -87,6 +88,9 @@ class NotificationByEventChangeTest(NotificationBaseTest):
 
         title = self.page.get_by_label("Título del Evento")
         title.fill("Titulo editado")
+        
+        price = self.page.get_by_label("Precio")
+        price.fill("150.00")
 
         description = self.page.get_by_label("Descripción")
         description.fill("Descripcion Editada")

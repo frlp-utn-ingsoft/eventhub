@@ -8,7 +8,9 @@
             "buy_date": "2025-04-25T14:30:00Z",
             "ticket_code": "a4b29f83-34be-4ab2-bbc7-7b6a77fc87e2",
             "quantity": 2,
+            "price": "1950.00",
             "type": "vip"
+            
         }
     },
     {
@@ -20,6 +22,7 @@
             "buy_date": "2025-04-25T15:00:00Z",
             "ticket_code": "c45e4ac1-bc9a-4a26-b3b2-fb885ed1e6c7",
             "quantity": 1,
+            "price": "1950.00",
             "type": "general"
         }
     },
@@ -31,6 +34,7 @@
             "event": 1,
             "buy_date": "2025-04-26T11:00:00Z",
             "ticket_code": "4b92ff47-16b1-40c1-a510-e43e7cc67f13",
+            "price": "1950.00",
             "quantity": 3,
             "type": "vip"
         }

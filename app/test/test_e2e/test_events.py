@@ -6,6 +6,11 @@ from playwright.sync_api import expect
 from app.models import Event, User, Venue, Category
 from app.test.test_e2e.base import BaseE2ETest
 
+def assert_input_value_equals(locator, expected_value: str):
+    actual_value = locator.input_value().replace(",", ".")
+    assert actual_value == expected_value, f"Expected '{expected_value}', got '{actual_value}'"
+
+
 class EventBaseTest(BaseE2ETest):
     """Clase base específica para tests de eventos"""
 
@@ -52,7 +57,8 @@ class EventBaseTest(BaseE2ETest):
             description="Descripción del evento 1",
             scheduled_at=event_date1,
             organizer=self.organizer,
-            venue=self.venue
+            venue=self.venue,
+            price=50.00
         )
         self.event1.categories.add(self.category) 
 
@@ -62,7 +68,8 @@ class EventBaseTest(BaseE2ETest):
             description="Descripción del evento 2",
             scheduled_at=event_date2,
             organizer=self.organizer,
-            venue=self.venue
+            venue=self.venue,
+            price=100.00
         )
         self.event2.categories.add(self.category) 
 
@@ -74,7 +81,8 @@ class EventBaseTest(BaseE2ETest):
         expect(headers.nth(1)).to_have_text("Descripción")
         expect(headers.nth(2)).to_have_text("Fecha")
         expect(headers.nth(3)).to_have_text("Categorías")
-        expect(headers.nth(4)).to_have_text("Acciones")
+        expect(headers.nth(4)).to_have_text("Precio")
+        expect(headers.nth(5)).to_have_text("Acciones")
 
         # Verificar que los eventos aparecen en la tabla
         rows = self.page.locator("table tbody tr")
@@ -85,11 +93,13 @@ class EventBaseTest(BaseE2ETest):
         expect(row0.locator("td").nth(0)).to_have_text("Evento de prueba 1")
         expect(row0.locator("td").nth(1)).to_have_text("Descripción del evento 1")
         expect(row0.locator("td").nth(2)).to_have_text("10 Feb 2025, 10:10")
+        expect(row0.locator("td").nth(4)).to_have_text("$50,00")
 
         # Verificar datos del segundo evento
         expect(rows.nth(1).locator("td").nth(0)).to_have_text("Evento de prueba 2")
         expect(rows.nth(1).locator("td").nth(1)).to_have_text("Descripción del evento 2")
         expect(rows.nth(1).locator("td").nth(2)).to_have_text("15 May 2025, 14:30")
+        expect(rows.nth(1).locator("td").nth(4)).to_have_text("$100,00")
 
     def _table_has_correct_actions(self, user_type):
         """Método auxiliar para verificar que las acciones son correctas según el tipo de usuario"""
@@ -221,6 +231,7 @@ class EventCRUDTest(EventBaseTest):
         expect(header).to_be_visible()
 
         self.page.get_by_label("Título del Evento").fill("Evento de prueba E2E")
+        self.page.get_by_label("Precio").fill("20.00")
         self.page.get_by_label("Descripción").fill("Descripción creada desde prueba E2E")
         self.page.get_by_label("Fecha").fill("2025-06-15")
         self.page.get_by_label("Hora").fill("16:45")
@@ -241,6 +252,8 @@ class EventCRUDTest(EventBaseTest):
         expect(row.locator("td").nth(0)).to_have_text("Evento de prueba E2E")
         expect(row.locator("td").nth(1)).to_have_text("Descripción creada desde prueba E2E")
         expect(row.locator("td").nth(2)).to_have_text("15 Jun 2025, 16:45")
+        expect(row.locator("td").nth(3)).to_have_text(self.category.name)
+        expect(row.locator("td").nth(4)).to_have_text("$20,00")
 
     def test_edit_event_organizer(self):
         """Test que verifica la funcionalidad de editar un evento para organizadores"""
@@ -258,6 +271,9 @@ class EventCRUDTest(EventBaseTest):
         title = self.page.get_by_label("Título del Evento")
         expect(title).to_have_value("Evento de prueba 1")
         title.fill("Titulo editado")
+        price = self.page.get_by_label("Precio")
+        assert_input_value_equals(price, "50.00")
+        price.fill("30.00")
         
         description = self.page.get_by_label("Descripción")
         expect(description).to_have_value("Descripción del evento 1")
@@ -286,6 +302,7 @@ class EventCRUDTest(EventBaseTest):
         expect(self.page.get_by_text("Descripcion Editada")).to_be_visible()
         expect(self.page.get_by_text("domingo, 20 de abril de 2025, 03:00")).to_be_visible()
         expect(self.page.get_by_text(self.category2.name)).to_be_visible()
+        expect(self.page.get_by_text("$30,00")).to_be_visible()
         #expect(self.page.get_by_text(self.venue2.name)).to_be_visible()
 
     def test_delete_event_organizer(self):

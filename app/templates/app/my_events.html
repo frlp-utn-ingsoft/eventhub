@@ -20,7 +20,8 @@
                 <th>Título</th>
                 <th>Descripción</th>
                 <th>Fecha</th>
-                <th>Categorías</th> <!-- Nueva columna Añadida -->
+                <th>Categorías</th>
+                <th>Precio</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -40,6 +41,13 @@
                         {% endif %}
                     </td>
                     <td>
+                        {% if event.price %}
+                            ${{ event.price }}
+                        {% else %}
+                            Gratis
+                        {% endif %}
+                    </td>
+                    <td>
                         <div class="hstack gap-1">
                             <a href="{% url 'event_detail' event.id %}"
                                class="btn btn-sm btn-outline-primary"
@@ -54,6 +62,13 @@
                                     title="Editar">
                                     <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
+                                     <a href="{% url 'coupon_form' event.id %}"
+                                    class="btn btn-sm btn-outline-success"
+                                     aria-label="Crear cupón"
+                                     title="Crear cupón">
+                                      <i class="bi bi-ticket-perforated" aria-hidden="true"></i>
+                                </a>
+
                                 <form action="{% url 'event_delete' event.id %}" method="POST" class="d-inline">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-danger"
