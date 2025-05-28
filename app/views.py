@@ -26,6 +26,7 @@ from .models import (
 from django.db.models import Count
 from django.utils.timezone import now
 
+from django.urls import reverse
 def register(request):
     if request.method == "POST":
         email = request.POST.get("email")
@@ -181,7 +182,6 @@ def event_delete(request, id):
 
 #modifique event_form
 @login_required
-@login_required
 def event_form(request, id=None):
     user = request.user
 
@@ -197,32 +197,17 @@ def event_form(request, id=None):
 
     if request.method == "POST":
         form = EventForm(request.POST, instance=instance)
-
+        
+        
+        
         if form.is_valid():
             event = form.save(commit=False)
             event.organizer = request.user
-            
+            event.status = request.POST.get("status") or event.status
 
-            # Combinar date y time desde POST para formar scheduled_at
-            date = request.POST.get("date")
-            time = request.POST.get("time")
-            if date and time:
-                try:
-                    y, m, d = map(int, date.split("-"))
-                    h, mi = map(int, time.split(":"))
-                    new_scheduled_at = timezone.make_aware(datetime.datetime(y, m, d, h, mi))
-                    event.scheduled_at = new_scheduled_at
-                except Exception:
-                    form.add_error(None, "Fecha y hora inválidas.")
-                    return render(request, "app/event_form.html", {
-                        "form": form,
-                        "user_is_organizer": request.user.is_organizer
-                    })
-
-            # Lógica para definir el estado del evento
-            event.status = request.POST.get("status") or event.status  # Se puede editar manualmente desde el form
-            event.update_status(original_scheduled_at)  # Aplica lógica de reprogramado o activación
-
+             # Asignar el datetime combinado del formulario al evento
+            event.scheduled_at = form.cleaned_data['scheduled_at']
+            event.update_status(original_scheduled_at)
 
             event.save()
             form.save_m2m()
@@ -231,16 +216,16 @@ def event_form(request, id=None):
         else:
             messages.error(request, "Corregí los errores.")
     else:
-        # Cargar el form con instancia si hay edición
+        # Preparar valores iniciales para inputs de fecha y hora si se está editando
         initial = {}
         if instance:
-            initial['date'] = instance.scheduled_at.date()
-            initial['time'] = instance.scheduled_at.time().strftime("%H:%M")
-
+            initial['date'] = instance.scheduled_at.strftime("%Y-%m-%d")
+            initial['time'] = instance.scheduled_at.strftime("%H:%M")
         form = EventForm(instance=instance, initial=initial)
 
     return render(request, "app/event_form.html", {
         "form": form,
+        "event": instance,
         "user_is_organizer": request.user.is_organizer
     })
 

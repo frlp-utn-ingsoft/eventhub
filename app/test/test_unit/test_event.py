@@ -1,18 +1,32 @@
+from datetime import date, time, timedelta
 import datetime
-
 from django.test import TestCase
 from django.utils import timezone
+from app.forms import EventForm
+from app.models import Event, User, Venue, Category
 
-from app.models import Event, User
 
+class TestEvent(TestCase):
 
-class EventModelTest(TestCase):
     def setUp(self):
         self.organizer = User.objects.create_user(
             username="organizador_test",
             email="organizador@example.com",
             password="password123",
             is_organizer=True,
+        )
+        self.venue = Venue.objects.create(
+            name="Auditorio Test",
+            address="Calle Falsa 123",
+            capacity=100 
+        )
+        self.category = Category.objects.create(name="Música")
+        self.event = Event.objects.create(
+            title="Evento original",
+            description="Descripción original",
+            scheduled_at=timezone.now() + datetime.timedelta(days=1),
+            organizer=self.organizer,
+            venue=self.venue
         )
 
     def test_event_creation(self):
@@ -21,122 +35,169 @@ class EventModelTest(TestCase):
             description="Descripción del evento de prueba",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
+            venue=self.venue, 
+            status="activo",
         )
-        """Test que verifica la creación correcta de eventos"""
         self.assertEqual(event.title, "Evento de prueba")
         self.assertEqual(event.description, "Descripción del evento de prueba")
         self.assertEqual(event.organizer, self.organizer)
+        self.assertEqual(event.venue, self.venue)
+        self.assertEqual(event.status, "activo")
         self.assertIsNotNone(event.created_at)
         self.assertIsNotNone(event.updated_at)
 
-    def test_event_validate_with_valid_data(self):
-        """Test que verifica la validación de eventos con datos válidos"""
-        scheduled_at = timezone.now() + datetime.timedelta(days=1)
-        errors = Event.validate("Título válido", "Descripción válida", scheduled_at)
-        self.assertEqual(errors, {})
+    def test_event_form_valid_data(self):
+        form_data = {
+            'title': 'Concierto de Jazz',
+            'description': 'Un evento musical al aire libre.',
+            'date': date.today() + timedelta(days=1),
+            'time': '19:30',
+            'categories': [self.category.id],#type:ignore
+            'venue': self.venue.id #type:ignore
+        }
+        form = EventForm(data=form_data)
+        self.assertTrue(form.is_valid())
 
-    def test_event_validate_with_empty_title(self):
-        """Test que verifica la validación de eventos con título vacío"""
-        scheduled_at = timezone.now() + datetime.timedelta(days=1)
-        errors = Event.validate("", "Descripción válida", scheduled_at)
-        self.assertIn("title", errors)
-        self.assertEqual(errors["title"], "Por favor ingrese un titulo")
+    def test_event_form_invalid_empty_title(self):
+        """Verifica que el formulario detecta título vacío"""
+        data = {
+            "title": "",
+            "description": "Descripción válida",
+            "date": datetime.date.today() + datetime.timedelta(days=1),
+            "time": datetime.time(12, 0),
+            "categories": [1],
+            "venue": 1
+        }
 
-    def test_event_validate_with_empty_description(self):
-        """Test que verifica la validación de eventos con descripción vacía"""
-        scheduled_at = timezone.now() + datetime.timedelta(days=1)
-        errors = Event.validate("Título válido", "", scheduled_at)
-        self.assertIn("description", errors)
-        self.assertEqual(errors["description"], "Por favor ingrese una descripcion")
+        form = EventForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn("title", form.errors)
+        self.assertIn("Este campo es obligatorio.", form.errors["title"])
 
+    def test_event_form_invalid_empty_description(self):
+        """Verifica que el formulario detecta descripción vacía"""
+        data = {
+            "title": "Título válido",
+            "description": "",
+            "date": datetime.date.today() + datetime.timedelta(days=1),
+            "time": datetime.time(12, 0),
+            "categories": [1],
+            "venue": 1
+        }
+
+        form = EventForm(data=data)
+        self.assertFalse(form.is_valid())
+        self.assertIn("description", form.errors)
+        self.assertIn("Este campo es obligatorio.", form.errors["description"])
+
+  
     def test_event_new_with_valid_data(self):
-        """Test que verifica la creación de eventos con datos válidos"""
-        scheduled_at = timezone.now() + datetime.timedelta(days=2)
-        success, errors = Event.new(
-            title="Nuevo evento",
-            description="Descripción del nuevo evento",
-            scheduled_at=scheduled_at,
-            organizer=self.organizer,
-        )
+        """Verifica la creación de un nuevo evento con datos válidos a través del formulario."""
+        
+        # Define una fecha en el futuro para el evento
+        future_date = timezone.localdate() + datetime.timedelta(days=7) 
+        
+        data = {
+            "title": "Nuevo Evento de Prueba",
+            "description": "Descripción para el nuevo evento.",
+            "date": future_date,
+            "time": datetime.time(18, 0), 
+            "categories": [self.category.id], #type: ignore
+            "venue": self.venue.id, #type: ignore
+            "organizer": self.organizer.id, #type: ignore
+        }
 
-        self.assertTrue(success)
-        self.assertIsNone(errors)
+        # Cuenta los eventos antes de crear el nuevo
+        initial_event_count = Event.objects.count()
 
-        # Verificar que el evento fue creado en la base de datos
-        new_event = Event.objects.get(title="Nuevo evento")
-        self.assertEqual(new_event.description, "Descripción del nuevo evento")
+        form = EventForm(data=data)
+        
+        # El formulario debe ser válido
+        self.assertTrue(form.is_valid())
+
+        # Guarda la instancia del modelo (new_event) sin guardar aún las relaciones Many-to-Many
+        new_event = form.save(commit=False) 
+        
+        new_event.organizer = self.organizer 
+        
+        # Guarda la instancia principal en la base de datos para que tenga un ID
+        new_event.save() 
+        
+        # Guarda las relaciones Many-to-Many
+        form.save_m2m() 
+
+        
+        self.assertEqual(Event.objects.count(), initial_event_count + 1)
+        
+        # Verifica que el nuevo evento tenga los datos correctos
+        self.assertEqual(new_event.title, data["title"])
+        self.assertEqual(new_event.description, data["description"])
+        self.assertEqual(new_event.scheduled_at.date(), data["date"])
+        self.assertEqual(new_event.scheduled_at.time(), data["time"])
         self.assertEqual(new_event.organizer, self.organizer)
+        self.assertEqual(new_event.venue, self.venue)
+        
+        # Ahora, verifica que la categoría se haya asociado correct
 
-    def test_event_new_with_invalid_data(self):
-        """Test que verifica que no se crean eventos con datos inválidos"""
-        scheduled_at = timezone.now() + datetime.timedelta(days=2)
-        initial_count = Event.objects.count()
+    def test_event_form_with_invalid_data(self):
+        """Test que verifica que el formulario no es válido con datos inválidos"""
 
-        # Intentar crear evento con título vacío
-        success, errors = Event.new(
-            title="",
-            description="Descripción del evento",
-            scheduled_at=scheduled_at,
-            organizer=self.organizer,
-        )
+        scheduled_date = (timezone.now() + datetime.timedelta(days=2)).date()
+        scheduled_time = (timezone.now() + datetime.timedelta(days=2)).time()
 
-        self.assertFalse(success)
-        self.assertIn("title", errors)
+        form_data = {
+            "title": "",  # título vacío (inválido)
+            "description": "Descripción válida",
+            "date": scheduled_date,
+            "time": scheduled_time,
+            "categories": [],  # suponiendo que es requerido
+            "venue": None      # suponiendo que es requerido
+        }
 
-        # Verificar que no se creó ningún evento nuevo
-        self.assertEqual(Event.objects.count(), initial_count)
+        form = EventForm(data=form_data)
 
-    def test_event_update(self):
-        """Test que verifica la actualización de eventos"""
-        new_title = "Título actualizado"
-        new_description = "Descripción actualizada"
-        new_scheduled_at = timezone.now() + datetime.timedelta(days=3)
+        # El formulario no debería ser válido
+        self.assertFalse(form.is_valid())
+        self.assertIn("title", form.errors)
+        self.assertIn("categories", form.errors)
+        self.assertIn("venue", form.errors)
 
-        event = Event.objects.create(
-            title="Evento de prueba",
-            description="Descripción del evento de prueba",
-            scheduled_at=timezone.now() + datetime.timedelta(days=1),
-            organizer=self.organizer,
-        )
+    def test_event_update_with_form(self):
+        """Verifica que el evento se actualiza correctamente usando datos validados por el formulario"""
+        data = {
+            "title": "Título actualizado",
+            "description": "Descripción actualizada",
+            "date": (timezone.now() + datetime.timedelta(days=1)).date(),
+            "time": datetime.time(15, 0),
+            "categories": [self.category.id], #type: ignore
+            "venue": self.venue.id #type: ignore
+        }
 
-        event.update(
-            title=new_title,
-            description=new_description,
-            scheduled_at=new_scheduled_at,
-            organizer=self.organizer,
-        )
+        form = EventForm(data=data, instance=self.event)
+        self.assertTrue(form.is_valid())
+        updated_event = form.save()
 
-        # Recargar el evento desde la base de datos
-        updated_event = Event.objects.get(pk=event.pk)
+        self.assertEqual(updated_event.title, data["title"])
+        self.assertEqual(updated_event.description, data["description"])
+        self.assertEqual(updated_event.scheduled_at.date(), data["date"])
+        self.assertEqual(updated_event.scheduled_at.time(), data["time"])
 
-        self.assertEqual(updated_event.title, new_title)
-        self.assertEqual(updated_event.description, new_description)
-        self.assertEqual(updated_event.scheduled_at.time(), new_scheduled_at.time())
+    def test_event_partial_update_with_form(self):
+        """Verifica que el evento puede actualizar solo algunos campos"""
+        # Solo cambia la descripción
+        data = {
+            "title": self.event.title,  # igual al original
+            "description": "Descripción parcialmente actualizada",
+            "date": self.event.scheduled_at.date(),
+            "time": self.event.scheduled_at.time(),
+            "categories": [self.category.id], #type: ignore
+            "venue": self.venue.id #type: ignore
+        }
 
-    def test_event_update_partial(self):
-        """Test que verifica la actualización parcial de eventos"""
-        event = Event.objects.create(
-            title="Evento de prueba",
-            description="Descripción del evento de prueba",
-            scheduled_at=timezone.now() + datetime.timedelta(days=1),
-            organizer=self.organizer,
-        )
+        form = EventForm(data=data, instance=self.event)
+        self.assertTrue(form.is_valid())
+        updated_event = form.save()
 
-        original_title = event.title
-        original_scheduled_at = event.scheduled_at
-        new_description = "Solo la descripción ha cambiado"
-
-        event.update(
-            title=None,  # No cambiar
-            description=new_description,
-            scheduled_at=None,  # No cambiar
-            organizer=None,  # No cambiar
-        )
-
-        # Recargar el evento desde la base de datos
-        updated_event = Event.objects.get(pk=event.pk)
-
-        # Verificar que solo cambió la descripción
-        self.assertEqual(updated_event.title, original_title)
-        self.assertEqual(updated_event.description, new_description)
-        self.assertEqual(updated_event.scheduled_at, original_scheduled_at)
+        self.assertEqual(updated_event.title, self.event.title)
+        self.assertEqual(updated_event.description, "Descripción parcialmente actualizada")
+        self.assertEqual(updated_event.scheduled_at, self.event.scheduled_at) 
