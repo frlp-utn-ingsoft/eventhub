@@ -209,6 +209,12 @@ class Event(models.Model):
     def get_attendees(self):
         """Obtiene los usuarios inscriptos al evento a través de los tickets"""
         return User.objects.filter(tickets__event=self).distinct()
+    
+    def get_demand(self):
+        """Calcula la demanda del evento como el porcentaje de ocupación"""
+        if self.venue.capacity == 0:
+            return 0
+        return (self.tickets.count() / self.venue.capacity) * 100
 
     @classmethod
     def validate(cls, title, description, scheduled_at):
