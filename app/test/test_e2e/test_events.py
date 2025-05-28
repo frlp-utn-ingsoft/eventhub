@@ -4,7 +4,7 @@ import re
 from django.utils import timezone
 from playwright.sync_api import expect
 
-from app.models import Event, User, Venue, Ticket, Category
+from app.models import Event, User, Venue, Category, Ticket, Category
 
 from app.test.test_e2e.base import BaseE2ETest
 
@@ -52,6 +52,13 @@ class EventBaseTest(BaseE2ETest):
             description="Rock y sus derivados",
         )
 
+        # Crear una categoría para las pruebas
+        self.category = Category.objects.create(
+            name="Categoría de prueba",
+            description="Descripción de prueba",
+            is_active=True
+        )
+
         # Crear eventos de prueba
         # Evento 1
         event_date1 = timezone.make_aware(datetime.datetime(2025, 2, 10, 10, 10))
@@ -61,6 +68,8 @@ class EventBaseTest(BaseE2ETest):
             scheduled_at=event_date1,
             venue = self.venue1,
             organizer=self.organizer,
+            venue=self.venue,
+            category=self.category
             category=self.category,
         )
 
@@ -72,6 +81,8 @@ class EventBaseTest(BaseE2ETest):
             scheduled_at=event_date2,
             venue=self.venue1,
             organizer=self.organizer,
+            venue=self.venue,
+            category=self.category
             category=self.category,
         )
 
@@ -254,9 +265,14 @@ class EventCRUDTest(EventBaseTest):
         self.page.get_by_label("Descripción").fill("Descripción creada desde prueba E2E")
         self.page.get_by_label("Fecha").fill("2025-06-15")
         self.page.get_by_label("Hora").fill("16:45")
+        self.page.get_by_label("Lugar").select_option(label=f"{self.venue.name} ({self.venue.city}) - Capacidad: {self.venue.capacity}")
+        self.page.get_by_label("Categoría").select_option(label=self.category.name)
 
         # Enviar el formulario
         self.page.get_by_role("button", name="Crear Evento").click()
+
+        # Esperar a que la redirección se complete
+        self.page.wait_for_load_state("networkidle")
 
         # Verificar que redirigió a la página de eventos
         expect(self.page).to_have_url(f"{self.live_server_url}/events/")
@@ -305,7 +321,17 @@ class EventCRUDTest(EventBaseTest):
         expect(time).to_have_value("10:10")
         time.fill("03:00")
 
+        venue = self.page.get_by_label("Lugar")
+        expect(venue).to_have_value(str(self.venue.id))
+
+        category = self.page.get_by_label("Categoría")
+        expect(category).to_have_value(str(self.category.id))
+
         # Enviar el formulario
+        self.page.get_by_role("button", name="Guardar Cambios").click()
+
+        # Esperar a que la redirección se complete
+        self.page.wait_for_load_state("networkidle")
         self.page.get_by_role("button", name="Crear Evento").click()
 
         # Verificar que redirigió a la página de eventos

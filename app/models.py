@@ -175,6 +175,15 @@ class Event(models.Model):
     def __str__(self):
         return self.title
 
+    def is_past(self):
+        """Verifica si el evento ya pasó"""
+        return self.scheduled_at < timezone.now()
+
+    @classmethod
+    def get_future_events(cls):
+        """Retorna todos los eventos futuros ordenados por fecha"""
+        return cls.objects.filter(scheduled_at__gt=timezone.now()).order_by('scheduled_at')
+
     def get_attendees(self):
         """Obtiene los usuarios inscriptos al evento a través de los tickets"""
         return User.objects.filter(tickets__event=self).distinct()
@@ -228,6 +237,15 @@ class Event(models.Model):
             aux = aux + t.quantity
 
         return self.venue.capacity - aux
+
+    def get_average_rating(self):
+        ratings = self.ratings.all()
+        if not ratings:
+            return 0
+        return sum(rating.rating for rating in ratings) / len(ratings)
+
+    def get_rating_count(self):
+        return self.ratings.count()
 
 class Ticket(models.Model):
     # Constants

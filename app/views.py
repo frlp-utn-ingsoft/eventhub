@@ -69,7 +69,8 @@ def home(request):
 
 @login_required
 def events(request):
-    events = Event.objects.all().order_by("scheduled_at")
+    current_time = timezone.now()
+    events = Event.objects.filter(scheduled_at__gt=current_time).order_by("scheduled_at")
     return render(
         request,
         "app/events.html",
@@ -119,7 +120,7 @@ def event_form(request, event_id=None):
     
     venues = Venue.objects.all()
     categories = Category.objects.filter(is_active=True)
-    event = {}
+    event = None
 
     if event_id is not None:
         event = get_object_or_404(Event, pk=event_id)
@@ -132,60 +133,90 @@ def event_form(request, event_id=None):
         date = request.POST.get("date")
         time = request.POST.get("time")
 
-        venue = get_object_or_404(Venue, pk=venue_id)
-        category = get_object_or_404(Category, pk=category_id) if category_id else None
-        [year, month, day] = date.split("-")
-        [hour, minutes] = time.split(":")
+        if not all([title, description, venue_id, date, time]):
+            messages.error(request, "Todos los campos son obligatorios")
+            return render(request, "app/event_form.html", {
+                "event": event,
+                "categories": categories,
+                "venues": venues,
+                "user_is_organizer": request.user.is_organizer,
+                "data": request.POST
+            })
 
-        scheduled_at = timezone.make_aware(
-            datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
-        )
+        try:
+            venue = get_object_or_404(Venue, pk=venue_id)
+            category = get_object_or_404(Category, pk=category_id) if category_id else None
+            [year, month, day] = date.split("-")
+            [hour, minutes] = time.split(":")
 
-        if event_id is None:
-            success, event = Event.new(
-                title=title,
-                description=description,
-                scheduled_at=scheduled_at,
-                organizer=request.user,
-                venue=venue,
-                category=category
+            scheduled_at = timezone.make_aware(
+                datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
             )
-            if not success:
-                return render(request, "app/event_form.html", {
-                    "event": event,
-                    "categories": categories,
-                    "venues": venues,
-                    "errors": event
-                })
-        else:
-            event = get_object_or_404(Event, pk=event_id)
-            old_scheduled_at = event.scheduled_at
-            old_venue = event.venue
-            success, event = event.update(
-                title=title,
-                description=description,
-                scheduled_at=scheduled_at,
-                venue=venue,
-                category=category
-            )
-            if not success:
-                return render(request, "app/event_form.html", {
-                    "event": event,
-                    "categories": categories,
-                    "venues": venues,
-                    "errors": event
-                })
-            #Noticar por cambios de fecha o venue
-            if old_scheduled_at != scheduled_at or old_venue != venue:
-                notification = Notification.objects.create(
-                    title="Evento Modificado",
-                    message=f"El evento '{event.title}' ha sido actualizado. Fecha: {scheduled_at} y lugar: {venue.name}.",
-                    priority="MEDIUM",
+
+            if event_id is None:
+                success, result = Event.new(
+                    title=title,
+                    description=description,
+                    scheduled_at=scheduled_at,
+                    organizer=request.user,
+                    venue=venue,
+                    category=category
                 )
-                usuarios = User.objects.filter(tickets__event=event).distinct()
-                notification.users.set(usuarios)
-                notification.save()
-        return redirect("events")
+                if success:
+                    messages.success(request, "Evento creado exitosamente")
+                    return redirect("events")
+                else:
+                    messages.error(request, "Error al crear el evento")
+                    return render(request, "app/event_form.html", {
+                        "event": event,
+                        "categories": categories,
+                        "venues": venues,
+                        "user_is_organizer": request.user.is_organizer,
+                        "errors": result,
+                        "data": request.POST
+                    })
+            else:
+                old_scheduled_at = event.scheduled_at
+                old_venue = event.venue
+                success, result = event.update(
+                    title=title,
+                    description=description,
+                    scheduled_at=scheduled_at,
+                    venue=venue,
+                    category=category
+                )
+                if success:
+                    messages.success(request, "Evento actualizado exitosamente")
+                    if old_scheduled_at != scheduled_at or old_venue != venue:
+                        notification = Notification.objects.create(
+                            title="Evento Modificado",
+                            message=f"El evento '{event.title}' ha sido actualizado. Fecha: {scheduled_at} y lugar: {venue.name}.",
+                            priority="MEDIUM",
+                        )
+                    usuarios = User.objects.filter(tickets__event=event).distinct()
+                    notification.users.set(usuarios)
+                    notification.save()
+                    return redirect("events")
+
+                else:
+                    messages.error(request, "Error al actualizar el evento")
+                    return render(request, "app/event_form.html", {
+                        "event": event,
+                        "categories": categories,
+                        "venues": venues,
+                        "user_is_organizer": request.user.is_organizer,
+                        "errors": result,
+                        "data": request.POST
+                    })
+        except (ValueError, TypeError):
+            messages.error(request, "Error en el formato de fecha y hora")
+            return render(request, "app/event_form.html", {
+                "event": event,
+                "categories": categories,
+                "venues": venues,
+                "user_is_organizer": request.user.is_organizer,
+                "data": request.POST
+            })
 
     return render(
         request,
@@ -194,7 +225,7 @@ def event_form(request, event_id=None):
             "event": event,
             "categories": categories,
             "venues": venues,
-            "user_is_organizer": request.user.is_organizer
+            "user_is_organizer": request.user.is_organizer,
         },
     )
 
@@ -411,6 +442,7 @@ def buy_ticket(request, id):
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
         if success:
+            event.attendees.add(user)
             messages.success(request, "¡Ticket comprado!")
             return redirect("tickets")
         else:
@@ -776,7 +808,8 @@ def notification_create(request):
         # Asignar destinatarios
         if destinatario == "todos":
             event = get_object_or_404(Event, id=event_id)
-            asistentes = event.get_attendees()
+            asistentes = event.attendee.all()
+            print("Asistentes para notificación:", asistentes)
             notification.users.set(asistentes)
         elif destinatario == "usuario":
             usuario = get_object_or_404(User, pk=usuario_id)
