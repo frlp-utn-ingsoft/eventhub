@@ -24,6 +24,7 @@ from .models import (
     SurveyResponse
 )
 from django.db.models import Count
+from django.utils.timezone import now
 
 def register(request):
     if request.method == "POST":
@@ -688,14 +689,28 @@ def delete_refund(request, refund_id):
 
 @login_required
 def create_refund(request):
+    # Chequeo rápido: si ya hay una solicitud pendiente, bloqueo creación
+    pending = RefundRequest.objects.filter(user=request.user, approved__isnull=True).exists()
+    if pending:
+        messages.error(request, "Ya tienes una solicitud de reembolso pendiente. Debes esperar a que sea procesada antes de solicitar otra.")
+        return redirect('user_refund_list')  # O a donde quieras que vaya el usuario
+
     if request.method == 'POST':
         form = RefundRequestForm(request.POST)
         if form.is_valid():
-            refund = form.save(commit=False)
-            refund.user = request.user
-            refund.created_at = timezone.now()
-            refund.save()
-            return redirect('refund_list')  # Redirige a la lista de solicitudes de reembolso
+            success, result = RefundRequest.new(
+                ticket_code=form.cleaned_data['ticket_code'],
+                reason=form.cleaned_data['reason'],
+                user=request.user,
+                approved=None,  # type: ignore
+                created_at=now()
+            )
+            if success:
+                return redirect('refund_list')
+            elif isinstance(result, dict):
+                form.add_error(None, result.get("__all__", "Error desconocido."))
+            else:
+                form.add_error(None, "Ocurrió un error inesperado.")
     else:
         form = RefundRequestForm()
     return render(request, 'app/create_refund.html', {'form': form})
