@@ -80,6 +80,39 @@ def event_detail(request, id):
     event = get_object_or_404(Event, id=id)
     comments = Comments.objects.filter(event=event).order_by('-created_at')
     user_is_organizer = request.user.is_authenticated and request.user.is_organizer
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        errors = {}
+
+        if not title:
+            errors['title'] = "El título no puede estar vacío."
+        if not description:
+            errors['description'] = "La descripción no puede estar vacía."
+
+        if not errors:
+            Comments.objects.create(
+                title=title,
+                description=description,
+                user=request.user,
+                event=event
+            )
+            return redirect('event_detail', id=event.id)
+
+        # Si hay errores, los devolvemos al template
+        return render(request, 'app/event_detail.html', {
+            'event': event,
+            'comments': comments,
+            'errors': errors,
+            'title': title,
+            'description': description,
+            'user_is_organizer': user_is_organizer,
+            'demand_status': event.demand_status,
+            'tickets_sold': event.tickets_sold,
+            'tickets_available': event.tickets_available
+        })
+
     context = {
         'event': event,
         'comments': comments,
@@ -88,6 +121,7 @@ def event_detail(request, id):
         'tickets_sold': event.tickets_sold,
         'tickets_available': event.tickets_available
     }
+    
     return render(request, 'app/event_detail.html', context)
 
 
