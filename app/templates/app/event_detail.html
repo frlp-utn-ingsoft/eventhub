@@ -21,6 +21,17 @@
                         <span class="ms-2">{{ event.scheduled_at|date:"d/m/Y H:i" }}</span>
                     </div>
                     
+                    {% if not user_is_organizer %}
+                    <!-- Cuenta regresiva del evento -->
+                    <div class="alert alert-info mb-4" id="countdown-container">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-clock me-2"></i>
+                            <span class="fw-bold me-2">Tiempo restante:</span>
+                            <span id="countdown-timer" class="fw-bold text-primary"></span>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
                     <div class="d-flex align-items-center mb-3">
                         <i class="bi bi-geo-alt me-2 text-primary"></i>
                         <span class="fw-bold">Lugar:</span>
@@ -32,11 +43,26 @@
                         <span class="fw-bold">Capacidad:</span>
                         <span class="ms-2">{{ event.venue.capacity }} personas</span>
                     </div>
+
+                    {% if event.ratings.exists %}
+                    <div class="d-flex align-items-center mb-3">
+                        <i class="bi bi-star-fill me-2 text-warning"></i>
+                        <span class="fw-bold">Calificación promedio:</span>
+                        <span class="ms-2">{{ event.get_average_rating|floatformat:1 }} / 5.0</span>
+                        <span class="ms-2 text-muted">({{ event.get_rating_count }} calificaciones)</span>
+                    </div>
+                    {% endif %}
                     
                     <div class="mt-4">
+                        {% if event.state != 'FINISHED' %}
+                        {% if event.state != 'CANCELED' %}
+                        {% if event.state != 'SOLD_OUT' %}
                         {% if user_is_organizer %}
                             <a href="{% url 'event_edit' event.id %}" class="btn btn-outline-primary me-2">
                                 <i class="bi bi-pencil me-1"></i>Editar Evento
+                            </a>
+                            <a href="{% url 'survey_results' event.id %}" class="btn btn-outline-info me-2">
+                                <i class="bi bi-bar-chart me-1"></i>Ver Encuestas
                             </a>
                         {% else %}
                             {% if event.available_tickets > 0 %}
@@ -48,6 +74,9 @@
                                     <i class="bi bi-ticket-perforated me-2"></i>Entradas Agotadas
                                 </button>
                             {% endif %}
+                        {% endif %}
+                        {% endif %}
+                        {% endif %}
                         {% endif %}
                     </div>
                 </div>
@@ -208,4 +237,70 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if not user_is_organizer %}
+<script>
+    // Cuenta regresiva del evento
+    function updateCountdown() {
+        try {
+            const eventDateStr = "{{ event.scheduled_at|date:'c' }}";
+            const eventDate = new Date(eventDateStr);
+            const now = new Date();
+            const timeLeft = eventDate.getTime() - now.getTime();
+            
+            const countdownElement = document.getElementById('countdown-timer');
+            const countdownContainer = document.getElementById('countdown-container');
+            
+            if (!countdownElement) {
+                return;
+            }
+            
+            if (timeLeft > 0) {
+                const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                
+                let countdownText = '';
+                if (days > 0) {
+                    countdownText += `${days} días `;
+                }
+                if (hours > 0 || days > 0) {
+                    countdownText += `${hours} horas `;
+                }
+                if (minutes > 0 || hours > 0 || days > 0) {
+                    countdownText += `${minutes} minutos `;
+                }
+                countdownText += `${seconds} segundos`;
+                
+                countdownElement.textContent = countdownText;
+                
+                if (countdownContainer) {
+                    countdownContainer.className = 'alert alert-info mb-4';
+                }
+            } else {
+                countdownElement.textContent = '¡El evento ya comenzó!';
+                if (countdownContainer) {
+                    countdownContainer.className = 'alert alert-success mb-4';
+                }
+            }
+        } catch (error) {
+            // Error silencioso
+        }
+    }
+    
+    // Ejecutar cuando el DOM esté listo
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function() {
+            updateCountdown();
+            setInterval(updateCountdown, 1000);
+        });
+    } else {
+        updateCountdown();
+        setInterval(updateCountdown, 1000);
+    }
+</script>
+{% endif %}
 {% endblock %}

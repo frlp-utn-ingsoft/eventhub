@@ -20,6 +20,8 @@ urlpatterns = [
     path("events/<int:event_id>/edit/", views.event_form, name="event_edit"),
     path("events/<int:event_id>/", views.event_detail, name="event_detail"),
     path("events/<int:event_id>/delete/", views.event_delete, name="event_delete"),
+    path("events/<int:event_id>/toggle-favorite/", views.toggle_favorite, name="toggle_favorite"),
+    path("events/<int:event_id>/cancel/", views.event_canceled, name="event_canceled"),
     path("events/<int:event_id>/ratings/create/", views.create_rating, name="create_rating"),
     path("ratings/<int:rating_id>/edit/", views.edit_rating, name="edit_rating"),
     path("ratings/<int:rating_id>/delete/", views.delete_rating, name="delete_rating"),
@@ -54,4 +56,8 @@ urlpatterns = [
     path("venues/create/", views.venue_form, name="venue_form"),
     path("venues/<int:id>/delete/", views.venue_delete, name="venue_delete"),
     path("venues/<int:id>/edit/", views.venue_edit, name="venue_edit"),
+
+    # Satisfaction Survey
+    path("tickets/<int:ticket_id>/survey/", views.satisfaction_survey, name="satisfaction_survey"),
+    path("events/<int:event_id>/survey-results/", views.survey_results, name="survey_results"),
 ]
