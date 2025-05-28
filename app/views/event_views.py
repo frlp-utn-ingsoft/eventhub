@@ -127,13 +127,26 @@ def event_detail(request, id):
     ratings = Rating.objects.filter(event=event)
     has_ticket = Ticket.objects.filter(event=event, user=request.user).exists()
 
-    # --- FAVORITO ---
+    # Verificacion de favoritos
     if request.method == "POST" and request.POST.get("toggle_favorite") == "1":
+        # Se consulta si el usuario ya tiene el evento como favorito
         if event in request.user.favorite_events.all():
+            # Si ya es favorito, le dejamos eliminarlo eliminamos
             request.user.favorite_events.remove(event)
+            messages.success(request, 'Evento eliminado de favoritos.')
+            return redirect("event_detail", id=event.id) # type: ignore
         else:
-            request.user.favorite_events.add(event)
-        return redirect("event_detail", id=event.id) # type: ignore
+            # Caso contrario, consultamos el estado del evento
+            # Si conincide con alguno de los estados que no se permite marcarlo como favorito
+            if event.status == 'canceled' or event.status == 'finished' or event.status == 'soldout':
+                messages.error(request, 'No puedes marcar un evento cancelado como favorito.')
+                return redirect("event_detail", id=event.id)# type: ignore
+            else:
+                # Si no, lo agregamos a favoritos
+                request.user.favorite_events.add(event)
+                messages.success(request, 'Evento agregado a favoritos.')
+                return redirect("event_detail", id=event.id) # type: ignore
+                  
 
     # Procesar acciones POST (cancelar/finalizar) SOLO si el usuario es organizador y dueño
     if request.method == "POST" and request.user.is_organizer and request.user == event.organizer:
