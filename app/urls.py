@@ -3,6 +3,8 @@ from django.urls import path
 
 from app import views
 
+from .views.event_views import favorite_events
+
 urlpatterns = [
     # Home
     path("", views.home, name="home"),
@@ -71,4 +73,5 @@ urlpatterns = [
     path('event/<int:event_id>/comments/edit/<int:comment_id>/', views.edit_comment, name='edit_comment'),
     
     path("events/<int:id>/favorite/", views.event_favorite, name="event_favorite"),
+    path('favorite-events/', favorite_events, name='favorite_events'),
 ]

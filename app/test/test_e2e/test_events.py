@@ -540,7 +540,17 @@ class EventFavoritesTest(EventBaseTest):
         # Ir a la página de eventos
         self.page.goto(f"{self.live_server_url}/events/")
 
-        # Hacer clic en el botón de detalle del primer evento
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
+
+        # Hacer clic en el botón de detalle del evento
         self.page.get_by_role("link", name="Ver Detalle").first.click()
 
         # Verificar que estamos en la página de detalle del evento
@@ -562,7 +572,17 @@ class EventFavoritesTest(EventBaseTest):
         # Ir a la página de eventos
         self.page.goto(f"{self.live_server_url}/events/")
 
-        # Hacer clic en el botón de detalle del primer evento
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
+
+        # Hacer clic en el botón de detalle del evento
         self.page.get_by_role("link", name="Ver Detalle").first.click()
 
         # Verificar que estamos en la página de detalle del evento
@@ -578,3 +598,44 @@ class EventFavoritesTest(EventBaseTest):
 
         # Verificar que el botón ahora indica que no es un favorito
         expect(favorite_button).to_have_text("Agregar a Favoritos")
+        
+    def test_my_favorites_button(self):
+        """Test que verifica que el evento se agrega a "Mis Favoritos" y se puede quitar de favoritos"""
+         # Iniciar sesión como usuario regular
+        self.login_user("usuario", "password123")
+
+        # Ir a la página de eventos
+        self.page.goto(f"{self.live_server_url}/events/")
+
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
+
+        # Hacer clic en el botón de detalle del evento
+        self.page.get_by_role("link", name="Ver Detalle").first.click()
+
+        # Verificar que estamos en la página de detalle del evento
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/{self.event1.id}/")
+
+        # Marcar el evento como favorito primero
+        favorite_button = self.page.locator("#favorite-event-button")
+        favorite_button.wait_for(state="visible")
+        favorite_button.click()
+
+        # Ahora quitarlo de favoritos
+        favorite_button.click()
+        
+        # Verificar que el botón de "Mis Favoritos" redirige correctamente
+        my_favorites_button = self.page.get_by_role("link", name="Mis Favoritos")
+        expect(my_favorites_button).to_be_visible()
+        my_favorites_button.click()
+        
+        # Verificar que redirigió a la página de favoritos
+        expect(self.page).to_have_url(f"{self.live_server_url}/favorite-events/")
+        

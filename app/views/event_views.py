@@ -248,3 +248,17 @@ def event_favorite(request, id):
         except ValidationError as e:
             messages.error(request, str(e))
     return redirect("event_detail", id=event.id) # type: ignore
+
+@login_required
+def favorite_events(request):
+    user = request.user
+    events = user.favorite_events.all().order_by("scheduled_at")
+    return render(
+        request,
+        "app/event/favorite_events.html",
+        {
+            "events": events,
+            "user_is_organizer": user.is_organizer,
+            "user": user
+        },
+    )
