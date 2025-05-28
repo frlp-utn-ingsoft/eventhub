@@ -349,12 +349,10 @@ class EventForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Si el formulario está ligado a una instancia existente, precarga los campos de fecha y hora.
         if self.instance and self.instance.scheduled_at:
-            self.initial['date'] = self.instance.scheduled_at.date()
-            self.initial['time'] = self.instance.scheduled_at.time()
+            self.fields['date'].initial = self.instance.scheduled_at.date()
+            self.fields['time'].initial = self.instance.scheduled_at.time()
 
-        # Asignación de clases a los campos para estilizar
         self.fields['title'].widget.attrs.update({'class': 'form-control'})
         self.fields['description'].widget.attrs.update({'class': 'form-control', 'rows': 4})
         self.fields['venue'].widget.attrs.update({'class': 'form-control'})
@@ -367,17 +365,22 @@ class EventForm(forms.ModelForm):
         date = cleaned_data.get('date')
         time = cleaned_data.get('time')
 
-        # Combina fecha y hora en un solo objeto datetime para el campo 'scheduled_at' del modelo
+        
+
         if date and time:
-            
-            combined_datetime = timezone.make_aware(datetime.combine(date, time))
-            cleaned_data['scheduled_at'] = combined_datetime
-        
-        if date:
-            today_date = timezone.localdate() 
-            if date < today_date:
-                self.add_error('date', "La fecha del evento debe ser hoy o posterior.")
-        
+            try:
+                dt = datetime.combine(date, time)
+                
+                combined_datetime = timezone.make_aware(dt)
+                
+
+                if combined_datetime < timezone.now():
+                    raise forms.ValidationError("La fecha y hora del evento deben ser futuras.")
+                cleaned_data['scheduled_at'] = combined_datetime
+            except Exception as e:
+                
+                raise forms.ValidationError("Fecha y hora inválidas.")
+
         return cleaned_data
 
 
@@ -412,10 +415,6 @@ class EventForm(forms.ModelForm):
         date = self.cleaned_data.get('date')
         if not date:
             raise forms.ValidationError("La fecha es obligatoria.")
-        if date:
-            today = date.today()
-            if date < today:
-                raise forms.ValidationError("La fecha del evento debe ser hoy o posterior.")
         return date
 
     def clean_time(self):
