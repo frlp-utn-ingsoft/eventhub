@@ -14,6 +14,13 @@ from app.views.rating_views import create_rating
 def event_form(request, id=None):
     user = request.user
     event = None
+    
+    if request.method == "POST" and request.POST.get("id"):
+        try:
+            id = int(request.POST["id"])
+        except (ValueError, TypeError):
+            id = None
+    
     errors = []
 
     if not user.is_organizer:
