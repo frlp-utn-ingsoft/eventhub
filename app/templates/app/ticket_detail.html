@@ -15,6 +15,7 @@
             <p><strong>Tipo:</strong> {{ ticket.get_type_display }}</p>
             <p><strong>Cantidad:</strong> {{ ticket.quantity }}</p>
             <p><strong>Fecha de compra:</strong> {{ ticket.buy_date }}</p>
+            <p><strong>Total:</strong> ${{ ticket.price|floatformat:2 }}</p>
         </div>
         <div class="card-footer">
              

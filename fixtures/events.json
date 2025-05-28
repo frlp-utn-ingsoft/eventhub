@@ -10,7 +10,8 @@
       "organizer": 2,        
       "venue": 1,            
       "created_at": "2025-04-20T10:00:00Z",
-      "updated_at": "2025-04-20T10:00:00Z"
+      "updated_at": "2025-04-20T10:00:00Z",
+      "price": 1500
     }
   },
   {
@@ -24,7 +25,8 @@
       "organizer": 2,      
       "venue": 2,          
       "created_at": "2025-04-22T09:30:00Z",
-      "updated_at": "2025-04-22T09:30:00Z"
+      "updated_at": "2025-04-22T09:30:00Z",
+      "price": 1500
     }
   },
   {
@@ -38,7 +40,8 @@
       "organizer": 2,      
       "venue": 3,          
       "created_at": "2025-05-01T15:00:00Z",
-      "updated_at": "2025-05-01T15:00:00Z"
+      "updated_at": "2025-05-01T15:00:00Z",
+      "price": 1500
     }
   },
   {
@@ -52,7 +55,8 @@
       "organizer": 2,
       "venue": 4,
       "created_at": "2025-04-23T18:00:00Z",
-      "updated_at": "2025-04-23T18:00:00Z"
+      "updated_at": "2025-04-23T18:00:00Z",
+      "price": 1500
     }
   },
   {
@@ -66,7 +70,8 @@
       "organizer": 2,
       "venue": 5,
       "created_at": "2025-04-25T14:00:00Z",
-      "updated_at": "2025-04-25T14:00:00Z"
+      "updated_at": "2025-04-25T14:00:00Z",
+      "price": 1500
     }
   },
   {
@@ -80,7 +85,8 @@
       "organizer": 6,
       "venue": 1,
       "created_at": "2025-04-28T13:30:00Z",
-      "updated_at": "2025-04-28T13:30:00Z"
+      "updated_at": "2025-04-28T13:30:00Z",
+      "price": 1500
     }
   },
   {
@@ -94,7 +100,8 @@
       "organizer": 2,
       "venue": 2,
       "created_at": "2025-04-30T16:00:00Z",
-      "updated_at": "2025-04-30T16:00:00Z"
+      "updated_at": "2025-04-30T16:00:00Z",
+      "price": 1500
     }
   },
   {
@@ -108,7 +115,8 @@
       "organizer": 1,
       "venue": 3,
       "created_at": "2025-05-01T12:00:00Z",
-      "updated_at": "2025-05-01T12:00:00Z"
+      "updated_at": "2025-05-01T12:00:00Z",
+      "price": 1500
     }
   },
   {
@@ -122,7 +130,8 @@
       "organizer": 2,
       "venue": 4,
       "created_at": "2025-05-02T10:00:00Z",
-      "updated_at": "2025-05-02T10:00:00Z"
+      "updated_at": "2025-05-02T10:00:00Z",
+      "price": 1500
     }
   },
   {
@@ -136,7 +145,8 @@
       "organizer": 2,
       "venue": 5,
       "created_at": "2025-05-03T11:00:00Z",
-      "updated_at": "2025-05-03T11:00:00Z"
+      "updated_at": "2025-05-03T11:00:00Z",
+      "price": 1500
     }
   },
   {
@@ -150,7 +160,8 @@
       "organizer": 1,
       "venue": 1,
       "created_at": "2025-05-05T09:00:00Z",
-      "updated_at": "2025-05-05T09:00:00Z"
+      "updated_at": "2025-05-05T09:00:00Z",
+      "price": 1500
     }
   },
   {
@@ -164,7 +175,8 @@
       "organizer": 2,
       "venue": 2,
       "created_at": "2025-05-07T10:30:00Z",
-      "updated_at": "2025-05-07T10:30:00Z"
+      "updated_at": "2025-05-07T10:30:00Z",
+      "price": 1500
     }
   },
   {
@@ -178,7 +190,8 @@
       "organizer": 2,
       "venue": 3,
       "created_at": "2025-05-10T15:00:00Z",
-      "updated_at": "2025-05-10T15:00:00Z"
+      "updated_at": "2025-05-10T15:00:00Z",
+      "price": 1500
     }
   }
 ]

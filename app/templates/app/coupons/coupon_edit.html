@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2>Editar Cupón "{{ coupon.code }}"</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="discount_percentage" class="form-label">Porcentaje de descuento (%)</label>
+            <input type="number" name="discount_percentage" id="discount_percentage" class="form-control"
+                   value="{{ coupon.discount_percentage }}" min="1" max="99" step="1" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Actualizar</button>
+        <a href="{% url 'coupon_list' event.id %}" class="btn btn-secondary">Cancelar</a>
+    </form>
+</div>
+{% endblock %}

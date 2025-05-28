@@ -12,12 +12,21 @@ from django.db.models import Count
 import math
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView
 from django.urls import reverse_lazy
-from .models import Venue, VenueForm
+from .models import Venue, VenueForm, Coupon
 from .models import Event, Rating, Rating_Form, User, Comment
 from django.shortcuts import render
 from django.utils import timezone
 from .utils import countdown_timer
 import re
+from decimal import Decimal, InvalidOperation
+import random, string
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+import json
+from django.http import Http404
+
+def generate_coupon_code(length=8):
+    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
 def organizer_required(view_func):
     @wraps(view_func)
@@ -239,6 +248,19 @@ def my_events(request):
 @login_required
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
+    
+    #borrar después este bloque de try/except
+    try:
+        timer_countdown = countdown_timer(event.scheduled_at)
+        completed = timer_countdown.get("completed", True)
+    except Exception:
+        # En caso de error devolvemos un timer por defecto
+        timer_countdown = {
+            "completed": True,
+            "days": 0, "hours": 0, "minutes": 0, "seconds": 0
+        }
+        completed = True
+        
     comments = event.comments.all().order_by("-created_at") # type: ignore
     ratings = event.ratings.all().order_by("-fecha_creacion") # type: ignore
     cantidad_resenas = ratings.count()
@@ -269,8 +291,8 @@ def event_detail(request, id):
         tickets_sold = None
         demand_message = None
         
-    timer_countdown = countdown_timer(event.scheduled_at)
-    completed = timer_countdown["completed"]
+        timer_countdown = countdown_timer(event.scheduled_at)
+        completed = timer_countdown["completed"]
 
     return render(
         request, "app/event_detail.html", 
@@ -309,7 +331,6 @@ def event_delete(request, id):
 def event_form(request, id=None):
     user = request.user
 
-    # Obtener todos los venues disponibles
     venues = Venue.objects.all()
 
     if request.method == "POST":
@@ -317,23 +338,52 @@ def event_form(request, id=None):
         description = request.POST.get("description")
         date = request.POST.get("date")
         time = request.POST.get("time")
-        category_ids = request.POST.getlist('categories')  # Lista de IDs
-        venue_id = request.POST.get("venue")  # Obtener el venue seleccionado
+        category_ids = request.POST.getlist('categories')
+        venue_id = request.POST.get("venue") 
+        price_str = request.POST.get("price")
+        
+        try:
+            price = Decimal(price_str) if price_str else Decimal('0.00')
+        except InvalidOperation:
+            price = Decimal('0.00')
 
-        # Parsear fecha y hora
+        
         year, month, day = date.split("-")
         hour, minutes = time.split(":")
         scheduled_at = timezone.make_aware(
             timezone.datetime(int(year), int(month), int(day), int(hour), int(minutes))
         )
+        
+        new_coupon_percentage = request.POST.get("new_coupon_percentage")
+        existing_coupon_id = request.POST.get("existing_coupon")
 
-        # Crear o actualizar el evento
+        coupon_to_assign = None
+
+        if new_coupon_percentage:
+            try:
+                discount = Decimal(new_coupon_percentage)
+                if 0 < discount <= 100:
+                    coupon_to_assign = Coupon.objects.create(
+                        code=generate_coupon_code(),
+                        discount_percentage=discount,
+                        organizer=user
+                    )
+            except (InvalidOperation, ValueError):
+                pass  
+
+        elif existing_coupon_id:
+            try:
+                coupon_to_assign = Coupon.objects.get(id=existing_coupon_id, organizer=user)
+            except Coupon.DoesNotExist:
+                pass
+
+      
         if id is None:
-            # Crear evento
+         
             venue = get_object_or_404(Venue, pk=venue_id) if venue_id else Venue.objects.first()
             if venue is None:
                 raise ValueError("No se ha proporcionado un lugar de celebración y no se dispone de un lugar de celebración por defecto.")
-            success, event_or_errors = Event.new(title, description, scheduled_at, request.user, category_ids, venue)
+            success, event_or_errors = Event.new(title, description, scheduled_at, request.user, category_ids, venue, float(price))
             if not success:
                 errors = event_or_errors
                 
@@ -346,7 +396,10 @@ def event_form(request, id=None):
             if venue is None:
                 raise ValueError("No se ha proporcionado un lugar de celebración y no se dispone de un lugar de celebración por defecto.")
             event.venue = venue
+            event.price = price
+
             event.save()
+            
 
             Notification.notify_event_change(event, user)
 
@@ -377,17 +430,174 @@ def event_form(request, id=None):
         per_column = math.ceil(total / 3)
         categories_chunks = [categories[i:i + per_column] for i in range(0, total, per_column)]
     context = {
-        'event': event,
-        'categories': categories,
-        'categories_chunks': categories_chunks,
-        'event_categories_ids': event_categories_ids,
-        'user_is_organizer': user.is_organizer,
-        'venues': venues, 
-        'event_venue': event_venue, 
+    'event': event,
+    'categories': categories,
+    'categories_chunks': categories_chunks,
+    'event_categories_ids': event_categories_ids,
+    'user_is_organizer': user.is_organizer,
+    'venues': venues, 
+    'event_venue': event_venue,
+    'price': getattr(event, 'price', 0.0) if event else 0.0,
+
     }
 
     return render(request, 'app/event_form.html', context)
+########################################################################################
 
+
+@organizer_required
+@login_required
+def coupon_list(request, event_id):
+    try:
+        event = Event.objects.get(id=event_id)
+    except Event.DoesNotExist:
+        raise Http404("Evento no encontrado")
+
+    if event.organizer != request.user:
+        return render(request, 'app/access_denied.html', status=403)
+
+    coupons = event.coupons.all().order_by('-created_at')
+    active_coupons_count = coupons.filter(active=True).count()
+
+    context = {
+        'event': event,
+        'coupons': coupons,
+        'active_coupons_count': active_coupons_count,
+        'user_is_organizer': request.user.is_authenticated and request.user.is_organizer,
+    }
+    return render(request, "app/coupons/coupon_list.html", context)
+
+
+
+@organizer_required
+@login_required
+def coupon_form(request, event_id):
+    event = get_object_or_404(Event, id=event_id, organizer=request.user)
+
+    if request.method == "POST":
+        discount_str = request.POST.get("discount_percentage", "").strip()
+        expiration_str = request.POST.get("expiration_date", "").strip()
+
+        try:
+          
+            discount = int(discount_str)
+            if not 1 <= discount <= 100:
+                raise ValueError("El porcentaje debe estar entre 1 y 100.")
+
+         
+            if not expiration_str:
+                raise ValueError("La fecha de expiración es obligatoria.")
+
+            naive_expiration = datetime.strptime(expiration_str, "%Y-%m-%dT%H:%M")
+            expiration = timezone.make_aware(naive_expiration)
+            
+            now = timezone.now()
+
+            if expiration <= now:
+                raise ValueError("La fecha de expiración debe ser futura.")
+
+            # Crear el cupón
+            Coupon.objects.create(
+                event=event,
+                discount_percent=discount,
+                expiration_date=expiration,
+                organizer=request.user,
+            )
+
+            messages.success(request, f"Cupón creado correctamente con {discount}% de descuento.")
+            return redirect("coupon_list", event_id=event.id)
+
+        except ValueError as e:
+            messages.error(request, str(e))
+            return redirect("coupon_form", event_id=event.id) 
+        except Exception as e:
+            messages.error(request, f"Error al crear el cupón: {e}")
+            return redirect("coupon_form", event_id=event.id) 
+
+    return render(request, "app/coupons/coupon_form.html", {
+    "event": event,
+    "user_is_organizer": request.user.is_authenticated and request.user.is_organizer
+    })
+
+
+
+@login_required
+def coupon_edit(request, event_id, coupon_id):
+    event = get_object_or_404(Event, id=event_id, organizer=request.user)
+    coupon = get_object_or_404(Coupon, id=coupon_id, event=event)
+
+    if request.method == "POST":
+        discount_str = request.POST.get("discount_percentage", "").strip()
+        active_str = request.POST.get("active", "").strip()
+        
+        try:
+            
+            discount = int(discount_str)
+            if not 1 <= discount <= 100:
+                raise ValueError("El porcentaje debe estar entre 1 y 100.")
+            
+            
+            coupon.discount_percent = discount
+            
+            coupon.active = active_str == 'on' or active_str == '1' or active_str == 'true'
+            coupon.save()
+            
+            messages.success(request, "Cupón actualizado correctamente.")
+            return redirect("coupon_list", event_id=event.id)
+            
+        except ValueError as e:
+            messages.error(request, str(e))
+        except Exception as e:
+            messages.error(request, f"Error al actualizar: {e}")
+
+    return render(request, "app/coupons/coupon_edit.html", {"event": event, "coupon": coupon})
+
+
+@login_required
+def coupon_delete(request, event_id, coupon_id):
+    event = get_object_or_404(Event, id=event_id, organizer=request.user)
+    coupon = get_object_or_404(Coupon, id=coupon_id, event=event)
+
+    if request.method == "POST":
+        coupon_code = coupon.code 
+        coupon.delete()
+        messages.success(request, f"Cupón {coupon_code} eliminado correctamente.")
+        return redirect("coupon_list", event_id=event.id)
+
+    return render(request, "app/coupons/coupon_delete.html", {"event": event, "coupon": coupon})
+@csrf_exempt
+def validar_cupon(request):
+    if request.method == "POST":
+        try:
+            data = json.loads(request.body)
+            codigo = data.get("codigo", "").strip().upper()
+
+            now = timezone.now()
+            cupón = Coupon.objects.filter(
+                code=codigo,
+                active=True,
+                expiration_date__gte=now
+            ).first()
+
+            if cupón:
+                return JsonResponse({
+                    "valido": True,
+                    "descuento": float(cupón.discount_percent)
+                })
+            else:
+                return JsonResponse({
+                    "valido": False,
+                    "error": "Cupón inválido, expirado o no activo."
+                })
+
+        except Exception as e:
+            return JsonResponse({
+                "valido": False,
+                "error": "Error al procesar la solicitud."
+            }, status=400)
+
+    return JsonResponse({"error": "Método no permitido"}, status=405)
+##################################################################################
 @login_required
 def notifications(request):
     user = request.user
@@ -534,69 +744,76 @@ def comment_edit(request, comment_id):
         "next_url": next_url
     })
 
+
 @login_required
+
 def buy_ticket(request, event_id):
     event = get_object_or_404(Event, id=event_id)
-    
+    base_price = event.price
+    discount_amount = 0
+    total = 0
+    coupon_code = ''
+    coupon_error = None
+    applied_coupon = None
+
     if request.method == 'POST':
         form = TicketForm(request.POST)
+        coupon_code = request.POST.get('coupon_code', '').strip().upper()
+
         if form.is_valid():
-            card_number = form.cleaned_data.get('card_number', '').strip()
-            card_holder = form.cleaned_data.get('card_holder', '').strip()
-            expiration_date = form.cleaned_data.get('expiration_date', '').strip()  # formato esperado: MM/YY
-            cvc = form.cleaned_data.get('cvc', '').strip()
-            quantity = form.cleaned_data.get('quantity')
+            quantity = form.cleaned_data['quantity']
+            ticket_type = form.cleaned_data['type']
 
-            if quantity is None or quantity < 1:
-                form.add_error('quantity', 'Debes seleccionar al menos un ticket.')
+            total = base_price * quantity
 
-
-            if not re.fullmatch(r'\d{16}', card_number):
-                form.add_error('card_number', 'El número de tarjeta debe tener 16 dígitos numéricos.')
-
-           
-            if not card_holder:
-                form.add_error('card_holder', 'El nombre del titular no puede estar vacío.')
-
-          
-            if not re.fullmatch(r'(0[1-9]|1[0-2])\/\d{2}', expiration_date):
-                form.add_error('expiration_date', 'La fecha de expiración debe tener formato MM/AA.')
+            if total <= 0:
+                total = 0
             else:
-                try:
-                    month, year = expiration_date.split('/')
-                    exp_date = datetime.strptime(f'20{year}-{month}-01', '%Y-%m-%d')
-                    now = datetime.now()
-                    if exp_date < now.replace(day=1, hour=0, minute=0, second=0, microsecond=0):
-                        form.add_error('expiration_date', 'La tarjeta está vencida.')
-                except ValueError:
-                    form.add_error('expiration_date', 'Fecha de expiración inválida.')
+              
+                if ticket_type.lower() == 'vip':
+                    total *= Decimal("1.3")
+                if coupon_code:
+                    now = timezone.now()
+                    try:
+                        applied_coupon = Coupon.objects.get(
+                            code=coupon_code,
+                            event=event,
+                            active=True,
+                            expiration_date__gte=now
+                        )
+                        discount_amount = total * (Decimal(applied_coupon.discount_percent) / Decimal("100"))
 
-            
-            if not re.fullmatch(r'\d{3}', cvc):
-                form.add_error('cvc', 'El CVC debe tener 3 dígitos numéricos.')
+                        total -= discount_amount
+                    except Coupon.DoesNotExist:
+                        coupon_error = "Cupón inválido, expirado o no activo para este evento."
 
-            if form.errors:
-               
-                return render(request, 'app/buy_ticket.html', {
-                    'form': form,
-                    'event': event,
-                    "user_is_organizer": request.user.is_organizer
-                })
-            ticket = form.save(commit=False)
-            ticket.user = request.user
-            ticket.event = event
-            ticket.save()
-            messages.success(request, f'¡Ticket comprado con éxito! Tu código es: {ticket.ticket_code}')
-            return redirect('ticket_detail', ticket_id=ticket.id)
-        
+            if coupon_error:
+                messages.error(request, coupon_error)
+            else:
+                ticket = form.save(commit=False)
+                ticket.user = request.user
+                ticket.event = event
+                ticket.price = total
+                ticket.coupon_code = applied_coupon.code if applied_coupon else None  # si tienes este campo
+                ticket.save()
+                messages.success(request, f'¡Ticket comprado con éxito! Tu código es: {ticket.ticket_code}')
+                if applied_coupon:
+                    applied_coupon.active = False
+                    applied_coupon.save()
+                return redirect('ticket_detail', ticket_id=ticket.id)
     else:
         form = TicketForm()
-    
+
     return render(request, 'app/buy_ticket.html', {
         'form': form,
         'event': event,
-        "user_is_organizer": request.user.is_organizer
+        'total': total,
+        'discount_amount': discount_amount,
+        'coupon_code': coupon_code,
+        'coupon_error': coupon_error,
+        "user_is_organizer": request.user.is_organizer,
     })
+
 
 @login_required
 def ticket_detail(request, ticket_id):
@@ -621,10 +838,10 @@ def edit_ticket(request, ticket_id):
     time_difference = timezone.now() - ticket.buy_date
     if time_difference.total_seconds() > 1800:
         messages.error(request, 'Solo puedes editar el ticket dentro de los primeros 30 minutos después de la compra')
-        #return redirect('ticket_detail', ticket_id=ticket.id)
+        
     
     time_difference = timezone.now() - ticket.buy_date
-    can_edit = time_difference.total_seconds() <= 1800  # Si el ticket se compró en los últimos 30 minutos
+    can_edit = time_difference.total_seconds() <= 1800 
     
     if request.method == 'POST':
         form = TicketForm(request.POST, instance=ticket)

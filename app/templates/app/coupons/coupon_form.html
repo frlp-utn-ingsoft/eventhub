@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="mb-4">Crear Cupón para "{{ event.title }}"</h1>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert" id="alert-message">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="card shadow">
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {% csrf_token %}
+                        <div class="vstack gap-3">
+                            <div>
+                                <label for="discount_percentage" class="form-label">Porcentaje de Descuento *</label>
+                                <input type="number"
+                                       class="form-control"
+                                       id="discount_percentage"
+                                       name="discount_percentage"
+                                       min="1"
+                                       max="100"
+                                       step="1"
+                                       required
+                                       placeholder="Ejemplo: 15" />
+                                <div class="form-text">
+                                    Ingrese un número entre 1 y 100 (ejemplo: 15 para 15% de descuento)
+                                </div>
+                            </div>
+
+                            <div>
+                                <label for="expiration_date" class="form-label">Fecha de Expiración *</label>
+                                <input type="datetime-local"
+                                       class="form-control"
+                                       id="expiration_date"
+                                       name="expiration_date"
+                                       required />
+                                <div class="form-text">
+                                    Seleccione hasta cuándo estará válido este cupón
+                                </div>
+                            </div>
+
+                            
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Crear Cupón
+                                </button>
+                                <a href="{% url 'coupon_list' event.id %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left"></i> Volver
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <div class="card-footer bg-light">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle"></i> El código del cupón se generará automáticamente y estará activo inmediatamente.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<script>
+
+  const expirationDate = document.getElementById('expiration_date');
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  expirationDate.min = now.toISOString().slice(0, 16);
+
+  document.querySelector('form').addEventListener('submit', function (e) {
+    const discountInput = document.getElementById('discount_percentage');
+    const expirationInput = document.getElementById('expiration_date');
+    const discountValue = parseInt(discountInput.value);
+    const selectedDate = new Date(expirationInput.value);
+    const currentDate = new Date();
+
+    if (!discountInput.value || discountValue < 1 || discountValue > 100 || !Number.isInteger(discountValue)) {
+      e.preventDefault();
+      alert("Por favor ingresa un porcentaje válido (1–100).");
+      discountInput.focus();
+      return;
+    }
+
+    if (!expirationInput.value || selectedDate <= currentDate) {
+      e.preventDefault();
+      alert("La fecha de expiración debe ser futura.");
+      expirationInput.focus();
+      return;
+    }
+  });
+
+  
+  setTimeout(function () {
+    const alert = document.getElementById("alert-message");
+    if (alert) {
+      const bsAlert = bootstrap.Alert.getOrCreateInstance(alert);
+      bsAlert.close();
+    }
+  }, 4000);
+</script>
+{% endblock %}

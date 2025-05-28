@@ -22,7 +22,8 @@
                 <th>Título</th>
                 <th>Descripción</th>
                 <th>Fecha</th>
-                <th>Categorías</th> <!-- Nueva columna Añadida -->
+                <th>Categorías</th>
+                <th>Precio</th>
                 <th>Acciones</th>
             </tr>
         </thead>
@@ -39,6 +40,13 @@
                             {% endfor %}
                         {% else %}
                             <em>-</em>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if event.price %}
+                            ${{ event.price }}
+                        {% else %}
+                            Gratis
                         {% endif %}
                     </td>
                     <td>
