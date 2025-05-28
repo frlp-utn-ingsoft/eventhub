@@ -5,7 +5,7 @@ from django.test import TestCase
 from django.utils import timezone
 from playwright.sync_api import expect
 
-from app.models import Event, User
+from app.models import Event, User, Venue
 from app.test.test_e2e.base import BaseE2ETest
 
 
@@ -48,6 +48,15 @@ class EventBaseTest(BaseE2ETest):
             description="Descripción del evento 2",
             scheduled_at=event_date2,
             organizer=self.organizer,
+        )
+        
+        self.venue = Venue.objects.create(
+            user=self.organizer,
+            name="Sala de Eventos",
+            address="Calle Falsa 123",
+            city="Ciudad",
+            capacity=100,
+            contact="Contacto de prueba",
         )
 
     def _table_has_event_info(self):
@@ -259,6 +268,12 @@ class EventCRUDTest(EventBaseTest):
         expect(self.page.get_by_role("heading", name="Crear evento")).to_be_visible()
 
         # Completar el formulario
+        
+        # Elegimos una nueva fecha/hora basada en timezone.now()
+        future_dt = timezone.now() + datetime.timedelta(days=5, hours=4, minutes=15)
+        date_str = future_dt.date().isoformat()          # 'YYYY-MM-DD'
+        time_str = future_dt.time().strftime("%H:%M")    # 'HH:MM'
+        
         self.page.get_by_label("Título del Evento").fill("Evento de prueba E2E")
         # Esperar a que el campo descripción esté visible (único dentro del div)
         self.page.locator("#description_event >> textarea#description").wait_for(state="visible")
@@ -267,9 +282,11 @@ class EventCRUDTest(EventBaseTest):
         self.page.locator("#description_event >> textarea#description").fill(
             "Descripción creada desde prueba E2E"
         )
-        self.page.get_by_label("Fecha").fill("2025-06-15")
+        self.page.get_by_label("Fecha").fill(date_str)
 
-        self.page.get_by_label("Hora").fill("16:45")
+        self.page.get_by_label("Hora").fill(time_str)
+        
+        self.page.select_option("#venue_id", str(self.venue.id))
 
         # Enviar el formulario
         self.page.get_by_role("button", name="Crear Evento").click()
@@ -294,7 +311,65 @@ class EventCRUDTest(EventBaseTest):
         row = self.page.locator("table tbody tr").last
         expect(row.locator("td").nth(0)).to_have_text("Evento de prueba E2E")
         expect(row.locator("td").nth(1)).to_have_text("Descripción creada desde prueba E2E")
-        expect(row.locator("td").nth(2)).to_have_text("15 jun 2025, 16:45")
+        # Verificar que la celda muestra la hora correcta
+        expect(row.locator("td").nth(2)).to_contain_text(time_str)
+
+        # Verificar que incluye día y año 
+        cell_text = row.locator("td").nth(2).text_content()
+        assert str(future_dt.day) in cell_text
+        assert str(future_dt.year) in cell_text
+
+    def test_visibility_countdown_event(self):
+        """Test que verifica que el countdown del detalle de evento es visible para el usuario regular y no para el usuario organizador"""
+
+        event3 = Event.objects.create(
+            title="Evento de prueba 3",
+            description="Descripción del evento 3 con fecha futura",
+            scheduled_at=timezone.now() + datetime.timedelta(days=3, hours=3, minutes=30),
+            organizer=self.organizer,
+        )
+
+        # Iniciar sesión como usuario organizador
+        self.login_user("organizador", "password123")
+
+        # Ir a la página de detalle del evento 3
+        self.page.goto(f"{self.live_server_url}/events/{event3.id}")
+
+        # Seleccionar el div del countdown
+        countdown = self.page.locator("#div-countdown")
+
+        # Verificar que countdown no es visible para el organizador
+        expect(countdown, "El Contdown no debe ser visible para el organizador").to_have_count(0)
+
+        # Cerrar sesión
+        self.logout_user()
+
+        # Iniciar sesión como usuario normal
+        self.login_user("usuario", "password123")
+        self.page.goto(f"{self.live_server_url}/events/{event3.id}")
+        countdown = self.page.locator("#div-countdown")
+        # Verificar que countdown es visible para el usuario normal
+        expect(countdown, "El Contdown debe ser visible para el usuario normal").to_have_count(1)
+
+    def test_countdown_event(self):
+        """Test que verifica que el countdown del detalle de evento calcula bien el tiempo restante"""
+
+        scheduled_at= timezone.now() + datetime.timedelta(days=1)
+
+        event3 = Event.objects.create(
+            title="Evento de prueba 3",
+            description="Descripción del evento 3, comienza en 1 dia",
+            scheduled_at=scheduled_at,
+            organizer=self.organizer,
+        )
+
+        # Iniciar sesión como usuario normal
+        self.login_user("usuario", "password123")
+        self.page.goto(f"{self.live_server_url}/events/{event3.id}")
+
+        h4_countdown = self.page.locator("h4#countdown")
+        # formato `${days}d ${hours}h ${minutes}m ${seconds}s`
+        expect(h4_countdown).to_have_text(re.compile(r"^0d 23h 59m"))
 
     def test_edit_event_organizer(self):
         """Test que verifica la funcionalidad de editar un evento para organizadores"""
@@ -330,17 +405,24 @@ class EventCRUDTest(EventBaseTest):
         self.page.locator("#description_event >> textarea#description").wait_for(state="visible")
 
         # Llenar el campo
+        # Elegimos una nueva fecha/hora basada en timezone.now()
+        future_dt = timezone.now() + datetime.timedelta(days=5, hours=4, minutes=15)
+        date_str = future_dt.date().isoformat()          # 'YYYY-MM-DD'
+        time_str = future_dt.time().strftime("%H:%M")    # 'HH:MM'
+        
         description = self.page.locator("#description_event >> textarea#description")
         expect(description).to_have_value("Descripción del evento 1")
         description.fill("Descripción Editada")
 
         date = self.page.get_by_label("Fecha")
         expect(date).to_have_value("2025-02-10")
-        date.fill("2025-04-20")
+        date.fill(date_str)
 
         time = self.page.get_by_label("Hora")
         expect(time).to_have_value("10:10")
-        time.fill("03:00")
+        time.fill(time_str)
+        
+        self.page.select_option("#venue_id", str(self.venue.id))
 
         # Enviar el formulario
         self.page.get_by_role("button", name="Guardar").click()
@@ -361,7 +443,14 @@ class EventCRUDTest(EventBaseTest):
         row = self.page.locator("table tbody tr").last
         expect(row.locator("td").nth(0)).to_have_text("Titulo editado")
         expect(row.locator("td").nth(1)).to_have_text("Descripción Editada")
-        expect(row.locator("td").nth(2)).to_have_text("20 abr 2025, 03:00")
+        
+        # Verificar que la celda muestra la hora correcta
+        expect(row.locator("td").nth(2)).to_contain_text(time_str)
+
+        # Verificar que incluye día y año (por ej. "15" y "2025")
+        cell_text = row.locator("td").nth(2).text_content()
+        assert str(future_dt.day) in cell_text
+        assert str(future_dt.year) in cell_text
 
     def test_delete_event_organizer(self):
         """Test que verifica la funcionalidad de eliminar un evento para organizadores"""
@@ -528,3 +617,114 @@ class EventStatusTest(EventBaseTest):
         event_state = self.page.locator("#event-status-display")
         event_state.wait_for(state="visible")
         expect(event_state).to_have_text("Finalizado")
+        
+class EventFavoritesTest(EventBaseTest):
+    """Tests relacionados con la funcionalidad de favoritos en eventos"""
+
+    def test_favorite_event_as_regular_user(self):
+        """Test que verifica que un usuario regular puede marcar un evento como favorito"""
+        # Iniciar sesión como usuario regular
+        self.login_user("usuario", "password123")
+
+        # Ir a la página de eventos
+        self.page.goto(f"{self.live_server_url}/events/")
+
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
+
+        # Hacer clic en el botón de detalle del evento
+        self.page.get_by_role("link", name="Ver Detalle").first.click()
+
+        # Verificar que estamos en la página de detalle del evento
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/{self.event1.id}/") # type: ignore
+
+        # Marcar el evento como favorito
+        favorite_button = self.page.locator("#favorite-event-button")
+        favorite_button.wait_for(state="visible")
+        favorite_button.click()
+
+        # Verificar que el botón ahora indica que es un favorito
+        expect(favorite_button).to_have_text("Quitar de Favoritos")
+
+    def test_unfavorite_event_as_regular_user(self):
+        """Test que verifica que un usuario regular puede quitar un evento de favoritos"""
+        # Iniciar sesión como usuario regular
+        self.login_user("usuario", "password123")
+
+        # Ir a la página de eventos
+        self.page.goto(f"{self.live_server_url}/events/")
+
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
+
+        # Hacer clic en el botón de detalle del evento
+        self.page.get_by_role("link", name="Ver Detalle").first.click()
+
+        # Verificar que estamos en la página de detalle del evento
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/{self.event1.id}/")
+
+        # Marcar el evento como favorito primero
+        favorite_button = self.page.locator("#favorite-event-button")
+        favorite_button.wait_for(state="visible")
+        favorite_button.click()
+
+        # Ahora quitarlo de favoritos
+        favorite_button.click()
+
+        # Verificar que el botón ahora indica que no es un favorito
+        expect(favorite_button).to_have_text("Agregar a Favoritos")
+        
+    def test_my_favorites_button(self):
+        """Test que verifica que el evento se agrega a "Mis Favoritos" y se puede quitar de favoritos"""
+         # Iniciar sesión como usuario regular
+        self.login_user("usuario", "password123")
+
+        # Ir a la página de eventos
+        self.page.goto(f"{self.live_server_url}/events/")
+
+        # Click en el dropdown "Filtros"
+        self.page.get_by_role("button", name="Filtros").click()
+
+        checkbox = self.page.locator("#past_events")
+        if not checkbox.is_checked():
+            checkbox.click()
+
+        # Click en el botón "Aplicar filtros" dentro del dropdown
+        self.page.locator("#apply_filters").click()
+
+        # Hacer clic en el botón de detalle del evento
+        self.page.get_by_role("link", name="Ver Detalle").first.click()
+
+        # Verificar que estamos en la página de detalle del evento
+        expect(self.page).to_have_url(f"{self.live_server_url}/events/{self.event1.id}/")
+
+        # Marcar el evento como favorito primero
+        favorite_button = self.page.locator("#favorite-event-button")
+        favorite_button.wait_for(state="visible")
+        favorite_button.click()
+
+        # Ahora quitarlo de favoritos
+        favorite_button.click()
+        
+        # Verificar que el botón de "Mis Favoritos" redirige correctamente
+        my_favorites_button = self.page.get_by_role("link", name="Mis Favoritos")
+        expect(my_favorites_button).to_be_visible()
+        my_favorites_button.click()
+        
+        # Verificar que redirigió a la página de favoritos
+        expect(self.page).to_have_url(f"{self.live_server_url}/favorite-events/")
+        

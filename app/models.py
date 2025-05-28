@@ -1,8 +1,9 @@
+from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Sum
 from django.utils.crypto import get_random_string
-
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -10,7 +11,13 @@ class User(AbstractUser):
         "Event",
         related_name="favorited_by",
         blank=True,
-    )  # Un usuario puede tener múltiples eventos favoritos. Un evento puede ser marcado como favorito por múltiples usuarios
+    )
+
+    def add_favorite_event(self, event):
+        """Agrega un evento a favoritos solo si su estado es válido."""
+        if event.status.lower() in ['canceled', 'finished', 'soldout']:
+            raise ValidationError("No se puede agregar un evento cancelado, finalizado o agotado a favoritos.")
+        self.favorite_events.add(event)
 
     @classmethod
     def validate_new_user(cls, email, username, password, password_confirm):
@@ -170,13 +177,25 @@ class Event(models.Model):
         return self.title
 
     @classmethod
-    def validate(cls, title, categories, venue, description, scheduled_at):
+    def validate(cls, title, categories, venue, description, scheduled_at, status=None):
         errors = {}
-        if title == "":
+        if title is None or title.strip() == "":
             errors["title"] = "Por favor ingrese un titulo"
 
-        if description == "":
+        if description is None or description.strip() == "":
             errors["description"] = "Por favor ingrese una descripcion"
+            
+        if scheduled_at is None:
+            errors["scheduled_at"] = "La fecha y hora programadas son requeridas"
+        
+        if scheduled_at and scheduled_at < timezone.now():
+            errors["scheduled_at"] = "La fecha y hora programadas deben ser en el futuro"
+            
+        if venue is None:
+            errors["venue"] = "El lugar del evento es requerido"
+            
+        if status is not None and status not in dict(cls.STATUS_CHOICES):
+            errors["status"] = "El estado del evento no es válido"
 
         return errors
 
@@ -197,7 +216,9 @@ class Event(models.Model):
         return True, None
 
     def update(self, title, categories, venue, description, scheduled_at, organizer, status=None):
-        if hasattr(self, "status") and self.status == "canceled":
+        errors = Event.validate(title, categories, venue, description, scheduled_at)
+        
+        if hasattr(self, "status") and self.status == "canceled" or self.status == "finished":
             # Si el evento está cancelado, no se puede editar
             raise ValueError("No se puede editar un evento cancelado.")
         self.title = title or self.title
@@ -209,10 +230,11 @@ class Event(models.Model):
             self.status = status
         if categories is not None:
             if isinstance(categories, models.Manager):
-                raise ValueError("Error updating event.categories")
+                return "Error updating event.categories", errors
             self.save()
             self.categories.set(categories)
         self.save()
+        return True, None
 
 
 class Refund(models.Model):
@@ -231,6 +253,29 @@ class Refund(models.Model):
 
     def __str__(self):
         return self.ticket_code
+    
+    def validate(self):
+        errors = {}
+        # Reason no vacío
+        if not self.reason or not self.reason.strip():
+            errors["reason"] = "El motivo del reembolso es obligatorio."
+        # Sólo una solicitud activa (approved is None) por usuario
+        exists_active = Refund.objects.filter(
+            user=self.user,
+            approved__isnull=True
+        ).exclude(pk=self.pk).exists()
+        if exists_active:
+            errors["__all__"] = "Ya tienes una solicitud de reembolso en curso."
+
+        return errors
+    
+    def get_status_display(self):
+        if self.approved is None:
+            return "Pendiente"
+        elif self.approved is True:
+            return "Aprobado"
+        else:
+            return "Rechazado"
 
 
 class Comment(models.Model):
