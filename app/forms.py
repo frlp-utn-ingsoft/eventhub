@@ -1,9 +1,11 @@
 
 from datetime import datetime
+from django.utils import timezone
 from django import forms
 from .models import Event, Notification, RefundRequest, Ticket, User, Venue,Rating,Comment, Category, SurveyResponse
 import re
 from django.db.models import Sum
+
 
 
 class NotificationForm(forms.ModelForm):
@@ -215,7 +217,7 @@ class TicketForm(forms.ModelForm):
                 raise forms.ValidationError("El mes debe ser un valor entre 01 y 12.")
             
             # Verificar si la tarjeta está caducada
-            current_year = datetime.now().year % 100  # Año actual en formato AA
+            current_year = datetime.now().year % 100  # type: ignore # Año actual en formato AA
             current_month = datetime.now().month
             if year < current_year or (year == current_year and month < current_month):
                 raise forms.ValidationError("La tarjeta está caducada.")
@@ -311,19 +313,19 @@ class EventForm(forms.ModelForm):
         max_length=200
     )
 
-    # Definir los campos de la fecha y hora con los widgets correspondientes
+    
     date = forms.DateField( label='Fecha', widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}))
     time = forms.TimeField( label='Hora', widget=forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}))
 
     # Campo de categorías (modelo de relación de varios a varios)
     categories = forms.ModelMultipleChoiceField(
-        queryset=Category.objects.all(),  # Establece el queryset directamente aquí
+        queryset=Category.objects.all(),  
         widget=forms.CheckboxSelectMultiple, 
         required=True,
         label='Categorías'
     )
 
-    venue = VenueChoiceField(  # Use the custom field here
+    venue = VenueChoiceField(  
         queryset=Venue.objects.all(),
         widget=forms.Select(attrs={'class': 'form-control'}),
         required=True,
@@ -334,7 +336,7 @@ class EventForm(forms.ModelForm):
 
     class Meta:
         model = Event
-        fields = ['title', 'description', 'date', 'time', 'categories', 'venue']  # Añadí 'date' y 'time' al form
+        fields = ['title', 'description', 'date', 'time', 'categories', 'venue']  
         labels = {
             'title': 'Título del Evento',
             'description': 'Descripción',
@@ -347,6 +349,11 @@ class EventForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        # Si el formulario está ligado a una instancia existente, precarga los campos de fecha y hora.
+        if self.instance and self.instance.scheduled_at:
+            self.initial['date'] = self.instance.scheduled_at.date()
+            self.initial['time'] = self.instance.scheduled_at.time()
+
         # Asignación de clases a los campos para estilizar
         self.fields['title'].widget.attrs.update({'class': 'form-control'})
         self.fields['description'].widget.attrs.update({'class': 'form-control', 'rows': 4})
@@ -354,8 +361,41 @@ class EventForm(forms.ModelForm):
         self.fields['date'].widget.attrs.update({'class': 'form-control'})
         self.fields['time'].widget.attrs.update({'class': 'form-control'})
         
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        date = cleaned_data.get('date')
+        time = cleaned_data.get('time')
 
-    # Agregar validaciones personalizadas
+        # Combina fecha y hora en un solo objeto datetime para el campo 'scheduled_at' del modelo
+        if date and time:
+            
+            combined_datetime = timezone.make_aware(datetime.combine(date, time))
+            cleaned_data['scheduled_at'] = combined_datetime
+        
+        if date:
+            today_date = timezone.localdate() 
+            if date < today_date:
+                self.add_error('date', "La fecha del evento debe ser hoy o posterior.")
+        
+        return cleaned_data
+
+
+    def save(self, commit=True):
+        instance = super().save(commit=False) 
+
+        # Asigna el valor de scheduled_at que se combinó en el método clean()
+        if 'scheduled_at' in self.cleaned_data:
+            instance.scheduled_at = self.cleaned_data['scheduled_at']
+        
+        if commit:
+            instance.save()
+            # Guarda la relación ManyToMany (categorías) después de que la instancia principal se ha guardado
+            if 'categories' in self.cleaned_data:
+                instance.categories.set(self.cleaned_data['categories'])
+        return instance
+
+    
     def clean_title(self):
         title = self.cleaned_data.get('title')
         if not title:
