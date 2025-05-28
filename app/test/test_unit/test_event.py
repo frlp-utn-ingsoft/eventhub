@@ -128,6 +128,8 @@ class EventModelTest(TestCase):
         self.assertEqual(updated_event.title, original_title)
         self.assertEqual(updated_event.description, new_description)
         self.assertEqual(updated_event.scheduled_at, original_scheduled_at)
+        self.assertEqual(updated_event.venue, self.venue)
+    
     
     def test_notification_created_on_event_update(self):
         """Test que verifica si se notifica a los usuarios con ticket del evento cuando cambia la fecha o el lugar"""
@@ -155,3 +157,4 @@ class EventModelTest(TestCase):
         # Verificar que la notificación esté en cada usuario con ticket
         for usuario in usuarios:
             self.assertIn(notification, usuario.notifications.all())
+        
