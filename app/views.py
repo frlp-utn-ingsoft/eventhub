@@ -85,7 +85,8 @@ def event_detail(request, id):
         'comments': comments,
         'user_is_organizer': user_is_organizer,
         'demand_status': event.demand_status,
-        'tickets_sold': event.tickets_sold
+        'tickets_sold': event.tickets_sold,
+        'tickets_available': event.tickets_available
     }
     return render(request, 'app/event_detail.html', context)
 
@@ -122,6 +123,7 @@ def event_form(request, id=None):
         categories = Category.objects.filter(id__in=category_ids)
         price_general = request.POST.get("price_general")
         price_vip = request.POST.get("price_vip")
+        tickets_available = request.POST.get("tickets_available")
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
@@ -145,6 +147,7 @@ def event_form(request, id=None):
                 event.price_vip = float(str(price_vip).replace(',', '.'))
             
             event.categories.set(categories)
+            event.tickets_available = int(tickets_available)
             event.save()
         return redirect('events')
 

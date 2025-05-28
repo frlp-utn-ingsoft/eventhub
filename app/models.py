@@ -157,6 +157,7 @@ class Event(models.Model):
     categories = models.ManyToManyField(Category, through='EventCategory')
     price_general = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
     price_vip = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
+    tickets_available = models.PositiveIntegerField(default=0)
     tickets_sold = models.PositiveIntegerField(default=0)
 
     def __str__(self):
