@@ -42,18 +42,46 @@
                             </label>
                             <div class="row">
                                 <div class="col-md-12">
-                                    {% for value, label in "1,Muy insatisfecho|2,Insatisfecho|3,Neutro|4,Satisfecho|5,Muy satisfecho"|split:"|" %}
-                                        {% with parts=label|split:"," %}
-                                        <div class="form-check form-check-inline">
-                                            <input class="form-check-input" type="radio" name="overall_satisfaction" 
-                                                   id="satisfaction{{ parts.0 }}" value="{{ parts.0 }}"
-                                                   {% if data.overall_satisfaction == parts.0 %}checked{% endif %}>
-                                            <label class="form-check-label" for="satisfaction{{ parts.0 }}">
-                                                {{ parts.0 }} - {{ parts.1 }}
-                                            </label>
-                                        </div>
-                                        {% endwith %}
-                                    {% endfor %}
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="overall_satisfaction" 
+                                               id="satisfaction1" value="1"
+                                               {% if data.overall_satisfaction == "1" %}checked{% endif %}>
+                                        <label class="form-check-label" for="satisfaction1">
+                                            1 - Muy insatisfecho
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="overall_satisfaction" 
+                                               id="satisfaction2" value="2"
+                                               {% if data.overall_satisfaction == "2" %}checked{% endif %}>
+                                        <label class="form-check-label" for="satisfaction2">
+                                            2 - Insatisfecho
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="overall_satisfaction" 
+                                               id="satisfaction3" value="3"
+                                               {% if data.overall_satisfaction == "3" %}checked{% endif %}>
+                                        <label class="form-check-label" for="satisfaction3">
+                                            3 - Neutro
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="overall_satisfaction" 
+                                               id="satisfaction4" value="4"
+                                               {% if data.overall_satisfaction == "4" %}checked{% endif %}>
+                                        <label class="form-check-label" for="satisfaction4">
+                                            4 - Satisfecho
+                                        </label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" name="overall_satisfaction" 
+                                               id="satisfaction5" value="5"
+                                               {% if data.overall_satisfaction == "5" %}checked{% endif %}>
+                                        <label class="form-check-label" for="satisfaction5">
+                                            5 - Muy satisfecho
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                         </div>

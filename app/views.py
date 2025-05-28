@@ -905,10 +905,9 @@ def venues(request):
 def venue_delete(request, id):
     if request.user.is_organizer:     
         venue = get_object_or_404(Venue, pk=id)
-
         venue.delete()
 
-        return redirect("venues")
+    return redirect("venues")
 
 @login_required
 def venue_edit(request, id):
