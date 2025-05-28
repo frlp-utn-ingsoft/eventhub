@@ -79,7 +79,7 @@ class NotificationModelTest(TestCase):
 
     def test_notification_created_by_event_change(self):
         expectedTitle = "Evento Modificado"
-        expectedMessage = "El evento ha sido modificado. Revisa el detalle del evento para mantenerte actualizado " + "<a href=/events/" + str(self.event_mocked.id) + ">aqui</a>"
+        expectedMessage = "El evento ha sido modificado. Revisa el detalle del evento para mantenerte actualizado."
         expectedPriority = "LOW"
 
         notification = Notification.notify_event_change(self.event_mocked, self.mocked_organizer)
