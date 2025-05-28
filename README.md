@@ -25,6 +25,10 @@ Aplicaci√≥n web para venta de entradas utilizada en la cursada 2025 de Ingenier√
 ```
 pip install -r requirements.txt
 ```
+## Instalar Playwright
+```
+playwright install
+```
 
 ## Iniciar la Base de Datos
 
@@ -54,6 +58,10 @@ python manage.py runserver
 #### Todos los tests
 ```
 python manage.py test app.test
+```
+#### Una clase de test
+```
+python manage.py test app.test.nombre.ClaseTest
 ```
 #### Tests unitarios
 ```
