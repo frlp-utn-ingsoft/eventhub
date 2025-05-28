@@ -19,6 +19,12 @@ class EventDetailTest(BaseE2ETest):
         self.not_organizer = User.objects.create_user(
             username="not_organizer",
             password="password123",
+            is_organizer=True
+        )
+
+        self.regular= User.objects.create_user(
+            username="regular",
+            password="password123",
             is_organizer=False
         )
 
@@ -38,14 +44,25 @@ class EventDetailTest(BaseE2ETest):
 
     def test_organizer_sees_tickest_info_and_demand(self):
         self.login_user("organizer","password123")
+        self.page.goto(f"{self.live_server_url}/my_events/")
+        self.page.get_by_role("link", name="Ver detalle").first.click()
         self.page.goto(f"{self.live_server_url}/events/{self.event_mocked.pk}/")
         expect(self.page.get_by_text("Entradas vendidas:")).to_be_visible()
         expect(self.page.get_by_text("Demanda:")).to_be_visible()
 
     def test_not_organizer_does_not_see_tickest_info_and_demand(self):
         self.login_user("not_organizer","password123")
+        self.page.goto(f"{self.live_server_url}/events/")
+        self.page.get_by_role("link", name="Ver detalle").first.click()
         self.page.goto(f"{self.live_server_url}/events/{self.event_mocked.pk}/")
+        expect(self.page.get_by_text("Entradas vendidas:")).not_to_be_visible()
+        expect(self.page.get_by_text("Demanda:")).not_to_be_visible()
 
+    def test_regular_user_does_not_see_tickest_info_and_demand(self):
+        self.login_user("regular","password123")
+        self.page.goto(f"{self.live_server_url}/events/")
+        self.page.get_by_role("link", name="Ver detalle").first.click()
+        self.page.goto(f"{self.live_server_url}/events/{self.event_mocked.pk}/")
         expect(self.page.get_by_text("Entradas vendidas:")).not_to_be_visible()
         expect(self.page.get_by_text("Demanda:")).not_to_be_visible()
 

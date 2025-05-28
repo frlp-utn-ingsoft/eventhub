@@ -392,6 +392,11 @@ class RefoundRequest(models.Model):
 
     @classmethod
     def new(cls, ticket_code, reason, details, user):
+        errors = RefoundRequest.validate(ticket_code, reason, details)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+
         refound= cls.objects.create(
             ticket_code= ticket_code,
             reason=reason,
@@ -399,5 +404,37 @@ class RefoundRequest(models.Model):
             user_id=user
         )
 
-        return refound
+        return refound, None
+    
+    def update(self, ticket_code, reason, details):
+        errors = RefoundRequest.validate(ticket_code, reason, details)
+
+        if len(errors.keys()) > 0:
+            return False, errors
+        
+        self.ticket_code = ticket_code or self.ticket_code
+        self.reason = reason or self.reason
+        self.details = details or self.details
+        self.save()
+
+        return True, None
+    
+    @classmethod
+    def validate(cls, ticket_code, reason, details):
+        errors = {}
+
+        if ticket_code == "":
+            errors["ticket_code"] = "Por favor ingrese un código válido"
+        if not ticket_code.strip():
+            errors["ticket_code"] = "Por favor ingrese un título válido"  
+        if len(ticket_code)>50:
+            errors["ticket_code"] = "El código no debe exceder los 50 caracteres"    
+
+        if not reason:
+            errors["reason"] = "Por favor selecciona un motivo válido."         
+
+        if details and len(details)>255:
+            errors["details"] = "El motivo no debe exceder los 255 caracteres"  
+
+        return errors
 
