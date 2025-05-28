@@ -211,9 +211,9 @@ class Event(models.Model):
     def update(self, title, categories, venue, description, scheduled_at, organizer, status=None):
         errors = Event.validate(title, categories, venue, description, scheduled_at)
         
-        if hasattr(self, "status") and self.status == "canceled":
+        if hasattr(self, "status") and self.status == "canceled" or self.status == "finished":
             # Si el evento está cancelado, no se puede editar
-            return "No se puede editar un evento cancelado.", errors
+            raise ValueError("No se puede editar un evento cancelado.")
         self.title = title or self.title
         self.description = description or self.description
         self.venue = venue or self.venue

@@ -244,3 +244,27 @@ class EventModelTest(TestCase):
         # El evento 5 fue creado por otro usuario, por lo que no debe aparecer en los eventos filtrados
         event5 = any(event.title == "Evento 5" for event in filtered_events)
         self.assertEqual(event5, False)
+
+    def test_event_status_cancel_invalid_edit(self):
+        """Test que verifica que no se puede editar un evento cancelado"""
+        event = Event.objects.create(
+            title="Evento de prueba",
+            description="Descripción del evento de prueba",
+            scheduled_at=timezone.now() + datetime.timedelta(days=1),
+            organizer=self.organizer,
+            status="canceled",
+        )
+        
+        
+
+        with self.assertRaises(ValueError) as context:
+            event.update(
+                title="Nuevo título",
+                description="Nueva descripción",
+                scheduled_at=timezone.now() + datetime.timedelta(days=2),
+                organizer=self.organizer,
+                categories=[],
+                venue=self.venue,
+            )
+        
+        self.assertEqual(str(context.exception), "No se puede editar un evento cancelado.")
