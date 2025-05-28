@@ -163,12 +163,27 @@ class Category(models.Model):
 
 
 class Event(models.Model):
+    # Constants
+    ACTIVE = 'ACTIVE'
+    CANCELED = 'CANCELED'
+    REPROGRAMED = 'REPROGRAMED'
+    SOLD_OUT = 'SOLD_OUT'
+    FINISHED = 'FINISHED'
+    EVENT_STATES = [
+        (ACTIVE, 'ACTIVO'),
+        (CANCELED, 'CANCELADO'),
+        (REPROGRAMED, 'REPROGRAMADO'),
+        (SOLD_OUT, 'AGOTADO'),
+        (FINISHED, 'FINALIZADO')
+    ]
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    state = models.CharField(choices=EVENT_STATES, max_length=25, default="ACTIVE")
+
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
     favorited_by = models.ManyToManyField(User, related_name="favorite_events", blank=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="events", null=True, blank=True)
@@ -219,7 +234,11 @@ class Event(models.Model):
 
         return True, event
 
-    def update(self, title=None, description=None, scheduled_at=None, organizer=None, venue=None, category=None):
+    def update(self, title=None, description=None, scheduled_at=None, organizer=None, venue=None, categories=None):
+        #VERIFICO SI LA FECHA FUE CAMBIADA
+        if scheduled_at and scheduled_at != self.scheduled_at:
+            self.state = self.REPROGRAMED
+
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
@@ -238,6 +257,18 @@ class Event(models.Model):
             aux = aux + t.quantity
 
         return self.venue.capacity - aux
+    
+    def auto_update_state(self):
+        # ESTADO FINALIZADO SI LA FECHA YA PASO
+        if self.scheduled_at < timezone.now():
+            self.state = self.FINISHED
+            self.save()
+            return
+        # ESTADO AGOTADO SI NO HAY MAS TICKETS DISPONIBLES
+        if self.available_tickets() <= 0:
+            self.state = self.SOLD_OUT
+            self.save()
+            return
 
     def get_average_rating(self):
         ratings = self.ratings.all()

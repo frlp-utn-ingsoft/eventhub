@@ -21,6 +21,7 @@ urlpatterns = [
     path("events/<int:event_id>/", views.event_detail, name="event_detail"),
     path("events/<int:event_id>/delete/", views.event_delete, name="event_delete"),
     path("events/<int:event_id>/toggle-favorite/", views.toggle_favorite, name="toggle_favorite"),
+    path("events/<int:event_id>/cancel/", views.event_canceled, name="event_canceled"),
     path("events/<int:event_id>/ratings/create/", views.create_rating, name="create_rating"),
     path("ratings/<int:rating_id>/edit/", views.edit_rating, name="edit_rating"),
     path("ratings/<int:rating_id>/delete/", views.delete_rating, name="delete_rating"),

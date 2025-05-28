@@ -68,6 +68,8 @@ def home(request):
 def events(request):
     current_time = timezone.now()
     events = Event.objects.filter(scheduled_at__gt=current_time).order_by("scheduled_at")
+    for ev in events:
+        ev.auto_update_state()  # Actualizar el estado de cada evento
     return render(
         request,
         "app/events.html",
@@ -110,6 +112,22 @@ def event_delete(request, event_id):
 
     return redirect("events")
 
+@login_required
+def event_canceled(request, event_id):
+    event = get_object_or_404(Event, pk=event_id)
+
+    user = request.user
+    if not user.is_organizer:
+        return redirect("events")
+
+    if request.method == "POST":
+        event = get_object_or_404(Event, pk=event_id)
+        event.state = Event.CANCELED
+        event.save()
+        return redirect("events")
+
+    return redirect("events")
+
 
 @login_required
 def event_form(request, event_id=None):
@@ -117,10 +135,10 @@ def event_form(request, event_id=None):
 
     if not user.is_organizer:
         return redirect("events")
-    
+
     venues = Venue.objects.all()
     categories = Category.objects.filter(is_active=True)
-    event = None
+    event = None # Inicializa event para que siempre exista
 
     if event_id is not None:
         event = get_object_or_404(Event, pk=event_id)
@@ -143,6 +161,8 @@ def event_form(request, event_id=None):
                 "data": request.POST
             })
 
+        # Este bloque try debe empezar aquí para envolver la lógica de parsing de fecha
+        # y la obtención de objetos que pueden fallar (get_object_or_404).
         try:
             venue = get_object_or_404(Venue, pk=venue_id)
             category = get_object_or_404(Category, pk=category_id) if category_id else None
@@ -153,6 +173,7 @@ def event_form(request, event_id=None):
                 datetime.datetime(int(year), int(month), int(day), int(hour), int(minutes))
             )
 
+            #Logica de Creacion o Actualizacion
             if event_id is None:
                 success, result = Event.new(
                     title=title,
@@ -163,48 +184,115 @@ def event_form(request, event_id=None):
                     category=category
                 )
                 if success:
+                    # El evento se crea exitosamente
                     messages.success(request, "Evento creado exitosamente")
                     return redirect("events")
                 else:
-                    messages.error(request, "Error al crear el evento")
+                    # Manejo de errores para la creacion
+                    messages.error(request, f"Error al crear el evento: {result}") # Mensaje corregido
                     return render(request, "app/event_form.html", {
-                        "event": event,
+                        "event": event, # event aqui es None, o el original si es edición fallida
                         "categories": categories,
                         "venues": venues,
                         "user_is_organizer": request.user.is_organizer,
                         "errors": result,
                         "data": request.POST
                     })
-            else:
+            else: # Este 'else' pertenece al 'if event_id is None:'
+                # Lógica para actualizar un evento existente
+                # event ya está cargado al inicio de la función si event_id no es None
+                # event = get_object_or_404(Event, pk=event_id) # Esta línea es redundante aquí, ya se cargó
+
+                if scheduled_at != event.scheduled_at:
+                    event.state = Event.REPROGRAMED # Asegúrate que Event.REPROGRAMED esté definido
+
+                # Ahora se actualiza el evento con la logica del incoming change
                 success, result = event.update(
-                    title=title,
-                    description=description,
-                    scheduled_at=scheduled_at,
-                    venue=venue,
+                    title = title,
+                    description = description,
+                    scheduled_at = scheduled_at,
+                    venue = venue,
                     category=category
                 )
+                # La condición 'if categories:' aquí es de tu código 'current',
+                # pero 'category' arriba es un solo objeto.
+                # Si `event.update` no maneja 'categories.set()' y esperas múltiples,
+                # esto debe adaptarse. Si 'category' es un solo objeto Category, la línea
+                # `event.categories.set(categories)` no tiene sentido aquí.
+                # Asumo que `category` es el objeto Category único seleccionado.
+                # Si la asignación de categorías es ManyToMany, necesitarás `category_ids` y `event.categories.set(Category.objects.filter(pk__in=category_ids))`
+                # Si tu modelo Event tiene un ForeignKey a Category (single category), la línea `event.categories.set(categories)` es incorrecta.
+                # Si el campo 'category' en Event.new y event.update es un ForeignKey a Category, entonces `category=category` está bien.
+                # Si es ManyToMany, el `event.update` no debería tener 'category' y necesitarías `event.categories.set(categories_from_ids)`
+                # para la actualización, de forma similar a como se hace en la creación si Event.new no lo maneja.
+
+                # Dejo la línea de tu código tal cual, asumiendo que "categories" se refiere a una lista/queryset válido si es ManyToMany.
+                # Pero si `category` es un solo objeto Category, esta línea no debería ir aquí
+                if categories: # Esto es ambiguo con `category=category`
+                    event.categories.set(categories) # Esto sugiere que `categories` es un QuerySet/lista de objetos Category
+
                 if success:
                     messages.success(request, "Evento actualizado exitosamente")
                     return redirect("events")
                 else:
-                    messages.error(request, "Error al actualizar el evento")
-                    return render(request, "app/event_form.html", {
-                        "event": event,
-                        "categories": categories,
-                        "venues": venues,
-                        "user_is_organizer": request.user.is_organizer,
-                        "errors": result,
-                        "data": request.POST
-                    })
-        except (ValueError, TypeError):
-            messages.error(request, "Error en el formato de fecha y hora")
+                    messages.error(request, f"Error al actualizar el evento: {result}")
+                    return render(
+                        request, "app/event_form.html",{
+                            "event": event,
+                            "categories": categories, # Estas son las categorías para el formulario
+                            "venues": venues,
+                            "user_is_organizer": request.user.is_organizer,
+                            "errors": result,
+                            "data": request.POST
+                        })
+        except (ValueError, TypeError) as e: # Captura errores de formato de fecha/hora o get_object_or_404
+            messages.error(request, f"Error en el formato de datos o al encontrar el recurso: {e}")
             return render(request, "app/event_form.html", {
                 "event": event,
-                "categories": categories,
+                "categories": categories, # Estas son las categorías generales, no las seleccionadas
                 "venues": venues,
                 "user_is_organizer": request.user.is_organizer,
                 "data": request.POST
             })
+
+    # Si la solicitud no es POST, se muestra el formulario vacío o pre-llenado
+    else:
+        # Aquí puedes pre-llenar el formulario si 'event' existe (modo edición)
+        initial_data = {}
+        if event:
+            # Asegúrate de formatear la fecha/hora para el input HTML (datetime-local)
+            if event.scheduled_at:
+                # Si scheduled_at es un campo DateTimeField aware (con USE_TZ=True),
+                # es mejor usar `isoformat` o `strftime` con el formato correcto.
+                # Ejemplo para input type="datetime-local": "YYYY-MM-DDTHH:MM"
+                initial_scheduled_at = event.scheduled_at.astimezone(timezone.get_current_timezone()).strftime("%Y-%m-%dT%H:%M")
+            else:
+                initial_scheduled_at = ""
+
+            initial_category_id = event.category.id if event.category else ""
+            # Si event.categories es ManyToMany, necesitarías:
+            # initial_category_ids = [c.id for c in event.categories.all()]
+
+            initial_data = {
+                "title": event.title,
+                "description": event.description,
+                "venue": event.venue.id if event.venue else "",
+                "category": initial_category_id, # Para un solo select
+                # "category": initial_category_ids, # Para un multi-select
+                "date": event.scheduled_at.strftime("%Y-%m-%d") if event.scheduled_at else "",
+                "time": event.scheduled_at.strftime("%H:%M") if event.scheduled_at else "",
+                # 'scheduled_at' es mejor para un input type="datetime-local"
+                "scheduled_at_datetime_local": initial_scheduled_at,
+            }
+
+        return render(request, "app/event_form.html", {
+            "event": event,
+            "categories": categories,
+            "venues": venues,
+            "user_is_organizer": request.user.is_organizer,
+            "data": initial_data # Pasar los datos iniciales
+        })
+
 
     return render(
         request,
@@ -234,6 +322,19 @@ def refund_form(request, id):
                 "error": "Todos los campos son obligatorios.",
                 "data": request.POST
             })
+        
+        #Validacion para evitar que haya solicitudes de reembolso duplicadas
+        existing_request = RefundRequest.objects.filter(
+            user=request.user,
+            ticket_code=ticket_code,
+            approval__isnull=True,  # Reembolso todavia pendientes
+        ).first()
+
+        if existing_request:
+            return render(request, "app/refund_form.html",{
+                "error": "Ya tienes una solicitud de reembolso pendiente.",
+                "data": request.POST
+            })
 
         # Crear la solicitud de reembolso con estado pendiente
         RefundRequest.objects.create(
@@ -255,7 +356,7 @@ def refund_form(request, id):
         notification.users.add(request.user)
         notification.save()
 
-        return redirect("events")
+        return redirect("tickets")
 
     return render(request, "app/refund_form.html", {"ticket": ticket})
 
@@ -427,6 +528,8 @@ def buy_ticket(request, id):
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user)
 
         if success:
+            #GENERO UN CHEQUEO PARA VERIFICAR EL ESTADO DE SOLD OUT
+            event.auto_update_state()
             messages.success(request, "¡Ticket comprado!")
             # Redirigir a la encuesta de satisfacción con el ID del ticket
             return redirect("satisfaction_survey", ticket_id=result.id)

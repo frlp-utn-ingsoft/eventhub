@@ -54,6 +54,9 @@
                     {% endif %}
                     
                     <div class="mt-4">
+                        {% if event.state != 'FINISHED' %}
+                        {% if event.state != 'CANCELED' %}
+                        {% if event.state != 'SOLD_OUT' %}
                         {% if user_is_organizer %}
                             <a href="{% url 'event_edit' event.id %}" class="btn btn-outline-primary me-2">
                                 <i class="bi bi-pencil me-1"></i>Editar Evento
@@ -71,6 +74,9 @@
                                     <i class="bi bi-ticket-perforated me-2"></i>Entradas Agotadas
                                 </button>
                             {% endif %}
+                        {% endif %}
+                        {% endif %}
+                        {% endif %}
                         {% endif %}
                     </div>
                 </div>
