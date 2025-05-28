@@ -133,7 +133,6 @@ class EventDetailViewTest(BaseEventTestCase):
         # Verificar respuesta
         self.assertEqual(response.status_code, 404)
 
-
 class EventFormViewTest(BaseEventTestCase):
     """Tests para la vista del formulario de eventos"""
 
@@ -349,3 +348,21 @@ class EventDeleteViewTest(BaseEventTestCase):
 
         # Verificar que el evento sigue existiendo
         self.assertTrue(Event.objects.filter(pk=self.event1.id).exists())
+
+class EventFavoriteTest(BaseEventTestCase):
+    """Tests para la funcionalidad de marcar eventos como favoritos"""
+    
+    def test_favorite_event_post(self):
+        """Test que verifica que un usuario puede marcar un evento como favorito"""
+        # Login con usuario regular
+        self.client.login(username="regular", password="password123")
+
+        # Hacer petición POST para marcar el evento como favorito
+        response = self.client.post(reverse("event_favorite", args=[self.event1.id])) # type: ignore
+
+        # Verificar que redirecciona a la vista de detalle del evento
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("event_detail", args=[self.event1.id])) # type: ignore
+
+        # Verificar que el evento fue marcado como favorito
+        self.assertTrue(self.regular_user.favorite_events.filter(id=self.event1.id).exists()) # type: ignore

@@ -124,31 +124,32 @@ def events(request):
 def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
     categories = Category.objects.all()
-    # Obtener todas las calificaciones de este evento
     ratings = Rating.objects.filter(event=event)
-
-    # Verificar si el usuario tiene ticket para este evento
     has_ticket = Ticket.objects.filter(event=event, user=request.user).exists()
+
+    # --- FAVORITO ---
+    if request.method == "POST" and request.POST.get("toggle_favorite") == "1":
+        if event in request.user.favorite_events.all():
+            request.user.favorite_events.remove(event)
+        else:
+            request.user.favorite_events.add(event)
+        return redirect("event_detail", id=event.id) # type: ignore
 
     # Procesar acciones POST (cancelar/finalizar) SOLO si el usuario es organizador y dueño
     if request.method == "POST" and request.user.is_organizer and request.user == event.organizer:
         if request.POST.get("cancel_event") == "1":
             event.update(event.title, list(event.categories.all()), event.venue, event.description, event.scheduled_at, event.organizer, status='canceled')
             messages.success(request, 'El evento ha sido cancelado.')
-            return redirect("event_detail", id=event.id)  # Redirige al detalle del evento
+            return redirect("event_detail", id=event.id) # type: ignore
         if request.POST.get("finish_event") == "1":
             event.update(event.title, list(event.categories.all()), event.venue, event.description, event.scheduled_at, event.organizer, status='finished')
             messages.success(request, 'El evento ha sido finalizado.')
-            return redirect("event_detail", id=event.id)  # Redirige al detalle del evento
+            return redirect("event_detail", id=event.id) # type: ignore
 
-    # Llamar a la función `handle_rating` para manejar la calificación
     rating_saved = create_rating(request, event)
-
-    # Si la calificación se guardó correctamente, actualizar las calificaciones
     if rating_saved:
         ratings = Rating.objects.filter(event=event)
     event_categories = event.categories.all() if event else []
-        
     return render(request, "app/event/event_detail.html", {
         "event": event,
         'ratings': ratings,
