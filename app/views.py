@@ -80,6 +80,39 @@ def event_detail(request, id):
     event = get_object_or_404(Event, id=id)
     comments = Comments.objects.filter(event=event).order_by('-created_at')
     user_is_organizer = request.user.is_authenticated and request.user.is_organizer
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        description = request.POST.get('description', '').strip()
+        errors = {}
+
+        if not title:
+            errors['title'] = "El título no puede estar vacío."
+        if not description:
+            errors['description'] = "La descripción no puede estar vacía."
+
+        if not errors:
+            Comments.objects.create(
+                title=title,
+                description=description,
+                user=request.user,
+                event=event
+            )
+            return redirect('event_detail', id=event.id)
+
+        # Si hay errores, los devolvemos al template
+        return render(request, 'app/event_detail.html', {
+            'event': event,
+            'comments': comments,
+            'errors': errors,
+            'title': title,
+            'description': description,
+            'user_is_organizer': user_is_organizer,
+            'demand_status': event.demand_status,
+            'tickets_sold': event.tickets_sold,
+            'tickets_available': event.tickets_available
+        })
+
     context = {
         'event': event,
         'comments': comments,
@@ -88,6 +121,7 @@ def event_detail(request, id):
         'tickets_sold': event.tickets_sold,
         'tickets_available': event.tickets_available
     }
+    
     return render(request, 'app/event_detail.html', context)
 
 
@@ -123,7 +157,7 @@ def event_form(request, id=None):
         categories = Category.objects.filter(id__in=category_ids)
         price_general = request.POST.get("price_general")
         price_vip = request.POST.get("price_vip")
-        tickets_available = request.POST.get("tickets_available")
+        tickets_total = request.POST.get("tickets_total")
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
@@ -147,7 +181,8 @@ def event_form(request, id=None):
                 event.price_vip = float(str(price_vip).replace(',', '.'))
             
             event.categories.set(categories)
-            event.tickets_available = int(tickets_available)
+            event.tickets_total = int(tickets_total) if tickets_total is not None else 0
+
             event.save()
         return redirect('events')
 
@@ -388,6 +423,7 @@ def read_notification(request, notification_user_id):
 def read_all_notifications(request):
     NotificationXUser.objects.filter(user=request.user, is_read=False).update(is_read=True)
     return redirect('list_notifications')
+
 def edit_comment(request, comment_id):
     comment = get_object_or_404(Comments, pk=comment_id, user=request.user)
 
@@ -526,7 +562,7 @@ def buy_ticket_from_event(request, event_id):
         if form.is_valid():
             type_ = form.cleaned_data['type']
             quantity = form.cleaned_data['quantity']
-
+    
             card_number = form.cleaned_data['card_number']
             card_cvv = form.cleaned_data['card_cvv']
 
@@ -537,6 +573,18 @@ def buy_ticket_from_event(request, event_id):
                     'event_prices': {
                         'general': float(event.price_general),
                         'vip': float(event.price_vip)}})
+            
+            # Validar cantidad de tickets disponibles
+            if quantity > event.tickets_available:
+                form.add_error('quantity', f'Solo hay {event.tickets_available} tickets disponibles para este evento.')
+                return render(request, 'tickets/buy_ticket.html', {
+                    'form': form,
+                    'event': event,
+                    'event_prices': {
+                        'general': float(event.price_general),
+                        'vip': float(event.price_vip)
+                    }
+                })
 
             ticket = form.save(commit=False)
             ticket.user = request.user  # asignamos el usuario que inició sesión

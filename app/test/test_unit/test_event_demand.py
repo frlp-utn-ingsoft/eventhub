@@ -30,6 +30,7 @@ class EventDemandTest(TestCase):
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
             location=self.location,
+            tickets_total=int("100"),
             price_general=Decimal('100.00'),
             price_vip=Decimal('200.00')
         )
@@ -37,7 +38,7 @@ class EventDemandTest(TestCase):
     def test_tickets_left_calculation(self):
         """Test que verifica el cálculo correcto de entradas restantes"""
         # Verificar que inicialmente hay 100 entradas disponibles
-        self.assertEqual(self.event.tickets_left, 100)
+        self.assertEqual(self.event.tickets_available, 100)
 
         # Vender algunas entradas
         Ticket.objects.create(
@@ -60,7 +61,7 @@ class EventDemandTest(TestCase):
         self.event.save()
 
         # Verificar que quedan 98 entradas
-        self.assertEqual(self.event.tickets_left, 98)
+        self.assertEqual(self.event.tickets_available, 98)
 
     def test_occupancy_percentage_calculation(self):
         """Test que verifica el cálculo correcto del porcentaje de ocupación"""
@@ -124,7 +125,7 @@ class EventDemandTest(TestCase):
         )
 
         # Verificar que no hay entradas disponibles
-        self.assertEqual(event.tickets_left, 0)
+        self.assertEqual(event.tickets_available, 0)
         # Verificar que la ocupación es 0%
         self.assertEqual(event.occupancy_percentage, 0.0)
         # Verificar que la demanda es baja
