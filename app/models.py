@@ -362,11 +362,19 @@ class Ticket(models.Model):
         ('debit', 'Tarjeta de Debito'),
     ]
 
+    QUANTITY_CHOICES = [
+        (1, '1'),
+        (2, '2'),
+        (3, '3'),
+        (4, '4'),
+    ]
+
+
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_ticket")
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="event_ticket")
     buy_date = models.DateTimeField(auto_now_add=True)
     ticket_code = models.CharField(max_length=100, unique=True, editable=False)
-    quantity = models.PositiveIntegerField()
+    quantity = models.PositiveIntegerField(choices=QUANTITY_CHOICES)
     type = models.CharField(max_length=10, choices=TICKET_TYPES)
     card_type = models.CharField(max_length=20, choices=CARD_TYPE_CHOICES)
     last4_card_number = models.CharField(max_length=4, blank=True)

@@ -144,7 +144,7 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('buy_date', models.DateTimeField(auto_now_add=True)),
                 ('ticket_code', models.CharField(editable=False, max_length=100, unique=True)),
-                ('quantity', models.PositiveIntegerField()),
+                ('quantity', models.PositiveIntegerField(choices=[(1, '1'), (2, '2'), (3, '3'), (4, '4')])),
                 ('type', models.CharField(choices=[('general', 'General'), ('vip', 'VIP')], max_length=10)),
                 ('card_type', models.CharField(choices=[('credit', 'Tarjeta de Credito'), ('debit', 'Tarjeta de Debito')], max_length=20)),
                 ('last4_card_number', models.CharField(blank=True, max_length=4)),

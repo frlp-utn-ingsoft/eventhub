@@ -460,8 +460,8 @@ def detail_comment(request, comment_id):
 
 @login_required
 def tickets_list(request):
-    tickets = Ticket.objects.filter(user=request.user)
-    return render(request, "tickets/tickets_list.html", {"tickets": tickets})
+    ticket = Ticket.objects.filter(user=request.user)
+    return render(request, "tickets/tickets_list.html", {"tickets": ticket})
 
 @login_required
 def organizer_tickets_list(request):
@@ -490,7 +490,7 @@ def organizer_tickets_list(request):
 @login_required
 def buy_ticket(request):
     if request.method == 'POST':
-        form = TicketForm(request.POST)
+        form = TicketForm(request.POST, user=request.user)
         if form.is_valid():
             event = form.cleaned_data['event']
             type_ = form.cleaned_data['type']
@@ -511,9 +511,9 @@ def buy_ticket(request):
             ticket.last4_card_number = card_number[-4:]
             ticket.save()
 
-            return render(request, 'tickets/tickets_list.html', {'ticket': ticket})
+            return redirect('tickets_list')
     else:
-        form = TicketForm()
+        form = TicketForm(user=request.user)
 
     events = Event.objects.all()
     event_prices = {
@@ -544,12 +544,12 @@ def update_ticket(request, ticket_code):
     ticket = get_object_or_404(Ticket, ticket_code=ticket_code, user=request.user)
 
     if request.method == 'POST':
-        form = TicketForm(request.POST, instance=ticket)
+        form = TicketForm(request.POST, instance=ticket, user=request.user)
         if form.is_valid():
             form.save()
             return redirect('tickets_list')
     else:
-        form = TicketForm(instance=ticket)
+        form = TicketForm(instance=ticket, user=request.user)
 
     return render(request, 'tickets/update_ticket.html', {'form': form})
 

@@ -1,15 +1,156 @@
 {% extends "base.html" %} 
 
 {% block content %}
-<div class="container mt-3">
-    <h2>Editar Ticket</h2>
-    <div class="col-md-4 mb-4">
-
-        <form method="post">
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit" class="btn btn-primary">Guardar cambios</button>
-        </form>
-    </div>
+<div>
+  <h3 class="container mt-4">Editar Ticket</h3>
 </div>
+
+<div class="container mt-4 mb-5">
+  <div class="d-flex justify-content-center">
+    <div class="row me-2">
+
+      <div class="col-md-7 w-100">
+
+        {% if form.errors %}
+        <div class="alert alert-danger">
+          <ul style="list-style-type: none; margin: 0; padding: 0;">
+            {% for error in form.non_field_errors %}
+            <li>{{ error }}</li>
+            {% endfor %}
+            {% for field in form %}
+            {% for error in field.errors %}
+            <li>{{ field.label }}: {{ error }}</li>
+            {% endfor %}
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+        <div class="border p-3 rounded card ">
+
+          <form method="post" id="ticketForm">
+            {% csrf_token %}
+
+
+            <div class="row mb-3">
+              <div class="col-md-4 text-left fw-bold">Evento:</div>
+              <div class="col-md-8">
+                  {{ form.event }}
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-4 text-left fw-bold">{{ form.quantity.label }}</div>
+              <div class="col-md-8">
+                {{ form.quantity }}
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-4 text-left fw-bold">{{ form.type.label }}</div>
+              <div class="col-md-8">{{ form.type }}</div>
+            </div>
+
+            <h4 class="mt-4">Método de pago</h4>
+            <div class="border rounded card w-100 mb-3 p-3 bg-light">
+                <div class="row">
+
+                    <div class="row mb-3">
+                        <div class="col-md-4 text-left fw-bold">{{ form.card_number.label }}</div>
+                        <div class="col-md-8">{{ form.card_number }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <a href="{% url 'tickets_list' %}" class="btn btn-outline-secondary w-40">Volver</a>
+                <button type="submit" class="btn btn-primary w-40" id="submitBtn">Guardar cambios</button>  
+            </div>
+            
+          </form>
+
+
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-4 d-flex flex-column gap-3">
+      <div class="border rounded card w-100">
+        <div class="card-header p-3"><strong>Resumen de compra</strong></div>
+        <div class="card-body">
+          <p>Precio por entrada: <span id="priceDisplay">$0.00</span></p>
+          <p>Cantidad: <span id="quantityDisplay">0</span></p>
+          <p>Subtotal: <span id="subtotalDisplay">$0.00</span></p>
+          <p>Impuestos (10%): <span id="taxDisplay">$0.00</span></p>
+          <hr>
+          <p><strong>Total: <span id="totalDisplay">$0.00</span></strong></p>
+        </div>
+      </div>
+
+
+
+      <div class="border mb-0 rounded card col-md-4 w-100">
+        <div class="card-header p-3"><strong>Información importante</strong></div>
+        <div class="card-body p-1">
+          <ul>
+            <li>Las entradas son personales e intransferibles.</li>
+            <li>Puedes solicitar un reembolso hasta 48h antes del evento.</li>
+            <li>Recibirás tu entrada en tu correo electrónico.</li>
+            <li>Presenta tu entrada digital o impresa.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #quantityInput,
+  #id_event,
+  #typeSelect,
+  #id_card_type,
+  #id_card_number,
+  #id_expiry_month,
+  #id_expiry_year,
+  #id_card_cvv {
+    width: 100%;
+  }
+</style>
+
+
+<script>
+  const eventPrices = {{ event_prices| safe }};
+  const eventSelect = document.getElementById("id_event");
+  const typeSelect = document.getElementById("typeSelect");
+  const quantityInput = document.getElementById("id_quantity");
+
+  const priceDisplay = document.getElementById("priceDisplay");
+  const quantityDisplay = document.getElementById("quantityDisplay");
+  const subtotalDisplay = document.getElementById("subtotalDisplay");
+  const taxDisplay = document.getElementById("taxDisplay");
+  const totalDisplay = document.getElementById("totalDisplay");
+
+  function updateSummary() {
+    const eventId = eventSelect.value;
+    const type = typeSelect.value;
+    const quantity = parseInt(quantityInput.value) || 0;
+
+    if (!eventPrices[eventId]) return;
+
+    const price = eventPrices[eventId][type];
+    const subtotal = price * quantity;
+    const tax = subtotal * 0.10;
+    const total = subtotal + tax;
+
+    priceDisplay.textContent = `$${price.toFixed(2)}`;
+    quantityDisplay.textContent = quantity;
+    subtotalDisplay.textContent = `$${subtotal.toFixed(2)}`;
+    taxDisplay.textContent = `$${tax.toFixed(2)}`;
+    totalDisplay.textContent = `$${total.toFixed(2)}`;
+  }
+
+  [eventSelect, typeSelect, quantityInput].forEach(el => {
+    el.addEventListener("change", updateSummary);
+    el.addEventListener("input", updateSummary);
+  });
+
+</script>
 {% endblock %}

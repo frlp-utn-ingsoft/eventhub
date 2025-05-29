@@ -1,6 +1,8 @@
 from django import forms
+from django.forms import TypedChoiceField
 from .models import Ticket
 from .models import Event
+from django.db.models import Sum
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from datetime import datetime
@@ -29,16 +31,7 @@ class TicketForm(forms.ModelForm):
 
     current_year = datetime.now().year
     YEAR_CHOICES = [(str(y)[-2:], str(y)) for y in range(current_year, current_year + 21)]
-    expiry_year = forms.ChoiceField(
-        choices=YEAR_CHOICES,
-        widget=forms.Select(attrs={'class': 'form-control'})
-    )
-    
-    quantity = forms.IntegerField(
-        min_value=1,
-        label="Cantidad de entradas",
-        widget=forms.NumberInput(attrs={'id': 'id_quantity', 'class': 'form-control'})
-    )
+    expiry_year = forms.ChoiceField(choices=YEAR_CHOICES, widget=forms.Select(attrs={'class': 'form-control'}))
 
     TYPE_CHOICES = [
         ('', 'Seleccione un tipo de entrada'),
@@ -46,6 +39,13 @@ class TicketForm(forms.ModelForm):
         ('vip', 'VIP'),
     ]
 
+    QUANTITY_CHOICES = [
+        ('', 'Seleccionar'),
+        (1, '1'),
+        (2, '2'),
+        (3, '3'),
+        (4, '4'),
+    ]
     type = forms.ChoiceField(
         choices=TYPE_CHOICES, 
         required=True, 
@@ -55,6 +55,8 @@ class TicketForm(forms.ModelForm):
             'class': 'form-control'
         })
     )
+    quantity = TypedChoiceField(choices=QUANTITY_CHOICES, coerce=int, required=True, label="Cantidad de entradas", widget=forms.Select(attrs={'id': 'id_quantity',
+            'class': 'form-control'}))
 
     def clean_type(self):
         value = self.cleaned_data['type']
@@ -67,6 +69,7 @@ class TicketForm(forms.ModelForm):
         fields = ['event', 'quantity', 'type', 'card_type']
         labels = {
             'event': 'Evento',
+            'quantity': 'Cantidad de entradas',
             'type': 'Tipo de entrada',
             'card_type': 'Tipo de tarjeta',
         }
@@ -77,22 +80,49 @@ class TicketForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
+        event = cleaned_data.get('event')
+        quantity_raw = cleaned_data.get('quantity')
+        
+        try:
+            quantity = int(quantity_raw)
+        except (TypeError, ValueError):
+            quantity = 0
+
+        if not self.user or not event:
+            return cleaned_data 
+        
+        existing_tickets = Ticket.objects.filter(user=self.user, event=event)
+        total_prev = existing_tickets.aggregate(total=Sum('quantity'))['total'] or 0
+
+        if self.instance and self.instance.pk:
+            original_quantity = Ticket.objects.get(pk=self.instance.pk).quantity
+            total_after = total_prev - original_quantity + quantity
+        else:
+            total_after = total_prev + quantity
+
+        if total_after > 4:
+            raise ValidationError(f"No podés comprar más de 4 entradas para este evento. Ya tenés {total_prev}.")
+
+        
         if not self.instance.pk:
             month = cleaned_data.get('expiry_month')
             year = cleaned_data.get('expiry_year')
 
             if month and year:
                 now = datetime.now()
-                exp_year = int('20' + year)
+                exp_year = 2000 + int(year)
                 exp_month = int(month)
                 exp_date = datetime(exp_year, exp_month, 1)
 
                 if exp_date.replace(day=28) < now.replace(day=1):
                     self.add_error('expiry_month', 'La tarjeta ya está vencida.')
-    
+
+        return cleaned_data
 
     def __init__(self, *args,  fixed_event=False, event_instance=None, **kwargs):
+        self.user = kwargs.pop('user', None)
         super().__init__(*args, **kwargs)
+
 
         if self.instance and self.instance.pk:
             masked = '************' + self.instance.last4_card_number
@@ -106,6 +136,7 @@ class TicketForm(forms.ModelForm):
             self.fields.pop('card_cvv', None)
             self.fields.pop('expiry_month', None)
             self.fields.pop('expiry_year', None)
+            self.initial['event'] = self.instance.event.pk
 
         if fixed_event and event_instance:
             self.fields.pop('event')
