@@ -413,6 +413,9 @@ def is_valid_code(request):
         print("MULTIPLIER:",  discount.multiplier)
         print("DISCOUNT:",  discount, "\n\n\n")
         
+        
+        messages.success(request, "Código validado correctamente")
+
         return JsonResponse({
             "message": "Código validado correctamente",
             "isValidCode": True,
