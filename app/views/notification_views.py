@@ -39,6 +39,7 @@ def notification_list(request):
         return render(request, 'app/notification/bandejaEntrada.html', {'notifications': notifications, 'unread_count': unread_count })
 
 
+
 @login_required
 def notification_create(request):
     if request.method == 'POST':
@@ -48,46 +49,82 @@ def notification_create(request):
         is_read = request.POST.get('is_read') == 'on'
         recipient = request.POST.get('recipient')
         event_id = request.POST.get('event')
-        specific_user=request.POST.get('specific_user')
-   
-        event=Event.objects.get(id = event_id)
+        specific_user_id = request.POST.get('specific_user')
 
-        notification=Notification.objects.create(
-            title=title,
-            massage=massage,
-            created_at=timezone.now().date(), 
-            Priority=priority,
-            is_read=is_read,
-            event=event,
-        )
+        event = None  # Por defecto, sin evento
 
-
+        # Si es para todos, el evento es obligatorio
         if recipient == 'all':
-            addressee_users = User.objects.filter(Ticket__event=event).distinct()
-            notification.addressee.set(addressee_users)  
-        elif recipient == 'specific':
-            try:
-                specific_user = User.objects.get(id=specific_user)
-                if specific_user.is_organizer:
-                     # Manejar el caso en que el usuario específico es admin (no se envian notificaciones a admins)
-                    eventos = Event.objects.all()
-                    users = User.objects.all()
-                    return render(request, 'app/notification/create.html', {'eventos': eventos, 'users': users, 'error': 'El usuario específico es administrador.'})
-                else:
-                    notification.addressee.set([specific_user]) 
-            except User.DoesNotExist:
-                # Manejar el caso en que el usuario específico no existe
+            if not event_id:
                 eventos = Event.objects.all()
                 users = User.objects.all()
-                return render(request, 'app/notification/create.html', {'eventos': eventos, 'users': users, 'error': 'El usuario específico no existe.'})
+                return render(request, 'app/notification/create.html', {
+                    'eventos': eventos,
+                    'users': users,
+                    'error': 'Debes seleccionar un evento para notificar a todos los asistentes.'
+                })
+            try:
+                event = Event.objects.get(id=event_id)
+            except Event.DoesNotExist:
+                eventos = Event.objects.all()
+                users = User.objects.all()
+                return render(request, 'app/notification/create.html', {
+                    'eventos': eventos,
+                    'users': users,
+                    'error': 'El evento seleccionado no existe.'
+                })
 
+        elif recipient == 'specific':
+            if not specific_user_id:
+                eventos = Event.objects.all()
+                users = User.objects.all()
+                return render(request, 'app/notification/create.html', {
+                    'eventos': eventos,
+                    'users': users,
+                    'error': 'Debes seleccionar un usuario específico.'
+                })
+            try:
+                specific_user = User.objects.get(id=specific_user_id)
+                if specific_user.is_organizer:
+                    eventos = Event.objects.all()
+                    users = User.objects.all()
+                    return render(request, 'app/notification/create.html', {
+                        'eventos': eventos,
+                        'users': users,
+                        'error': 'El usuario específico es administrador.'
+                    })
+            except User.DoesNotExist:
+                eventos = Event.objects.all()
+                users = User.objects.all()
+                return render(request, 'app/notification/create.html', {
+                    'eventos': eventos,
+                    'users': users,
+                    'error': 'El usuario específico no existe.'
+                })
 
-        return redirect('/notification/')  
-    
-    eventos= Event.objects.all()
+        # Crear la notificación (evento puede ser None)
+        notification = Notification.objects.create(
+            title=title,
+            massage=massage,
+            created_at=timezone.now(),
+            Priority=priority,
+            is_read=is_read,
+            event=event
+        )
+
+        # Asignar destinatarios
+        if recipient == 'all':
+            addressee_users = User.objects.filter(tickets__event=event).distinct()
+            notification.addressee.set(addressee_users)
+        elif recipient == 'specific':
+            notification.addressee.set([specific_user])
+
+        return redirect('/notification/')
+
+    eventos = Event.objects.all()
     users = User.objects.all()
-    
     return render(request, 'app/notification/create.html', {'eventos': eventos, 'users': users})
+
 
 @login_required
 def notification_detail(request, pk):

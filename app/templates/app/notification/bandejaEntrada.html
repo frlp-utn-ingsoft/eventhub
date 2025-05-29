@@ -7,7 +7,7 @@
     <h2>
       Notificaciones
       {% if unread_count > 0 %}
-        <span class="badge bg-danger">{{ unread_count }} nuevas</span>
+        <span class="badge bg-danger" id="count-notifications">{{ unread_count }} nuevas</span>
       {% endif %}
     </h2>
     <a href="{% url 'notification_mark_all_as_read' %}" class="btn btn-outline-primary btn-sm">Marcar todas como leídas</a>
