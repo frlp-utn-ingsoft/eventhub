@@ -9,10 +9,9 @@
                 {{ error }}
             </div>
         {% endif %}
-        <!-- Formulario -->
         <div class="col-md-8">
             <div class="card shadow-sm p-4 mb-4">
-                <form method="POST">
+                <form method="POST" onsubmit="return validateForm();">
                     {% csrf_token %}
                     
                     <div class="mb-3">
@@ -25,16 +24,7 @@
                         <textarea id="massage" name="massage" class="form-control" rows="4" placeholder="Escribe el contenido de la notificación..." required></textarea>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="event" class="form-label">Evento relacionado *</label>
-                        <select id="event" name="event" class="form-select">
-                            <option selected disabled required>Selecciona un evento</option>
-                            {% for evento in eventos %}
-                            <option value="{{ evento.id }}">{{ evento.title }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-
+                    <!-- Destinatarios -->
                     <div class="mb-3">
                         <label class="form-label">Destinatarios *</label>
                         <div class="form-check">
@@ -45,10 +35,27 @@
                             <input class="form-check-input" type="radio" name="recipient" id="specific" value="specific">
                             <label class="form-check-label" for="specific">Usuario específico</label>
                         </div>
-                        <select id="specific_user" name="specific_user" class="form-select mt-2">
+                    </div>
+
+                    <!-- Evento (siempre visible, pero validación depende de opción) -->
+                    <div class="mb-3" id="event-field">
+                        <label for="event" class="form-label">Evento relacionado</label>
+                        <select id="event" name="event" class="form-select">
+                            <option value="">Sin evento</option>
+                            {% for evento in eventos %}
+                                <option value="{{ evento.id }}">{{ evento.title }}</option>
+                            {% endfor %}
+                        </select>
+                        <div id="event-error" class="text-danger mt-1" style="display: none;">Debes seleccionar un evento si eliges "Todos los asistentes".</div>
+                    </div>
+
+                    <!-- Usuario específico (solo si 'specific') -->
+                    <div class="mb-3" id="specific-user-field">
+                        <label for="specific_user" class="form-label">Usuario específico *</label>
+                        <select id="specific_user" name="specific_user" class="form-select">
                             <option selected disabled>Selecciona un usuario</option>
                             {% for user in users %}
-                            <option value="{{ user.id }}">{{ user.username }}</option>
+                                <option value="{{ user.id }}">{{ user.username }}</option>
                             {% endfor %}
                         </select>
                     </div> 
@@ -82,4 +89,42 @@
         </div>
     </div>
 </div>
+
+<!-- Script para lógica de campos -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const recipientAll = document.getElementById('all');
+        const recipientSpecific = document.getElementById('specific');
+        const specificUserField = document.getElementById('specific-user-field');
+
+        function toggleFields() {
+            if (recipientSpecific.checked) {
+                specificUserField.style.display = 'block';
+            } else {
+                specificUserField.style.display = 'none';
+            }
+        }
+
+        toggleFields();
+        recipientAll.addEventListener('change', toggleFields);
+        recipientSpecific.addEventListener('change', toggleFields);
+    });
+
+    function validateForm() {
+        const recipientAll = document.getElementById('all').checked;
+        const eventSelect = document.getElementById('event');
+        const errorMsg = document.getElementById('event-error');
+
+        if (recipientAll && eventSelect.value === "") {
+            errorMsg.style.display = 'block';
+            eventSelect.classList.add('is-invalid');
+            return false;
+        }
+
+        errorMsg.style.display = 'none';
+        eventSelect.classList.remove('is-invalid');
+        return true;
+    }
+</script>
+
 {% endblock %}
