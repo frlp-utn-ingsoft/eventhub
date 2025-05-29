@@ -333,6 +333,7 @@ class Ticket(models.Model):
             errors["quantity"] = "La cantidad debe ser un entero mayor o igual a 1."
         if ticket_type not in dict(cls.TICKET_TYPES):
             errors["type"] = "El tipo de ticket no es válido."
+        
         # Check total tickets per user per event
         existing_tickets = (
             Ticket.objects.filter(user=user, event=event).aggregate(total_quantity=Sum("quantity"))[
@@ -342,6 +343,9 @@ class Ticket(models.Model):
         )
         if existing_tickets + quantity > 4:
             errors["quantity"] = "No puedes comprar más de 4 entradas por evento."
+        else:
+            errors = cls.check_event_capacity(event, quantity)
+       
         return errors
 
     @classmethod
@@ -350,7 +354,45 @@ class Ticket(models.Model):
         if errors:
             return False, errors
         ticket = cls.objects.create(user=user, event=event, quantity=quantity, type=ticket_type)
+        cls.handle_event_status(event)
         return True, ticket
+    
+    @classmethod
+    def check_event_capacity(cls, event, quantity):
+        errors = {}
+         # sum total tickets
+        total_tickets = (
+            Ticket.objects.filter(event=event).aggregate(total_quantity=Sum("quantity"))[
+                "total_quantity"
+            ]
+            or 0
+        )
+        # Check event capacity
+        if event.venue and total_tickets + quantity > event.venue.capacity:
+            errors["capacity"] = "No puedes comprar más tickets que la capacidad del evento"
+        return errors
+    
+    @classmethod
+    def handle_event_status(cls, event):
+        
+        total_tickets = (
+            Ticket.objects.filter(event=event).aggregate(total_quantity=Sum("quantity"))[
+                "total_quantity"
+            ]
+            or 0
+        )
+
+        if event.venue and total_tickets == event.venue.capacity:
+            event.update(
+                title=event.title,
+                categories=event.categories.all(),
+                venue=event.venue,
+                description=event.description,
+                scheduled_at=event.scheduled_at,
+                organizer=event.organizer,
+                status="soldout",
+                         )
+        
 
     def update(self, quantity=None, ticket_type=None):
         # Si no se pasa un parámetro, se mantiene el valor actual
