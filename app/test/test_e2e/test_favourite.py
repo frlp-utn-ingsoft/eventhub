@@ -112,7 +112,7 @@ class TestFavoritosE2E(unittest.TestCase):
             # Estado inicial
             boton_favorito = obtener_boton_favorito()
             clase_inicial = boton_favorito.get_attribute("class")
-            print("⭐ Clase inicial del botón:", clase_inicial)
+            print("lase inicial del botón:", clase_inicial)
 
             # Click para marcar como favorito
             boton_favorito.click()
