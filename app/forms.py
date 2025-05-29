@@ -89,7 +89,12 @@ class TicketForm(forms.ModelForm):
 
                 if exp_date.replace(day=28) < now.replace(day=1):
                     self.add_error('expiry_month', 'La tarjeta ya está vencida.')
-    
+            quantity = cleaned_data.get('quantity')
+            event = getattr(self, 'event_instance', None) or cleaned_data.get('event')
+            if event and quantity:
+                if quantity > event.tickets_available:
+                    self.add_error('quantity', f'Solo hay {event.tickets_available} tickets disponibles para este evento.')
+        return cleaned_data
 
     def __init__(self, *args,  fixed_event=False, event_instance=None, **kwargs):
         super().__init__(*args, **kwargs)

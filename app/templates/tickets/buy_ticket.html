@@ -39,7 +39,7 @@
                 {% if form.fields.event %}
                   {{ form.event }}
                 {% else %}
-                  <input type="text" class="form-control" value="{{ event.title }}" disabled>
+                  <input type="text" class="form-control" value="{{ event.title }}" name="title" disabled>
                   <input type="hidden" id="id_event" value="{{ event.id }}">
                 {% endif %}
               </div>

@@ -46,7 +46,7 @@ class EventDemandIntegrationTest(TestCase):
         # Cliente para hacer peticiones
         self.client = Client()
 
-    def test_event_detail_shows_ticket_info(self):
+    def test_basic_info(self):
         """Test que verifica que la vista de detalle muestra la información básica del evento"""
         # Login como usuario regular
         self.client.login(username="regular", password="password123")
