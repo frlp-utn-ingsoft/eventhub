@@ -31,7 +31,7 @@
                         {% csrf_token %}
 
                         {% if messages %}
-                            <div class="alert alert-info">
+                            <div class="alert">
                                 <ul class="mb-0">
                                     {% for message in messages %}
                                         <li>{{ message }}</li>
