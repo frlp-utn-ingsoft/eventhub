@@ -62,19 +62,49 @@ def my_refunds(request):
 
 @login_required
 def refund_edit(request, id):
-    refund_obj = get_object_or_404(Refund, id=id, user=request.user)
+     user = request.user
+     user_tickets = Ticket.objects.filter(user=user)
+     refund_obj = get_object_or_404(Refund, id=id, user=user)
 
-    # Sólo puede editarse si no ha sido aprobado o rechazado
-    if refund_obj is not None:
-        return redirect("my_refunds")
+     # Solo editar si está pendiente
+     if refund_obj.approved is not None:
+         return redirect("my_refunds")
 
-    if request.method == "POST":
-        refund_obj.ticket_code = request.POST.get("ticket_code")
-        refund_obj.reason = request.POST.get("reason")
-        refund_obj.save()
-        return redirect("my_refunds")
+     errors = []
+     if request.method == "POST":
+         ticket_code = request.POST.get("ticket_code")
+         reason = request.POST.get("reason", "").strip()
 
-    return render(request, "app/refund/refund_form.html", {"refund": refund_obj})
+         # Validaciones
+         if not ticket_code:
+             errors.append("Selecciona un ticket.")
+         else:
+            if Refund.objects.filter(user=user, ticket_code=ticket_code).exists():
+             errors.append("Ya existe una solicitud de reembolso para este ticket.")
+
+         if not reason:
+             errors.append("El motivo es obligatorio.")
+
+         # Verificar ticket propio
+         ticket = Ticket.objects.filter(user=user, ticket_code=ticket_code).first()
+         if not ticket:
+             errors.append("Código de ticket inválido.")
+
+         # Si no hay errores, guardar cambios
+         if not errors:
+             refund_obj.ticket_code = ticket_code
+             refund_obj.reason = reason
+             refund_obj.save()
+             return redirect("my_refunds")
+
+     # GET o errores
+     return render(request, "app/refund/refund_form.html", {
+         "user_tickets": user_tickets,
+         "refund": refund_obj,
+         "errors": errors,
+         "selected_code": refund_obj.ticket_code,
+         "reason": refund_obj.reason,
+     })
 
 @login_required
 def refund_delete(request, id):
