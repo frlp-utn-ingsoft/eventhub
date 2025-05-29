@@ -189,7 +189,7 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     state = models.CharField(choices=EVENT_STATES, max_length=25, default="ACTIVE")
-
+    favorited_by = models.ManyToManyField(User, related_name="favorite_events", blank=True)
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="events", null=True, blank=True)
 
@@ -246,9 +246,9 @@ class Event(models.Model):
 
         return True, event
 
-    def update(self, title=None, description=None, scheduled_at=None, organizer=None, venue=None, categories=None):
-        #VERIFICO SI LA FECHA FUE CAMBIADA
-        if scheduled_at and scheduled_at != self.scheduled_at:
+    def update(self, title=None, description=None, scheduled_at=None, organizer=None, venue=None, category=None):
+        #VERIFICO SI LA FECHA O EL LUGAR FUERON CAMBIADOS
+        if (scheduled_at and scheduled_at != self.scheduled_at) or (venue and venue != self.venue):
             self.state = self.REPROGRAMED
 
         self.title = title or self.title

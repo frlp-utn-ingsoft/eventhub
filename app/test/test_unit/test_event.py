@@ -86,7 +86,6 @@ class EventModelTest(TestCase):
             description="Test Description",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
-            venue=self.venue
             venue=self.venue,
         )
 
@@ -95,7 +94,6 @@ class EventModelTest(TestCase):
             description=new_description,
             scheduled_at=new_scheduled_at,
             organizer=self.organizer,
-            venue=self.venue
             venue=self.venue,
         )
         event.auto_update_state()
@@ -128,6 +126,8 @@ class EventModelTest(TestCase):
         self.assertEqual(updated_event.title, original_title)
         self.assertEqual(updated_event.description, new_description)
         self.assertEqual(updated_event.scheduled_at, original_scheduled_at)
+        self.assertEqual(updated_event.venue, self.venue)
+    
     
 
     def test_event_get_demand(self):
@@ -158,6 +158,10 @@ class EventModelTest(TestCase):
                 quantity=1
             )
 
+        # Verificar que la notificación esté en cada usuario con ticket
+        for usuario in usuarios:
+            self.assertIn(notification, usuario.notifications.all())
+        
         # Demanda debe ser 50%
         self.assertEqual(event.get_demand(), 50)
 
