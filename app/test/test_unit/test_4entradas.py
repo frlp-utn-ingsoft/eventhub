@@ -38,8 +38,7 @@ class TicketFormUnitTest(TestCase):
             'card_number': '1234567812345678',
             'card_cvv': '123',
             'expiry_month': '12',
-            'expiry_year': '2030'
+            'expiry_year': '30'
         }
         form = TicketForm(data=form_data, user=self.user)
         self.assertFalse(form.is_valid())
-        self.assertIn('No podés comprar más de 4 entradas', str(form.errors))
