@@ -131,7 +131,7 @@
                 onclick="history.back()">
             ← Volver
           </button>
-          <button type="submit" id="button-pucharse" class="btn btn-primary btn-lg w-100">
+          <button type="submit" id="button-purchase" class="btn btn-primary btn-lg w-100">
             {% if ticket %}Actualizar{% else %}Pagar y Comprar{% endif %}
           </button>
         </form>
@@ -202,7 +202,7 @@
 
   if(status== 'soldout' || status== 'SOLDOUT') {
     const $alert = document.getElementById('alert-error');
-    const $buttonPucharse = document.getElementById('button-pucharse');
+    const $buttonPucharse = document.getElementById('button-purchase');
     $buttonPucharse.disabled = true;
     $alert.classList.remove('d-none');
     console.log("$alert")

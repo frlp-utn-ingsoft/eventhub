@@ -4,7 +4,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Sum
 from django.utils.crypto import get_random_string
-from django.core.exceptions import ValidationError
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -393,7 +392,6 @@ class Ticket(models.Model):
                 organizer=event.organizer,
                 status="soldout",
                          )
-            Notification.objects.create()
         
 
     def update(self, quantity=None, ticket_type=None):
@@ -411,14 +409,12 @@ class Ticket(models.Model):
         return True, None
 
 
-
-
 class Notification(models.Model):
     title = models.CharField(max_length=200)
     massage = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="notifications", null=True, blank=True)
-    addressee = models.ManyToManyField(User, blank=True)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="notifications")
+    addressee = models.ManyToManyField(User)
 
     prioridadOpciones = [
         ("High", "HIGH"),
@@ -428,26 +424,3 @@ class Notification(models.Model):
 
     Priority = models.CharField(choices=prioridadOpciones, default="Medium")
     is_read = models.BooleanField(default=False)
-
-    def clean(self):
-        # Validación: título y mensaje no pueden estar vacíos
-        if not self.title.strip():
-            raise ValidationError("El título no puede estar vacío.")
-
-        if not self.massage.strip():
-            raise ValidationError("El mensaje no puede estar vacío.")
-
-        # Validación: si hay un solo destinatario, no debería haber evento
-        if self.addressee.count() == 1 and self.event:
-            raise ValidationError("No se puede asignar un evento cuando la notificación es para un usuario específico.")
-
-        # Validación: si es para múltiples (o todos), debe haber evento
-        if self.addressee.count() > 1 and not self.event:
-            raise ValidationError("Debes asignar un evento cuando la notificación es para múltiples usuarios.")
-        
-        # Validación de prioridad
-        if self.Priority not in dict(self.prioridadOpciones):
-            raise ValidationError("Prioridad inválida.")
-
-    def __str__(self):
-        return self.title
