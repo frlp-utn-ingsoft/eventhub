@@ -565,22 +565,19 @@ def buy_ticket(request, id):
 
         type = request.POST.get("type")
 
-        discount_data = None
+        discount = None
         discount_str = request.POST.get("discount", "{}")
         try:
-            discount_str = unquote(request.POST.get("discount", "{}"))
+            discount_str = unquote(discount_str)
             discount_data = json.loads(discount_str)
             discount_info = discount_data.get("discount", {})
             
-            discount_code = discount_info.get("code")
-            discount_multiplier = discount_info.get("multiplier")
-        except json.JSONDecodeError:
-            print("Error al decodificar el JSON de descuento")
-            discount_data = None
-
-        discount_code = discount_data.get("discount", {}).get("code")
-
-        discount = Discount.objects.get(code=discount_code)
+            if discount_info:
+                discount_code = discount_info.get("code")
+                if discount_code:
+                    discount = Discount.objects.get(code=discount_code)
+        except (json.JSONDecodeError, Discount.DoesNotExist):
+            discount = None
 
         success, result = Ticket.new(quantity=quantity, type=type, event=event, user=user, discount=discount)
 
@@ -591,7 +588,9 @@ def buy_ticket(request, id):
             # Redirigir a la encuesta de satisfacción con el ID del ticket
             return redirect("satisfaction_survey", ticket_id=result.id)
         else:
-            messages.error(request, "Error al comprar el ticket")
+            # Mostrar el mensaje de error específico
+            for field, error in result.items():
+                messages.error(request, error)
             return render(
                 request,
                 "app/buy_ticket.html",
