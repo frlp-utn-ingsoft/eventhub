@@ -50,10 +50,10 @@
               <div class="col-md-8">
                 {{ form.quantity }}
                 <div class="form-text">
-                  {% if event.location %}
-                    Disponibles: {{ event.tickets_left }} entradas
+                  {% if event.tickets_available != 0 %}
+                    Disponibles: {{ event.tickets_available }} entradas
                   {% else %}
-                    No hay información de capacidad disponible
+                    No hay entradas disponibles
                   {% endif %}
                 </div>
               </div>

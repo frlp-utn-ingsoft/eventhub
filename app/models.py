@@ -157,8 +157,13 @@ class Event(models.Model):
     categories = models.ManyToManyField(Category, through='EventCategory')
     price_general = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
     price_vip = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
-    tickets_available = models.PositiveIntegerField(default=0)
+    tickets_total = models.PositiveIntegerField(default=0)
     tickets_sold = models.PositiveIntegerField(default=0)
+
+    @property
+    def tickets_available(self):
+        sold = Ticket.objects.filter(event=self).count()
+        return self.tickets_total - sold
 
     def __str__(self):
         return self.title
@@ -171,21 +176,16 @@ class Event(models.Model):
             self.scheduled_at = timezone.make_aware(self.scheduled_at)
         super().save(*args, **kwargs)
     
-    @property
-    def tickets_left(self):
-        if not self.location:
-            return 0
-        return max(0, self.location.capacity - self.tickets_sold)
 
     @property
     def occupancy_percentage(self):
-        if not self.location or self.location.capacity == 0:
+        if not self.tickets_total or self.tickets_total == 0:
             return 0.0
-        return min(100.0, round((self.tickets_sold / self.location.capacity) * 100, 1))
+        return min(100.0, round((self.tickets_sold / self.tickets_total) * 100, 1))
 
     @property
     def demand_status(self):
-        if not self.location:
+        if not self.tickets_total:
             return "Baja demanda"
         percentage = self.occupancy_percentage
         if percentage <= 10:

@@ -157,7 +157,7 @@ def event_form(request, id=None):
         categories = Category.objects.filter(id__in=category_ids)
         price_general = request.POST.get("price_general")
         price_vip = request.POST.get("price_vip")
-        tickets_available = request.POST.get("tickets_available")
+        tickets_total = request.POST.get("tickets_total")
 
         [year, month, day] = date.split("-")
         [hour, minutes] = time.split(":")
@@ -181,7 +181,7 @@ def event_form(request, id=None):
                 event.price_vip = float(str(price_vip).replace(',', '.'))
             
             event.categories.set(categories)
-            event.tickets_available = int(tickets_available) if tickets_available is not None else 0
+            event.tickets_total = int(tickets_total) if tickets_total is not None else 0
 
             event.save()
         return redirect('events')
@@ -562,7 +562,7 @@ def buy_ticket_from_event(request, event_id):
         if form.is_valid():
             type_ = form.cleaned_data['type']
             quantity = form.cleaned_data['quantity']
-
+    
             card_number = form.cleaned_data['card_number']
             card_cvv = form.cleaned_data['card_cvv']
 
@@ -573,6 +573,18 @@ def buy_ticket_from_event(request, event_id):
                     'event_prices': {
                         'general': float(event.price_general),
                         'vip': float(event.price_vip)}})
+            
+            # Validar cantidad de tickets disponibles
+            if quantity > event.tickets_available:
+                form.add_error('quantity', f'Solo hay {event.tickets_available} tickets disponibles para este evento.')
+                return render(request, 'tickets/buy_ticket.html', {
+                    'form': form,
+                    'event': event,
+                    'event_prices': {
+                        'general': float(event.price_general),
+                        'vip': float(event.price_vip)
+                    }
+                })
 
             ticket = form.save(commit=False)
             ticket.user = request.user  # asignamos el usuario que inició sesión

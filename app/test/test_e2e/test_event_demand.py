@@ -41,6 +41,7 @@ class EventDemandE2ETest(BaseE2ETest):
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
             location=self.location,
+            tickets_total=int("100"),
             price_general=Decimal('100.00'),
             price_vip=Decimal('200.00')
         )
