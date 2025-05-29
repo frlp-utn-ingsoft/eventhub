@@ -1,104 +1,115 @@
 {% extends "base.html" %}
-
 {% block content %}
-<div class="container my-5">
-  <div class="row">
-    <!-- Columna izquierda: Formulario de compra -->
-    <div class="col-md-8">
-      <div class="card mb-4">
-        <div class="card-body">
-          <h5 class="card-title">{{ event.title }}</h5>
-          <div class="d-flex align-items-center mb-3">
-            <div class="bg-light rounded-circle p-2 me-3">
-                <i class="bi bi-calendar-event text-primary"></i>
-            </div>
-            <div>
-                <h6 class="mb-0">Fecha y Hora</h6>
-                <p class="mb-0">{{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
-            </div>
-          </div>
 
-          <div class="d-flex align-items-center mb-3">
-            <div class="bg-light rounded-circle p-2 me-3">
-                <i class="bi bi-geo-alt text-primary"></i>
-            </div>
-            <div>
-                <h6 class="mb-0">Ubicación</h6>
-                <p class="mb-0">{{ event.venue }} - {{ event.venue.adress }}, {{ event.venue.city }}</p>
-            </div>
+{% if available_tickets_to_buy == 0 %}
+  <div class="container my-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card shadow-sm">
+          <div class="card-body text-center">
+            <h5 class="card-title">¡Lo sentimos!</h5>
+            <p class="card-text">Has comprado el máximo de tickets disponibles para este usuario.</p>
+            <a href="{% url 'events' %}" class="btn btn-outline-primary" aria-label="Volver a eventos" title="Volver a eventos">
+              Aceptar y volver
+            </a>
           </div>
-          <div class="d-flex align-items-center mb-3">
-            <div class="bg-light rounded-circle p-2 me-3">
-                <i class="bi bi-person text-primary"></i>
-            </div>
-            <div>
-                <h6 class="mb-0">Organizador</h6>
-                <p class="mb-0">{{ event.organizer }}</p>
-            </div>
-          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 
-          {% if messages %}
-          <div class="alert alert-danger mb-3">
-            {% for message in messages %}
-              {{ message }}
-            {% endfor %}
-          </div>
-          {% endif %}
-
-          {% if errors %}
-          <div class="alert alert-danger mb-3">
-            {% for field, error in errors.items %}
-              {{ error }}
-            {% endfor %}
-          </div>
-          {% endif %}
-
-          <form method="POST" action="{% url 'buy_ticket' event.id %}">
-            {% csrf_token %}
-
-            <div class="mb-3">
-              <label for="quantity" class="form-label">Cantidad de entradas</label>
-              <div class="input-group">
-                <button type="button" class="btn btn-outline-secondary" onclick="decrementQuantity()"><i class="bi bi-dash"></i></button>
-                <input type="number" name="quantity" id="quantity" class="form-control text-center" value="1" min="1" max="5" onchange="setQuantity()">
-                <button type="button" class="btn btn-outline-secondary" onclick="incrementQuantity()"><i class="bi bi-plus"></i></button>
+{% else %}
+  <div class="container my-5">
+    <div class="row">
+      <!-- Columna izquierda: Formulario de compra -->
+      <div class="col-md-8">
+        <div class="card mb-4">
+          <div class="card-body">
+            <h5 class="card-title">{{ event.title }}</h5>
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-light rounded-circle p-2 me-3">
+                  <i class="bi bi-calendar-event text-primary"></i>
               </div>
-              <div class="form-text">{{ event.available_tickets }} entradas disponibles</div>
-            </div>
-
-            <div class="mb-3">
-              <label for="type" class="form-label">Tipo de entrada</label>
-              
-              <select name="type" id="type" class="form-select" required>
-                <option value="GENERAL" data-price="45.99">Entrada General</option>
-                <option value="VIP" data-price="89.99">Entrada VIP</option>
-              </select>
-            </div>
-
-            <h6 class="mt-4">Método de pago</h6>
-            <div class="mb-3">
-              <label for="card_number" class="form-label">Número de tarjeta</label>
-              <input type="text" id="card_number" name="card_number" class="form-control" placeholder="1234 5678 9012 3456" required>
-            </div>
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="expiry" class="form-label">Fecha de expiración</label>
-                <input type="text" id="expiry" name="expiry" class="form-control" placeholder="MM/AA" required>
-              </div>
-              <div class="col-md-6 mb-3">
-                <label for="cvv" class="form-label">CVV</label>
-                <input type="text" id="cvv" name="cvv" class="form-control" placeholder="123" required>
+              <div>
+                  <h6 class="mb-0">Fecha y Hora</h6>
+                  <p class="mb-0">{{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
               </div>
             </div>
-            <div class="mb-3">
-              <label for="card_name" class="form-label">Nombre en la tarjeta</label>
-              <input type="text" id="card_name" name="card_name" class="form-control" placeholder="Juan Pérez" required>
+
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-light rounded-circle p-2 me-3">
+                  <i class="bi bi-geo-alt text-primary"></i>
+              </div>
+              <div>
+                  <h6 class="mb-0">Ubicación</h6>
+                  <p class="mb-0">{{ event.venue }} - {{ event.venue.adress }}, {{ event.venue.city }}</p>
+              </div>
+            </div>
+            <div class="d-flex align-items-center mb-3">
+              <div class="bg-light rounded-circle p-2 me-3">
+                  <i class="bi bi-person text-primary"></i>
+              </div>
+              <div>
+                  <h6 class="mb-0">Organizador</h6>
+                  <p class="mb-0">{{ event.organizer }}</p>
+              </div>
             </div>
 
-            <div class="form-check mb-3">
-              <input type="checkbox" class="form-check-input" id="terms" required>
-              <label class="form-check-label" for="terms">Acepto los <a href="#" target="_blank" rel="noopener noreferrer">términos y condiciones</a> y la <a href="#" target="_blank" rel="noopener noreferrer">política de privacidad</a>.</label>
-            </div>
+            <form method="POST" action="{% url 'buy_ticket' event.id %}">
+              {% csrf_token %}
+
+              <div class="mb-3">
+                <label for="quantity" class="form-label">Cantidad de entradas</label>
+                <div class="input-group">
+                  <button type="button" class="btn btn-outline-secondary" onclick="decrementQuantity()">-</button>
+                  <input
+                    type="number"
+                    name="quantity"
+                    id="quantity"
+                    class="form-control text-center"
+                    value="1"
+                    min="1"
+                    max={{available_tickets_to_buy}}
+                    onchange="setQuantity()"
+                  >
+                  <button type="button" class="btn btn-outline-secondary" onclick="incrementQuantity()">+</button>
+                </div>
+                <div class="form-text">{{ event.available_tickets }} entradas disponibles</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="type" class="form-label">Tipo de entrada</label>
+                
+                <select name="type" id="type" class="form-select" required>
+                  <option value="GENERAL" data-price="45.99">Entrada General</option>
+                  <option value="VIP" data-price="89.99">Entrada VIP</option>
+                </select>
+              </div>
+
+              <h6 class="mt-4">Método de pago</h6>
+              <div class="mb-3">
+                <label for="card_number" class="form-label">Número de tarjeta</label>
+                <input type="text" id="card_number" name="card_number" class="form-control" placeholder="1234 5678 9012 3456" required>
+              </div>
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="expiry" class="form-label">Fecha de expiración</label>
+                  <input type="text" id="expiry" name="expiry" class="form-control" placeholder="MM/AA" required>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="cvv" class="form-label">CVV</label>
+                  <input type="text" id="cvv" name="cvv" class="form-control" placeholder="123" required>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="card_name" class="form-label">Nombre en la tarjeta</label>
+                <input type="text" id="card_name" name="card_name" class="form-control" placeholder="Juan Pérez" required>
+              </div>
+
+              <div class="form-check mb-3">
+                <input type="checkbox" class="form-check-input" id="terms" required>
+                <label class="form-check-label" for="terms">Acepto los <a href="#" target="_blank" rel="noopener noreferrer">términos y condiciones</a> y la <a href="#" target="_blank" rel="noopener noreferrer">política de privacidad</a>.</label>
+              </div>
 
             <input type="hidden" id="discount" name="discount" value="">
 
@@ -158,110 +169,109 @@
       </div>
     </div>
   </div>
-</div>
 
 
-<!-- SCRIPTS -->
-<script>
-  function incrementQuantity() {
-    const quantityInput = document.getElementById('quantity');
-    const currentValue = parseInt(quantityInput.value) || 1;
-    const max = parseInt(quantityInput.max);
+  <!-- SCRIPTS -->
+  <script>
+    function incrementQuantity() {
+      const quantityInput = document.getElementById('quantity');
+      const currentValue = parseInt(quantityInput.value) || 1;
+      const max = parseInt(quantityInput.max);
 
-    if (currentValue < max) {
-      const newValue = currentValue + 1;
-      quantityInput.value = newValue;
+      if (currentValue < max) {
+        const newValue = currentValue + 1;
+        quantityInput.value = newValue;
 
-      setQuantity(newValue);
+        setQuantity(newValue);
+      }
     }
-  }
-</script>
+  </script>
 
-<script>
-  function decrementQuantity() {
-    const quantityInput = document.getElementById('quantity');
-    const currentValue = parseInt(quantityInput.value) || 1;
+  <script>
+    function decrementQuantity() {
+      const quantityInput = document.getElementById('quantity');
+      const currentValue = parseInt(quantityInput.value) || 1;
 
-    if (currentValue > 1) {
-      const newValue = currentValue - 1;
+      if (currentValue > 1) {
+        const newValue = currentValue - 1;
 
-      quantityInput.value = newValue;
+        quantityInput.value = newValue;
 
-      setQuantity(newValue);
+        setQuantity(newValue);
+      }
     }
-  }
-</script>
+  </script>
 
-<script>
-  function setQuantity(value) {
-    const summaryQuantity = document.getElementById('summary__quantity');
+  <script>
+    function setQuantity(value) {
+      const summaryQuantity = document.getElementById('summary__quantity');
 
-    if (value !== undefined) {
-      summaryQuantity.innerText = '';
-      summaryQuantity.innerText = value;
+      if (value !== undefined) {
+        summaryQuantity.innerText = '';
+        summaryQuantity.innerText = value;
 
-      setSubTotal();
+        setSubTotal();
+      }
     }
-  }
-</script>
+  </script>
 
-<script>
-  const ticketTypeSelect = document.getElementById('type');
-  const summaryTicketPrice = document.getElementById('summary__ticket-price');
-  
-  ticketTypeSelect.addEventListener('change', () => {
-    const selectedOption = ticketTypeSelect.options[ticketTypeSelect.selectedIndex];
-    const price = selectedOption.getAttribute('data-price');
+  <script>
+    const ticketTypeSelect = document.getElementById('type');
+    const summaryTicketPrice = document.getElementById('summary__ticket-price');
     
-    if(summaryTicketPrice) {
-      summaryTicketPrice.textContent = price;
-      setSubTotal();
+    ticketTypeSelect.addEventListener('change', () => {
+      const selectedOption = ticketTypeSelect.options[ticketTypeSelect.selectedIndex];
+      const price = selectedOption.getAttribute('data-price');
+      
+      if(summaryTicketPrice) {
+        summaryTicketPrice.textContent = price;
+        setSubTotal();
+      }
+    });
+  </script>
+
+  <script>
+    function setSubTotal() {
+      const quantityInput = document.getElementById('quantity');
+      const subTotalElement = document.getElementById('summary__subtotal');
+      const selectedOption = ticketTypeSelect.options[ticketTypeSelect.selectedIndex];
+      
+      const price = selectedOption.getAttribute('data-price');
+      const quantity = quantityInput.value;
+      
+      const subtotal = parseFloat(price * quantity).toFixed(2);
+
+      subTotalElement.innerText = '';
+      subTotalElement.innerText = subtotal;
+
+      setTaxes(subtotal);
     }
-  });
-</script>
-
-<script>
-  function setSubTotal() {
-    const quantityInput = document.getElementById('quantity');
-    const subTotalElement = document.getElementById('summary__subtotal');
-    const selectedOption = ticketTypeSelect.options[ticketTypeSelect.selectedIndex];
-    
-    const price = selectedOption.getAttribute('data-price');
-    const quantity = quantityInput.value;
-    
-    const subtotal = parseFloat(price * quantity).toFixed(2);
-
-    subTotalElement.innerText = '';
-    subTotalElement.innerText = subtotal;
-
-    setTaxes(subtotal);
-  }
-</script>
+  </script>
 
 
-<script>
-  function setTaxes(subtotal) {
-    const taxesElement = document.getElementById('summary__taxes');
+  <script>
+    function setTaxes(subtotal) {
+      const taxesElement = document.getElementById('summary__taxes');
 
-    const taxes = parseFloat(subtotal * 0.1).toFixed(2);
+      const taxes = parseFloat(subtotal * 0.1).toFixed(2);
 
-    taxesElement.innerText = '';
-    taxesElement.innerText = taxes;
+      taxesElement.innerText = '';
+      taxesElement.innerText = taxes;
 
-    setTotal(subtotal, taxes)
-  }
-</script>
+      setTotal(subtotal, taxes)
+    }
+  </script>
 
-<script>
-  function setTotal(subtotal, taxes) {
-    const totalElement = document.getElementById('total');
+  <script>
+    function setTotal(subtotal, taxes) {
+      const totalElement = document.getElementById('total');
 
-    const total = parseFloat(parseFloat(subtotal) + parseFloat(taxes)).toFixed(2);
+      const total = parseFloat(parseFloat(subtotal) + parseFloat(taxes)).toFixed(2);
 
-    totalElement.innerText = '';
-    totalElement.innerText = total;
-  }
-</script>
+      totalElement.innerText = '';
+      totalElement.innerText = total;
+    }
+  </script>
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
@@ -372,17 +382,18 @@
   }
 </script>
 
-<!-- CUSTOM STYLES -->
-<style>
-  input[type=number]::-webkit-inner-spin-button, 
-  input[type=number]::-webkit-outer-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-  }
+  <!-- CUSTOM STYLES -->
+  <style>
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
 
-  input[type=number] {
-      -moz-appearance: textfield;
-      appearance: textfield;
-  }
-</style>
+    input[type=number] {
+        -moz-appearance: textfield;
+        appearance: textfield;
+    }
+  </style>
+{% endif %}
 {% endblock %}

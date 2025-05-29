@@ -5,7 +5,7 @@ import django
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'eventhub.settings')
 django.setup()
 
-from app.models import Venue, Category, Notification, Event, User, Ticket, Rating, Comment, RefundRequest
+from app.models import Venue, Category, Notification, Event, User, Ticket, Rating, Comment, RefundRequest, Discount
 from django.utils import timezone
 from datetime import datetime
 
@@ -59,6 +59,7 @@ def seed():
         organizer=newUser,
         venue=newVenue,
         category=newCategory,
+        state='ACTIVE'
     )
     print("Datos de 'Event' sembrados exitosamente")
 
@@ -71,12 +72,17 @@ def seed():
     )
     print("Datos de 'Notification' sembrados exitosamente")
 
+    # Discount
+    discount = Discount.objects.create(code='UTN-FRLP', multiplier=0.8)
+    print("Datos de 'Discount' sembrados exitosamente")
+
     # Ticket
     success, newTicket = Ticket.new(
         quantity=1,
         type="VIP",
         event=newEvent,
-        user=newNormieUser
+        user=newNormieUser,
+        discount=discount
     )
     print("Datos de 'Ticket' sembrados exitosamente")
 
