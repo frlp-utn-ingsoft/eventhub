@@ -1,10 +1,11 @@
 import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -291,6 +292,136 @@ class Event(models.Model):
     def get_rating_count(self):
         return self.ratings.count()
 
+class Discount(models.Model):
+    code = models.CharField(
+        max_length=8,
+        unique=True,
+        editable=False,
+        blank=True,
+        verbose_name='Código'
+    )
+    
+    multiplier = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        verbose_name='Multiplicador'
+    )
+
+    class Meta:
+        verbose_name = 'Descuento'
+        verbose_name_plural = 'Descuentos'
+
+    def __str__(self):
+        return f"{self.code or 'Sin código'} - {self.multiplier*100}%"
+
+    def clean(self):
+        """Validación a nivel de modelo"""
+        if self.code and len(self.code) != 8:
+            raise ValidationError({'code': 'El código debe tener exactamente 8 caracteres'})
+        
+        if self.multiplier is None:
+            raise ValidationError({'multiplier': 'El multiplicador es requerido'})
+
+    def save(self, *args, **kwargs):
+        """Generación automática de código si no se proporciona"""
+        if not self.code:
+            self.code = self.generate_discount_code()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def generate_discount_code(cls):
+        """Genera un código único de 8 caracteres"""
+        code = uuid.uuid4().hex[:8].upper()
+        while cls.objects.filter(code=code).exists():
+            code = uuid.uuid4().hex[:8].upper()
+        return code
+
+    @classmethod
+    def validate(cls, code=None, multiplier=None):
+        """Validación previa a la creación"""
+        errors = {}
+        
+        if code is not None and code != '':
+            if not isinstance(code, str):
+                errors['code'] = 'El código debe ser texto'
+            elif len(code) != 8:
+                errors['code'] = 'El código debe tener 8 caracteres'
+        
+        if multiplier is None:
+            errors['multiplier'] = 'Multiplicador requerido'
+        else:
+            try:
+                multiplier = float(multiplier)
+                if not (0 <= multiplier <= 1):
+                    errors['multiplier'] = 'Debe estar entre 0 y 1'
+            except (TypeError, ValueError):
+                errors['multiplier'] = 'Debe ser un número válido'
+        
+        return errors
+
+    @classmethod
+    def new(cls, code=None, multiplier=None):
+        """Crea un nuevo descuento con validación"""
+        errors = cls.validate(code, multiplier)
+        if errors:
+            return False, errors
+            
+        try:
+            discount = cls(code=code, multiplier=multiplier)
+            discount.full_clean()
+            discount.save()
+
+            return True, discount
+        
+        except ValidationError as e:
+            return False, e.message_dict
+        except Exception as e:
+            return False, {'error': str(e)}
+
+    def update(self, code=None, multiplier=None):
+        """Update discount fields"""
+        errors = {}
+        
+        if code is not None:
+            if not isinstance(code, str):
+                errors["code"] = "El código debe ser una cadena de texto."
+            elif len(code) != 8:
+                errors["code"] = "El código de descuento debe tener exactamente 8 caracteres."
+            elif Discount.objects.filter(code=code).exclude(pk=self.id).exists():
+                errors["code"] = "Este código ya está en uso por otro descuento."
+        
+        if multiplier is not None:
+            try:
+                multiplier = float(multiplier)
+                if multiplier > 1:
+                    errors["multiplier"] = "El multiplicador debe ser como máximo 1."
+                elif multiplier < 0:
+                    errors["multiplier"] = "El multiplicador debe ser al menos 0."
+            except (TypeError, ValueError):
+                errors["multiplier"] = "El multiplicador debe ser un número válido."
+        
+        if errors:
+            return False, errors
+        
+        try:
+            if code is not None:
+                self.code = code
+            
+            if multiplier is not None:
+                self.multiplier = multiplier
+            
+            self.save()
+            
+            return True, self
+        
+
+        except Exception as e:
+            return False, {"error": f"Error al actualizar el descuento: {str(e)}"}
+
+
 class Ticket(models.Model):
     # Constants
     GENERAL = 'GENERAL'
@@ -333,6 +464,13 @@ class Ticket(models.Model):
         related_name='tickets'
     )
 
+    discount = models.ForeignKey(
+        Discount,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='discounts'
+    )
+
     class Meta:
         verbose_name = 'Ticket'
         verbose_name_plural = 'Tickets'
@@ -342,7 +480,7 @@ class Ticket(models.Model):
         return str(self.ticket_code)
     
     @classmethod
-    def validate(cls, quantity, type, event, user):
+    def validate(cls, quantity, type, event, user, discount=None):
         """Validate ticket data before creation"""
         errors = {}
 
@@ -367,12 +505,15 @@ class Ticket(models.Model):
         if not user:
             errors["user"] = "Usuario es requerido"
         
+        if discount and not isinstance(discount, Discount):
+            errors["discount"] = "El descuento debe ser una instancia válida del modelo Discount"            
+
         return errors
     
     @classmethod
-    def new(cls, quantity, type, event, user):
+    def new(cls, quantity, type, event, user, discount=None):
         """Create a new ticket with validation"""
-        errors = cls.validate(quantity, type, event, user)
+        errors = cls.validate(quantity, type, event, user, discount)
 
         if errors:
             return False, errors
@@ -383,13 +524,14 @@ class Ticket(models.Model):
                 quantity=quantity,
                 type=type,
                 event=event,
-                user=user
+                user=user,
+                discount=discount
             )
             return True, ticket
         except Exception as e:
             return False, {"error": f"Error al crear ticket: {str(e)}"}
 
-    def update(self, buy_date, quantity, type, event, user):
+    def update(self, buy_date, quantity, type, event, user, discount=None):
         """Update ticket fields"""
         
         if buy_date is not None:
@@ -402,6 +544,8 @@ class Ticket(models.Model):
             self.event = event
         if user is not None:
             self.user = user
+        if discount is not None:
+            self.discount = discount
         
         self.save()
         return True, self
