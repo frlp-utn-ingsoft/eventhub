@@ -3,7 +3,7 @@
         <strong class="strong1">Calificaciones y Reseñas ({{ ratings.count }})</strong>
         <!-- Si el usuario es organizador muestro promedio -->
         {% if user_is_organizer %}
-            <strong class="strong2">Calificación promedio:</strong>
+            <strong class="strong2" id='average_rating'>Calificación promedio:</strong>
             <!-- Si no hay calificaciones -->
             {% if not ratings %}
                 Sin calificaciones

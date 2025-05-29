@@ -7,10 +7,35 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
-from app.models import Category, Event, Rating, Ticket, Venue
+from app.models import Category, Event, Rating, Ticket, Venue, Notification, User
 from app.views.rating_views import create_rating
 
 
+def handle_notification_on_reprogramate(event, title, categories, venue, description, scheduled_at, user):
+    # Si la fecha cambia, poner estado reprogramado
+    # Se que medio patata programming pero no se me ocurre otra forma
+    fecha_anterior = event.scheduled_at
+
+    success = True
+    errors = None
+    if fecha_anterior != scheduled_at:
+        success, errors = event.update(title, categories, venue, description, scheduled_at, user, status='reprogramed')
+        # Notifico a los usarios de los cambios realizados
+        # Crear la notificación
+        notification = Notification.objects.create(
+        title="El evento ha sido reprogramado",
+        massage=f"El evento '{event.title}' ha sido reprogramado. Nueva fecha y hora: {scheduled_at.strftime('%d/%m/%Y %H:%M')}.",
+        event=event,
+        Priority='High',
+        )
+
+        # Obtener los usuarios con tickets para el evento
+        addressee_users = User.objects.filter(tickets__event=event).distinct()
+        notification.addressee.set(addressee_users)
+    else:
+        success, errors = event.update(title, categories, venue, description, scheduled_at, user)
+    
+    return success, errors
 @login_required
 def event_form(request, id=None):
     user = request.user
@@ -79,9 +104,7 @@ def event_form(request, id=None):
                     title, categories, venue, description, scheduled_at, user
                 )
             else:
-                ok, model_errors = event.update(
-                    title, categories, venue, description, scheduled_at, user, status=status
-                )
+                ok, model_errors = handle_notification_on_reprogramate(event, title, categories, venue, description, scheduled_at, request.user)
             if not ok:
                 # model_errors puede ser dict o mensaje
                 if isinstance(model_errors, dict):

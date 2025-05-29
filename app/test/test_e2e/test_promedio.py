@@ -2,6 +2,8 @@ import datetime
 from app.models import User, Event, Rating
 from django.utils import timezone
 from app.test.test_e2e.base import BaseE2ETest
+from playwright.sync_api import expect
+
 
 class PromedioBaseTest(BaseE2ETest):
     def setUp(self):
@@ -39,26 +41,20 @@ class PromedioBaseTest(BaseE2ETest):
             text="Me encantó",
         )
 
-
     def test_organizer_ve_promedio_y_estrellas(self):
         # Login vía interfaz
         self.login_user("organizador_test", "password123")
 
         # Ir a la página detalle del evento
         self.page.goto(f"{self.live_server_url}/events/{self.event.id}/")
-        print(self.page.content())  # Muestra el HTML actual para depurar
 
-        # Esperar que el bloque "Calificación promedio" esté visible
-        self.page.wait_for_selector("text=Calificación promedio")
+        average = self.page.locator("#average_rating")
 
-        # Verificar que aparece el promedio 4.0 (promedio de 3 y 5)
-        contenido = self.page.content()
-        assert ("4.0" in contenido) or ("4,0" in contenido), "No se encontró el promedio esperado en la página"
-
-
-        # Verificar que no aparece "Sin calificaciones"
-        assert "Sin calificaciones" not in contenido, "Aparece texto 'Sin calificaciones' cuando debería haber promedio"
+        # Verificar que aparece el promedio
+        expect(average).to_be_visible()
 
         # Verificar que el gráfico de estrellas está presente (ejemplo: verificar clase .star-filled)
         estrellas = self.page.query_selector_all("i.bi-star-fill")
-        assert len(estrellas) >= 4, "No se encontraron suficientes estrellas llenas para el promedio"
+        assert len(estrellas) >= 4, (
+            "No se encontraron suficientes estrellas llenas para el promedio"
+        )

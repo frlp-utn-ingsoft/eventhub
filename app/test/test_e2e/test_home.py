@@ -1,4 +1,5 @@
 import re
+import time
 
 from playwright.sync_api import expect
 
@@ -83,3 +84,58 @@ class HomeAuthenticationTest(BaseE2ETest):
         # Verificar que el botón de cerrar sesión esté presente
         logout_btn = self.page.get_by_role("button", name="Salir")
         expect(logout_btn).to_be_visible()
+
+
+class HomeThemeTest(BaseE2ETest):
+    """Tests sobre el tema de la página de inicio"""
+
+    def test_prefer_color_scheme(self):
+        """Test que verifica que el tema inicial es el esperado y se setea correctamente"""
+
+        # Inicial en dark
+        context = self.browser.new_context(color_scheme="dark")
+        page = context.new_page()
+        page.goto(f"{self.live_server_url}/")
+
+        # Recupera el atributo data-bs-theme del html
+        theme_attr = page.evaluate("document.documentElement.getAttribute('data-bs-theme')")
+        assert theme_attr == "dark", (
+            f"El valor seteado en el html: '{theme_attr}' es distinto a la preferencia del usuario: 'dark'"
+        )
+
+        # Inicial en light
+        context = self.browser.new_context(color_scheme="light")
+        page = context.new_page()
+        page.goto(f"{self.live_server_url}/")
+
+        theme_attr = page.evaluate("document.documentElement.getAttribute('data-bs-theme')")
+        assert theme_attr == "light", (
+            f"El valor seteado en el html: '{theme_attr}' es distinto a la preferencia del usuario: 'light'"
+        )
+
+        # Inicial en None
+        context = self.browser.new_context(color_scheme=None)
+        page = context.new_page()
+        page.goto(f"{self.live_server_url}/")
+
+        theme_attr = page.evaluate("document.documentElement.getAttribute('data-bs-theme')")
+        assert theme_attr == "light", (
+            f"El valor seteado en el html: '{theme_attr}' por defecto debe ser 'light'"
+        )
+
+    def test_toggle_theme(self):
+        """Test que verifica que el botón alterna tema claro a oscuro correctamente"""
+
+        self.page.goto(f"{self.live_server_url}/")
+
+        button_theme_toggle = self.page.locator("#themeToggle")
+        initial_theme_attr = self.page.evaluate(
+            "document.documentElement.getAttribute('data-bs-theme')"
+        )
+        button_theme_toggle.click()
+        final_theme_attr = self.page.evaluate(
+            "document.documentElement.getAttribute('data-bs-theme')"
+        )
+        assert initial_theme_attr != final_theme_attr, (
+            "El tema no cambió al hacer clic en el botón de alternar tema"
+        )
