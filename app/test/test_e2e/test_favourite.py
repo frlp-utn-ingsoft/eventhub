@@ -2,6 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import StaleElementReferenceException
 import unittest
 import time
 from django.contrib.auth import get_user_model
@@ -37,7 +38,7 @@ class TestFavoritosE2E(unittest.TestCase):
             self.organizer_user.set_password('87654321')
             self.organizer_user.save()
 
-        # Crear un evento asociado al organizador, no al usuario de prueba
+        # Crear un evento asociado al organizador
         self.test_event, created = Event.objects.get_or_create(
             title='Evento de prueba',
             defaults={
@@ -54,11 +55,8 @@ class TestFavoritosE2E(unittest.TestCase):
         self.base_url = "http://127.0.0.1:8000"
 
     def tearDown(self):
-        # Para observar la última pantalla si hay error
         time.sleep(5)
         self.driver.quit()
-
-        # Limpieza de datos creados
         if hasattr(self, 'test_event'):
             self.test_event.delete()
         if hasattr(self, 'test_user'):
@@ -71,24 +69,29 @@ class TestFavoritosE2E(unittest.TestCase):
         try:
             username_input = self.wait.until(EC.presence_of_element_located((By.NAME, "username")))
             password_input = self.driver.find_element(By.NAME, "password")
-
             username_input.send_keys("Prueba")
             password_input.send_keys("12345678")
-
             password_input.submit()
-
-            # Confirmamos que se logueó correctamente
             self.wait.until(EC.url_contains("/events"))
-
         except Exception as e:
             print("❌ Error en login:", e)
             print("URL actual:", self.driver.current_url)
             time.sleep(10)
             raise
 
-    def esperar_cambio_clase(self, obtener_boton_fn, clase_anterior, timeout=10):
+    def esperar_cambio_title(self, obtener_boton_fn, title_anterior, timeout=10):
         wait = WebDriverWait(self.driver, timeout)
-        wait.until(lambda d: obtener_boton_fn().get_attribute("class") != clase_anterior)
+
+        def condition(driver):
+            try:
+                title_actual = obtener_boton_fn().get_attribute("title")
+                print(f"Esperando cambio de título... Actual: '{title_actual}', Anterior: '{title_anterior}'")
+                return title_actual != title_anterior
+            except StaleElementReferenceException:
+                print("⚠️ StaleElementReferenceException capturada, reintentando...")
+                return False
+
+        wait.until(condition)
 
     def test_marcar_y_desmarcar_favorito(self):
         driver = self.driver
@@ -101,38 +104,34 @@ class TestFavoritosE2E(unittest.TestCase):
             print("URL actual:", driver.current_url)
 
             def obtener_boton_favorito():
-                filas_eventos = wait.until(EC.presence_of_all_elements_located((By.CSS_SELECTOR, "table.table tbody tr")))
-                assert len(filas_eventos) > 0, "No hay filas en la tabla"
-
-                primera_fila = filas_eventos[0]
-                form_favorito = primera_fila.find_element(By.CSS_SELECTOR, "form.favourite-form")
-                boton_favorito = form_favorito.find_element(By.CSS_SELECTOR, "button.btn-warning, button.btn-outline-warning")
-                return boton_favorito
+                # Selector que busca el primer botón dentro del formulario con clase favourite-form en la tabla
+                selector = "table tbody tr:first-child form.favourite-form button"
+                return wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, selector)))
 
             # Estado inicial
             boton_favorito = obtener_boton_favorito()
-            clase_inicial = boton_favorito.get_attribute("class")
-            print("lase inicial del botón:", clase_inicial)
+            title_inicial = boton_favorito.get_attribute("title")
+            print("Título inicial del botón:", title_inicial)
 
             # Click para marcar como favorito
             boton_favorito.click()
-            self.esperar_cambio_clase(obtener_boton_favorito, clase_inicial)
+            self.esperar_cambio_title(obtener_boton_favorito, title_inicial)
 
             boton_favorito = obtener_boton_favorito()
-            clase_despues_click = boton_favorito.get_attribute("class")
-            print("Clase después de marcar favorito:", clase_despues_click)
-            self.assertNotEqual(clase_inicial, clase_despues_click)
+            title_despues_click = boton_favorito.get_attribute("title")
+            print("Título después de marcar favorito:", title_despues_click)
+            self.assertNotEqual(title_inicial, title_despues_click)
 
             # Click para desmarcar favorito
             boton_favorito.click()
-            self.esperar_cambio_clase(obtener_boton_favorito, clase_despues_click)
+            self.esperar_cambio_title(obtener_boton_favorito, title_despues_click)
 
             boton_favorito = obtener_boton_favorito()
-            clase_final = boton_favorito.get_attribute("class")
-            print("Clase final (debería ser igual a inicial):", clase_final)
-            self.assertEqual(clase_final, clase_inicial)
+            title_final = boton_favorito.get_attribute("title")
+            print("Título final (debería ser igual a inicial):", title_final)
+            self.assertEqual(title_final, title_inicial)
 
-            print("✅Test de favoritos completado con éxito")
+            print("✅ Test de favoritos completado con éxito")
 
         except Exception as e:
             print("❌ Error durante el test:", e)
@@ -143,4 +142,3 @@ class TestFavoritosE2E(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-#Utilizo emojis para a la hora de debuggear, ver correctamente el error
