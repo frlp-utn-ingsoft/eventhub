@@ -354,7 +354,7 @@ class Ticket(models.Model):
         if errors:
             return False, errors
         ticket = cls.objects.create(user=user, event=event, quantity=quantity, type=ticket_type)
-        cls.handle_event_status(event)
+        cls.handle_post_conditions(event)
         return True, ticket
     
     @classmethod
@@ -373,7 +373,7 @@ class Ticket(models.Model):
         return errors
     
     @classmethod
-    def handle_event_status(cls, event):
+    def handle_post_conditions(cls, event):
         
         total_tickets = (
             Ticket.objects.filter(event=event).aggregate(total_quantity=Sum("quantity"))[
@@ -392,6 +392,7 @@ class Ticket(models.Model):
                 organizer=event.organizer,
                 status="soldout",
                          )
+            Notification.objects.create()
         
 
     def update(self, quantity=None, ticket_type=None):

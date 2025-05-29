@@ -3,6 +3,9 @@
 
 {% block content %}
 <div class="row justify-content-center">
+  <div class="alert alert-danger d-none" id="alert-error" role="alert">
+    Los tickets para este evento estan agotados
+  </div>
   <div class="col-lg-8">
     <div class="card shadow-sm mb-4">
       <div class="card-header bg-white">
@@ -128,7 +131,7 @@
                 onclick="history.back()">
             ← Volver
           </button>
-          <button type="submit" class="btn btn-primary btn-lg w-100">
+          <button type="submit" id="button-pucharse" class="btn btn-primary btn-lg w-100">
             {% if ticket %}Actualizar{% else %}Pagar y Comprar{% endif %}
           </button>
         </form>
@@ -195,5 +198,19 @@
   inc.addEventListener('click', () => {
     qty.value = parseInt(qty.value,10) + 1;
   });
+  const status = "{{ event.status }}"
+
+  if(status== 'soldout' || status== 'SOLDOUT') {
+    const $alert = document.getElementById('alert-error');
+    const $buttonPucharse = document.getElementById('button-pucharse');
+    $buttonPucharse.disabled = true;
+    $alert.classList.remove('d-none');
+    console.log("$alert")
+    console.log($alert)
+    setTimeout(function() {
+      window.location.href = "{% url 'event_detail' event.id %}";
+    }, 3000);
+  }
+  
 </script>
 {% endblock %}
