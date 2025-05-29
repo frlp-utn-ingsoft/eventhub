@@ -1,7 +1,8 @@
 import datetime
+import re
 from django.utils import timezone
 from playwright.sync_api import expect
-from app.models import Event, User, Ticket
+from app.models import Event, User, Ticket, Venue
 from app.test.test_e2e.base import BaseE2ETest
 
 
@@ -19,6 +20,14 @@ class TicketLimitE2ETest(BaseE2ETest):
             is_organizer=False,
         )
 
+        # Crear usuario regular
+        self.other_user = User.objects.create_user(
+            username="usuario2",
+            email="usuario2@example.com",
+            password="password123",
+            is_organizer=False,
+        )
+
         # Crear organizador
         self.organizer = User.objects.create_user(
             username="organizador",
@@ -28,12 +37,26 @@ class TicketLimitE2ETest(BaseE2ETest):
         )
 
         # Crear evento
-        event_date = timezone.make_aware(datetime.datetime(2025, 6, 1, 18, 0))
+        event_date = timezone.now() + datetime.timedelta(days=5, hours=4, minutes=15)
+        venue = Venue.objects.create(
+            name="Auditorio Principal",
+            address="Calle Falsa 123, Ciudad Ejemplo",
+            capacity=3,
+        )
+
         self.event = Event.objects.create(
             title="Concierto de prueba",
             description="Concierto limitado",
             scheduled_at=event_date,
             organizer=self.organizer,
+        )
+
+        self.event2 = Event.objects.create(
+            title="Evento de prueba",
+            description="Evento con capacidad 3",
+            scheduled_at=event_date,
+            organizer=self.organizer,
+            venue=venue,
         )
 
     def llenar_formulario_pago(self):
@@ -55,11 +78,39 @@ class TicketLimitE2ETest(BaseE2ETest):
         """Verifica que un usuario no puede comprar más de 4 tickets para un mismo evento"""
         self.login_user("usuario", "password123")
 
-        # Comprar los primeros 5 tickets
+        # Comprar los primeros 4 tickets
         for i in range(4):
             self.comprar_ticket()
-        # Intentar comprar un 6º ticket
-        self.comprar_ticket() 
+        # Intentar comprar un 5º ticket
+        self.comprar_ticket()
         # Verificar en la base de datos
         ticket_count = Ticket.objects.filter(user=self.regular_user, event=self.event).count()
         self.assertEqual(ticket_count, 4)
+
+    def test_alert_visibility_on_soldout(self):
+        """Verifica que la alerta de sold out se muestra correctamente en caso de intentar comprar un evento con tickets agotados"""
+
+        self.login_user("usuario2", "password123")
+
+        # Compra los 3 tickets disponibles
+        for i in range(3):
+            self.page.goto(f"{self.live_server_url}/ticket/new/{self.event2.id}/")
+            alert = self.page.locator("#alert-error")
+            # La alerta deberia ser invisible
+            expect(alert).to_be_visible(visible=False)
+            self.llenar_formulario_pago()
+            buy_button = self.page.get_by_role("button", name="Pagar y Comprar")
+            expect(buy_button).to_be_visible()
+            buy_button.click()
+
+        # Logout
+        self.page.goto(f"{self.live_server_url}/events/")
+        self.page.get_by_role("button", name="Salir").click()
+
+        # Login otro usuario
+        self.login_user("usuario", "password123")
+
+        # Intentar comprar un ticket adicional
+        self.page.goto(f"{self.live_server_url}/ticket/new/{self.event2.id}/")
+        alert = self.page.locator("#alert-error")
+        expect(alert).to_be_visible()

@@ -4,7 +4,6 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Sum
 from django.utils.crypto import get_random_string
-from django.core.exceptions import ValidationError
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -334,6 +333,7 @@ class Ticket(models.Model):
             errors["quantity"] = "La cantidad debe ser un entero mayor o igual a 1."
         if ticket_type not in dict(cls.TICKET_TYPES):
             errors["type"] = "El tipo de ticket no es válido."
+        
         # Check total tickets per user per event
         existing_tickets = (
             Ticket.objects.filter(user=user, event=event).aggregate(total_quantity=Sum("quantity"))[
@@ -343,6 +343,9 @@ class Ticket(models.Model):
         )
         if existing_tickets + quantity > 4:
             errors["quantity"] = "No puedes comprar más de 4 entradas por evento."
+        else:
+            errors = cls.check_event_capacity(event, quantity)
+       
         return errors
 
     @classmethod
@@ -351,7 +354,45 @@ class Ticket(models.Model):
         if errors:
             return False, errors
         ticket = cls.objects.create(user=user, event=event, quantity=quantity, type=ticket_type)
+        cls.handle_post_conditions(event)
         return True, ticket
+    
+    @classmethod
+    def check_event_capacity(cls, event, quantity):
+        errors = {}
+         # sum total tickets
+        total_tickets = (
+            Ticket.objects.filter(event=event).aggregate(total_quantity=Sum("quantity"))[
+                "total_quantity"
+            ]
+            or 0
+        )
+        # Check event capacity
+        if event.venue and total_tickets + quantity > event.venue.capacity:
+            errors["capacity"] = "No puedes comprar más tickets que la capacidad del evento"
+        return errors
+    
+    @classmethod
+    def handle_post_conditions(cls, event):
+        
+        total_tickets = (
+            Ticket.objects.filter(event=event).aggregate(total_quantity=Sum("quantity"))[
+                "total_quantity"
+            ]
+            or 0
+        )
+
+        if event.venue and total_tickets == event.venue.capacity:
+            event.update(
+                title=event.title,
+                categories=event.categories.all(),
+                venue=event.venue,
+                description=event.description,
+                scheduled_at=event.scheduled_at,
+                organizer=event.organizer,
+                status="soldout",
+                         )
+        
 
     def update(self, quantity=None, ticket_type=None):
         # Si no se pasa un parámetro, se mantiene el valor actual
@@ -368,14 +409,12 @@ class Ticket(models.Model):
         return True, None
 
 
-
-
 class Notification(models.Model):
     title = models.CharField(max_length=200)
     massage = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="notifications", null=True, blank=True)
-    addressee = models.ManyToManyField(User, blank=True)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="notifications")
+    addressee = models.ManyToManyField(User)
 
     prioridadOpciones = [
         ("High", "HIGH"),
@@ -385,26 +424,3 @@ class Notification(models.Model):
 
     Priority = models.CharField(choices=prioridadOpciones, default="Medium")
     is_read = models.BooleanField(default=False)
-
-    def clean(self):
-        # Validación: título y mensaje no pueden estar vacíos
-        if not self.title.strip():
-            raise ValidationError("El título no puede estar vacío.")
-
-        if not self.massage.strip():
-            raise ValidationError("El mensaje no puede estar vacío.")
-
-        # Validación: si hay un solo destinatario, no debería haber evento
-        if self.addressee.count() == 1 and self.event:
-            raise ValidationError("No se puede asignar un evento cuando la notificación es para un usuario específico.")
-
-        # Validación: si es para múltiples (o todos), debe haber evento
-        if self.addressee.count() > 1 and not self.event:
-            raise ValidationError("Debes asignar un evento cuando la notificación es para múltiples usuarios.")
-        
-        # Validación de prioridad
-        if self.Priority not in dict(self.prioridadOpciones):
-            raise ValidationError("Prioridad inválida.")
-
-    def __str__(self):
-        return self.title

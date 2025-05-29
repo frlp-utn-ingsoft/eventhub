@@ -33,7 +33,7 @@ def purchase_ticket(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
 
     # Bloquear compra si el evento está cancelado, agotado o finalizado
-    if event.status in ["canceled", "CANCELED", "finished", "FINISHED", "soldout", "SOLDOUT"]:
+    if event.status in ["canceled", "CANCELED", "finished", "FINISHED"]:
         messages.error(request, "No se pueden comprar entradas para este evento.")
         return redirect("event_detail", id=event.id)
 
