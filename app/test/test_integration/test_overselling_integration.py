@@ -38,11 +38,11 @@ class TestOversellingIntegration(TestCase):
 
     def test_cannot_buy_tickets_when_event_is_full(self):
         """Verifica que no se puedan comprar entradas cuando el evento está lleno a través de la interfaz web"""
-        # Primero llenamos el evento comprando todas las entradas disponibles
+        # Primero compramos 4 entradas (máximo permitido por usuario)
         response = self.client.post(
             reverse('buy_ticket', args=[self.event.id]),
             {
-                'quantity': '5',
+                'quantity': '4',
                 'type': 'GENERAL',
                 'card_number': '1234567890123456',
                 'expiry': '12/25',
@@ -55,6 +55,31 @@ class TestOversellingIntegration(TestCase):
         # Verificar que la primera compra fue exitosa
         self.assertEqual(response.status_code, 302)  # Redirección después de compra exitosa
         self.assertEqual(Ticket.objects.count(), 1)
+        
+        # Crear otro usuario para comprar la última entrada
+        other_user = User.objects.create_user(
+            username='otheruser',
+            password='testpass123'
+        )
+        self.client.login(username='otheruser', password='testpass123')
+        
+        # Comprar la última entrada
+        response = self.client.post(
+            reverse('buy_ticket', args=[self.event.id]),
+            {
+                'quantity': '1',
+                'type': 'GENERAL',
+                'card_number': '1234567890123456',
+                'expiry': '12/25',
+                'cvv': '123',
+                'card_name': 'Test User',
+                'terms': 'on'
+            }
+        )
+        
+        # Verificar que la segunda compra fue exitosa
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(Ticket.objects.count(), 2)
         self.assertEqual(self.event.available_tickets(), 0)
         
         # Intentar comprar una entrada más cuando el evento está lleno
@@ -71,9 +96,9 @@ class TestOversellingIntegration(TestCase):
             }
         )
         
-        # Verificar que la segunda compra fue rechazada
+        # Verificar que la tercera compra fue rechazada
         self.assertEqual(response.status_code, 200)  # Se muestra el formulario con error
-        self.assertEqual(Ticket.objects.count(), 1)  # No se creó un nuevo ticket
+        self.assertEqual(Ticket.objects.count(), 2)  # No se creó un nuevo ticket
         self.assertContains(response, "Lo sentimos, este evento ya no tiene entradas disponibles")
 
     def test_cannot_buy_more_tickets_than_available(self):
