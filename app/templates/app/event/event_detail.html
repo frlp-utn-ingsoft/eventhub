@@ -15,15 +15,47 @@
                         <i class="bi bi-ticket-perforated me-2"></i>Gestionar entradas
                     </a>
                 {% else %}
-                    {% if event.status != 'canceled' and event.status != 'CANCELED' and event.status != 'finished' and event.status != 'FINISHED' and event.status != 'soldout' and event.status != 'SOLDOUT' %}
-                        <a href="{% url 'ticket_create' event.id %}" class="btn btn-primary">
+                    {% if event.status != 'canceled' and event.status != 'CANCELED' and event.status != 'finished' and event.status != 'FINISHED' and event.status != 'soldout' and event.status != 'SOLDOUT' and not user_is_organizer %}
+                    <div class="d-flex justify-content-between align-items-center gap-4">
+                        <div class="d-flex d-inline-block justify-content-between align-items-center gap-1 d-none"
+                            id="div-countdown">
+                            <i class="bi bi-hourglass-split fs-3 mb-2"></i>
+                            <h4 id="countdown" class="d-inline-block"></h4>
+                        </div>    
+                            <a href="{% url 'ticket_create' event.id %}" class="btn btn-primary">
                             <i class="bi bi-ticket-perforated me-2"></i>Comprar entradas
                         </a>
+                        <form method="post" action="{% url 'event_favorite' event.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="toggle_favorite" value="1">
+                            <button type="submit" id="favorite-event-button" class="btn btn-outline-danger ms-2 d-inline-flex align-items-center justify-content-center favorite-btn-nohover" style="height: 38px; min-width: 170px; border-width: 2px; border-radius: 8px;">
+                                {% if event in request.user.favorite_events.all %}
+                                    <i class="bi bi-heart-fill fs-5 text-danger" style="margin-left: 8px;"></i>
+                                    <span class="fw-bold text-danger ms-2">Quitar de Favoritos</span>
+                                {% else %}
+                                    <i class="bi bi-heart fs-5 text-danger" style="margin-left: 8px;"></i>
+                                    <span class="fw-bold text-danger ms-2">Agregar a Favoritos</span>
+                                {% endif %}
+                            </button>
+                        </form>
+                    </div>    
+
                     {% else %}
                         <button class="btn btn-secondary" disabled>
                             <i class="bi bi-ticket-perforated me-2"></i>No disponible
                         </button>
+                        {% if event in request.user.favorite_events.all %}
+                            <form method="post" action="{% url 'event_favorite' event.id %}" class="d-inline">
+                                {% csrf_token %}
+                                <input type="hidden" name="toggle_favorite" value="1">
+                                <button type="submit" id="favorite-event-button" class="btn btn-outline-danger ms-2 d-inline-flex align-items-center justify-content-center favorite-btn-nohover" style="height: 38px; min-width: 170px; border-width: 2px; border-radius: 8px;">                                  
+                                    <i class="bi bi-heart-fill fs-5 text-danger" style="margin-left: 8px;"></i>
+                                    <span class="fw-bold text-danger ms-2">Quitar de Favoritos</span>
+                                </button>
+                            </form>
+                        {% endif %}
                     {% endif %}
+                        
                 {% endif %}
             </div>
         </div>
@@ -137,5 +169,58 @@
     {% block extra_content %}
         {% include "app/rating/create_rating.html" %}
     {% endblock %}
+
+    <!-- CountDown -->
+    <script>
+        const eventDate = new Date("{{ event.scheduled_at|date:'c' }}").getTime();
+        const $countdown = document.getElementById("countdown");
+        const $divCountdown = document.getElementById("div-countdown");
+
+        if ($countdown && $divCountdown) {
+            let interval;
+            function updateCountdown() {
+                const now = new Date().getTime();
+                let diff = eventDate - now;
+            
+                if (diff <= 0) {
+                    console.log("El evento ya comenzó.");
+                    clearInterval(interval);
+                    return;
+                } else {
+                    const msInSecond = 1000;
+                    const msInMinute = msInSecond * 60;
+                    const msInHour = msInMinute * 60;
+                    const msInDay = msInHour * 24;
+            
+                    const days = Math.floor(diff / msInDay);
+                    diff %= msInDay;
+                    const hours = Math.floor(diff / msInHour);
+                    diff %= msInHour;
+                    const minutes = Math.floor(diff / msInMinute);
+                    diff %= msInMinute;
+                    const seconds = Math.floor(diff / msInSecond);
+            
+                    const textCountdown = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+                    $divCountdown.classList.remove("d-none");
+                    $countdown.innerHTML = textCountdown;
+                }
+            }
+            
+            updateCountdown();
+            
+            interval = setInterval(updateCountdown, 1000);
+        }
+
+      </script>
 </div>
+<style>
+.favorite-btn-nohover:hover, .favorite-btn-nohover:focus {
+    background: #fff !important;
+    color: #dc3545 !important;
+    border-color: #dc3545 !important;
+}
+.favorite-btn-nohover:hover span, .favorite-btn-nohover:focus span {
+    color: #dc3545 !important;
+}
+</style>
 {% endblock %}

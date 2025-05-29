@@ -1,9 +1,10 @@
 import datetime
 
+from django.core.exceptions import ValidationError
 from django.test import TestCase
 from django.utils import timezone
 
-from app.models import Event, User
+from app.models import Event, User, Venue
 from app.views.event_views import filter_events
 
 
@@ -55,6 +56,15 @@ class EventModelTest(TestCase):
             password="password123",
             is_organizer=True,
         )
+        
+        self.venue = Venue.objects.create(
+            user=self.organizer,
+            name="Sala de eventos",
+            address="Calle Falsa 123",
+            city="Ciudad",
+            capacity=100,
+            contact="12345"
+        )
 
     def test_event_creation(self):
         event = Event.objects.create(
@@ -77,7 +87,7 @@ class EventModelTest(TestCase):
         errors = Event.validate(
             title="Título válido",
             categories=[],
-            venue=None,
+            venue=self.venue,
             description="Descripción válida",
             scheduled_at=scheduled_at,
         )
@@ -89,7 +99,7 @@ class EventModelTest(TestCase):
         errors = Event.validate(
             title="",
             categories=[],
-            venue=None,
+            venue=self.venue,
             description="Descripción válida",
             scheduled_at=scheduled_at,
         )
@@ -103,7 +113,7 @@ class EventModelTest(TestCase):
         errors = Event.validate(
             title="Título válido",
             categories=[],
-            venue=None,
+            venue=self.venue,
             description="",
             scheduled_at=scheduled_at,
         )
@@ -113,13 +123,14 @@ class EventModelTest(TestCase):
     def test_event_new_with_valid_data(self):
         """Test que verifica la creación de eventos con datos válidos"""
         scheduled_at = timezone.now() + datetime.timedelta(days=2)
+        
         success, errors = Event.new(
             title="Nuevo evento",
             description="Descripción del nuevo evento",
             scheduled_at=scheduled_at,
             organizer=self.organizer,
             categories=[],
-            venue=None,
+            venue=self.venue,
         )
 
         self.assertTrue(success)
@@ -142,7 +153,7 @@ class EventModelTest(TestCase):
             scheduled_at=scheduled_at,
             organizer=self.organizer,
             categories=[],
-            venue=None,
+            venue=self.venue,
         )
 
         self.assertFalse(success)
@@ -171,7 +182,7 @@ class EventModelTest(TestCase):
             scheduled_at=new_scheduled_at,
             organizer=self.organizer,
             categories=[],
-            venue=None,
+            venue=self.venue,
         )
 
         # Recargar el evento desde la base de datos
@@ -234,3 +245,67 @@ class EventModelTest(TestCase):
         # El evento 5 fue creado por otro usuario, por lo que no debe aparecer en los eventos filtrados
         event5 = any(event.title == "Evento 5" for event in filtered_events)
         self.assertEqual(event5, False)
+
+    def test_event_status_cancel_invalid_edit(self):
+        """Test que verifica que no se puede editar un evento cancelado"""
+        event = Event.objects.create(
+            title="Evento de prueba",
+            description="Descripción del evento de prueba",
+            scheduled_at=timezone.now() + datetime.timedelta(days=1),
+            organizer=self.organizer,
+            status="canceled",
+        )
+        
+        
+
+        with self.assertRaises(ValueError) as context:
+            event.update(
+                title="Nuevo título",
+                description="Nueva descripción",
+                scheduled_at=timezone.now() + datetime.timedelta(days=2),
+                organizer=self.organizer,
+                categories=[],
+                venue=self.venue,
+            )
+        
+        self.assertEqual(str(context.exception), "No se puede editar un evento cancelado.")
+class UserModelTest(TestCase):
+    
+    def setUp(self):
+        self.organizer = User.objects.create_user(
+            username="organizador_test",
+            email="organizador@example.com",
+            password="password123",
+            is_organizer=True,
+        )
+        
+    def test_favorite_user_event_status_related(self):
+        """Test que verifica el comportamiento de los favoritos de eventos del usuario dependiendo del estado del evento"""
+        
+        # Crear eventos con diferentes estados
+        event_active = Event.objects.create(
+            title="Evento Activo",
+            description="Descripción del evento activo",
+            scheduled_at=timezone.now() + datetime.timedelta(days=1),
+            organizer=self.organizer,
+            status="active",
+        )
+        
+        event_canceled = Event.objects.create(
+            title="Evento Cancelado",
+            description="Descripción del evento cancelado",
+            scheduled_at=timezone.now() - datetime.timedelta(days=2),
+            organizer=self.organizer,
+            status="canceled",
+        )
+        
+        # El usuario agrega el evento activo a favoritos y debe estar en la lista de favoritos
+        self.organizer.add_favorite_event(event_active)
+        self.assertIn(event_active, self.organizer.favorite_events.all())
+        
+        # El usuario intenta agregar el evento cancelado a favoritos
+        # Debe lanzar ValidationError
+        with self.assertRaises(ValidationError):
+            self.organizer.add_favorite_event(event_canceled)
+        self.assertNotIn(event_canceled, self.organizer.favorite_events.all())
+   

@@ -8,10 +8,21 @@
   <form method="POST">
     {% csrf_token %}
 
+    {# Mostrar todos los errores agrupados #}
+    {% if errors %}
+      <div class="alert alert-danger">
+        <ul class="mb-0">
+          {% for e in errors %}
+            <li>{{ e }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+
     <div class="mb-3">
       <label for="ticket_code" class="form-label">Código del ticket</label>
       <select name="ticket_code" id="ticket_code" class="form-select" required>
-        <option value="" disabled {% if not selected_code %}selected{% endif %}>Selecciona tu ticket…</option>
+        <option value="" id="ticket_code" disabled {% if not selected_code %}selected{% endif %}>Selecciona tu ticket…</option>
         {% for ticket in user_tickets %}
           <option value="{{ ticket.ticket_code }}"
                   {% if ticket.ticket_code == selected_code %}selected{% endif %}>
@@ -30,12 +41,10 @@
                 required>{{ reason|default_if_none:'' }}</textarea>
     </div>
 
-    {% if error %}
-    <div class="alert alert-danger">{{ error }}</div>
-    {% endif %}
-
-    <button type="submit" class="btn btn-primary">Guardar</button>
-    <a href="{% url 'my_refunds' %}" class="btn btn-secondary ms-2">Cancelar</a>
+    <div class="d-flex">
+      <a href="{% url 'my_refunds' %}" class="btn btn-secondary me-2">← Volver</a>
+      <button type="submit" class="btn btn-primary">Guardar</button>
+    </div>
   </form>
 </div>
 {% endblock %}

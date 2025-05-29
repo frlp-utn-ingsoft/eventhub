@@ -32,19 +32,11 @@ class NotificationTest(TestCase):
         )
         Ticket.new(user=self.other_user, event=event, quantity=3, ticket_type="GENERAL")
 
-        title="Evento de prueba",
-        description="Descripción del evento de prueba",
+        title="Evento de prueba"
+        description="Descripción del evento de prueba"
         organizer=self.organizer
         
         var = timezone.now() + datetime.timedelta(days=1)
-        event.update(
-            title=title,
-            description=description,
-            categories=[],
-            venue=None,
-            scheduled_at=timezone.now() + datetime.timedelta(days=1),
-            organizer= organizer
-        )
 
         # envia la notificacion
         handle_notification_on_reprogramate(

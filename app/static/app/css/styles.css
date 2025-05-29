@@ -1,3 +1,18 @@
+[data-bs-theme="dark"] .bg-light {
+    background-color: #262626 !important;
+  }
+
+[data-bs-theme="dark"] .table-light {
+    background-color: #262626 !important;
+    --bs-table-bg: #262626;
+    --bs-table-bg: #212529;
+    --bs-table-border-color: #c6c7c838;
+}
+
+[data-bs-theme="dark"] .table-light th {
+    color: #dee2e6 !important;
+}
+
 .star-rating {
     direction: rtl;
     font-size: 1.8rem;
