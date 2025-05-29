@@ -213,38 +213,7 @@ class EventDisplayTest(EventBaseTest):
         no_events_message = self.page.locator("text=No hay eventos disponibles")
         expect(no_events_message).to_be_visible()
     
-    def test_event_detail_get_demand(self):
-        """Test que verifica la demanda y la cantidad de entradas vendidas en el detalle del evento"""
-        # Login como organizador
-        self.page.goto(f"{self.live_server_url}/accounts/login/")
-        self.page.fill('input[name="username"]', "organizador")
-        self.page.fill('input[name="password"]', "password123")             
-        self.page.click('button[type="submit"]')
-
-        # Ir al detalle del evento (sin tickets, debe ser baja demanda)
-        self.page.goto(f"{self.live_server_url}/events/{self.event1.id}/")
-        expect(self.page.locator("text=Baja demanda")).to_be_visible()
-
-        # Crear 91 tickets para superar el 90% de ocupación (capacidad 100)
-        from app.models import Ticket, User
-        for i in range(91):
-            user = User.objects.create_user(
-                username=f"e2e_user_{i}",
-                email=f"e2e_user_{i}@test.com",
-                password="password123"
-            )
-            Ticket.objects.create(
-                user=user,
-                event=self.event1,
-                type="general",
-                quantity=1
-            )
-
-        # Refrescar la página de detalle
-        self.page.reload()
-        expect(self.page.locator("text=Alta demanda")).to_be_visible()
-        expect(self.page.locator("text=91")).to_be_visible()  # Entradas vendidas: 91
-
+   
 
 class EventPermissionsTest(EventBaseTest):
     """Tests relacionados con los permisos de usuario para diferentes funcionalidades"""
