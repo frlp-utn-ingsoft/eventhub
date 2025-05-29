@@ -11,7 +11,7 @@ from datetime import datetime
 
 def seed():
     # Venue
-    success, newVenue=Venue.new(
+    success, newVenue = Venue.new(
         name="Movistar Arena",
         adress="Humboldt 450",
         city="Cdad. Autónoma de Buenos Aires",
@@ -21,14 +21,14 @@ def seed():
     print("Datos de 'Venue' sembrados exitosamente")
 
     # Category
-    newCategory=Category.new(
+    success,newCategory=Category.new(
         name="Pop",
-        description="Género musical popular caracterizado por canciones con melodías y ritmos marcados, a menudo con instrumentos eléctricos y amplificación, y dirigido a un público amplio.", 
+        description="Género musical popular caracterizado por canciones con melodías y ritmos marcados, a menudo con instrumentos eléctricos y amplificación, y dirigido a un público amplio.",
         is_active=True
     )
     print("Datos de 'Category' sembrados exitosamente")
 
-    # User
+    # User Organizador
     newUser = User.objects.create_user(
         email="organizer@example.com",
         username="organizer",
@@ -37,7 +37,7 @@ def seed():
     )
     print("Datos de 'Usuario Organizador' sembrados exitosamente")
 
-    # User
+    # User Normal
     newNormieUser = User.objects.create_user(
         email="normie@example.com",
         username="normie",
@@ -52,28 +52,27 @@ def seed():
         timezone.get_current_timezone()
     )
 
-    newEvent=Event.objects.create(
+    newEvent = Event.objects.create(
         title="Reik",
         description="La banda mexicana formada por Jesús Navarro, Julio Ramírez y Bibi Marín regresa al país en el marco de su gira mundial 'Panorama Tour'",
         scheduled_at=event_date,
         organizer=newUser,
-        venue=newVenue
+        venue=newVenue,
+        category=newCategory,
     )
-    newEvent.categories.set(newCategory)
     print("Datos de 'Event' sembrados exitosamente")
 
     # Notification
     Notification.objects.create(
         title="Quedan 24hs para que comience el evento. No te lo pierdas!",
         message="No dejes pasar esta oportunidad única de vivir una experiencia increíble. ¡Prepárate, ajusta tu agenda y nos vemos allí!",
-        event=newEvent,
         priority="MEDIUM",
         created_at=timezone.now(),
     )
-    print("Datos de 'Notification' sembrados exitosamente")   
+    print("Datos de 'Notification' sembrados exitosamente")
 
     # Ticket
-    success, newTicket=Ticket.new(
+    success, newTicket = Ticket.new(
         quantity=1,
         type="VIP",
         event=newEvent,
@@ -81,20 +80,14 @@ def seed():
     )
     print("Datos de 'Ticket' sembrados exitosamente")
 
-    # Rating.new(
-    #    
-    # )
-    # print("Datos de 'Rating' sembrados exitosamente")
-    
     # Comment
     Comment.new(
-        title="Buenisima banda", 
+        title="Buenisima banda",
         text="Reik es mi corazón <3, cada canción me lleva a momentos inolvidables. ¡Eternamente fan!",
         event=newEvent,
         user=newUser
     )
     print("Datos de 'Comment' sembrados exitosamente")
-
 
     # RefundRequest
     RefundRequest.objects.create(
@@ -106,7 +99,6 @@ def seed():
         approval_date=timezone.now(),
         user=newNormieUser
     )
-
 
 if __name__ == '__main__':
     print("Sembrando datos...")

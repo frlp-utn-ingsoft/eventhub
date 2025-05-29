@@ -1,16 +1,12 @@
-import datetime
-import time
-
-from django.test import Client, TestCase
+from django.test import TestCase, Client
 from django.urls import reverse
 from django.utils import timezone
+from app.models import Event, Venue, Category,Ticket, Notification
+from django.contrib.auth import get_user_model
+User = get_user_model()
+import datetime
 
-from app.models import Event, User
-
-
-class BaseEventTestCase(TestCase):
-    """Clase base con la configuración común para todos los tests de eventos"""
-
+class EventStateIntegrationTest(TestCase):
     def setUp(self):
         # Crear un usuario organizador
         self.organizer = User.objects.create_user(
@@ -21,12 +17,22 @@ class BaseEventTestCase(TestCase):
         )
 
         # Crear un usuario regular
-        self.regular_user = User.objects.create_user(
+        self.regular_user1 = User.objects.create_user(
             username="regular",
             email="regular@test.com",
             password="password123",
             is_organizer=False,
         )
+        self.regular_user2 = User.objects.create_user(
+            username="regular2",
+            email="regular1@test.com",
+            password="password123",
+            is_organizer=False,
+        )
+        
+        ## Creamos venues
+        self.venue1 = Venue.objects.create(name="Lugar 1", capacity=100)
+        self.venue2 = Venue.objects.create(name="Lugar 2", capacity=100)
 
         # Crear algunos eventos de prueba
         self.event1 = Event.objects.create(
@@ -34,18 +40,23 @@ class BaseEventTestCase(TestCase):
             description="Descripción del evento 1",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
+            venue = self.venue1,
         )
+        self.client = Client()
+        self.user = User.objects.create_user(username='organizer', password='testpass', is_organizer=True)
+        self.venue = Venue.objects.create(name="Test Venue", adress="Test Adress", capacity=100)
+        self.category = Category.objects.create(name="Music", is_active=True)
 
-        self.event2 = Event.objects.create(
-            title="Evento 2",
-            description="Descripción del evento 2",
+        self.event = Event.objects.create(
+            title="Test Event",
+            description="Test Description",
             scheduled_at=timezone.now() + datetime.timedelta(days=2),
             organizer=self.organizer,
+            venue=self.venue
         )
-
-        # Cliente para hacer peticiones
-        self.client = Client()
-
+     # Usuarios con Tickets para el evento 1
+        Ticket.objects.create(user=self.regular_user1, event=self.event1, quantity=1, type="GENERAL")
+        Ticket.objects.create(user=self.regular_user2, event=self.event1, quantity=1, type="GENERAL")
 
 class EventsListViewTest(BaseEventTestCase):
     """Tests para la vista de listado de eventos"""
@@ -109,6 +120,14 @@ class EventDetailViewTest(BaseEventTestCase):
         self.assertTemplateUsed(response, "app/event_detail.html")
         self.assertIn("event", response.context)
         self.assertEqual(response.context["event"].id, self.event1.id)
+           
+        
+        self.event.categories.add(self.category)  # Relación M2M
+
+        self.event_id = self.event.id  # Se accede después de crear
+        self.venue_id = self.venue.id
+
+        self.client.login(username='organizer', password='testpass')
 
     def test_event_detail_view_without_login(self):
         """Test que verifica que la vista event_detail redirige a login cuando el usuario no está logueado"""
@@ -129,6 +148,38 @@ class EventDetailViewTest(BaseEventTestCase):
 
         # Verificar respuesta
         self.assertEqual(response.status_code, 404)
+
+    def test_event_get_demand(self):
+        """Test de integración que  verifica que la vista event_detail muestra la demanda del evento correctamente y si es alta o baja"""
+        # Login como organizador
+        self.client.login(username="organizador", password="password123")
+
+        # Demanda baja (sin tickets)
+        response = self.client.get(reverse("event_detail", args=[self.event1.id]))
+        self.assertContains(response, "Baja demanda")
+
+        # Crear 91 tickets para superar el 90% de ocupación (capacidad 100)
+        for i in range(91):
+            user = User.objects.create_user(
+                username=f"user_{i}",
+                email=f"user_{i}@test.com",
+                password="password123"
+            )
+            Ticket.objects.create(
+                user=user,
+                event=self.event1,
+                type="general",
+                quantity=1
+            )
+
+        
+        response = self.client.get(reverse("event_detail", args=[self.event1.id]))
+        ##Verificar que la cantidad de entradas vendidas es correcta == 91
+        self.assertContains(response, "Entradas vendidas:")
+        self.assertContains(response, "91")
+        # Demanda alta 
+        self.assertContains(response, "Alta demanda")
+    
 
 
 class EventFormViewTest(BaseEventTestCase):
@@ -248,6 +299,47 @@ class EventFormSubmissionTest(BaseEventTestCase):
         self.assertEqual(self.event1.scheduled_at.hour, 16)
         self.assertEqual(self.event1.scheduled_at.minute, 45)
 
+    def test_notification_creation_on_event_update(self):
+        """Test que verifica que se crea una notificación al editar un evento"""
+        # Login con usuario organizador
+        self.client.login(username="organizador", password="password123")
+
+        # Editamos el evento
+        update_event_data = {
+            "title": "Evento 1",
+            "description": "Descripción del evento 1",
+            "date": (timezone.now() + datetime.timedelta(days=1)).date().isoformat(),  # 'YYYY-MM-DD'
+            "time": (timezone.now() + datetime.timedelta(days=1)).time().strftime("%H:%M"),  # 'HH:MM'
+            "venue": self.venue2.id,  # o simplemente self.venue1.id si el form espera int
+        }
+        #Formateo la fecha al igual que la vista
+        date_str = update_event_data["date"]  # 'YYYY-MM-DD'
+        time_str = update_event_data["time"]  # 'HH:MM'
+
+        year, month, day = map(int, date_str.split("-"))
+        hour, minute = map(int, time_str.split(":"))
+
+        scheduled_at = timezone.make_aware(
+            datetime.datetime(year, month, day, hour, minute)
+        )
+
+        # Hacer petición POST a la vista event_form
+        url = reverse("event_edit", args=[self.event1.id])
+        response = self.client.post(url, update_event_data)
+        self.assertRedirects(response, reverse("events"))
+        
+        #Verificar que los usarios tengan notificaciones
+        usuarios = User.objects.filter(tickets__event=self.event1)
+        for usuario in usuarios:
+            self.assertTrue(
+                Notification.objects.filter(
+                    users=usuario,
+                    message = f"El evento '{self.event1.title}' ha sido actualizado. Fecha: {scheduled_at} y lugar: {self.venue2.name}."
+                ).exists()
+            )
+    
+        
+       
 
 class EventDeleteViewTest(BaseEventTestCase):
     """Tests para la eliminación de eventos"""
@@ -331,3 +423,25 @@ class EventDeleteViewTest(BaseEventTestCase):
 
         # Verificar que el evento sigue existiendo
         self.assertTrue(Event.objects.filter(pk=self.event1.id).exists())
+
+        
+    def test_event_reprograms_when_date_changes(self):
+        new_date = (timezone.now() + datetime.timedelta(days=5)).date().strftime('%Y-%m-%d')
+        new_time = '15:00'
+
+        response = self.client.post(reverse('event_edit', args=[self.event_id]), {
+            'title': self.event.title,
+            'description': self.event.description,
+            'date': new_date,
+            'time': new_time,
+            'venue': str(self.venue_id),
+            'categories': [self.category.id]
+        })
+
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.state, Event.REPROGRAMED)
+
+    def test_event_canceled_view_sets_state_correctly(self):
+        response = self.client.post(reverse('event_canceled', args=[self.event_id]))
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.state, Event.CANCELED)

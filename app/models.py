@@ -1,10 +1,16 @@
 import uuid
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.core.validators import MinValueValidator
+from django.core.validators import MinValueValidator, MaxValueValidator
 from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .models import Ticket, Rating
+
 
 class Venue(models.Model):
     # Atributes
@@ -177,18 +183,53 @@ class Category(models.Model):
 
 
 class Event(models.Model):
+    id = models.AutoField(primary_key=True)
+    # Constants
+    ACTIVE = 'ACTIVE'
+    CANCELED = 'CANCELED'
+    REPROGRAMED = 'REPROGRAMED'
+    SOLD_OUT = 'SOLD_OUT'
+    FINISHED = 'FINISHED'
+    EVENT_STATES = [
+        (ACTIVE, 'ACTIVO'),
+        (CANCELED, 'CANCELADO'),
+        (REPROGRAMED, 'REPROGRAMADO'),
+        (SOLD_OUT, 'AGOTADO'),
+        (FINISHED, 'FINALIZADO')
+    ]
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-
+    state = models.CharField(choices=EVENT_STATES, max_length=25, default="ACTIVE")
+    favorited_by = models.ManyToManyField(User, related_name="favorite_events", blank=True)
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
-    attendees = models.ManyToManyField(User, related_name="attended_events", blank=True)
-    categories = models.ManyToManyField(Category, related_name="events")
+    category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="events", null=True, blank=True)
+
+
     def __str__(self):
         return self.title
+
+    def is_past(self):
+        """Verifica si el evento ya pasó"""
+        return self.scheduled_at < timezone.now()
+
+    @classmethod
+    def get_future_events(cls):
+        """Retorna todos los eventos futuros ordenados por fecha"""
+        return cls.objects.filter(scheduled_at__gt=timezone.now()).order_by('scheduled_at')
+
+    def get_attendees(self):
+        """Obtiene los usuarios inscriptos al evento a través de los tickets"""
+        return User.objects.filter(tickets__event=self).distinct()
+    
+    def get_demand(self):
+        """Calcula la demanda del evento como el porcentaje de ocupación"""
+        if self.venue.capacity == 0:
+            return 0
+        return (self.tickets.count() / self.venue.capacity) * 100
 
     @classmethod
     def validate(cls, title, description, scheduled_at):
@@ -203,7 +244,7 @@ class Event(models.Model):
         return errors
 
     @classmethod
-    def new(cls, title, description, scheduled_at, organizer, venue, categories=None):
+    def new(cls, title, description, scheduled_at, organizer, venue, category=None):
         errors = Event.validate(title, description, scheduled_at)
 
         if len(errors.keys()) > 0:
@@ -214,25 +255,26 @@ class Event(models.Model):
             description=description,
             scheduled_at=scheduled_at,
             organizer=organizer,
-            venue=venue
+            venue=venue,
+            category=category
         )
-        
-        if categories:
-            event.categories.set(categories)
 
         return True, event
 
-    def update(self, title=None, description=None, scheduled_at=None, organizer=None, venue=None, categories=None):
+    def update(self, title=None, description=None, scheduled_at=None, organizer=None, venue=None, category=None):
+        #VERIFICO SI LA FECHA O EL LUGAR FUERON CAMBIADOS
+        if (scheduled_at and scheduled_at != self.scheduled_at) or (venue and venue != self.venue):
+            self.state = self.REPROGRAMED
+
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
         self.organizer = organizer or self.organizer
         self.venue = venue or self.venue
-        
-        if categories:
-            self.categories.set(categories)
-            
+        self.category = category or self.category
+
         self.save()
+        return True, self
     
    
     def available_tickets(self):
@@ -242,6 +284,157 @@ class Event(models.Model):
             aux = aux + t.quantity
 
         return self.venue.capacity - aux
+    
+    def auto_update_state(self):
+        # ESTADO FINALIZADO SI LA FECHA YA PASO
+        if self.scheduled_at < timezone.now():
+            self.state = self.FINISHED
+            self.save()
+            return
+        # ESTADO AGOTADO SI NO HAY MAS TICKETS DISPONIBLES
+        if self.available_tickets() <= 0:
+            self.state = self.SOLD_OUT
+            self.save()
+            return
+
+    def get_average_rating(self):
+        ratings = self.ratings.all()
+        if not ratings:
+            return 0
+        return sum(rating.rating for rating in ratings) / len(ratings)
+
+    def get_rating_count(self):
+        return self.ratings.count()
+
+class Discount(models.Model):
+    code = models.CharField(
+        max_length=8,
+        unique=True,
+        editable=False,
+        blank=True,
+        verbose_name='Código'
+    )
+    
+    multiplier = models.FloatField(
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(1)
+        ],
+        verbose_name='Multiplicador'
+    )
+
+    class Meta:
+        verbose_name = 'Descuento'
+        verbose_name_plural = 'Descuentos'
+
+    def __str__(self):
+        return f"{self.code or 'Sin código'} - {self.multiplier*100}%"
+
+    def clean(self):
+        """Validación a nivel de modelo"""
+        if self.code and len(self.code) != 8:
+            raise ValidationError({'code': 'El código debe tener exactamente 8 caracteres'})
+        
+        if self.multiplier is None:
+            raise ValidationError({'multiplier': 'El multiplicador es requerido'})
+
+    def save(self, *args, **kwargs):
+        """Generación automática de código si no se proporciona"""
+        if not self.code:
+            self.code = self.generate_discount_code()
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def generate_discount_code(cls):
+        """Genera un código único de 8 caracteres"""
+        code = uuid.uuid4().hex[:8].upper()
+        while cls.objects.filter(code=code).exists():
+            code = uuid.uuid4().hex[:8].upper()
+        return code
+
+    @classmethod
+    def validate(cls, code=None, multiplier=None):
+        """Validación previa a la creación"""
+        errors = {}
+        
+        if code is not None and code != '':
+            if not isinstance(code, str):
+                errors['code'] = 'El código debe ser texto'
+            elif len(code) != 8:
+                errors['code'] = 'El código debe tener 8 caracteres'
+        
+        if multiplier is None:
+            errors['multiplier'] = 'Multiplicador requerido'
+        else:
+            try:
+                multiplier = float(multiplier)
+                if not (0 <= multiplier <= 1):
+                    errors['multiplier'] = 'Debe estar entre 0 y 1'
+            except (TypeError, ValueError):
+                errors['multiplier'] = 'Debe ser un número válido'
+        
+        return errors
+
+    @classmethod
+    def new(cls, code=None, multiplier=None):
+        """Crea un nuevo descuento con validación"""
+        errors = cls.validate(code, multiplier)
+        if errors:
+            return False, errors
+            
+        try:
+            discount = cls(code=code, multiplier=multiplier)
+            discount.full_clean()
+            discount.save()
+
+            return True, discount
+        
+        except ValidationError as e:
+            return False, e.message_dict
+        except Exception as e:
+            return False, {'error': str(e)}
+
+    def update(self, code=None, multiplier=None):
+        """Update discount fields"""
+        errors = {}
+        
+        if code is not None:
+            if not isinstance(code, str):
+                errors["code"] = "El código debe ser una cadena de texto."
+            elif len(code) != 8:
+                errors["code"] = "El código de descuento debe tener exactamente 8 caracteres."
+            elif Discount.objects.filter(code=code).exclude(pk=self.id).exists():
+                errors["code"] = "Este código ya está en uso por otro descuento."
+        
+        if multiplier is not None:
+            try:
+                multiplier = float(multiplier)
+                if multiplier > 1:
+                    errors["multiplier"] = "El multiplicador debe ser como máximo 1."
+                elif multiplier < 0:
+                    errors["multiplier"] = "El multiplicador debe ser al menos 0."
+            except (TypeError, ValueError):
+                errors["multiplier"] = "El multiplicador debe ser un número válido."
+        
+        if errors:
+            return False, errors
+        
+        try:
+            if code is not None:
+                self.code = code
+            
+            if multiplier is not None:
+                self.multiplier = multiplier
+            
+            self.save()
+            
+            return True, self
+        
+
+        except Exception as e:
+            return False, {"error": f"Error al actualizar el descuento: {str(e)}"}
+
 
 class Ticket(models.Model):
     # Constants
@@ -285,6 +478,13 @@ class Ticket(models.Model):
         related_name='tickets'
     )
 
+    discount = models.ForeignKey(
+        Discount,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='discounts'
+    )
+
     class Meta:
         verbose_name = 'Ticket'
         verbose_name_plural = 'Tickets'
@@ -294,7 +494,7 @@ class Ticket(models.Model):
         return str(self.ticket_code)
     
     @classmethod
-    def validate(cls, quantity, type, event, user):
+    def validate(cls, quantity, type, event, user, discount=None):
         """Validate ticket data before creation"""
         errors = {}
 
@@ -311,39 +511,49 @@ class Ticket(models.Model):
             errors["quantity"] = "La cantidad debe ser al menos 1"
         elif quantity > 4:
             errors["quantity"] = "Puedes comprar 4 lugares como máximo."
+        elif event and quantity > event.available_tickets():
+            errors["quantity"] = f"No hay suficientes entradas disponibles. Solo quedan {event.available_tickets()} entradas."
         
         valid_types = [choice[0] for choice in cls.TICKETS_TYPE_CHOICES]
         if not type or type not in valid_types:
             errors["type"] = f"Tipo inválido. Opciones válidas: {', '.join(valid_types)}"
 
         
+        if not event:
+            errors["event"] = "Evento es requerido"
+        elif event.available_tickets() <= 0:
+            errors["event"] = "Lo sentimos, este evento ya no tiene entradas disponibles"
+        
         if not user:
             errors["user"] = "Usuario es requerido"
         
+        if discount and not isinstance(discount, Discount):
+            errors["discount"] = "El descuento debe ser una instancia válida del modelo Discount"            
+
         return errors
     
     @classmethod
-    def new(cls, quantity, type, event, user):
+    def new(cls, quantity, type, event, user, discount=None):
         """Create a new ticket with validation"""
-        errors = cls.validate(quantity, type, event, user)
+        errors = cls.validate(quantity, type, event, user, discount)
 
         if errors:
             return False, errors
 
         try:
+            # Siempre crear un ticket nuevo, sin agrupar por usuario/evento
             ticket = cls.objects.create(
                 quantity=quantity,
                 type=type,
                 event=event,
-                user=user
+                user=user,
+                discount=discount
             )
-
-            print(ticket)
             return True, ticket
         except Exception as e:
             return False, {"error": f"Error al crear ticket: {str(e)}"}
 
-    def update(self, buy_date, quantity, type, event, user):
+    def update(self, buy_date, quantity, type, event, user, discount=None):
         """Update ticket fields"""
         
         if buy_date is not None:
@@ -356,6 +566,8 @@ class Ticket(models.Model):
             self.event = event
         if user is not None:
             self.user = user
+        if discount is not None:
+            self.discount = discount
         
         self.save()
         return True, self
@@ -377,20 +589,20 @@ class Rating(models.Model):
         return f"{self.title} - {self.event.title}"
 
     @classmethod
-    def validate(cls, score, comment):
+    def validate(cls, rating, text):
         errors = {}
         
-        if not 1 <= score <= 5:
-            errors["score"] = "La calificación debe estar entre 1 y 5"
+        if not 1 <= rating <= 5:
+            errors["rating"] = "La calificación debe estar entre 1 y 5"
             
-        if len(comment) > 500:
-            errors["comment"] = "El comentario no puede tener más de 500 caracteres"
+        if len(text) > 500:
+            errors["text"] = "El comentario no puede tener más de 500 caracteres"
             
         return errors
 
     @classmethod
-    def new(cls, event, user, score, comment=""):
-        errors = cls.validate(score, comment)
+    def new(cls, event, user, rating, text=""):
+        errors = cls.validate(rating, text)
         
         if len(errors.keys()) > 0:
             return False, errors
@@ -398,24 +610,24 @@ class Rating(models.Model):
         rating = cls.objects.create(
             event=event,
             user=user,
-            score=score,
-            comment=comment
+            rating=rating,
+            text=text
         )
         
         return True, rating
 
-    def update(self, score, comment):
-        errors = self.validate(score, comment)
+    def update(self, rating, text):
+        errors = self.validate(rating, text)
         
         if len(errors.keys()) > 0:
             return False, errors
             
-        self.score = score
-        self.comment = comment
+        self.rating = rating
+        self.text = text
         self.save()
         
         return True, None
-
+    
 class Comment(models.Model):
     title = models.CharField(max_length=200)
     text = models.TextField()
@@ -471,9 +683,6 @@ class Notification(models.Model):
         max_length=10, choices=PRIORITY_CHOICES, default="LOW"
     )
     is_read = models.BooleanField(default=False)
-    event = models.ForeignKey(
-        "Event", on_delete=models.CASCADE, related_name="notifications"
-    )
     users = models.ManyToManyField(
         settings.AUTH_USER_MODEL, related_name="notifications"
     )
@@ -494,3 +703,124 @@ class RefundRequest(models.Model):
 
     def __str__(self):
         return f"Refund Request for Ticket: {self.ticket_code}"
+
+
+class SatisfactionSurvey(models.Model):
+    SATISFACTION_CHOICES = [
+        (1, "Muy insatisfecho"),
+        (2, "Insatisfecho"),
+        (3, "Neutro"),
+        (4, "Satisfecho"),
+        (5, "Muy satisfecho"),
+    ]
+    
+    PURCHASE_EXPERIENCE_CHOICES = [
+        ("muy_facil", "Muy fácil"),
+        ("facil", "Fácil"),
+        ("normal", "Normal"),
+        ("dificil", "Difícil"),
+        ("muy_dificil", "Muy difícil"),
+    ]
+    
+    # Campos principales
+    overall_satisfaction = models.IntegerField(
+        choices=SATISFACTION_CHOICES,
+        verbose_name="Satisfacción general"
+    )
+    purchase_experience = models.CharField(
+        max_length=20,
+        choices=PURCHASE_EXPERIENCE_CHOICES,
+        verbose_name="Experiencia de compra"
+    )
+    would_recommend = models.BooleanField(
+        verbose_name="¿Recomendarías este evento?"
+    )
+    comments = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Comentarios adicionales"
+    )
+    
+    # Metadatos
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Relaciones
+    ticket = models.OneToOneField(
+        Ticket,
+        on_delete=models.CASCADE,
+        related_name="satisfaction_survey"
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="satisfaction_surveys"
+    )
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.CASCADE,
+        related_name="satisfaction_surveys"
+    )
+
+    class Meta:
+        verbose_name = "Encuesta de Satisfacción"
+        verbose_name_plural = "Encuestas de Satisfacción"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Encuesta de {self.user.username} - {self.event.title}"
+
+    @classmethod
+    def validate(cls, overall_satisfaction, purchase_experience, would_recommend, comments=None):
+        """Validar datos de la encuesta"""
+        errors = {}
+
+        if not overall_satisfaction or overall_satisfaction not in [1, 2, 3, 4, 5]:
+            errors["overall_satisfaction"] = "Debes seleccionar un nivel de satisfacción"
+
+        if not purchase_experience or purchase_experience not in ["muy_facil", "facil", "normal", "dificil", "muy_dificil"]:
+            errors["purchase_experience"] = "Debes seleccionar una experiencia de compra"
+
+        if would_recommend is None:
+            errors["would_recommend"] = "Debes indicar si recomendarías el evento"
+
+        if comments and len(comments) > 500:
+            errors["comments"] = "Los comentarios no pueden tener más de 500 caracteres"
+
+        return errors
+
+    @classmethod
+    def new(cls, ticket, user, event, overall_satisfaction, purchase_experience, would_recommend, comments=None):
+        """Crear nueva encuesta con validación"""
+        errors = cls.validate(overall_satisfaction, purchase_experience, would_recommend, comments)
+
+        if errors:
+            return False, errors
+
+        # Verificar que no exista ya una encuesta para este ticket
+        if cls.objects.filter(ticket=ticket).exists():
+            return False, {"ticket": "Ya existe una encuesta para este ticket"}
+
+        try:
+            survey = cls.objects.create(
+                ticket=ticket,
+                user=user,
+                event=event,
+                overall_satisfaction=overall_satisfaction,
+                purchase_experience=purchase_experience,
+                would_recommend=would_recommend,
+                comments=comments
+            )
+            return True, survey
+        except Exception as e:
+            return False, {"error": f"Error al crear encuesta: {str(e)}"}
+
+    def get_satisfaction_display_with_icon(self):
+        """Obtener el display de satisfacción con ícono"""
+        icons = {
+            1: "😞",
+            2: "😐",
+            3: "😶",
+            4: "😊",
+            5: "😁"
+        }
+        return f"{icons.get(self.overall_satisfaction, '')} {self.get_overall_satisfaction_display()}"
