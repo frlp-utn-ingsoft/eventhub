@@ -6,6 +6,11 @@ from datetime import timedelta
 from django.utils import timezone
 from django.conf import settings
 from django.core.exceptions import ValidationError
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from .models import Ticket, Rating
+
 
 class Venue(models.Model):
     # Atributes
@@ -164,21 +169,53 @@ class Category(models.Model):
 
 
 class Event(models.Model):
+    id = models.AutoField(primary_key=True)
+    # Constants
+    ACTIVE = 'ACTIVE'
+    CANCELED = 'CANCELED'
+    REPROGRAMED = 'REPROGRAMED'
+    SOLD_OUT = 'SOLD_OUT'
+    FINISHED = 'FINISHED'
+    EVENT_STATES = [
+        (ACTIVE, 'ACTIVO'),
+        (CANCELED, 'CANCELADO'),
+        (REPROGRAMED, 'REPROGRAMADO'),
+        (SOLD_OUT, 'AGOTADO'),
+        (FINISHED, 'FINALIZADO')
+    ]
     title = models.CharField(max_length=200)
     description = models.TextField()
     scheduled_at = models.DateTimeField()
     organizer = models.ForeignKey(User, on_delete=models.CASCADE, related_name="organized_events")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    state = models.CharField(choices=EVENT_STATES, max_length=25, default="ACTIVE")
+    favorited_by = models.ManyToManyField(User, related_name="favorite_events", blank=True)
     venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name='venues')
     category = models.ForeignKey(Category, on_delete=models.CASCADE, related_name="events", null=True, blank=True)
+
 
     def __str__(self):
         return self.title
 
+    def is_past(self):
+        """Verifica si el evento ya pasó"""
+        return self.scheduled_at < timezone.now()
+
+    @classmethod
+    def get_future_events(cls):
+        """Retorna todos los eventos futuros ordenados por fecha"""
+        return cls.objects.filter(scheduled_at__gt=timezone.now()).order_by('scheduled_at')
+
     def get_attendees(self):
         """Obtiene los usuarios inscriptos al evento a través de los tickets"""
         return User.objects.filter(tickets__event=self).distinct()
+    
+    def get_demand(self):
+        """Calcula la demanda del evento como el porcentaje de ocupación"""
+        if self.venue.capacity == 0:
+            return 0
+        return (self.tickets.count() / self.venue.capacity) * 100
 
     @classmethod
     def validate(cls, title, description, scheduled_at):
@@ -211,6 +248,10 @@ class Event(models.Model):
         return True, event
 
     def update(self, title=None, description=None, scheduled_at=None, organizer=None, venue=None, category=None):
+        #VERIFICO SI LA FECHA O EL LUGAR FUERON CAMBIADOS
+        if (scheduled_at and scheduled_at != self.scheduled_at) or (venue and venue != self.venue):
+            self.state = self.REPROGRAMED
+
         self.title = title or self.title
         self.description = description or self.description
         self.scheduled_at = scheduled_at or self.scheduled_at
@@ -229,6 +270,27 @@ class Event(models.Model):
             aux = aux + t.quantity
 
         return self.venue.capacity - aux
+    
+    def auto_update_state(self):
+        # ESTADO FINALIZADO SI LA FECHA YA PASO
+        if self.scheduled_at < timezone.now():
+            self.state = self.FINISHED
+            self.save()
+            return
+        # ESTADO AGOTADO SI NO HAY MAS TICKETS DISPONIBLES
+        if self.available_tickets() <= 0:
+            self.state = self.SOLD_OUT
+            self.save()
+            return
+
+    def get_average_rating(self):
+        ratings = self.ratings.all()
+        if not ratings:
+            return 0
+        return sum(rating.rating for rating in ratings) / len(ratings)
+
+    def get_rating_count(self):
+        return self.ratings.count()
 
 class Discount(models.Model):
     code = models.CharField(
@@ -457,6 +519,7 @@ class Ticket(models.Model):
             return False, errors
 
         try:
+            # Siempre crear un ticket nuevo, sin agrupar por usuario/evento
             ticket = cls.objects.create(
                 quantity=quantity,
                 type=type,
@@ -464,8 +527,6 @@ class Ticket(models.Model):
                 user=user,
                 discount=discount
             )
-
-            print(ticket)
             return True, ticket
         except Exception as e:
             return False, {"error": f"Error al crear ticket: {str(e)}"}
@@ -506,20 +567,20 @@ class Rating(models.Model):
         return f"{self.title} - {self.event.title}"
 
     @classmethod
-    def validate(cls, score, comment):
+    def validate(cls, rating, text):
         errors = {}
         
-        if not 1 <= score <= 5:
-            errors["score"] = "La calificación debe estar entre 1 y 5"
+        if not 1 <= rating <= 5:
+            errors["rating"] = "La calificación debe estar entre 1 y 5"
             
-        if len(comment) > 500:
-            errors["comment"] = "El comentario no puede tener más de 500 caracteres"
+        if len(text) > 500:
+            errors["text"] = "El comentario no puede tener más de 500 caracteres"
             
         return errors
 
     @classmethod
-    def new(cls, event, user, score, comment=""):
-        errors = cls.validate(score, comment)
+    def new(cls, event, user, rating, text=""):
+        errors = cls.validate(rating, text)
         
         if len(errors.keys()) > 0:
             return False, errors
@@ -527,20 +588,20 @@ class Rating(models.Model):
         rating = cls.objects.create(
             event=event,
             user=user,
-            score=score,
-            comment=comment
+            rating=rating,
+            text=text
         )
         
         return True, rating
 
-    def update(self, score, comment):
-        errors = self.validate(score, comment)
+    def update(self, rating, text):
+        errors = self.validate(rating, text)
         
         if len(errors.keys()) > 0:
             return False, errors
             
-        self.score = score
-        self.comment = comment
+        self.rating = rating
+        self.text = text
         self.save()
         
         return True, None
@@ -620,3 +681,124 @@ class RefundRequest(models.Model):
 
     def __str__(self):
         return f"Refund Request for Ticket: {self.ticket_code}"
+
+
+class SatisfactionSurvey(models.Model):
+    SATISFACTION_CHOICES = [
+        (1, "Muy insatisfecho"),
+        (2, "Insatisfecho"),
+        (3, "Neutro"),
+        (4, "Satisfecho"),
+        (5, "Muy satisfecho"),
+    ]
+    
+    PURCHASE_EXPERIENCE_CHOICES = [
+        ("muy_facil", "Muy fácil"),
+        ("facil", "Fácil"),
+        ("normal", "Normal"),
+        ("dificil", "Difícil"),
+        ("muy_dificil", "Muy difícil"),
+    ]
+    
+    # Campos principales
+    overall_satisfaction = models.IntegerField(
+        choices=SATISFACTION_CHOICES,
+        verbose_name="Satisfacción general"
+    )
+    purchase_experience = models.CharField(
+        max_length=20,
+        choices=PURCHASE_EXPERIENCE_CHOICES,
+        verbose_name="Experiencia de compra"
+    )
+    would_recommend = models.BooleanField(
+        verbose_name="¿Recomendarías este evento?"
+    )
+    comments = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Comentarios adicionales"
+    )
+    
+    # Metadatos
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    # Relaciones
+    ticket = models.OneToOneField(
+        Ticket,
+        on_delete=models.CASCADE,
+        related_name="satisfaction_survey"
+    )
+    user = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name="satisfaction_surveys"
+    )
+    event = models.ForeignKey(
+        Event,
+        on_delete=models.CASCADE,
+        related_name="satisfaction_surveys"
+    )
+
+    class Meta:
+        verbose_name = "Encuesta de Satisfacción"
+        verbose_name_plural = "Encuestas de Satisfacción"
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Encuesta de {self.user.username} - {self.event.title}"
+
+    @classmethod
+    def validate(cls, overall_satisfaction, purchase_experience, would_recommend, comments=None):
+        """Validar datos de la encuesta"""
+        errors = {}
+
+        if not overall_satisfaction or overall_satisfaction not in [1, 2, 3, 4, 5]:
+            errors["overall_satisfaction"] = "Debes seleccionar un nivel de satisfacción"
+
+        if not purchase_experience or purchase_experience not in ["muy_facil", "facil", "normal", "dificil", "muy_dificil"]:
+            errors["purchase_experience"] = "Debes seleccionar una experiencia de compra"
+
+        if would_recommend is None:
+            errors["would_recommend"] = "Debes indicar si recomendarías el evento"
+
+        if comments and len(comments) > 500:
+            errors["comments"] = "Los comentarios no pueden tener más de 500 caracteres"
+
+        return errors
+
+    @classmethod
+    def new(cls, ticket, user, event, overall_satisfaction, purchase_experience, would_recommend, comments=None):
+        """Crear nueva encuesta con validación"""
+        errors = cls.validate(overall_satisfaction, purchase_experience, would_recommend, comments)
+
+        if errors:
+            return False, errors
+
+        # Verificar que no exista ya una encuesta para este ticket
+        if cls.objects.filter(ticket=ticket).exists():
+            return False, {"ticket": "Ya existe una encuesta para este ticket"}
+
+        try:
+            survey = cls.objects.create(
+                ticket=ticket,
+                user=user,
+                event=event,
+                overall_satisfaction=overall_satisfaction,
+                purchase_experience=purchase_experience,
+                would_recommend=would_recommend,
+                comments=comments
+            )
+            return True, survey
+        except Exception as e:
+            return False, {"error": f"Error al crear encuesta: {str(e)}"}
+
+    def get_satisfaction_display_with_icon(self):
+        """Obtener el display de satisfacción con ícono"""
+        icons = {
+            1: "😞",
+            2: "😐",
+            3: "😶",
+            4: "😊",
+            5: "😁"
+        }
+        return f"{icons.get(self.overall_satisfaction, '')} {self.get_overall_satisfaction_display()}"
