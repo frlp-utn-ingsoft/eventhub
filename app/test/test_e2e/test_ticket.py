@@ -62,7 +62,7 @@ class TicketBaseTest(BaseE2ETest):
 
         # Crear algunos tickets de prueba
         ticket_event_1 = Ticket.objects.create(
-            quantity=4,
+            quantity=1,
             type="VIP",
             event=self.event1,
             user=self.regular_user
@@ -87,7 +87,7 @@ class Ticket4PlacesLimitTest(TicketBaseTest):
         """
         # Primero verificar como usuario regular
         self.login_user("usuario", "password123")
-        self.page.goto(f"{self.live_server_url}/events/2/buy-ticket/")
+        self.page.goto(f"{self.live_server_url}/events/{self.event1.id}/buy-ticket/")
 
         # Verificar que existe el input de quantity
         quantity_input = self.page.get_by_label("Cantidad de entradas")
