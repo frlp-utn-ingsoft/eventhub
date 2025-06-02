@@ -39,7 +39,7 @@ jobs:
             - run: pip install -r requirements.txt
 
             - name: Install playwright
-              run: python -m playwright install --with-deps firefox
+              run: python -m playwright install --with-deps chromium
 
             - name: Run e2e tests
               run: python manage.py test app/test/test_e2e
