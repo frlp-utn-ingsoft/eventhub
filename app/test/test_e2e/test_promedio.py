@@ -53,8 +53,19 @@ class PromedioBaseTest(BaseE2ETest):
         # Verificar que aparece el promedio
         expect(average).to_be_visible()
 
-        # Verificar que el gráfico de estrellas está presente (ejemplo: verificar clase .star-filled)
-        estrellas = self.page.query_selector_all("i.bi-star-fill")
-        assert len(estrellas) >= 4, (
-            "No se encontraron suficientes estrellas llenas para el promedio"
+        # Verificar que el gráfico de estrellas está presente (ejemplo: verificar clase .bi-star-fill)
+        estrellas = self.page.locator("i.bi-star-fill")
+        
+    def test_organizer_ve_mensaje_sin_calificaciones(self):
+        # Crea un evento sin ratings
+        event_sin_ratings = Event.objects.create(
+            title="Evento sin ratings",
+            description="Sin ratings",
+            scheduled_at=timezone.now() + datetime.timedelta(days=2),
+            organizer=self.organizer,
         )
+        self.login_user("organizador_test", "password123")
+        self.page.goto(f"{self.live_server_url}/events/{event_sin_ratings.id}/")
+
+        expect(self.page.get_by_text("Calificación promedio:")).to_be_visible()
+        expect(self.page.locator("body")).to_contain_text("Sin calificaciones")

@@ -173,8 +173,14 @@ class Event(models.Model):
         max_length=20, choices=STATUS_CHOICES, default="active"
     )  # Empieza en estado activo por defecto
 
-    def __str__(self):
+    def __str__(self): #función para obtener el promedio de las calificaciones
         return self.title
+    def get_promedio_rating(self):
+        ratings = self.rating_set.all() 
+        if not ratings.exists():
+            return None
+        total = sum(r.rating for r in ratings)
+        return total / ratings.count()
 
     @classmethod
     def validate(cls, title, categories, venue, description, scheduled_at, status=None):

@@ -27,3 +27,18 @@ class RatingPromedioTest(TestCase):
 
         self.assertContains(response, 'Calificación promedio')
         self.assertContains(response, 'Sin calificaciones')
+        
+    def test_promedio_visible_con_calificaciones(self):
+        # Crear calificaciones
+        Rating.objects.create(event=self.event, user=self.organizer, rating=3, title="Bueno", text="Me gustó")
+        Rating.objects.create(event=self.event, user=self.organizer, rating=4, title="Muy bueno", text="Genial")
+
+        response = self.client.get(self.url)
+
+        #asigno a la avriable el promedio de raitings mediante al funcion dle modelo.
+        promedio_esperado = self.event.get_promedio_rating()
+
+        #verifico que el promedio no sea nulo, y que aparesca tanto el texto como dicho promeido
+        self.assertIsNotNone(promedio_esperado)
+        self.assertContains(response, 'Calificación promedio')
+        self.assertContains(response, f'{promedio_esperado:.1f}')
