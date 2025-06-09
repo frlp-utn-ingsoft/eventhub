@@ -64,13 +64,6 @@ class OversellingPreventionTest(BaseE2ETest):
             event=self.event,
             user=self.normie_user
         )
-
-    def completar_formulario_pago(self):
-        self.page.fill("#card_number", "1234567890123456")
-        self.page.fill("#expiry", "12/30")
-        self.page.fill("#cvv", "123")
-        self.page.fill("#card_name", "Usuario Test")
-        self.page.check("#terms")
     
     def test_cannot_exceed_remaining_capacity(self):
         """Test que verifica que no se pueden comprar más tickets que los disponibles después de compras previas"""
@@ -81,7 +74,7 @@ class OversellingPreventionTest(BaseE2ETest):
         self.page.wait_for_selector("#quantity")
         self.page.fill("#quantity", "2")
         self.page.get_by_label("Tipo de entrada").select_option("GENERAL")
-        self.completar_formulario_pago()
+        self.complete_card_data_in_buy_ticket_form()
         self.page.get_by_role("button", name="Confirmar compra").click()
         self.page.wait_for_load_state("networkidle")
         with transaction.atomic():
@@ -94,7 +87,7 @@ class OversellingPreventionTest(BaseE2ETest):
         self.page.wait_for_selector("#quantity")
         self.page.fill("#quantity", "2")
         self.page.get_by_label("Tipo de entrada").select_option("GENERAL")
-        self.completar_formulario_pago()
+        self.complete_card_data_in_buy_ticket_form()
         self.page.get_by_role("button", name="Confirmar compra").click()
 
 #        error_message = self.page.get_by_text("No hay suficientes entradas disponibles. Solo quedan 2 entradas.")
