@@ -17,22 +17,6 @@ class TicketBaseTest(BaseE2ETest):
     def setUp(self):
         super().setUp()
 
-        # Crear un usuario organizador
-    #    self.organizer = User.objects.create_user(
-     #       username="organizador",
-      #      email="organizador@test.com",
-       #     password="password123",
-        #    is_organizer=True,
-        #)
-
-        # Crear un usuario regular
-        #self.regular_user = User.objects.create_user(
-         #   username="regular",
-          #  email="regular@test.com",
-           # password="password123",
-            #is_organizer=False,
-        #)
-
         # Crear una localización de prueba
         self.venue = Venue.objects.create(
             name = "venue__name-test",
@@ -58,23 +42,6 @@ class TicketBaseTest(BaseE2ETest):
             organizer=self.organizer,
             venue= self.venue
         )
-        
-
-        # Crear algunos tickets de prueba
-        ticket_event_1 = Ticket.objects.create(
-            quantity=1,
-            type="VIP",
-            event=self.event1,
-            user=self.regular_user
-        )
-
-        ticket_event_2 = Ticket.objects.create(
-            quantity=1,
-            type="GENERAL",
-            event=self.event2,
-            user=self.regular_user
-        )
-
 
 class Ticket4PlacesLimitTest(TicketBaseTest):
     """
@@ -87,6 +54,7 @@ class Ticket4PlacesLimitTest(TicketBaseTest):
         """
         # Primero verificar como usuario regular
         self.login_user("usuario", "password123")
+        
         self.page.goto(f"{self.live_server_url}/events/{self.event1.id}/buy-ticket/")
 
         # Verificar que existe el input de quantity
@@ -96,13 +64,16 @@ class Ticket4PlacesLimitTest(TicketBaseTest):
         # Hago focus en el input
         quantity_input.click()
 
-        # Presionar la flecha arriba 4 veces para aumentar el valor de 1 hasta el límite o más
-        self.page.keyboard.press("ArrowUp")
-        self.page.keyboard.press("ArrowUp")
-        self.page.keyboard.press("ArrowUp")
-        self.page.keyboard.press("ArrowUp")
+        # Ingreso el valor 5 el cual es invalido, ya que siempre superará el valor inválido el cual es 4
+        quantity_input.fill('5')
+      
+      
+        # Completo el campo de la tarjeta mediante el método auxiliar ubicado en base.py
+        self.complete_card_data_in_buy_ticket_form()
+        
+        # Enviar formulario
+        self.page.get_by_role("button", name="Confirmar compra").click()
 
-        # Verificar que el nuevo valor es "3"
-        expect(quantity_input).to_have_value("3")
-
-        # El valor debería ser 3 dado que al ya haber creado un ticket con un lugar para el evento 2, el límite de 4 se reduce a 3.
+        error_message = self.page.locator("#message-box")
+        expect(error_message).to_have_text("No puedes superar el límite de 4 entradas por usario. Puedes comprar 4.")
+        
