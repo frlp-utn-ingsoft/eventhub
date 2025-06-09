@@ -74,7 +74,7 @@ class OversellingPreventionTest(BaseE2ETest):
         self.page.wait_for_selector("#quantity")
         self.page.fill("#quantity", "2")
         self.page.get_by_label("Tipo de entrada").select_option("GENERAL")
-        self.completar_formulario_pago()
+        self.complete_card_data_in_buy_ticket_form()
         self.page.get_by_role("button", name="Confirmar compra").click()
         self.page.wait_for_load_state("networkidle")
         with transaction.atomic():
