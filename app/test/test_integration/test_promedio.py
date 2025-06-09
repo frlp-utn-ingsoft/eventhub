@@ -23,10 +23,11 @@ class RatingPromedioTest(TestCase):
         
     def test_promedio_no_visible_sin_calificaciones(self):
         response = self.client.get(self.url)
-        
 
-        self.assertContains(response, 'Calificación promedio')
-        self.assertContains(response, 'Sin calificaciones')
+        self.assertIn("promedio", response.context)
+        self.assertIn("ratings", response.context)
+        self.assertEqual(response.context["promedio"],0)
+        self.assertFalse(response.context["ratings"].exists())
         
     def test_promedio_visible_con_calificaciones(self):
         # Crear calificaciones
@@ -35,10 +36,10 @@ class RatingPromedioTest(TestCase):
 
         response = self.client.get(self.url)
 
-        #asigno a la avriable el promedio de raitings mediante al funcion dle modelo.
+        # Usar el promedio calculado por la view 
+        self.assertIn("promedio", response.context)
+        promedio = response.context["promedio"]
         promedio_esperado = self.event.get_promedio_rating()
-
-        #verifico que el promedio no sea nulo, y que aparesca tanto el texto como dicho promeido
-        self.assertIsNotNone(promedio_esperado)
-        self.assertContains(response, 'Calificación promedio')
-        self.assertContains(response, f'{promedio_esperado:.1f}')
+        
+        self.assertEqual(promedio, promedio_esperado)
+        self.assertGreater(promedio, 0)

@@ -6,7 +6,7 @@
             <strong class="strong2" id='average_rating'>Calificación promedio:</strong>
             <!-- Si no hay calificaciones -->
             {% if not ratings %}
-                Sin calificaciones
+                <span class="sin-calificaciones">Sin calificaciones</span>
             {% else %}
                 {{ promedio|floatformat:1 }}
                 {% for i in "12345" %}

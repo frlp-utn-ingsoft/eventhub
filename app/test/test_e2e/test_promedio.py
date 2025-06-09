@@ -68,4 +68,4 @@ class PromedioBaseTest(BaseE2ETest):
         self.page.goto(f"{self.live_server_url}/events/{event_sin_ratings.id}/")
 
         expect(self.page.get_by_text("Calificación promedio:")).to_be_visible()
-        expect(self.page.locator("body")).to_contain_text("Sin calificaciones")
+        expect(self.page.locator("span.sin-calificaciones")).to_contain_text("Sin calificaciones")
