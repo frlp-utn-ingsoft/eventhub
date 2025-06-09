@@ -64,6 +64,15 @@ class OversellingPreventionTest(BaseE2ETest):
             event=self.event,
             user=self.normie_user
         )
+
+    def _create_test_user(self, username_suffix, is_organizer=False):
+        """Helper method para crear usuarios de prueba - optimizado para evitar repetición"""
+        return User.objects.create_user(
+            username=f"testuser_{username_suffix}",
+            email=f"testuser_{username_suffix}@example.com",
+            password="password123",
+            is_organizer=is_organizer,
+        )
     
     def test_cannot_exceed_remaining_capacity(self):
         """Test que verifica que no se pueden comprar más tickets que los disponibles después de compras previas"""

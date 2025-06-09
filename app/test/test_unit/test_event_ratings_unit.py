@@ -60,21 +60,23 @@ class EventRatingTests(TestCase):
 
     def test_get_average_rating_with_multiple_ratings(self):
         """Test que verifica el cálculo del promedio con múltiples calificaciones"""
-        # Crear varias calificaciones
         ratings_data = [
-            {'rating': 5, 'title': 'Excelente', 'text': 'Muy bueno'},
-            {'rating': 4, 'title': 'Bueno', 'text': 'Bastante bueno'},
-            {'rating': 3, 'title': 'Regular', 'text': 'Normal'},
-            {'rating': 2, 'title': 'Malo', 'text': 'No tan bueno'},
-            {'rating': 1, 'title': 'Pésimo', 'text': 'Muy malo'}
+            {'rating': 5, 'title': 'Tremendo', 'text': 'El mejor evento de mi vida'},
+            {'rating': 4, 'title': 'Bastante bueno', 'text': 'Muy bueno, me encantó'},
+            {'rating': 3, 'title': 'Zafa', 'text': 'Antes de ir a la casa de mi abuelo, prefiero asistir a este evento'},
+            {'rating': 2, 'title': 'Gasté plata al p', 'text': 'Creo que prefiero ir a la casa de mi abuelo'},
+            {'rating': 1, 'title': 'Devuelvan la guita', 'text': 'Les voy a romper toda la vidriera que evento malo'}
         ]
         
-        for rating_data in ratings_data:
-            Rating.objects.create(
+        ratings_to_create = [
+            Rating(
                 event=self.event,
                 user=self.user,
                 **rating_data
             )
+            for rating_data in ratings_data
+        ]
+        Rating.objects.bulk_create(ratings_to_create)
         
         # El promedio debería ser 3.0 (suma de todas las calificaciones / cantidad)
         self.assertEqual(self.event.get_average_rating(), 3.0)
