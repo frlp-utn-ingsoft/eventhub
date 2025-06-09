@@ -1,12 +1,10 @@
 from django.test import TestCase
-from django.contrib.auth import get_user_model
 from django.urls import reverse
-from app.models import Event, Venue, Rating
+from app.models import Event, Venue, Rating, User
 from django.utils import timezone
 from django.contrib.messages import get_messages
 import datetime
 
-User = get_user_model()
 
 class EventRatingsIntegrationTest(TestCase):
     def setUp(self):

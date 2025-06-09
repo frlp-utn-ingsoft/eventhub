@@ -1,9 +1,6 @@
 from django.test import TestCase
-from django.contrib.auth import get_user_model
-from app.models import Event, Venue, Rating
-from decimal import Decimal
+from app.models import Event, Venue, Rating, User
 
-User = get_user_model()
 
 class EventRatingTests(TestCase):
     def setUp(self):
