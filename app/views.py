@@ -84,6 +84,7 @@ def events(request):
 @login_required
 def event_detail(request, event_id):
     event = get_object_or_404(Event, pk=event_id)
+    event.auto_update_state()  # Actualizar el estado del evento
     user_has_rated = False
     
     if request.user.is_authenticated:
