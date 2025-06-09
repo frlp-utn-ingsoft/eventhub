@@ -114,11 +114,9 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 AUTH_USER_MODEL = "app.User"
 LANGUAGE_CODE = "es-ar"
 
-TIME_ZONE = "UTC"
-
 USE_I18N = True
 
-USE_TZ = True
+
 
 
 # Static files (CSS, JavaScript, Images)
