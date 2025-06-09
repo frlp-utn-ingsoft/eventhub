@@ -90,4 +90,16 @@ class BaseE2ETest(StaticLiveServerTestCase):
         
         # Verificar que estamos en la página de eventos
         self.page.wait_for_url(re.compile(r".*/events/?.*"), timeout=20000)
+    
+    def complete_card_data_in_buy_ticket_form(self):
+        """
+        Método auxiliar para completar el campo de las tarjetas de crédito dentro de la compra de un ticket.
+        
+        - Se deberá acceder a la página de compra del ticket antes de utilizar este método.
+        """
+        self.page.fill("#card_number", "1234567890123456")
+        self.page.fill("#expiry", "12/30")
+        self.page.fill("#cvv", "123")
+        self.page.fill("#card_name", "Usuario Test")
+        self.page.check("#terms")
 
