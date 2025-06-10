@@ -43,11 +43,13 @@ class EventGetDemandIntegrationTest(TestCase):
         # Demanda baja (sin tickets)
         response = self.client.get(reverse("event_detail", args=[self.event.id]))
         self.assertContains(response, "Baja demanda")
+        self.assertContains(response, "0") #0 entradas vendidas
 
         #Demanda alta (con 100% de tickets vendidos)
         Ticket.objects.create(user=self.user1, event=self.event, type="general", quantity=1)
         Ticket.objects.create(user=self.user2, event=self.event, type="general", quantity=1)
         response = self.client.get(reverse("event_detail", args=[self.event.id]))
         self.assertContains(response, "Alta demanda")
+        self.assertContains(response, "2") #2 entradas vendidas
 
         
