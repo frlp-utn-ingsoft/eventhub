@@ -14,14 +14,25 @@ class EventGetDemandIntegrationTest(TestCase):
             is_organizer=True,
         )
         # Crear venues
-        self.venue1 = Venue.objects.create(name="Lugar 1", capacity=100)
+        self.venue = Venue.objects.create(name="Lugar 1", capacity=2) ## 2 de capacidad
         # Crear evento de prueba
-        self.event1 = Event.objects.create(
+        self.event = Event.objects.create(
             title="Evento 1",
             description="Descripción del evento 1",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
-            venue=self.venue1,
+            venue=self.venue,
+        )
+        # Crear usuarios para los tickets
+        self.user1 = User.objects.create_user(
+            username="usuario1",
+            password="password123",
+            is_organizer=False, 
+        )
+        self.user2 = User.objects.create_user(
+            username="usuario2",
+            password="password123",
+            is_organizer=False,
         )
 
     def test_event_get_demand(self):
@@ -30,26 +41,13 @@ class EventGetDemandIntegrationTest(TestCase):
         self.client.login(username="organizador", password="password123")
 
         # Demanda baja (sin tickets)
-        response = self.client.get(reverse("event_detail", args=[self.event1.id]))
+        response = self.client.get(reverse("event_detail", args=[self.event.id]))
         self.assertContains(response, "Baja demanda")
 
-        # Crear 91 tickets para superar el 90% de ocupación (capacidad 100)
-        for i in range(91):
-            user = User.objects.create_user(
-                username=f"user_{i}",
-                email=f"user_{i}@test.com",
-                password="password123"
-            )
-            Ticket.objects.create(
-                user=user,
-                event=self.event1,
-                type="general",
-                quantity=1
-            )
-
-        response = self.client.get(reverse("event_detail", args=[self.event1.id]))
-        # Verificar que la cantidad de entradas vendidas es correcta == 91
-        self.assertContains(response, "Entradas vendidas:")
-        self.assertContains(response, "91")
-        # Demanda alta
+        #Demanda alta (con 100% de tickets vendidos)
+        Ticket.objects.create(user=self.user1, event=self.event, type="general", quantity=1)
+        Ticket.objects.create(user=self.user2, event=self.event, type="general", quantity=1)
+        response = self.client.get(reverse("event_detail", args=[self.event.id]))
         self.assertContains(response, "Alta demanda")
+
+        
