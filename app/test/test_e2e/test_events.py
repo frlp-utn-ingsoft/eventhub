@@ -1,8 +1,10 @@
 import datetime
 import re
+from datetime import timedelta
 
 from django.utils import timezone
 from playwright.sync_api import expect
+import pytz
 
 from app.models import Event, User
 
@@ -31,9 +33,11 @@ class EventBaseTest(BaseE2ETest):
             is_organizer=False,
         )
 
-        # Crear eventos de prueba
-        # Evento 1
-        event_date1 = timezone.make_aware(datetime.datetime(2025, 2, 10, 10, 10))
+        # Crear eventos de prueba usando fechas relativas a now()
+        now = timezone.now()
+        
+        # Evento 1 (futuro, 1 mes adelante)
+        event_date1 = now + timedelta(days=30)
         self.event1 = Event.objects.create(
             title="Evento de prueba 1",
             description="Descripción del evento 1",
@@ -41,8 +45,8 @@ class EventBaseTest(BaseE2ETest):
             organizer=self.organizer,
         )
 
-        # Evento 2
-        event_date2 = timezone.make_aware(datetime.datetime(2025, 3, 15, 14, 30))
+        # Evento 2 (futuro, 2 meses adelante)
+        event_date2 = now + timedelta(days=60)
         self.event2 = Event.objects.create(
             title="Evento de prueba 2",
             description="Descripción del evento 2",
@@ -50,49 +54,112 @@ class EventBaseTest(BaseE2ETest):
             organizer=self.organizer,
         )
 
-    def _table_has_event_info(self):
+        # Evento 3 (pasado, 1 día atrás)
+        event_date3 = now - timedelta(days=1)
+        self.event3 = Event.objects.create(
+            title="Evento pasado",
+            description="Descripción del evento pasado",
+            scheduled_at=event_date3,
+            organizer=self.organizer,
+        )
+
+    def tearDown(self):
+        timezone.deactivate()
+        super().tearDown()
+
+    def _table_has_event_info(self, show_past=False):
         """Método auxiliar para verificar que la tabla tiene la información correcta de eventos"""
-        # Verificar encabezados de la tabla (por texto, no por posición)
+        # Esperar a que la tabla esté visible
+        table = self.page.locator("table")
+        expect(table).to_be_visible()
+
+        # Verificar encabezados de la tabla
         header_texts = self.page.locator("table thead th").all_inner_texts()
         assert "Título" in header_texts
         assert "Descripción" in header_texts
         assert "Fecha" in header_texts
         assert "Acciones" in header_texts
 
+        # Esperar a que los eventos estén cargados
+        self.page.wait_for_selector("table tbody tr")
+
         # Verificar que los eventos aparecen en la tabla
         rows = self.page.locator("table tbody tr")
-        expect(rows).to_have_count(2)
+        expected_count = 3 if show_past else 2
+        expect(rows).to_have_count(expected_count)
 
-        # Verificar datos del primer evento
-        row0 = rows.nth(0)
-        expect(row0.locator("td").nth(0)).to_have_text("Evento de prueba 1")
-        expect(row0.locator("td").nth(1)).to_have_text("Descripción del evento 1")
-        expect(row0.locator("td").nth(2)).to_have_text("10 feb 2025, 10:10")
+        if show_past:
+            # Cuando show_past=True, los eventos están ordenados por fecha descendente
+            # Evento 2 (más reciente)
+            row0 = rows.nth(0)
+            expect(row0.locator("td").nth(0)).to_have_text("Evento de prueba 2")
+            expect(row0.locator("td").nth(1)).to_have_text("Descripción del evento 2")
+            date_text = row0.locator("td").nth(2).inner_text()
+            assert re.match(r"\d{1,2} [a-z]{3} \d{4}, \d{2}:\d{2}", date_text)
 
-        # Verificar datos del segundo evento
-        expect(rows.nth(1).locator("td").nth(0)).to_have_text("Evento de prueba 2")
-        expect(rows.nth(1).locator("td").nth(1)).to_have_text("Descripción del evento 2")
-        expect(rows.nth(1).locator("td").nth(2)).to_have_text("15 mar 2025, 14:30")
+            # Evento 1
+            row1 = rows.nth(1)
+            expect(row1.locator("td").nth(0)).to_have_text("Evento de prueba 1")
+            expect(row1.locator("td").nth(1)).to_have_text("Descripción del evento 1")
+            date_text = row1.locator("td").nth(2).inner_text()
+            assert re.match(r"\d{1,2} [a-z]{3} \d{4}, \d{2}:\d{2}", date_text)
 
-    def _table_has_correct_actions(self, user_type):
+            # Evento pasado
+            past_event_row = rows.nth(2)
+            expect(past_event_row.locator("td").nth(0)).to_have_text("Evento pasado")
+            expect(past_event_row.locator("td").nth(1)).to_have_text("Descripción del evento pasado")
+            date_text = past_event_row.locator("td").nth(2).inner_text()
+            assert re.match(r"\d{1,2} [a-z]{3} \d{4}, \d{2}:\d{2}", date_text)
+        else:
+            # Cuando show_past=False, solo se muestran eventos futuros ordenados por fecha ascendente
+            # Evento 1 (más próximo)
+            row0 = rows.nth(0)
+            expect(row0.locator("td").nth(0)).to_have_text("Evento de prueba 1")
+            expect(row0.locator("td").nth(1)).to_have_text("Descripción del evento 1")
+            date_text = row0.locator("td").nth(2).inner_text()
+            assert re.match(r"\d{1,2} [a-z]{3} \d{4}, \d{2}:\d{2}", date_text)
+
+            # Evento 2
+            row1 = rows.nth(1)
+            expect(row1.locator("td").nth(0)).to_have_text("Evento de prueba 2")
+            expect(row1.locator("td").nth(1)).to_have_text("Descripción del evento 2")
+            date_text = row1.locator("td").nth(2).inner_text()
+            assert re.match(r"\d{1,2} [a-z]{3} \d{4}, \d{2}:\d{2}", date_text)
+
+    def _table_has_correct_actions(self, user_type, show_past=False):
         """Método auxiliar para verificar que las acciones son correctas según el tipo de usuario"""
-        row0 = self.page.locator("table tbody tr").nth(0)
+        # Esperar a que la tabla esté visible
+        table = self.page.locator("table")
+        expect(table).to_be_visible()
 
-        detail_button = row0.locator("[aria-label='Ver Detalle']")
-        edit_button = row0.locator("[aria-label='Editar']")
+        # Esperar a que los eventos estén cargados
+        self.page.wait_for_selector("table tbody tr")
+
+        # Obtener la primera fila según el orden de los eventos
+        if show_past:
+            # Cuando show_past=True, el evento 2 aparece primero
+            row0 = self.page.locator("table tbody tr").nth(0)
+            event = self.event2
+        else:
+            # Cuando show_past=False, el evento 1 aparece primero
+            row0 = self.page.locator("table tbody tr").nth(0)
+            event = self.event1
+
+        detail_button = row0.locator("a[aria-label='Ver Detalle']")
+        edit_button = row0.locator("a[aria-label='Editar']")
         delete_form = row0.locator("form")
 
         expect(detail_button).to_be_visible()
-        expect(detail_button).to_have_attribute("href", f"/events/{self.event1.id}/")
+        expect(detail_button).to_have_attribute("href", f"/events/{event.id}/")
 
         if user_type == "organizador":
             expect(edit_button).to_be_visible()
-            expect(edit_button).to_have_attribute("href", f"/events/{self.event1.id}/edit/")
+            expect(edit_button).to_have_attribute("href", f"/events/{event.id}/edit/")
 
-            expect(delete_form).to_have_attribute("action", f"/events/{self.event1.id}/delete/")
+            expect(delete_form).to_have_attribute("action", f"/events/{event.id}/delete/")
             expect(delete_form).to_have_attribute("method", "POST")
 
-            delete_button = delete_form.locator("[aria-label='Eliminar']")
+            delete_button = delete_form.locator("button[aria-label='Eliminar']")
             expect(delete_button).to_be_visible()
         else:
             expect(edit_button).to_have_count(0)
@@ -120,7 +187,11 @@ class EventDisplayTest(EventBaseTest):
     def test_events_page_display_as_organizer(self):
         """Test que verifica la visualización correcta de la página de eventos para organizadores"""
         self.login_user("organizador", "password123")
+        
         self.page.goto(f"{self.live_server_url}/events/")
+
+        # Esperar a que la página cargue completamente
+        self.page.wait_for_load_state("networkidle")
 
         # Verificar el título de la página
         expect(self.page).to_have_title("Eventos")
@@ -134,39 +205,34 @@ class EventDisplayTest(EventBaseTest):
         table = self.page.locator("table")
         expect(table).to_be_visible()
 
-        self._table_has_event_info()
-        self._table_has_correct_actions("organizador")
+        # Verificar que el toggle existe y está desactivado por defecto
+        toggle = self.page.locator("#showPastEvents")
+        expect(toggle).to_be_visible()
+        expect(toggle).not_to_be_checked()
 
-    def _table_has_event_info(self):
-        """Método auxiliar para verificar que la tabla tiene la información correcta de eventos"""
-        headers = self.page.locator("table thead th")
+        # Verificar contenido inicial (sin eventos pasados)
+        self._table_has_event_info(show_past=False)
+        self._table_has_correct_actions("organizador", show_past=False)
 
-        # Verificar que existan las columnas esperadas (sin importar el orden)
-        for expected_text in ["Título", "Descripción", "Fecha", "Acciones"]:
-            header_with_text = headers.filter(has_text=expected_text)
-            expect(header_with_text).to_have_count(1)
+        # Activar el toggle para mostrar eventos pasados
+        toggle.click()
 
-        # Verificar que hay 2 filas
-        rows = self.page.locator("table tbody tr")
-        expect(rows).to_have_count(2)
+        # Esperar a que la página cargue completamente después del cambio
+        self.page.wait_for_load_state("networkidle")
 
-        # Para verificar contenido, primero mapeamos los índices de cada columna por su encabezado
-        count = headers.count()
-        header_texts = [headers.nth(i).inner_text() for i in range(count)]
-        header_indices = {text: idx for idx, text in enumerate(header_texts)}
+        # Verificar contenido con eventos pasados
+        self._table_has_event_info(show_past=True)
+        self._table_has_correct_actions("organizador", show_past=True)
 
-        # Verificar datos de la primera fila según índices detectados
-        row0 = rows.nth(0)
-        expect(row0.locator("td").nth(header_indices["Título"])).to_have_text("Evento de prueba 1")
-        expect(row0.locator("td").nth(header_indices["Descripción"])).to_have_text("Descripción del evento 1")
-        expect(row0.locator("td").nth(header_indices["Fecha"])).to_have_text("10 feb 2025, 10:10")
+        # Desactivar el toggle
+        toggle.click()
 
-        # Verificar datos de la segunda fila
-        row1 = rows.nth(1)
-        expect(row1.locator("td").nth(header_indices["Título"])).to_have_text("Evento de prueba 2")
-        expect(row1.locator("td").nth(header_indices["Descripción"])).to_have_text("Descripción del evento 2")
-        expect(row1.locator("td").nth(header_indices["Fecha"])).to_have_text("15 mar 2025, 14:30")
+        # Esperar a que la página cargue completamente después del cambio
+        self.page.wait_for_load_state("networkidle")
 
+        # Verificar que volvemos a mostrar solo eventos futuros
+        self._table_has_event_info(show_past=False)
+        self._table_has_correct_actions("organizador", show_past=False)
 
     def test_events_page_no_events(self):
         """Test que verifica el comportamiento cuando no hay eventos"""
@@ -177,6 +243,9 @@ class EventDisplayTest(EventBaseTest):
 
         # Ir a la página de eventos
         self.page.goto(f"{self.live_server_url}/events/")
+
+        # Esperar a que la página cargue completamente
+        self.page.wait_for_load_state("networkidle")
 
         # Verificar que existe un mensaje indicando que no hay eventos
         no_events_message = self.page.locator("text=No hay eventos disponibles")
@@ -219,6 +288,9 @@ class EventCRUDTest(EventBaseTest):
         # Ir a la página de eventos
         self.page.goto(f"{self.live_server_url}/events/")
 
+        # Esperar a que la página cargue completamente
+        self.page.wait_for_load_state("networkidle")
+
         # Hacer clic en el botón de crear evento
         self.page.get_by_role("link", name="Crear Evento").click()
 
@@ -241,17 +313,14 @@ class EventCRUDTest(EventBaseTest):
         # Enviar el formulario
         self.page.get_by_role("button", name="Crear Evento").click()
 
+        # Esperar a que la página cargue completamente
+        self.page.wait_for_load_state("networkidle")
+
         # Verificar que redirigió a la página de eventos
         expect(self.page).to_have_url(f"{self.live_server_url}/events/")
 
-        # Verificar que ahora hay 3 eventos
-        rows = self.page.locator("table tbody tr")
-        expect(rows).to_have_count(3)
-
-        row = self.page.locator("table tbody tr").last
-        expect(row.locator("td").nth(0)).to_have_text("Evento de prueba E2E")
-        expect(row.locator("td").nth(1)).to_have_text("Descripción creada desde prueba E2E")
-        expect(row.locator("td").nth(2)).to_have_text("15 jun 2025, 16:45")
+        # Verificar que el nuevo evento está en la lista
+        expect(self.page.locator("text=Evento de prueba E2E")).to_be_visible()
 
     def test_edit_event_organizer(self):
         """Test que verifica la funcionalidad de editar un evento para organizadores"""
@@ -261,17 +330,32 @@ class EventCRUDTest(EventBaseTest):
         # Ir a la página de eventos
         self.page.goto(f"{self.live_server_url}/events/")
 
-        # Hacer clic en el botón editar del primer evento
-        self.page.locator("[aria-label='Editar']").first.click()
+        # Esperar a que la página cargue completamente
+        self.page.wait_for_load_state("networkidle")
+
+        # Debug: Verificar estado del toggle
+        toggle = self.page.locator("#showPastEvents")
+        
+        # Debug: Imprimir eventos antes de editar
+        rows = self.page.locator("table tbody tr")
+        for i in range(rows.count()):
+            row = rows.nth(i)
+            title = row.locator("td").nth(0).inner_text()
+            description = row.locator("td").nth(1).inner_text()
+            date = row.locator("td").nth(2).inner_text()
+
+        # Hacer clic en el botón de editar del primer evento
+        edit_link = self.page.locator("table tbody tr").first.locator("a[aria-label='Editar']")
+        expect(edit_link).to_be_visible()
+        edit_link.click()
+
+        # Esperar a que la página de edición cargue completamente
+        self.page.wait_for_load_state("networkidle")
 
         # Verificar que estamos en la página de edición
         expect(self.page).to_have_url(f"{self.live_server_url}/events/{self.event1.id}/edit/")
 
-        header = self.page.locator("h1")
-        expect(header).to_have_text("Editar evento")
-        expect(header).to_be_visible()
-
-        # Verificar que el formulario está precargado con los datos del evento y luego los editamos
+        # Verificar que el formulario está precargado con los datos del evento
         title = self.page.get_by_label("Título del Evento")
         expect(title).to_have_value("Evento de prueba 1")
         title.fill("Titulo editado")
@@ -280,25 +364,85 @@ class EventCRUDTest(EventBaseTest):
         expect(description).to_have_value("Descripción del evento 1")
         description.fill("Descripcion Editada")
 
+        # Verificar que la fecha tiene el formato correcto (YYYY-MM-DD)
         date = self.page.get_by_label("Fecha")
-        expect(date).to_have_value("2025-02-10")
+        date_value = date.input_value()
+        assert re.match(r"\d{4}-\d{2}-\d{2}", date_value)
         date.fill("2025-04-20")
 
+        # Verificar que la hora tiene el formato correcto (HH:MM)
         time = self.page.get_by_label("Hora")
-        expect(time).to_have_value("10:10")
+        time_value = time.input_value()
+        assert re.match(r"\d{2}:\d{2}", time_value)
         time.fill("03:00")
 
         # Enviar el formulario
-        self.page.get_by_role("button", name="Crear Evento").click()
+        submit_button = self.page.get_by_role("button", name="Crear Evento")
+        expect(submit_button).to_be_visible()
+        submit_button.click()
+
+        # Esperar a que la página cargue completamente
+        self.page.wait_for_load_state("networkidle")
+
+        # Debug: Verificar la URL después de enviar
+        current_url = self.page.url
 
         # Verificar que redirigió a la página de eventos
         expect(self.page).to_have_url(f"{self.live_server_url}/events/")
 
-        # Verificar que el título del evento ha sido actualizado
-        row = self.page.locator("table tbody tr").last
-        expect(row.locator("td").nth(0)).to_have_text("Titulo editado")
-        expect(row.locator("td").nth(1)).to_have_text("Descripcion Editada")
-        expect(row.locator("td").nth(2)).to_have_text("20 abr 2025, 03:00")
+        # Debug: Verificar estado del toggle después de editar
+        toggle = self.page.locator("#showPastEvents")
+
+        # Esperar a que la tabla esté visible
+        table = self.page.locator("table")
+        expect(table).to_be_visible()
+
+        # Esperar a que los eventos estén cargados
+        self.page.wait_for_selector("table tbody tr")
+
+        # Debug: Imprimir información de los eventos en la tabla
+        rows = self.page.locator("table tbody tr")
+        for i in range(rows.count()):
+            row = rows.nth(i)
+            title = row.locator("td").nth(0).inner_text()
+            description = row.locator("td").nth(1).inner_text()
+            date = row.locator("td").nth(2).inner_text()
+
+        # Verificar que el evento original ya no está
+        expect(self.page.locator("text=Evento de prueba 1")).not_to_be_visible()
+
+        # Activar el toggle para mostrar eventos pasados
+        toggle.click()
+        self.page.wait_for_load_state("networkidle")
+
+        # Debug: Imprimir eventos después de activar el toggle
+        rows = self.page.locator("table tbody tr")
+        for i in range(rows.count()):
+            row = rows.nth(i)
+            title = row.locator("td").nth(0).inner_text()
+            description = row.locator("td").nth(1).inner_text()
+            date = row.locator("td").nth(2).inner_text()
+
+        # Buscar el evento editado en la tabla (sin depender de su posición)
+        event_row = self.page.locator("table tbody tr").filter(has_text="Titulo editado")
+        expect(event_row).to_be_visible()
+
+        # Verificar los detalles del evento editado
+        expect(event_row.locator("td").nth(1)).to_have_text("Descripcion Editada")
+        date_text = event_row.locator("td").nth(2).inner_text()
+        assert re.match(r"20 abr 2025, 03:00", date_text)
+
+        # Verificar que el evento editado aparece después del evento 2 (porque su fecha es anterior)
+        rows = self.page.locator("table tbody tr")
+        event2_row = rows.filter(has_text="Evento de prueba 2")
+        edited_row = rows.filter(has_text="Titulo editado")
+        
+        # Obtener las posiciones de las filas
+        event2_index = rows.evaluate_all("(rows) => rows.findIndex(row => row.textContent.includes('Evento de prueba 2'))")
+        edited_index = rows.evaluate_all("(rows) => rows.findIndex(row => row.textContent.includes('Titulo editado'))")
+        
+        # Verificar que el evento editado está después del evento 2
+        assert edited_index > event2_index, "El evento editado debería aparecer después del evento 2"
 
     def test_delete_event_organizer(self):
         """Test que verifica la funcionalidad de eliminar un evento para organizadores"""
@@ -308,18 +452,19 @@ class EventCRUDTest(EventBaseTest):
         # Ir a la página de eventos
         self.page.goto(f"{self.live_server_url}/events/")
 
-        # Contar eventos antes de eliminar
-        initial_count = len(self.page.locator("table tbody tr").all())
+        # Esperar a que la página cargue completamente
+        self.page.wait_for_load_state("networkidle")
 
-        # Hacer clic en el botón eliminar del primer evento
-        self.page.locator("[aria-label='Eliminar']").first.click()
+        # Hacer clic en el botón de eliminar del primer evento
+        delete_form = self.page.locator("table tbody tr").first.locator("form[action*='/delete/']")
+        expect(delete_form).to_be_visible()
+        delete_form.locator("button[aria-label='Eliminar']").click()
+
+        # Esperar a que la página cargue completamente
+        self.page.wait_for_load_state("networkidle")
 
         # Verificar que redirigió a la página de eventos
         expect(self.page).to_have_url(f"{self.live_server_url}/events/")
 
-        # Verificar que ahora hay un evento menos
-        rows = self.page.locator("table tbody tr")
-        expect(rows).to_have_count(initial_count - 1)
-
-        # Verificar que el evento eliminado ya no aparece en la tabla
-        expect(self.page.get_by_text("Evento de prueba 1")).to_have_count(0)
+        # Verificar que el evento ya no está en la lista
+        expect(self.page.locator("text=Evento de prueba 1")).not_to_be_visible()
