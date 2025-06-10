@@ -55,6 +55,7 @@ class EventDetailGetDemandE2ETest(BaseE2ETest):
         # Ir al detalle del evento (sin tickets, debe ser baja demanda)
         self.page.goto(f"{self.live_server_url}/events/{self.event.id}/")
         expect(self.page.locator("text=Baja demanda")).to_be_visible()
+        expect(self.page.locator("text=Entradas vendidas: 0")).to_be_visible()
 
         # Creamos tickets para el evento
         Ticket.objects.create(
@@ -73,3 +74,5 @@ class EventDetailGetDemandE2ETest(BaseE2ETest):
         # Refrescar la página de detalle
         self.page.reload()
         expect(self.page.locator("text=Alta demanda")).to_be_visible()
+        expect(self.page.locator("text=Entradas vendidas: 2")).to_be_visible()
+        
