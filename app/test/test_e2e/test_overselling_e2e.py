@@ -16,35 +16,18 @@ class OversellingPreventionTest(BaseE2ETest):
         super().setUp()
 
         sufijo = str(int(time.time() * 1000))
-        # Crear usuario organizador
-        self.organizer = User.objects.create_user(
-            username=f"organizador_{sufijo}",
-            email=f"organizador_{sufijo}@example.com",
-            password="password123",
-            is_organizer=True,
-        )
-
-        # Crear usuario regular
-        self.regular_user = User.objects.create_user(
-            username=f"usuario_{sufijo}",
-            email=f"usuario_{sufijo}@example.com",
-            password="password123",
-            is_organizer=False,
-        )
-
-        self.normie_user = User.objects.create_user(
-            username="normie",
-            email=f"usuario_normie@example.com",
-            password="password123",
-            is_organizer=False,
-        )
+        
+        # Crear múltiples usuarios
+        self.organizer = self._create_test_user(f"organizador_{sufijo}", is_organizer=True)
+        self.regular_user = self._create_test_user(f"usuario_{sufijo}", is_organizer=False)
+        self.normie_user = self._create_test_user("normie", is_organizer=False)
 
         # Crear venue con capacidad limitada
         self.venue = Venue.objects.create(
             name="Venue de prueba",
             adress="Dirección de prueba",
             city="Ciudad de prueba",
-            capacity=4,  # Capacidad pequeña para facilitar las pruebas
+            capacity=4,
             contact="contacto@test.com"
         )
 
@@ -73,12 +56,22 @@ class OversellingPreventionTest(BaseE2ETest):
             password="password123",
             is_organizer=is_organizer,
         )
+
+    def _verify_ticket_creation(self, expected_count, expected_quantity=None):
+        """Helper method para verificar la creación de tickets - optimizado para evitar repetición"""
+        with transaction.atomic():
+            self.assertEqual(Ticket.objects.count(), expected_count)
+            if expected_quantity is not None:
+                ticket = cast(Ticket, Ticket.objects.first())  # type: ignore
+                self.assertIsNotNone(ticket)
+                self.assertEqual(ticket.quantity, expected_quantity)
     
     def test_cannot_exceed_remaining_capacity(self):
         """Test que verifica que no se pueden comprar más tickets que los disponibles después de compras previas"""
         self.login_user("usuario", "password123")
         event_id = cast(int, self.event.id)  # type: ignore
 
+        # Primera compra de tickets
         self.page.goto(f"{self.live_server_url}/events/{self.event.id}/buy-ticket/")
         self.page.wait_for_selector("#quantity")
         self.page.fill("#quantity", "2")
@@ -86,12 +79,11 @@ class OversellingPreventionTest(BaseE2ETest):
         self.complete_card_data_in_buy_ticket_form()
         self.page.get_by_role("button", name="Confirmar compra").click()
         self.page.wait_for_load_state("networkidle")
-        with transaction.atomic():
-            ticket = cast(Ticket, Ticket.objects.first())  # type: ignore
-            self.assertIsNotNone(ticket)
-            self.assertEqual(ticket.quantity, 2)
+        
+        # Verificar primera compra usando método helper
+        self._verify_ticket_creation(expected_count=2, expected_quantity=2)
 
-        # Navegar nuevamente a la página de compra
+        # Segunda compra de tickets (debería fallar o crear otro ticket)
         self.page.goto(f"{self.live_server_url}/events/{event_id}/buy-ticket/")
         self.page.wait_for_selector("#quantity")
         self.page.fill("#quantity", "2")
@@ -99,11 +91,5 @@ class OversellingPreventionTest(BaseE2ETest):
         self.complete_card_data_in_buy_ticket_form()
         self.page.get_by_role("button", name="Confirmar compra").click()
 
-#        error_message = self.page.get_by_text("No hay suficientes entradas disponibles. Solo quedan 2 entradas.")
-#        expect(error_message).to_be_visible()
-
-        with transaction.atomic():
-            self.assertEqual(Ticket.objects.count(), 2)
-            ticket = cast(Ticket, Ticket.objects.first())  # type: ignore
-            self.assertIsNotNone(ticket)
-            self.assertEqual(ticket.quantity, 2)
+        # Verificar resultado final usando método helper
+        self._verify_ticket_creation(expected_count=2, expected_quantity=2)
