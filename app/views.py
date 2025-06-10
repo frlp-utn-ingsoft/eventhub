@@ -548,6 +548,8 @@ def update_ticket(request, ticket_code):
         if form.is_valid():
             form.save()
             return redirect('tickets_list')
+        # Si el formulario no es válido, se renderiza con los errores
+        return render(request, 'tickets/update_ticket.html', {'form': form})
     else:
         form = TicketForm(instance=ticket, user=request.user)
 

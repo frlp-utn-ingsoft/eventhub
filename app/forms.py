@@ -37,7 +37,13 @@ class TicketForm(forms.ModelForm):
     
     quantity = forms.IntegerField(
         min_value=1,
+        max_value=4,
         label="Cantidad de entradas",
+        error_messages={
+            'min_value': 'La cantidad mínima es 1 entrada',
+            'max_value': 'No pueden comprarse más de 4 entradas',
+            'invalid': 'Por favor ingrese un número válido'
+        },
         widget=forms.NumberInput(attrs={'id': 'id_quantity', 'class': 'form-control'})
     )
 
@@ -78,32 +84,39 @@ class TicketForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super().clean()
-        if not self.instance.pk:
-            month = cleaned_data.get('expiry_month')
-            year = cleaned_data.get('expiry_year')
+        month = cleaned_data.get('expiry_month')
+        year = cleaned_data.get('expiry_year')
 
-            if month and year:
-                now = datetime.now()
-                exp_year = int('20' + year)
-                exp_month = int(month)
-                exp_date = datetime(exp_year, exp_month, 1)
+        if month and year:
+            now = datetime.now()
+            exp_year = int('20' + year)
+            exp_month = int(month)
+            exp_date = datetime(exp_year, exp_month, 1)
 
-                if exp_date.replace(day=28) < now.replace(day=1):
-                    self.add_error('expiry_month', 'La tarjeta ya está vencida.')
-            quantity = cleaned_data.get('quantity')
-            event = getattr(self, 'event_instance', None) or cleaned_data.get('event')
-            user = getattr(self, 'user', None)
-            if event and user and quantity:
-                # Suma de entradas ya compradas por el usuario para este evento
-                total_user_tickets = (
-                    Ticket.objects.filter(event=event, user=user).aggregate(Sum('quantity'))['quantity__sum'] or 0
-                )
-                if total_user_tickets + quantity > 4:
-                    self.add_error('quantity', 'No podés comprar más de 4 entradas')
-            # ...validación de disponibilidad...
-            if event and quantity:
-                if quantity > event.tickets_available:
-                    self.add_error('quantity', f'Solo hay {event.tickets_available} tickets disponibles para este evento.')
+            if exp_date.replace(day=28) < now.replace(day=1):
+                self.add_error('expiry_month', 'La tarjeta ya está vencida.')
+
+        quantity = cleaned_data.get('quantity')
+        event = getattr(self, 'event_instance', None) or cleaned_data.get('event')
+        user = getattr(self, 'user', None)
+
+        if event and user and quantity:
+            # Suma de entradas ya compradas por el usuario para este evento
+            total_user_tickets = (
+                Ticket.objects.filter(event=event, user=user).aggregate(Sum('quantity'))['quantity__sum'] or 0
+            )
+            
+            # Si estamos editando, restamos la cantidad actual del ticket
+            if self.instance and self.instance.pk:
+                total_user_tickets -= self.instance.quantity
+
+            if total_user_tickets + quantity > 4:
+                self.add_error('quantity', 'No pueden comprarse más de 4 entradas')
+
+            # Validación de disponibilidad
+            if quantity > event.tickets_available:
+                self.add_error('quantity', f'Solo hay {event.tickets_available} tickets disponibles para este evento.')
+
         return cleaned_data
 
     def __init__(self, *args, user=None, fixed_event=False, event_instance=None, **kwargs):
