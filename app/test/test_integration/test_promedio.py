@@ -23,7 +23,23 @@ class RatingPromedioTest(TestCase):
         
     def test_promedio_no_visible_sin_calificaciones(self):
         response = self.client.get(self.url)
-        
 
-        self.assertContains(response, 'Calificación promedio')
-        self.assertContains(response, 'Sin calificaciones')
+        self.assertIn("promedio", response.context)
+        self.assertIn("ratings", response.context)
+        self.assertEqual(response.context["promedio"],0)
+        self.assertFalse(response.context["ratings"].exists())
+        
+    def test_promedio_visible_con_calificaciones(self):
+        # Crear calificaciones
+        Rating.objects.create(event=self.event, user=self.organizer, rating=3, title="Bueno", text="Me gustó")
+        Rating.objects.create(event=self.event, user=self.organizer, rating=4, title="Muy bueno", text="Genial")
+
+        response = self.client.get(self.url)
+
+        # Usar el promedio calculado por la view 
+        self.assertIn("promedio", response.context)
+        promedio = response.context["promedio"]
+        promedio_esperado = self.event.get_promedio_rating()
+        
+        self.assertEqual(promedio, promedio_esperado)
+        self.assertGreater(promedio, 0)

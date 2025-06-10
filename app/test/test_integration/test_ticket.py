@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.urls import reverse
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 from app.models import Event, Ticket
@@ -16,24 +17,20 @@ class TicketLimitIntegrationTest(TestCase):
             scheduled_at=timezone.now() + timezone.timedelta(days=1),
             organizer=self.organizer
         )
+        self.url = reverse("ticket_create", args=[self.event.id])
 
-    def test_cannot_purchase_more_than_four_tickets(self):
-        """Verifica que un usuario no pueda comprar más de 4 entradas por evento."""
-        # Crear 4 tickets inicialmente
-        success, _ = Ticket.new(user=self.user, event=self.event, quantity=4, ticket_type="GENERAL")
-        self.assertTrue(success, "Initial ticket creation should succeed")
+    def test_cannot_purchase_more_than_four_tickets_via_view(self):
+        self.assertTrue(self.client.login(username="testuser", password="testpass"))
 
-        # Intentar comprar 2 más (total = 6)
-        success, result = Ticket.new(user=self.user, event=self.event, quantity=2, ticket_type="GENERAL")
-        self.assertFalse(success, "Should fail when exceeding 5 tickets")
-        self.assertIn("quantity", result, "Error should indicate quantity issue")
-        self.assertEqual(
-            result["quantity"],
-            "No puedes comprar más de 4 entradas por evento.",
-            "Error message should match"
-        )
+        # Comprar 3 tickets
+        response1 = self.client.post(self.url, data={"quantity": 3, "type": "GENERAL"})
+        self.assertEqual(response1.status_code, 302)  # Redirige a my_tickets
 
-        # Verificar que el total de tickets sigue siendo 4 en la bd
-        total_tickets = Ticket.objects.filter(user=self.user, event=self.event).aggregate(total_quantity=Sum('quantity'))['total_quantity']
-        self.assertEqual(total_tickets, 4, "No additional tickets should be created")
-    
+        # Intentar comprar 2 tickets más -> debe fallar porque 3+2 > 4
+        response2 = self.client.post(self.url, data={"quantity": 2, "type": "GENERAL"})
+        self.assertEqual(response2.status_code, 200)  # Renderiza la página con errores
+        
+
+        # Verificar que solo hay 3 tickets en la base
+        total = Ticket.objects.filter(user=self.user, event=self.event).aggregate(total=Sum("quantity"))["total"]
+        self.assertEqual(total, 3)

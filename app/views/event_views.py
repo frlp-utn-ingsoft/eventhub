@@ -159,7 +159,7 @@ def event_detail(request, id):
     event = get_object_or_404(Event, pk=id)
    # Obtener todas las calificaciones de este evento
     ratings = Rating.objects.filter(event=event)
-    
+    promedio = event.get_promedio_rating() or 0
     categories = Category.objects.all()
     
         # Llamar a la función `handle_rating` para manejar la calificación
@@ -201,6 +201,7 @@ def event_detail(request, id):
         request,
         "app/event/event_detail.html",
         {
+            "promedio":promedio,
             "event": event,
             "ratings": ratings,
             "categories": categories,

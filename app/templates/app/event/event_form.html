@@ -30,15 +30,6 @@
                     <form action="{% url 'event_form' %}" method="POST">
                         {% csrf_token %}
 
-                        {% if messages %}
-                            <div class="alert alert-info">
-                                <ul class="mb-0">
-                                    {% for message in messages %}
-                                        <li>{{ message }}</li>
-                                    {% endfor %}
-                                </ul>
-                            </div>
-                        {% endif %}
                         {% if event.id %}
                             <input class="form-control"
                                 id="id"
