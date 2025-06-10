@@ -41,4 +41,4 @@ class EditarTicketE2ETest(TestCase):
             'quantity': 3,
             'type': 'general',
         })
-        self.assertContains(response, "No podés comprar más de 4 entradas")
+        self.assertContains(response, "No pueden comprarse más de 4 entradas")

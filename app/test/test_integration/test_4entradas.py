@@ -44,4 +44,4 @@ class ComprarTicketIntegrationTest(TestCase):
             'expiry_month': '12',
             'expiry_year': '2035',
         })
-        self.assertContains(response, "No podés comprar más de 4 entradas")
+        self.assertContains(response, "No pueden comprarse más de 4 entradas")

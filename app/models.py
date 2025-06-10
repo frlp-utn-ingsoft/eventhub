@@ -8,6 +8,7 @@ from datetime import datetime
 from django.utils import timezone
 from datetime import datetime
 from django.utils.dateparse import parse_datetime
+from django.db.models import Sum
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -162,7 +163,7 @@ class Event(models.Model):
 
     @property
     def tickets_available(self):
-        sold = Ticket.objects.filter(event=self).count()
+        sold = Ticket.objects.filter(event=self).aggregate(total=Sum('quantity'))['total'] or 0
         return self.tickets_total - sold
 
     def __str__(self):
