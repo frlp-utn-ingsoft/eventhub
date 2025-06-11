@@ -1,25 +1,22 @@
 from playwright.sync_api import expect
-from app.models import Ticket, User
+from app.models import Ticket, User, Venue,Category, Event  
 from app.test.test_e2e.base import BaseE2ETest
+import datetime
+from django.utils import timezone
 
 class EventDetailGetDemandE2ETest(BaseE2ETest):
     def setUp(self):
         super().setUp()
-        # Eliminar usuario si ya existe
-        User.objects.filter(username="organizador").delete()
         self.organizer = User.objects.create_user(
-            username="organizador",
-            email="organizador@example.com",
+            username="Organizador",
             password="password123",
             is_organizer=True,
         )
-        # Crea venue y evento como en tu setUp original
-        from app.models import Venue, Category, Event
-        self.venue1 = Venue.objects.create(
+        self.venue = Venue.objects.create(
             name="Auditorio Principal",
             adress="Calle Falsa 123",
             city="Ciudad Autonoma de Buenos Aires",
-            capacity=100,
+            capacity=2,
             contact="Juan Perez",
         )
         self.category = Category.objects.create(
@@ -27,45 +24,55 @@ class EventDetailGetDemandE2ETest(BaseE2ETest):
             is_active=True,
             description="Rock y sus derivados",
         )
-        import datetime
-        from django.utils import timezone
-        event_date1 = timezone.make_aware(datetime.datetime(2025, 2, 10, 10, 10))
-        self.event1 = Event.objects.create(
+        event_date = timezone.make_aware(datetime.datetime(2025, 2, 10, 10, 10))
+        self.event = Event.objects.create(
             title="Evento de prueba 1",
             description="Descripción del evento 1",
-            scheduled_at=event_date1,
-            venue=self.venue1,
+            scheduled_at=event_date,
+            venue=self.venue,
             organizer=self.organizer,
             category=self.category,
+        )
+        self.user1 = User.objects.create_user(
+            username="usuario1",
+            password="password123",
+            is_organizer=False,
+        )
+        self.user2 = User.objects.create_user(
+            username="usuario2",
+            password="password123",
+            is_organizer=False,
         )
 
     def test_event_get_demand(self):
         """Test que verifica la demanda y la cantidad de entradas vendidas en el detalle del evento"""
         # Login como organizador
         self.page.goto(f"{self.live_server_url}/accounts/login/")
-        self.page.fill('input[name="username"]', "organizador")
+        self.page.fill('input[name="username"]', "Organizador")
         self.page.fill('input[name="password"]', "password123")             
         self.page.click('button[type="submit"]')
 
         # Ir al detalle del evento (sin tickets, debe ser baja demanda)
-        self.page.goto(f"{self.live_server_url}/events/{self.event1.id}/")
+        self.page.goto(f"{self.live_server_url}/events/{self.event.id}/")
         expect(self.page.locator("text=Baja demanda")).to_be_visible()
+        expect(self.page.locator("text=Entradas vendidas: 0")).to_be_visible()
 
-        # Crear 91 tickets para superar el 90% de ocupación (capacidad 100)
-        for i in range(91):
-            user = User.objects.create_user(
-                username=f"e2e_user_{i}",
-                email=f"e2e_user_{i}@test.com",
-                password="password123"
-            )
-            Ticket.objects.create(
-                user=user,
-                event=self.event1,
+        # Creamos tickets para el evento
+        Ticket.objects.create(
+                user=self.user1,
+                event=self.event,
                 type="general",
                 quantity=1
             )
-
+        Ticket.objects.create(
+                user=self.user2,
+                event=self.event,
+                type="general",
+                quantity=1
+            )
+   
         # Refrescar la página de detalle
         self.page.reload()
         expect(self.page.locator("text=Alta demanda")).to_be_visible()
-        expect(self.page.locator("text=91")).to_be_visible()  # Entradas vendidas: 91
+        expect(self.page.locator("text=Entradas vendidas: 2")).to_be_visible()
+        
