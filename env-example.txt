@@ -1,0 +1,16 @@
+# Configuración básica de Django
+DEBUG=True
+SECRET_KEY= clave-secreta123
+ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+
+# Configuración de base de datos (ejemplo para dbsqlite3)
+DATABASE_URL=sqlite:///db.sqlite3
+
+
+# Variables adicionales específicas de tu proyecto
+LOGIN_REDIRECT_URL=/events/
+LOGIN_URL=/accounts/login/
+LOGOUT_REDIRECT_URL=/accounts/login/
+
+LANGUAGE_CODE=es-ar
+TIME_ZONE=America/Argentina/Buenos_Aires
