@@ -316,7 +316,7 @@ class EventCRUDTest(EventBaseTest):
         expect(row.locator("td").nth(1)).to_have_text("Descripción creada desde prueba E2E")
         # Formatear la fecha esperada para el nuevo evento en la tabla
         new_event_datetime = dj_timezone.make_aware(datetime.strptime(f"{future_date} {future_time}", "%Y-%m-%d %H:%M"))
-        expected_new_event_date_time = self._format_date_for_table(new_event_datetime)
+        expected_new_event_date_time = self._format_date_for_table(new_event_datetime).lstrip("0")
         expect(row.locator("td").nth(2)).to_have_text(expected_new_event_date_time)
         expect(row.locator("td").nth(3)).to_have_text(self.category1.name) # Esperamos el nombre de la categoría seleccionada
         expect(row.locator("td").nth(4)).to_contain_text("Activo") # Asume que se crea como "Activo"
