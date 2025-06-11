@@ -12,24 +12,11 @@ class EventRatingsBaseTest(BaseE2ETest):
     def setUp(self):
         super().setUp()
 
-        # Usar el usuario organizador ya creado en BaseE2ETest
-        self.organizer = User.objects.get(username="organizador")
+        # Usar los usuarios ya creados en BaseE2ETest
+        self.user1 = self.regular_user
+        self.user2 = self.create_test_user(is_organizer=False)
 
-        # Usar el usuario regular ya creado en BaseE2ETest
-        self.user1 = User.objects.get(username="usuario")
-
-        # Crear un segundo usuario regular para tener más datos de prueba
-        self.user2 = User.objects.create_user(
-            username="usuario2",
-            email="usuario2@example.com",
-            password="password456",
-            is_organizer=False,
-        )
-
-        # Usar el venue ya creado en BaseE2ETest
-        self.venue = Venue.objects.get(name="Venue de prueba")
-
-        # Crear evento de prueba
+        # Crear evento de prueba usando el venue ya creado en BaseE2ETest
         event_date = timezone.make_aware(datetime.datetime(2025, 2, 10, 10, 10))
         self.event = Event.objects.create(
             title="Evento de prueba",
@@ -39,31 +26,29 @@ class EventRatingsBaseTest(BaseE2ETest):
             venue=self.venue,
         )
 
+        # Crear ratings de prueba
+        self.rating1 = Rating.objects.create(
+            title="Buenazo me encantó",
+            text="Que lindo haberme gastado el aguinaldo en este evento. Recomiendo.",
+            rating=5,
+            event=self.event,
+            user=self.user1
+        )
+        
+        self.rating2 = Rating.objects.create(
+            title="Esto es una bosta.",
+            text="Prefiero pelear mano a mano con Topuria antes que ir a este evento.",
+            rating=1,
+            event=self.event,
+            user=self.user2
+        )
+
 
 class EventRatingsDisplayTest(EventRatingsBaseTest):
     """Tests relacionados con la visualización de ratings de eventos"""
 
     def test_organizer_can_see_event_ratings(self):
         """Test que verifica que el organizador puede ver los ratings de sus eventos"""
-        # Crear algunas calificaciones para el evento
-        ratings_to_create = [
-            Rating(
-                title="Buenazo me encantó",
-                text="Que lindo haberme gastado el aguinaldo en este evento. Recomiendo.",
-                rating=5,
-                event=self.event,
-                user=self.user1
-            ),
-            Rating(
-                title="Esto es una bosta.",
-                text="Prefiero pelear mano a mano con Topuria antes que ir a este evento.",
-                rating=1,
-                event=self.event,
-                user=self.user2
-            )
-        ]
-        Rating.objects.bulk_create(ratings_to_create)
-
         # Iniciar sesión como organizador
         self.login_user("organizador", "password123")
 
@@ -84,6 +69,9 @@ class EventRatingsDisplayTest(EventRatingsBaseTest):
 
     def test_organizer_can_see_no_ratings_message(self):
         """Test que verifica que se muestra un mensaje cuando no hay ratings"""
+        # Eliminar todos los ratings para este test específico
+        Rating.objects.filter(event=self.event).delete()
+        
         # Iniciar sesión como organizador
         self.login_user("organizador", "password123")
 
@@ -97,15 +85,6 @@ class EventRatingsDisplayTest(EventRatingsBaseTest):
 
     def test_regular_user_can_see_ratings(self):
         """Test que verifica que usuarios regulares pueden ver los ratings"""
-        # Crear una calificación
-        Rating.objects.create(
-            title="Excelente evento",
-            text="Muy buena organización",
-            rating=5,
-            event=self.event,
-            user=self.user1
-        )
-
         # Iniciar sesión como usuario regular (usuario)
         self.login_user("usuario", "password123")
 
@@ -117,13 +96,13 @@ class EventRatingsDisplayTest(EventRatingsBaseTest):
         rating_section.wait_for(state="visible", timeout=5000)
         expect(rating_section).to_be_visible()
         
-        # Verificar que el promedio es correcto (5.0)
+        # Verificar que el promedio es correcto (3.0 = (5+1)/2)
         average_rating = self.page.locator(".average-rating")
-        expect(average_rating).to_have_text("5.0")
+        expect(average_rating).to_have_text("3.0")
 
         # Verificar que se muestra la cantidad de ratings
         rating_count = self.page.locator(".rating-count")
-        expect(rating_count).to_have_text("(1 calificación)")
+        expect(rating_count).to_have_text("(2 calificaciones)")
 
 
 class EventRatingsInteractionTest(EventRatingsBaseTest):
