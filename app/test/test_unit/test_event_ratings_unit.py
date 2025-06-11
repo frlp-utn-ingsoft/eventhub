@@ -12,13 +12,6 @@ class EventRatingTests(TestCase):
             is_organizer=True
         )
         
-        self.user = self._create_test_user(
-            username='usuario',
-            email='usuario@test.com',
-            password='testpass123',
-            is_organizer=False
-        )
-        
         # Crear múltiples usuarios para diferentes ratings
         self.users = self._create_multiple_users(count=5, base_username='usuario')
         
@@ -106,18 +99,6 @@ class EventRatingTests(TestCase):
             for i in range(count)
         ]
         return User.objects.bulk_create(users_to_create)
-
-    def _create_multiple_ratings(self, ratings_data):
-        """Helper method para crear múltiples ratings usando bulk_create - optimizado para performance"""
-        ratings_to_create = [
-            Rating(
-                event=self.event,
-                user=self.user,
-                **rating_data
-            )
-            for rating_data in ratings_data
-        ]
-        return Rating.objects.bulk_create(ratings_to_create)
 
     def _verify_rating_stats(self, expected_average, expected_count):
         """Helper method para verificar estadísticas de ratings - optimizado para evitar repetición"""

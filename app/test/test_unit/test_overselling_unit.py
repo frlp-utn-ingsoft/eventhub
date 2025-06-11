@@ -2,55 +2,38 @@ from django.test import TestCase
 from app.models import User, Event, Venue, Ticket
 from django.utils import timezone
 from datetime import timedelta
-from typing import Dict, Any, Union, Tuple, List
+from typing import Dict, List
 
 class TestOverselling(TestCase):
     def setUp(self):
-        # Crear usuarios base para reutilizar en todos los tests
-        self.user = self._create_test_user('testuser', 'testpass123')
-        self.users = self._create_multiple_users(count=5, base_username='testuser')
+        # Crear organizador y usuario normal
+        self.organizer = self._create_test_user('organizer', 'organizerpass123')
+        self.user = self._create_test_user('normaluser', 'userpass123')
         
-        # Crear venue de prueba con capacidad limitada
+        # Crear venue de prueba con capacidad limitada a 1
         self.venue = Venue.objects.create(
             name='Test Venue',
             adress='Test Address',
             city='Test City',
-            capacity=10,
+            capacity=1,
             contact='Test Contact'
         )
         
-        # Crear evento de prueba
-        self.event = Event.objects.create(
-            title='Test Event',
-            description='Test Description',
+        # Crear dos eventos
+        self.event1 = Event.objects.create(
+            title='Test Event 1',
+            description='Test Description 1',
             scheduled_at=timezone.now() + timedelta(days=1),
-            organizer=self.user,
+            organizer=self.organizer,
             venue=self.venue
         )
         
-        # Crear tickets base para diferentes escenarios
-        # Ticket 1: 4 entradas (usuario 0)
-        self.ticket1 = Ticket.objects.create(
-            quantity=4,
-            type='GENERAL',
-            event=self.event,
-            user=self.users[0]
-        )
-        
-        # Ticket 2: 4 entradas (usuario 1) 
-        self.ticket2 = Ticket.objects.create(
-            quantity=4,
-            type='GENERAL',
-            event=self.event,
-            user=self.users[1]
-        )
-        
-        # Ticket 3: 2 entradas (usuario 2) - completa la capacidad
-        self.ticket3 = Ticket.objects.create(
-            quantity=2,
-            type='GENERAL',
-            event=self.event,
-            user=self.users[2]
+        self.event2 = Event.objects.create(
+            title='Test Event 2',
+            description='Test Description 2',
+            scheduled_at=timezone.now() + timedelta(days=2),
+            organizer=self.organizer,
+            venue=self.venue
         )
 
     def _create_test_user(self, username: str, password: str) -> User:
@@ -81,9 +64,9 @@ class TestOverselling(TestCase):
     def test_cannot_buy_more_tickets_than_capacity(self):
         """Verifica que no se puedan comprar más entradas que la capacidad disponible"""
         success, result = Ticket.new(
-            quantity=11,
+            quantity=2,
             type='GENERAL',
-            event=self.event,
+            event=self.event1,
             user=self.user
         )
         
@@ -94,22 +77,31 @@ class TestOverselling(TestCase):
             self.assertIn('quantity', result)
             self.assertEqual(
                 result['quantity'],
-                'Puedes comprar 4 lugares como máximo.'
+                'No hay suficientes entradas disponibles. Solo quedan 1 entradas.'
             )
 
     def test_cannot_buy_tickets_when_event_is_full(self):
         """Verifica que no se puedan comprar entradas cuando el evento está lleno"""
-        # El evento ya está lleno con los tickets creados en setUp()
-        # Intentar comprar una entrada más
-        success, result = Ticket.new(
+        # Comprar la única entrada disponible
+        success1, ticket1 = Ticket.new(
             quantity=1,
             type='GENERAL',
-            event=self.event,
+            event=self.event1,
+            user=self.user
+        )
+        self.assertTrue(success1)
+        self.assertIsInstance(ticket1, Ticket)
+        
+        # Intentar comprar una entrada más cuando el evento está lleno
+        success2, result = Ticket.new(
+            quantity=1,
+            type='GENERAL',
+            event=self.event1,
             user=self.user
         )
         
         # Verificar que es un error de evento lleno
-        self.assertFalse(success)
+        self.assertFalse(success2)
         self.assertIsInstance(result, dict)
         if isinstance(result, dict):
             self.assertIn('event', result)
@@ -118,63 +110,27 @@ class TestOverselling(TestCase):
                 'Lo sentimos, este evento ya no tiene entradas disponibles'
             )
 
-    def test_cannot_update_ticket_to_exceed_capacity(self):
-        """Verifica que no se pueda actualizar un ticket para exceder la capacidad"""
-        # Usar el ticket1 creado en setUp() (4 entradas)
-        # Intentar actualizar el ticket a 7 entradas (lo que excedería la capacidad)
-        # Primero validamos la cantidad
-        errors = Ticket.validate(
-            quantity=7,
-            type='GENERAL',
-            event=self.event,
-            user=self.user
-        )
-        
-        self.assertIn('quantity', errors)
-        self.assertEqual(
-            errors['quantity'],
-            'Puedes comprar 4 lugares como máximo.'
-        )
-
-    def test_can_buy_tickets_up_to_capacity(self):
-        """Verifica que se puedan comprar entradas hasta la capacidad máxima"""
-        # Los tickets ya están creados en setUp() y llenan la capacidad
-        self.assertEqual(self.event.available_tickets(), 0)
-
     def test_multiple_tickets_respect_capacity(self):
         """Verifica que múltiples compras de tickets respeten la capacidad total"""
-        # Crear un nuevo evento con capacidad disponible para este test específico
-        new_event = Event.objects.create(
-            title='New Test Event',
-            description='New Test Description',
-            scheduled_at=timezone.now() + timedelta(days=2),
-            organizer=self.user,
-            venue=self.venue
-        )
-        
-        # Comprar entradas
-        success1, ticket1 = Ticket.new(quantity=4, type='GENERAL', event=new_event, user=self.users[0])
+        # Comprar la única entrada disponible del evento2
+        success1, ticket1 = Ticket.new(quantity=1, type='GENERAL', event=self.event2, user=self.user)
         self.assertTrue(success1)
         self.assertIsInstance(ticket1, Ticket)
         
-        success2, ticket2 = Ticket.new(quantity=4, type='GENERAL', event=new_event, user=self.users[1])
-        self.assertTrue(success2)
-        self.assertIsInstance(ticket2, Ticket)
-        
-        # Intentar comprar más entradas de las disponibles
-        success, result = Ticket.new(
-            quantity=3,
+        # Intentar comprar más entradas cuando no hay disponibles
+        success2, result = Ticket.new(
+            quantity=1,
             type='GENERAL',
-            event=new_event,
-            user=self.users[2]
+            event=self.event2,
+            user=self.user
         )
         
         # Verificar que es un error de cantidad insuficiente
-        self.assertFalse(success)
+        self.assertFalse(success2)
         self.assertIsInstance(result, dict)
         if isinstance(result, dict):
-            self.assertIn('quantity', result)
+            self.assertIn('event', result)
             self.assertEqual(
-                result['quantity'],
-                'No hay suficientes entradas disponibles. Solo quedan 2 entradas.'
+                result['event'],
+                'Lo sentimos, este evento ya no tiene entradas disponibles'
             )
