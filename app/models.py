@@ -3,12 +3,9 @@ from django.db import models
 from decimal import Decimal
 import uuid
 from django.conf import settings
-from django.utils.dateparse import parse_datetime
-from datetime import datetime
 from django.utils import timezone
-from datetime import datetime
-from django.utils.dateparse import parse_datetime
 from django.db.models import Sum
+from django.db import transaction
 
 class User(AbstractUser):
     is_organizer = models.BooleanField(default=False)
@@ -370,7 +367,7 @@ class Ticket(models.Model):
         (4, '4'),
     ]
 
-
+    id = models.AutoField(primary_key=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user_ticket")
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="event_ticket")
     buy_date = models.DateTimeField(auto_now_add=True)
@@ -380,37 +377,49 @@ class Ticket(models.Model):
     card_type = models.CharField(max_length=20, choices=CARD_TYPE_CHOICES)
     last4_card_number = models.CharField(max_length=4, blank=True)
     price_per_ticket = models.DecimalField(max_digits=8, decimal_places=2, default=Decimal('0.00'))
+    coupon = models.ForeignKey('Coupon', null=True, blank=True, on_delete=models.SET_NULL)
     
+    @property
     def subtotal(self):
-        return self.quantity * self.price_per_ticket
-
+        return Decimal(str(self.quantity)) * self.price_per_ticket
+    
+    @property
     def tax(self):
-        return self.subtotal() * Decimal('0.10')
-
-    def total(self):
-        return self.subtotal() + self.tax()
-
-    def __str__(self):
-        return f"{self.ticket_code} - {self.type} x{self.quantity} - {self.user.username}"
-
-    def save(self, *args, **kwargs):
-        if not self.ticket_code:
-            import uuid
-            self.ticket_code = str(uuid.uuid4()).replace('-', '')[:20]
-        
-        # Actualizar el precio por ticket
-        if self.event:
-            if self.type == 'vip':
-                self.price_per_ticket = self.event.price_vip
+        return self.subtotal * Decimal('0.10')
+    
+    @property
+    def total_before_discount(self):
+        return self.subtotal + self.tax
+    
+    @property
+    def discount_amount(self):
+        if self.coupon and self.coupon.active:
+            if self.coupon.discount_type == 'fixed':
+                return min(self.coupon.amount, self.total_before_discount)
             else:
-                self.price_per_ticket = self.event.price_general
-            
-            # Actualizar tickets vendidos
-            if not self.pk:  # Si es un nuevo ticket
-                self.event.tickets_sold += self.quantity
-                self.event.save()
+                return self.total_before_discount * (self.coupon.amount / Decimal('100.00'))
+        return Decimal('0.00')
+    
+    @property
+    def total(self):
+        return self.total_before_discount - self.discount_amount
+    
+    def save(self, *args, **kwargs):
+        # Primero calculamos el precio
+        if self.event:
+            self.price_per_ticket = Decimal(str(
+                self.event.price_vip if self.type == 'vip' 
+                else self.event.price_general
+            ))
         
-        super().save(*args, **kwargs)
+        # Si es un nuevo ticket y no tiene código
+        if not self.pk and not self.ticket_code:
+            self.ticket_code = f"TKT-{uuid.uuid4().hex[:6].upper()}"
+        
+        # Guardamos una sola vez con todo listo
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+
 
     def delete(self, *args, **kwargs):
         # Restar tickets vendidos al eliminar
@@ -450,3 +459,16 @@ class Ticket(models.Model):
             type=ticket_type,
             card_type=card_type
         )
+
+class Coupon(models.Model):
+    DISCOUNT_TYPES = (
+        ('fixed', 'Fijo'),
+        ('percent', 'Porcentaje'),
+    )
+    coupon_code = models.CharField(max_length=20, unique=True)
+    discount_type = models.CharField(max_length=10, choices=DISCOUNT_TYPES)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.coupon_code

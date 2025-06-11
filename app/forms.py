@@ -1,5 +1,5 @@
 from django import forms
-from .models import Ticket
+from .models import Ticket, Coupon
 from .models import Event
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
@@ -154,3 +154,44 @@ class TicketFilterForm(forms.Form):
         super().__init__(*args, **kwargs)
         if user:
             self.fields['event'].queryset = Event.objects.filter(organizer=user)
+
+
+class CouponForm(forms.ModelForm):
+    class Meta:
+        model = Coupon
+        fields = ['coupon_code', 'discount_type', 'amount', 'active']
+        widgets = {
+            'coupon_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ingrese el código del cupón'
+            }),
+            'discount_type': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'amount': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.01',
+                'min': '0.01'
+            }),
+            'active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+        }
+        labels = {
+            'coupon_code': 'Código del Cupón',
+            'discount_type': 'Tipo de Descuento',
+            'amount': 'Valor del Descuento',
+            'active': 'Activo'
+        }
+
+    def clean_coupon_code(self):
+        coupon_code = self.cleaned_data.get('coupon_code')
+        if not coupon_code:
+            raise forms.ValidationError("El código del cupón es requerido.")
+        return coupon_code
+
+    def clean_amount(self):
+        amount = self.cleaned_data.get('amount')
+        if amount <= 0:
+            raise forms.ValidationError("El monto debe ser mayor a cero.")
+        return amount
