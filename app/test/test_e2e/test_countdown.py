@@ -1,6 +1,7 @@
 import re
 import pytest
 from playwright.sync_api import sync_playwright, expect
+from app.models import User
 
 # Helper para login simple (adaptar a tu forma real de login)
 def login(page, username, password):
@@ -23,6 +24,13 @@ def browser(playwright_instance):
     browser = playwright_instance.chromium.launch(headless=True)
     yield browser
     browser.close()
+
+@pytest.fixture(autouse=True)
+def crear_usuarios():
+    if not User.objects.filter(username="usuario").exists():
+        User.objects.create_user(username="usuario", password="password")
+    if not User.objects.filter(username="organizador").exists():
+        User.objects.create_user(username="organizador", password="password", is_organizer=True)
 
 def test_countdown_visibility_for_non_organizer(browser):
     page = browser.new_page()
