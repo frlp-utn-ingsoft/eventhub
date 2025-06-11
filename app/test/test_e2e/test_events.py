@@ -1,18 +1,15 @@
 import re
-from datetime import datetime, timedelta, timezone  
+from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
 from django.test import TestCase
 from django.utils import formats
+from django.utils import timezone as dj_timezone
 from django.utils.timezone import get_current_timezone
-from django.utils import timezone as dj_timezone  
-
 from playwright.sync_api import expect
 
-from app.models import Event, User, Category, Venue
+from app.models import Category, Event, User, Venue
 from app.test.test_e2e.base import BaseE2ETest
-
-
 
 
 class EventBaseTest(BaseE2ETest):
@@ -44,7 +41,7 @@ class EventBaseTest(BaseE2ETest):
         local_tz = dj_timezone.get_current_timezone()
 
         # Evento 1: Fecha fija con hora local (ej. 29/05/2025 17:41 hora local)
-        naive_dt = datetime(2025, 5, 29, 17, 41)
+        naive_dt = datetime(2025, 7, 29, 17, 41)
         aware_dt = naive_dt.replace(tzinfo=local_tz) 
 
         self.event1 = Event.objects.create(
@@ -75,19 +72,17 @@ class EventBaseTest(BaseE2ETest):
         """
         local_dt = dj_timezone.localtime(dt_obj)
 
-        # Obtener el formato de fecha y hora
-        date_part = formats.date_format(local_dt, "j M Y")
+        #Cambiado de 'j' (sin cero) a 'd' (con cero inicial)
+        date_part = formats.date_format(local_dt, "d M Y")
         time_part = formats.date_format(local_dt, "H:i")
 
-        
         parts = date_part.split(' ')
-        if len(parts) == 3: #
-            
+        if len(parts) == 3:
             parts[1] = parts[1].lower()
-            date_part = ' '.join(parts) 
-       
+            date_part = ' '.join(parts)
 
         return f"{date_part}, {time_part}"
+
 
     def _table_has_event_info(self):
         """Método auxiliar para verificar que la tabla tiene la información correcta de eventos"""
@@ -179,7 +174,7 @@ class EventAuthenticationTest(EventBaseTest):
 class EventDisplayTest(EventBaseTest):
     """Tests relacionados con la visualización de la página de eventos"""
 
-    def test_events_page_display_as_organizer(self):
+    def test_events_page_display_as_organizer(self): #falla
         """Test que verifica la visualización correcta de la página de eventos para organizadores"""
         self.login_user("organizador", "password123")
         self.page.goto(f"{self.live_server_url}/events/")
@@ -199,12 +194,12 @@ class EventDisplayTest(EventBaseTest):
         # Verificar que existe una tabla
         table = self.page.locator("table")
         expect(table).to_be_visible()
-
+ 
         self._table_has_event_info()
         self._table_has_correct_actions("organizador")
 
 
-    def test_events_page_regular_user(self):
+    def test_events_page_regular_user(self): #falla
         """Test que verifica la visualización de la página de eventos para un usuario regular"""
         # Iniciar sesión como usuario regular
         self.login_user("usuario", "password123")
@@ -270,7 +265,7 @@ class EventPermissionsTest(EventBaseTest):
 class EventCRUDTest(EventBaseTest):
     """Tests relacionados con las operaciones CRUD (Crear, Leer, Actualizar, Eliminar) de eventos"""
 
-    def test_create_new_event_organizer(self):
+    def test_create_new_event_organizer(self):#falla
         """Test que verifica la funcionalidad de crear un nuevo evento para organizadores"""
         # Iniciar sesión como organizador
         self.login_user("organizador", "password123")
@@ -327,7 +322,7 @@ class EventCRUDTest(EventBaseTest):
         expect(row.locator("td").nth(4)).to_contain_text("Activo") # Asume que se crea como "Activo"
     
 
-    def test_delete_event_organizer(self):
+    def test_delete_event_organizer(self):#falla
         """Test que verifica la funcionalidad de eliminar un evento para organizadores"""
         # Iniciar sesión como organizador
         self.login_user("organizador", "password123")
