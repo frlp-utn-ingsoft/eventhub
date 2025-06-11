@@ -25,7 +25,6 @@ jobs:
     - name: Build
       run: |
         python manage.py check
-        python manage.py collectstatic --noinput
 
   test:
     needs: build
