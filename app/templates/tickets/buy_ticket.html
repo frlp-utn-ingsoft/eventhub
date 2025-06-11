@@ -1,20 +1,6 @@
 {% extends "base.html" %}
 
 {% block content %}
-{% if form.errors %}
-<div class="alert alert-danger">
-  <ul style="list-style-type: none; margin: 0; padding: 0;">
-    {% for error in form.non_field_errors %}
-      <li>{{ error }}</li>
-    {% endfor %}
-    {% for field in form %}
-      {% for error in field.errors %}
-        <li>{{ field.label }}: {{ error }}</li>
-      {% endfor %}
-    {% endfor %}
-  </ul>
-</div>
-{% endif %}
 {% if messages %}
 <div class="container mt-3">
     {% for message in messages %}
