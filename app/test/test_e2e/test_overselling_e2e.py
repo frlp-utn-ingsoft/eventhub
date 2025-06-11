@@ -2,7 +2,6 @@ import datetime
 from django.utils import timezone
 from playwright.sync_api import expect
 from django.db import transaction
-from typing import cast
 import time
 
 from app.models import Event, User, Venue, Ticket
@@ -15,21 +14,17 @@ class OversellingPreventionTest(BaseE2ETest):
     def setUp(self):
         super().setUp()
 
-        sufijo = str(int(time.time() * 1000))
+        # Usar el usuario organizador ya creado en BaseE2ETest
+        self.organizer = User.objects.get(username="organizador")
         
-        # Crear múltiples usuarios
-        self.organizer = self._create_test_user(f"organizador_{sufijo}", is_organizer=True)
-        self.regular_user = self._create_test_user(f"usuario_{sufijo}", is_organizer=False)
+        # Usar el usuario regular ya creado en BaseE2ETest
+        self.regular_user = User.objects.get(username="usuario")
+        
+        # Crear un usuario adicional para tener más datos de prueba
         self.normie_user = self._create_test_user("normie", is_organizer=False)
 
-        # Crear venue con capacidad limitada
-        self.venue = Venue.objects.create(
-            name="Venue de prueba",
-            adress="Dirección de prueba",
-            city="Ciudad de prueba",
-            capacity=4,
-            contact="contacto@test.com"
-        )
+        # Usar el venue ya creado en BaseE2ETest
+        self.venue = Venue.objects.get(name="Venue de prueba")
 
         # Crear evento de prueba
         event_date = timezone.make_aware(datetime.datetime(2030, 2, 10, 10, 10))
@@ -62,14 +57,14 @@ class OversellingPreventionTest(BaseE2ETest):
         with transaction.atomic():
             self.assertEqual(Ticket.objects.count(), expected_count)
             if expected_quantity is not None:
-                ticket = cast(Ticket, Ticket.objects.first())  # type: ignore
+                ticket = Ticket.objects.first()
                 self.assertIsNotNone(ticket)
-                self.assertEqual(ticket.quantity, expected_quantity)
+                if ticket is not None:
+                    self.assertEqual(ticket.quantity, expected_quantity)
     
     def test_cannot_exceed_remaining_capacity(self):
         """Test que verifica que no se pueden comprar más tickets que los disponibles después de compras previas"""
         self.login_user("usuario", "password123")
-        event_id = cast(int, self.event.id)  # type: ignore
 
         # Primera compra de tickets
         self.page.goto(f"{self.live_server_url}/events/{self.event.id}/buy-ticket/")
@@ -80,16 +75,16 @@ class OversellingPreventionTest(BaseE2ETest):
         self.page.get_by_role("button", name="Confirmar compra").click()
         self.page.wait_for_load_state("networkidle")
         
-        # Verificar primera compra usando método helper
+        # Verificar primera compra usando método helper (1 ticket VIP + 1 ticket GENERAL = 2 total)
         self._verify_ticket_creation(expected_count=2, expected_quantity=2)
 
         # Segunda compra de tickets (debería fallar o crear otro ticket)
-        self.page.goto(f"{self.live_server_url}/events/{event_id}/buy-ticket/")
+        self.page.goto(f"{self.live_server_url}/events/{self.event.id}/buy-ticket/")
         self.page.wait_for_selector("#quantity")
         self.page.fill("#quantity", "2")
         self.page.get_by_label("Tipo de entrada").select_option("GENERAL")
         self.complete_card_data_in_buy_ticket_form()
         self.page.get_by_role("button", name="Confirmar compra").click()
 
-        # Verificar resultado final usando método helper
-        self._verify_ticket_creation(expected_count=2, expected_quantity=2)
+        # Verificar resultado final usando método helper (debería haber 1 VIP y 2 GENERAL = 3 tickets)
+        self._verify_ticket_creation(expected_count=3, expected_quantity=2)

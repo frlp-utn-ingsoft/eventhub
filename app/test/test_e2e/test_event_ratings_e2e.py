@@ -15,13 +15,10 @@ class EventRatingsBaseTest(BaseE2ETest):
         # Usar el usuario organizador ya creado en BaseE2ETest
         self.organizer = User.objects.get(username="organizador")
 
-        # Crear dos usuarios regulares distintos para calificar
-        self.user1 = User.objects.create_user(
-            username="usuario1",
-            email="usuario1@example.com",
-            password="password123",
-            is_organizer=False,
-        )
+        # Usar el usuario regular ya creado en BaseE2ETest
+        self.user1 = User.objects.get(username="usuario")
+
+        # Crear un segundo usuario regular para tener más datos de prueba
         self.user2 = User.objects.create_user(
             username="usuario2",
             email="usuario2@example.com",
@@ -109,8 +106,8 @@ class EventRatingsDisplayTest(EventRatingsBaseTest):
             user=self.user1
         )
 
-        # Iniciar sesión como usuario regular (usuario2)
-        self.login_user("usuario2", "password456")
+        # Iniciar sesión como usuario regular (usuario)
+        self.login_user("usuario", "password123")
 
         # Ir a la página de detalle del evento
         self.page.goto(f"{self.live_server_url}/events/{self.event.id}/")
