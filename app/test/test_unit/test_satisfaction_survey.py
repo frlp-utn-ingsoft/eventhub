@@ -1,10 +1,7 @@
 from django.test import TestCase
-from django.contrib.auth import get_user_model
-from app.models import Event, Venue, Ticket, SatisfactionSurvey
+from app.models import User, Event, Venue, Ticket, SatisfactionSurvey
 from django.utils import timezone
 from datetime import timedelta
-
-User = get_user_model()
 
 
 class SatisfactionSurveyUnitTest(TestCase):

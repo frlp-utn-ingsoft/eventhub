@@ -1,11 +1,8 @@
 from django.test import TestCase, Client
-from django.contrib.auth import get_user_model
 from django.urls import reverse
-from app.models import Event, Venue, Ticket, SatisfactionSurvey
+from app.models import User, Event, Venue, Ticket, SatisfactionSurvey
 from django.utils import timezone
 from datetime import timedelta
-
-User = get_user_model()
 
 
 class SatisfactionSurveyIntegrationTest(TestCase):
