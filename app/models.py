@@ -225,6 +225,18 @@ class Event(models.Model):
         """Obtiene los usuarios inscriptos al evento a través de los tickets"""
         return User.objects.filter(tickets__event=self).distinct()
     
+    def create_notification_on_event_update(self, old_scheduled_at, old_venue):
+        """Crea una notificación si el evento ha sido actualizado"""
+        if self.scheduled_at != old_scheduled_at or self.venue != old_venue:
+            notification = Notification.objects.create(
+                title="Evento actualizado",
+                message=f"El evento '{self.title}' ha sido actualizado. Fecha: {self.scheduled_at} y lugar: {self.venue.name}.",
+                priority="HIGH"
+            )
+            usuarios = User.objects.filter(tickets__event=self).distinct()
+            notification.users.set(usuarios)
+            notification.save()
+        
     def get_demand(self):
         """Calcula la demanda del evento como el porcentaje de ocupación"""
         if self.venue.capacity == 0:
@@ -684,6 +696,7 @@ class Notification(models.Model):
     )
     def __str__(self):
         return self.title
+    
     
 class RefundRequest(models.Model):
     approval = models.BooleanField(null=True, blank=True)

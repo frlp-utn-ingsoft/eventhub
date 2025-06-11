@@ -15,53 +15,47 @@ class EventGetDemandTest(TestCase):
             name="Test Venue",
             adress="Test Address",
             city="Test City",
-            capacity=100,
+            capacity=10, ##capacidad de 10
             contact="Test Contact"
         )
-
-    def test_event_get_demand(self):
-        """Test que verifica el cálculo correcto de la demanda del evento"""
-        event = Event.objects.create(
+        self.event = Event.objects.create(
             title="Evento de prueba",
             description="Descripción del evento de prueba",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
             organizer=self.organizer,
             venue=self.venue
         )
+        self.user1 = User.objects.create_user(
+            username="usuario",
+            password="password123",
+            is_organizer=False
+        )
+        self.user2 = User.objects.create_user(
+            username="usuario2",
+            password="password123",
+            is_organizer=False  
+        )
+
+    def test_event_get_demand(self):
+        """Test que verifica el cálculo correcto de la demanda del evento"""
 
         # Sin tickets: demanda debe ser 0%
-        self.assertEqual(event.get_demand(), 0)
-
-        # Creamos 50 tickets (capacidad 100)
-        for i in range(50):
-            user = User.objects.create_user(
-                username=f"user_{i}",
-                email=f"user_{i}@test.com",
-                password="password123"
-            )
-            Ticket.objects.create(
-                user=user,
-                event=event,
+        self.assertEqual(self.event.get_demand(), 0)
+        #Creamos dos ticket para el evento
+        Ticket.objects.create(
+                user=self.user1,
+                event=self.event,
                 type="general",
                 quantity=1
             )
-
-        # Demanda debe ser 50%
-        self.assertEqual(event.get_demand(), 50)
-
-        # Creamos 50 tickets más (total 100)
-        for i in range(50, 100):
-            user = User.objects.create_user(
-                username=f"user_{i}",
-                email=f"user_{i}@test.com",
-                password="password123"
-            )
-            Ticket.objects.create(
-                user=user,
-                event=event,
+        Ticket.objects.create(
+                user=self.user2,
+                event=self.event,
                 type="general",
                 quantity=1
             )
-
-        # Demanda debe ser 100%
-        self.assertEqual(event.get_demand(), 100)
+        
+        # Demanda debe ser 20%
+        self.assertEqual(self.event.get_demand(), 20)
+       
+        

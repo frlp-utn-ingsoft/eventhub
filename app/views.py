@@ -199,6 +199,7 @@ def event_form(request, event_id=None):
                         "data": request.POST
                     })
             else:
+                ##aca se actualiza el evento
                 old_scheduled_at = event.scheduled_at
                 old_venue = event.venue
                 success, result = event.update(
@@ -211,15 +212,8 @@ def event_form(request, event_id=None):
 
                 if success:
                     messages.success(request, "Evento actualizado exitosamente")
-                    if old_scheduled_at != scheduled_at or old_venue != venue:
-                        notification = Notification.objects.create(
-                            title="Evento Modificado",
-                            message=f"El evento '{event.title}' ha sido actualizado. Fecha: {scheduled_at} y lugar: {venue.name}.",
-                            priority="MEDIUM",
-                        )
-                        usuarios = User.objects.filter(tickets__event=event).distinct()
-                        notification.users.set(usuarios)
-                        notification.save()
+                    if event is not None:
+                        event.create_notification_on_event_update(old_scheduled_at, old_venue)
                     return redirect("events")
 
                 else:
