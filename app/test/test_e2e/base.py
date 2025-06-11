@@ -6,7 +6,7 @@ from playwright.sync_api import sync_playwright
 from app.models import User
 
 os.environ["DJANGO_ALLOW_ASYNC_UNSAFE"] = "true"
-headless = os.environ.get("HEADLESS", 1) == 1
+headless = os.environ.get("HEADLESS", "1") in ["1", "true"]
 slow_mo = os.environ.get("SLOW_MO", 0)
 
 
