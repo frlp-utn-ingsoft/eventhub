@@ -11,8 +11,7 @@ from django.conf import settings
 import pytz
 from django.http import JsonResponse
 from decimal import Decimal
-import uuid
-from django.db.utils import IntegrityError
+from django.utils import timezone
 
 def register(request):
     if request.method == "POST":

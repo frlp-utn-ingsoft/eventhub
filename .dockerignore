@@ -1,0 +1,31 @@
+# Archivos de desarrollo y entornos virtuales
+venv/
+.env
+.env.local
+.env.development
+.env.test
+*.env.local
+
+
+# Archivos del sistema
+*.swp
+*.dump
+*.DS_Store
+
+# Archivos de git
+.git/
+.gitignore
+
+# Archivos de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Archivos de base de datos
+*.sqlite3
+*.db
+
+# Archivos de medios y estáticos (pueden ser volúmenes)
+media/
+staticfiles/
