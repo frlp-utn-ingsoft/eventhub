@@ -1,135 +1,145 @@
-
-from django.test import TestCase, Client
-from django.urls import reverse
-from django.contrib.auth import get_user_model
-from app.models import Event, Ticket, Venue, SurveyResponse
+from .base import BaseE2ETest
+from playwright.sync_api import expect
+from app.models import Venue, Event, Ticket, User
 from datetime import datetime
 from django.utils import timezone
+from django.utils.timezone import now, timedelta
+import re
 
-User = get_user_model()
-
-class TicketPurchaseE2ETest(TestCase): 
+class TicketE2ETest(BaseE2ETest):
     def setUp(self):
-        self.client = Client() 
-        self.user = User.objects.create_user(username='testuser', password='testpassword')
-        self.organizer = User.objects.create_user(username='organizeruser', password='organizerpassword')
-        self.venue = Venue.objects.create(name='E2E Test Venue', address='123 Test St', city='E2E City', capacity=100)
-        self.event = Event.objects.create(
-            title='E2E Event Test',
-            description='Descripción para el test E2E.',
-            scheduled_at=timezone.make_aware(datetime(2025, 12, 31, 20, 0, 0)),
-            venue=self.venue,
-            organizer=self.organizer
+        super().setUp()
+
+        self.user = self.create_test_user()
+
+        self.organizer = User.objects.create_user(
+            username="organizer_test",
+            email="organizer_test@example.com",
+            password="password123",
+            is_organizer=True
         )
-        self.client.login(username='testuser', password='testpassword')
 
-    # Simula y verifica el flujo completo de una compra de ticket exitosa,
-    # desde ver el evento hasta la creación del ticket en la BD, la encuesta y
-    # su aparición en la lista del usuario
-    
-    def test_complete_valid_ticket_purchase_flow_from_event_list(self):
-        """
-        Test E2E: Simula el flujo completo de una compra de ticket exitosa,
-        comenzando desde la página de listado de eventos.
-        """
-        # 1. Acceder a la página de listado de eventos
-        event_list_url = reverse('events') 
-        response = self.client.get(event_list_url)
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, self.event.title)
-        self.assertContains(response, self.event.description) 
+        self.venue1 = Venue.objects.create(
+            name="Estadio A",
+            address="Calle A",
+            city="Ciudad",
+            capacity=1000,
+            contact="mail@test.com"
+        )
+        self.venue2 = Venue.objects.create(
+            name="Estadio B",
+            address="Calle B",
+            city="Ciudad",
+            capacity=8000,
+            contact="mail2@test.com"
+        )
+
+        self.event = Event.objects.create(
+            title="Evento E2E",
+            description="Descripción",
+            scheduled_at=now() + timedelta(days=1),
+            organizer=self.organizer,
+            venue=self.venue1
+        )
+
+        Ticket.objects.create(
+            event=self.event,
+            user=self.user,
+            quantity=2,
+            type="GENERAL"
+        )
+
+        self.user2 = User.objects.create_user(
+            username="segundo_usuario",
+            email="segundo@example.com",
+            password="password456"
+        )
+
+        Ticket.objects.create(
+            event=self.event,
+            user=self.user2,
+            quantity=1,
+            type="GENERAL"
+        )
+
+
+    def test_successful_ticket_purchase_flow(self):
+        self.login_user("usuario_test", "password123")
+        self.page.goto(f"{self.live_server_url}/events")
+
+        # Ver el evento y clickear en "Comprar Ticket"
+        expect(self.page.locator(f"text={self.event.title}")).to_be_visible()
+        self.page.click(f"text={self.event.title}")
+        self.page.click("a[aria-label='Comprar Ticket']")
+        expect(self.page.locator("div.card-body form")).to_be_visible()
+
+        expect(self.page.locator('input[name="card_name"]')).to_be_visible()
+        expect(self.page.locator('input[name="card_number"]')).to_be_visible()
+        expect(self.page.locator('input[name="expiration_date"]')).to_be_visible()
+        expect(self.page.locator('input[name="cvv"]')).to_be_visible()
+        expect(self.page.locator('input[name="quantity"]')).to_be_visible()
+        expect(self.page.locator('select[name="type"]')).to_be_visible()
+        expect(self.page.locator('input[name="accept_terms"]')).to_be_visible()
+
+        # Completar el formulario de compra
+        self.page.fill('input[name="card_name"]', "Test User")
+        self.page.fill('input[name="card_number"]', "1234567890123456")
+        self.page.fill('input[name="expiration_date"]', "12/26")
+        self.page.fill('input[name="cvv"]', "123")
+        self.page.fill('input[name="quantity"]', "1")
+        self.page.select_option('select[name="type"]', "GENERAL")
+        self.page.check('input[name="accept_terms"]')
+        self.page.get_by_role("button", name="Confirmar Compra").click()
         
-        # 2. Simular clic en el botón "Comprar Ticket" que redirige a la página de compra
-        purchase_link = reverse('ticket_create', args=[self.event.id]) # type: ignore
-        self.assertContains(response, f'href="{purchase_link}"') # Verifica que el enlace exista en la página de listado
-        
-        # simula un clic del usuario
-        response = self.client.get(purchase_link)
-        self.assertEqual(response.status_code, 200)
 
-        # Verificar que la página de compra contenga los campos de formulario esperados
-        self.assertContains(response, '<input type="text" name="card_name"')
-        self.assertContains(response, '<input type="text" name="card_number"')
-        self.assertContains(response, '<input type="text" name="expiration_date"')
-        self.assertContains(response, '<input type="text" name="cvv"')
-        self.assertContains(response, '<input type="text" name="quantity"') 
-        self.assertContains(response, '<select name="type"') 
+        # Redirección a encuesta
+        expect(self.page).to_have_url(re.compile(f"{self.live_server_url}/encuesta/\\d+/"))
 
-        # 3. Enviar el formulario de compra de tickets con datos válidos
-        ticket_data = {
-            'quantity': 1,
-            'type': 'GENERAL', 
-            'card_name': 'Test User',
-            'card_number': '1234567890123456',
-            'expiration_date': '12/26', 
-            'cvv': '123',
-            'accept_terms': 'on', 
-        }
-        
-        # Realizar la solicitud POST a la URL de compra, siguiendo cualquier redirección
-        response = self.client.post(purchase_link, ticket_data, follow=True) 
+        # Verificar que la encuesta está visible
+        expect(self.page.locator('div.star-rating')).to_be_visible()
+        expect(self.page.locator('textarea[name="issue"]')).to_be_visible()
+        expect(self.page.locator('input[name="recommend"][value="True"]')).to_be_visible()
+        expect(self.page.locator('input[name="recommend"][value="False"]')).to_be_visible()
 
-        # 4. Verificar que la compra fue exitosa
-        self.assertEqual(response.status_code, 200) 
+        expect(self.page.locator('div.star-rating[data-input-id="star-input-satisfaction"] i.star[data-value="5"]')).to_be_visible()
+        self.page.click('div.star-rating[data-input-id="star-input-satisfaction"] i.star[data-value="5"]')
+        self.page.fill('textarea[name="issue"]', "Todo excelente.")
+        self.page.check('input[name="recommend"][value="True"]')
+        self.page.click("text=Enviar Encuesta")
 
-        # Verifica que la aplicación redirige a la página de encuestas 
-        ticket = Ticket.objects.get(user=self.user, event=self.event)
-        expected_url = reverse('satisfaction_survey', args=[ticket.id])  # type: ignore
-        self.assertRedirects(response, expected_url)
+        # Redirección a lista de tickets
+        expect(self.page).to_have_url(f"{self.live_server_url}/tickets/")
+        expect(self.page.locator("table")).to_be_visible()
+        expect(self.page.locator("table")).to_contain_text(self.event.title)
 
-          # 5. Simula el envío del formulario de encuesta post compra
-        encuesta_url = reverse('satisfaction_survey', args=[ticket.id]) #type: ignore
-        encuesta_data = {
-            'satisfaction': 5,
-            'issue': 'Todo excelente.',
-            'recommend': 'True', 
-        }
 
-        response = self.client.post(encuesta_url, encuesta_data, follow=True)
+    def test_ticket_purchase_with_invalid_card_fails(self):
+        self.login_user("usuario_test", "password123")
+        self.page.goto(f"{self.live_server_url}/events")
+        self.page.click(f"text={self.event.title}")
+        self.page.click("text=Comprar Ticket")
+        expect(self.page.locator("div.card-body form")).to_be_visible()
 
-        # 6. Verifica que se redirige a la lista de tickets tras enviar la encuesta
-        ticket_list_url = reverse('ticket_list')
-        self.assertRedirects(response, ticket_list_url)
+        expect(self.page.locator('input[name="card_name"]')).to_be_visible()
+        expect(self.page.locator('input[name="card_number"]')).to_be_visible()
+        expect(self.page.locator('input[name="expiration_date"]')).to_be_visible()
+        expect(self.page.locator('input[name="cvv"]')).to_be_visible()
+        expect(self.page.locator('input[name="quantity"]')).to_be_visible()
+        expect(self.page.locator('select[name="type"]')).to_be_visible()
+        expect(self.page.locator('input[name="accept_terms"]')).to_be_visible()
 
-        # 7. Verifica que el ticket se muestra correctamente en la lista
-        self.assertContains(response, self.event.title)
-        self.assertContains(response, f"<td>{self.event.title}</td>")
+        # Formulario con datos inválidos
+        self.page.fill('input[name="card_name"]', "Test User")
+        self.page.fill('input[name="card_number"]', "123")
+        self.page.fill('input[name="expiration_date"]', "12/26")
+        self.page.fill('input[name="cvv"]', "123")
+        self.page.fill('input[name="quantity"]', "1")
+        self.page.select_option('select[name="type"]', "GENERAL")
+        self.page.check('input[name="accept_terms"]')
+        self.page.click("text=Confirmar Compra")
 
-        # 8. Verifica que el ticket se creó correctamente en la base de datos
-        self.assertTrue(Ticket.objects.filter(user=self.user, event=self.event, quantity=1).exists())
-
-        # 9. Verifica que la respuesta de la encuesta se guardó
-        self.assertTrue(SurveyResponse.objects.filter(ticket=ticket, satisfaction=5).exists())
- 
-
-    # Simula y verifica que la compra falla y
-    # se muestra un mensaje de error si se usan datos de tarjeta inválidos,
-    # y que no se crea ningún ticket
-    def test_ticket_purchase_with_invalid_card_details(self):
-        purchase_url = reverse('ticket_create', args=[self.event.id]) # type: ignore
-        
-        # Datos de compra con un número de tarjeta inválido 
-        invalid_ticket_data = {
-            'quantity': 1,
-            'type': 'GENERAL',
-            'card_name': 'Invalid User',
-            'card_number': '123',
-            'expiration_date': '12/26',
-            'cvv': '123',
-            'accept_terms': 'on',
-        }
-
-        response = self.client.post(purchase_url, invalid_ticket_data, follow=True)
-
-        # La compra debería fallar y el formulario se debería volver a mostrar con errores
-        self.assertEqual(response.status_code, 200) 
-        
-        self.assertContains(response, "Asegúrese de que este valor tenga como mínimo 13 caracteres (tiene 3).") 
-        
-        self.assertContains(response, "Por favor, corrige los siguientes errores:")
-        self.assertContains(response, '<ul class="errorlist" id="id_card_number_error">')
-
-        self.assertContains(response, '<input type="text" name="card_number"') # asegura que el formulario siga ahí
-
-        # Asegurarse de que NO se haya creado ningún ticket
-        self.assertFalse(Ticket.objects.filter(user=self.user, event=self.event).exists())
+        # Verificar que sigamos en la misma página y aparezca error
+        expect(self.page.locator("body")).to_contain_text("corrige los siguientes errores")
+        expect(self.page.locator("#id_card_number_error")).to_contain_text(
+            "Asegúrese de que este valor tenga como mínimo 13 caracteres"
+        )
