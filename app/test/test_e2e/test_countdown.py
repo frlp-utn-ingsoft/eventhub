@@ -11,7 +11,7 @@ def login(page, username, password):
     # Esperar a que el formulario se envíe y la página cambie
     page.wait_for_load_state("networkidle")
     # Verificar que estamos en la página principal
-    expect(page).to_have_url("http://localhost:8000/")
+    expect(page).to_have_url("http://localhost:8000/events")
 
 @pytest.fixture(scope="session")
 def playwright_instance():
