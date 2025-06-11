@@ -23,7 +23,7 @@ class NotificationUnitTest(TestCase):
         self.ticket = Ticket.objects.create(
             event=self.event,
             user=self.user,
-            price=100.0,
+            type="GENERAL",
             quantity=1
         )
 
