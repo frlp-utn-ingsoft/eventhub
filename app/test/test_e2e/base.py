@@ -17,7 +17,7 @@ class BaseE2ETest(StaticLiveServerTestCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.playwright = sync_playwright().start()
-        cls.browser = cls.playwright.chromium.launch(headless=False) # 
+        cls.browser = cls.playwright.chromium.launch(headless=True) # 
 
     @classmethod
     def tearDownClass(cls):
