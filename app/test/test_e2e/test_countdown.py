@@ -1,6 +1,6 @@
 import re
 import pytest
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 
 # Helper para login simple (adaptar a tu forma real de login)
 def login(page, username, password):
@@ -8,8 +8,10 @@ def login(page, username, password):
     page.fill("input[name='username']", username)
     page.fill("input[name='password']", password)
     page.click("button[type='submit']")
-    # Esperar a que redirija, o que alguna señal de login exista
-    page.wait_for_url("http://localhost:8000/")  # Adaptar a url post-login
+    # Esperar a que el formulario se envíe y la página cambie
+    page.wait_for_load_state("networkidle")
+    # Verificar que estamos en la página principal
+    expect(page).to_have_url("http://localhost:8000/")
 
 @pytest.fixture(scope="session")
 def playwright_instance():
