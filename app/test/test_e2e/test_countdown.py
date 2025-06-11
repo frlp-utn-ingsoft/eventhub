@@ -3,9 +3,9 @@ import pytest
 from playwright.sync_api import sync_playwright
 
 # Helper para login simple (adaptar a tu forma real de login)
-def login(page, email, password):
-    page.goto("http://localhost:8000/login")  # Cambiar a tu url real de login
-    page.fill("input[name='email']", email)
+def login(page, username, password):
+    page.goto("http://localhost:8000/accounts/login/")  # URL correcta de login
+    page.fill("input[name='username']", username)
     page.fill("input[name='password']", password)
     page.click("button[type='submit']")
     # Esperar a que redirija, o que alguna señal de login exista
@@ -26,7 +26,7 @@ def test_countdown_visibility_for_non_organizer(browser):
     page = browser.new_page()
 
     # Login como usuario no organizador (crear previamente o usar fixture)
-    login(page, "user@example.com", "password")
+    login(page, "usuario", "password")
 
     event_id = 123  # Cambiar por evento válido en tu DB de test
     page.goto(f"http://localhost:8000/events/{event_id}/")
@@ -46,7 +46,7 @@ def test_countdown_not_visible_for_organizer(browser):
     page = browser.new_page()
 
     # Login como usuario organizador
-    login(page, "organizer@example.com", "password")
+    login(page, "organizador", "password")
 
     event_id = 123  # Mismo evento de arriba
     page.goto(f"http://localhost:8000/events/{event_id}/")

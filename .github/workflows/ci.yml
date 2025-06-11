@@ -74,7 +74,18 @@ jobs:
       env:
         DJANGO_SETTINGS_MODULE: eventhub.settings
         DATABASE_URL: sqlite:///test_db.sqlite3
+        DEBUG: "True"
+        ALLOWED_HOSTS: localhost,127.0.0.1
       run: |
         python manage.py migrate
-        python manage.py runserver &
+        # Iniciar el servidor en segundo plano y esperar a que esté listo
+        python manage.py runserver 0.0.0.0:8000 &
+        # Esperar a que el servidor esté listo
+        for i in {1..30}; do
+          if curl -s http://localhost:8000/ > /dev/null; then
+            break
+          fi
+          sleep 1
+        done
+        # Ejecutar los tests
         pytest app/test/test_e2e/ --headed 
