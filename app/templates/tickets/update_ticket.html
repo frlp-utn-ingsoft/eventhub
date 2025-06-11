@@ -116,41 +116,53 @@
 </style>
 
 
+{{ event_prices|json_script:"event-prices-data" }}
+
 <script>
-  const eventPrices = {{ event_prices| safe }};
-  const eventSelect = document.getElementById("id_event");
-  const typeSelect = document.getElementById("typeSelect");
-  const quantityInput = document.getElementById("id_quantity");
+document.addEventListener('DOMContentLoaded', function() {
+    // Obtener datos iniciales
+    const eventPrices = JSON.parse(document.getElementById('event-prices-data').textContent);
+    const form = document.getElementById("ticketForm");
+    const eventSelect = document.getElementById("id_event");
+    const typeSelect = document.getElementById("id_type");
+    const quantityInput = document.getElementById("id_quantity");
 
-  const priceDisplay = document.getElementById("priceDisplay");
-  const quantityDisplay = document.getElementById("quantityDisplay");
-  const subtotalDisplay = document.getElementById("subtotalDisplay");
-  const taxDisplay = document.getElementById("taxDisplay");
-  const totalDisplay = document.getElementById("totalDisplay");
+    // Elementos del resumen
+    const priceDisplay = document.getElementById("priceDisplay");
+    const quantityDisplay = document.getElementById("quantityDisplay");
+    const subtotalDisplay = document.getElementById("subtotalDisplay");
+    const taxDisplay = document.getElementById("taxDisplay");
+    const totalDisplay = document.getElementById("totalDisplay");
 
-  function updateSummary() {
-    const eventId = eventSelect.value;
-    const type = typeSelect.value;
-    const quantity = parseInt(quantityInput.value) || 0;
+    function updateSummary() {
+        const eventId = eventSelect ? eventSelect.value : Object.keys(eventPrices)[0];
+        const type = typeSelect ? typeSelect.value : 'general';
+        const quantity = quantityInput ? parseInt(quantityInput.value) || 0 : 0;
 
-    if (!eventPrices[eventId]) return;
+        if (!eventPrices[eventId]) return;
 
-    const price = eventPrices[eventId][type];
-    const subtotal = price * quantity;
-    const tax = subtotal * 0.10;
-    const total = subtotal + tax;
+        const price = eventPrices[eventId][type] || 0;
+        const subtotal = price * quantity;
+        const tax = subtotal * 0.10;
+        const total = subtotal + tax;
 
-    priceDisplay.textContent = `$${price.toFixed(2)}`;
-    quantityDisplay.textContent = quantity;
-    subtotalDisplay.textContent = `$${subtotal.toFixed(2)}`;
-    taxDisplay.textContent = `$${tax.toFixed(2)}`;
-    totalDisplay.textContent = `$${total.toFixed(2)}`;
-  }
+        if (priceDisplay) priceDisplay.textContent = `$${price.toFixed(2)}`;
+        if (quantityDisplay) quantityDisplay.textContent = quantity;
+        if (subtotalDisplay) subtotalDisplay.textContent = `$${subtotal.toFixed(2)}`;
+        if (taxDisplay) taxDisplay.textContent = `$${tax.toFixed(2)}`;
+        if (totalDisplay) totalDisplay.textContent = `$${total.toFixed(2)}`;
+    }
 
-  [eventSelect, typeSelect, quantityInput].forEach(el => {
-    el.addEventListener("change", updateSummary);
-    el.addEventListener("input", updateSummary);
-  });
+    // Event listeners
+    if (eventSelect) eventSelect.addEventListener('change', updateSummary);
+    if (typeSelect) typeSelect.addEventListener('change', updateSummary);
+    if (quantityInput) {
+        quantityInput.addEventListener('change', updateSummary);
+        quantityInput.addEventListener('input', updateSummary);
+    }
 
+    // Actualización inicial
+    updateSummary();
+});
 </script>
 {% endblock %}

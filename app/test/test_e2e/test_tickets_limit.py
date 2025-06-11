@@ -82,4 +82,4 @@ class TicketsLimitE2ETest(BaseE2ETest):
         self.page.get_by_role("button", name="Confirmar compra").click()
 
         # Validar mensaje de error por límite de tickets
-        expect(self.page.locator("text=Solo hay 0 tickets disponibles para este evento.")).to_be_visible()
+        expect(self.page.locator("text=No hay entradas disponibles")).to_be_visible()

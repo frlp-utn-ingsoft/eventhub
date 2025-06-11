@@ -40,7 +40,7 @@ class TicketsLimitIntegrationTest(TestCase):
     def test_tickets_limit(self):
         self.client.login(username="comprador", password="password123")
 
-        # Comprar todos los tickets disponibles
+    # Comprar todos los tickets disponibles
         for _ in range(self.event.tickets_total):
             response = self.client.post(
                 reverse("buy_ticket_from_event", args=[self.event.id]),
@@ -52,11 +52,18 @@ class TicketsLimitIntegrationTest(TestCase):
                     'card_type': 'credit',
                     'expiry_month': '12',
                     'expiry_year': '30'
-                }
+                },
+                follow=True
             )
-            self.assertNotContains(response, "Solo hay 0 tickets disponibles para este evento.")
+            self.assertEqual(response.status_code, 200)
+            self.event.refresh_from_db()  # Actualizar datos del evento
 
-        # Intentar comprar un ticket mas
+    # Verificar disponibilidad exacta
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.tickets_available, 0, 
+                        f"Deberían haber 0 tickets disponibles, pero hay {self.event.tickets_available}")
+
+    # Intentar comprar un ticket más
         response = self.client.post(
             reverse("buy_ticket_from_event", args=[self.event.id]),
             {
@@ -67,6 +74,12 @@ class TicketsLimitIntegrationTest(TestCase):
                 'card_type': 'credit',
                 'expiry_month': '12',
                 'expiry_year': '30'
-            }
+            },
+            follow=True
         )
-        self.assertContains(response, "Solo hay 0 tickets disponibles para este evento.")
+    
+    # Verificar que no se permitió la compra
+        self.assertContains(response, "No hay suficientes tickets disponibles", status_code=200)
+        self.event.refresh_from_db()
+        self.assertEqual(self.event.tickets_available, 0, 
+                        "La disponibilidad no debería cambiar después de intentar comprar sin stock")

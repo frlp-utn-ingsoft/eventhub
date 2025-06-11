@@ -40,6 +40,8 @@ urlpatterns = [
     path('organizer/tickets/', views.organizer_tickets_list, name='organizer_tickets_list'),
     path('event/<int:event_id>/favorite/', views.toggle_favorite, name='toggle_favorite'),
     path('my_favorites/', views.my_favorites, name='my_favorites'),
-
-
+    path('coupons/', views.coupon_list_create, name='coupon_list_create'),
+    path('coupons/delete/<int:pk>/', views.coupon_delete, name='coupon_delete'),
+    path('coupons/toggle/<int:pk>/', views.toggle_coupon_active, name='toggle_coupon_active'),
+    path('validate-coupon/', views.validate_coupon, name='validate_coupon'),
 ]

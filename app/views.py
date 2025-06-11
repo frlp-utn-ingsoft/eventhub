@@ -3,16 +3,16 @@ from django.contrib.auth import authenticate, login
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib import messages
-from django.utils import timezone
 from django.db.models import Count
-from .models import Event, User, Location, Category, Notification, NotificationXUser, Comments, Ticket
-from .forms import TicketForm, TicketFilterForm
+from .models import Event, User, Location, Category, Notification, NotificationXUser, Comments, Ticket, Coupon
+from .forms import TicketForm, TicketFilterForm, CouponForm
 from django.http import Http404
-from decimal import Decimal
-from django.core.serializers import serialize
-from django.urls import reverse
 from django.conf import settings
 import pytz
+from django.http import JsonResponse
+from decimal import Decimal
+import uuid
+from django.db.utils import IntegrityError
 
 def register(request):
     if request.method == "POST":
@@ -514,22 +514,22 @@ def buy_ticket(request):
             event = form.cleaned_data['event']
             type_ = form.cleaned_data['type']
             quantity = form.cleaned_data['quantity']
-
             card_number = form.cleaned_data['card_number']
             card_cvv = form.cleaned_data['card_cvv']
 
-            # Podés validar longitud, formato, etc.
             if len(card_number) != 16:
                 form.add_error('card_number', 'El número debe tener 16 dígitos.')
-                return render(request, 'tickets/buy_ticket.html', {'form': form, 'price_general': event.price_general,
-                    'price_vip': event.price_vip})
+                return render(request, 'tickets/buy_ticket.html', {
+                    'form': form,
+                    'price_general': event.price_general,
+                    'price_vip': event.price_vip
+                })
 
             ticket = form.save(commit=False)
-            ticket.user = request.user  # asignamos el usuario que inició sesión
-
+            ticket.user = request.user
             ticket.last4_card_number = card_number[-4:]
-            ticket.save()
-
+            ticket.save() 
+            
             return redirect('tickets_list')
     else:
         form = TicketForm(user=request.user)
@@ -542,7 +542,10 @@ def buy_ticket(request):
         } for event in events
     }
 
-    return render(request, 'tickets/buy_ticket.html', {'form': form,'event_prices': event_prices})
+    return render(request, 'tickets/buy_ticket.html', {
+        'form': form,
+        'event_prices': event_prices
+    })
 
 @login_required
 def delete_ticket(request, ticket_code):
@@ -561,73 +564,105 @@ def delete_ticket(request, ticket_code):
 @login_required
 def update_ticket(request, ticket_code):
     ticket = get_object_or_404(Ticket, ticket_code=ticket_code, user=request.user)
+    
+    # Prepara los precios de los eventos para el contexto
+    event_prices = {}
+    if ticket.event:
+        event_prices[str(ticket.event.id)] = {
+            'general': float(ticket.event.price_general),
+            'vip': float(ticket.event.price_vip)
+        }
 
     if request.method == 'POST':
         form = TicketForm(request.POST, instance=ticket, user=request.user)
         if form.is_valid():
             form.save()
             return redirect('tickets_list')
-        # Si el formulario no es válido, se renderiza con los errores
-        return render(request, 'tickets/update_ticket.html', {'form': form})
+        return render(request, 'tickets/update_ticket.html', {
+            'form': form,
+            'event_prices': event_prices
+        })
     else:
         form = TicketForm(instance=ticket, user=request.user)
-
-    return render(request, 'tickets/update_ticket.html', {'form': form})
+        return render(request, 'tickets/update_ticket.html', {
+            'form': form,
+            'event_prices': event_prices,
+            'ticket': ticket  # Opcional: por si necesitas otros datos del ticket
+        })
 
 @login_required
 def buy_ticket_from_event(request, event_id):
     event = get_object_or_404(Event, id=event_id)
+    applied_coupon = None
+    discount_amount = Decimal('0.00')
+    coupon_message = ""
+    coupon_error = ""
 
     if request.method == 'POST':
-        form = TicketForm(request.POST, fixed_event=True, event_instance=event)
-        if form.is_valid():
-            type_ = form.cleaned_data['type']
-            quantity = form.cleaned_data['quantity']
-    
-            card_number = form.cleaned_data['card_number']
-            card_cvv = form.cleaned_data['card_cvv']
-
-            # Podés validar longitud, formato, etc.
-            if len(card_number) != 16:
-                form.add_error('card_number', 'El número debe tener 16 dígitos.')
-                return render(request, 'tickets/buy_ticket.html', {'form': form,'event': event,
-                    'event_prices': {
-                        'general': float(event.price_general),
-                        'vip': float(event.price_vip)}})
-            
-            # Validar cantidad de tickets disponibles
-            if quantity > event.tickets_available:
-                form.add_error('quantity', f'Solo hay {event.tickets_available} tickets disponibles para este evento.')
-                return render(request, 'tickets/buy_ticket.html', {
-                    'form': form,
-                    'event': event,
-                    'event_prices': {
-                        'general': float(event.price_general),
-                        'vip': float(event.price_vip)
-                    }
-                })
-
-            ticket = form.save(commit=False)
-            ticket.user = request.user  # asignamos el usuario que inició sesión
-
-            ticket.last4_card_number = card_number[-4:]
-            ticket.event = event
-            ticket.save()
-
-            return render(request, 'tickets/tickets_list.html', {'ticket': ticket})
+        if 'apply_coupon' in request.POST:
+            form = TicketForm(request.POST, fixed_event=True, event_instance=event)
+            coupon_code = request.POST.get('coupon_code', '').strip()
+            if coupon_code:
+                try:
+                    applied_coupon = Coupon.objects.get(coupon_code=coupon_code, active=True)
+                    coupon_message = f"Cupón aplicado: {applied_coupon.get_discount_type_display()} de {applied_coupon.amount}"
+                    if applied_coupon.discount_type == 'percent':
+                        coupon_message += "%"
+                    else:
+                        coupon_message += "$"
+                except Coupon.DoesNotExist:
+                    coupon_error = "Cupón no válido o inactivo"
+        else:
+            form = TicketForm(request.POST, fixed_event=True, event_instance=event)
+            if form.is_valid():
+                # VERIFICAR DISPONIBILIDAD ANTES DE COMPRAR
+                quantity = form.cleaned_data['quantity']
+                if event.tickets_available < quantity:
+                    messages.error(request, "No hay suficientes tickets disponibles")
+                    return redirect('buy_ticket_from_event', event_id=event.id)
+                
+                ticket = form.save(commit=False)
+                ticket.user = request.user
+                ticket.event = event
+                
+                coupon_code = request.POST.get('coupon_code', '').strip()
+                if coupon_code:
+                    try:
+                        applied_coupon = Coupon.objects.get(coupon_code=coupon_code, active=True)
+                        ticket.coupon = applied_coupon
+                    except Coupon.DoesNotExist:
+                        pass
+                
+                ticket.save()
+                return redirect('tickets_list')
     else:
         form = TicketForm(fixed_event=True, event_instance=event)
 
-    # Modificamos la estructura de event_prices para que sea un JSON válido
-    event_prices = {
-        str(event.id): {
-            'general': float(event.price_general),
-            'vip': float(event.price_vip)
-        }
-    }
+    # Calcular precios para el resumen
+    price_per_ticket = Decimal(str(event.price_general if form.data.get('type', 'general') == 'general' else event.price_vip))
+    quantity = int(form.data.get('quantity', 1))
+    subtotal = price_per_ticket * quantity
+    tax = subtotal * Decimal('0.10')
+    total = subtotal + tax
+    
+    if applied_coupon:
+        discount_amount = applied_coupon.amount if applied_coupon.discount_type == 'fixed' else (total * (applied_coupon.amount / Decimal('100.00')))
+        total = max(total - discount_amount, Decimal('0.00'))
 
-
-    return render(request, 'tickets/buy_ticket.html', {'form': form, 'event': event,'event_prices': event_prices})
+    return render(request, 'tickets/buy_ticket.html', {
+        'price_general': float(event.price_general),
+        'price_vip': float(event.price_vip),
+        'form': form,
+        'event': event,
+        'applied_coupon': applied_coupon,
+        'coupon_message': coupon_message,
+        'coupon_error': coupon_error,
+        'price_per_ticket': price_per_ticket,
+        'subtotal': subtotal,
+        'tax': tax,
+        'total': total,
+        'discount_amount': discount_amount,
+    })
 
 
 @login_required
@@ -649,3 +684,54 @@ def toggle_favorite(request, event_id):
 def my_favorites(request):
     """Vista para mostrar eventos favoritos del usuario"""
     return render(request, 'favoritos/my_favorites.html')
+
+def coupon_list_create(request):
+    coupons = Coupon.objects.all().order_by('coupon_code')
+
+    if request.method == 'POST':
+        form = CouponForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('coupon_list_create')
+    else:
+        form = CouponForm()
+
+    context = {
+        'coupons': coupons,
+        'form': form,
+    }
+    return render(request, 'coupons/coupon_list_create.html', context)
+
+def coupon_delete(request, pk):
+    coupon = get_object_or_404(Coupon, pk=pk)
+    if request.method == 'POST':
+        coupon.delete()
+        return redirect('coupon_list_create')
+    return render(request, 'coupons/coupon_confirm_delete.html', {'coupon': coupon})
+
+@login_required
+def toggle_coupon_active(request, pk):
+    coupon = get_object_or_404(Coupon, pk=pk)
+    coupon.active = not coupon.active
+    coupon.save()
+    return redirect('coupon_list_create')
+
+@login_required
+def validate_coupon(request):
+    coupon_code = request.GET.get('code', '').strip()
+    response_data = {'valid': False, 'message': ''}
+    
+    if coupon_code:
+        try:
+            coupon = Coupon.objects.get(coupon_code=coupon_code, active=True)
+            response_data['valid'] = True
+            response_data['coupon'] = {
+                'discount_type': coupon.discount_type,
+                'amount': float(coupon.amount)
+            }
+        except Coupon.DoesNotExist:
+            response_data['message'] = 'Cupón no válido o inactivo'
+    else:
+        response_data['message'] = 'Por favor ingrese un código de cupón'
+    
+    return JsonResponse(response_data)
