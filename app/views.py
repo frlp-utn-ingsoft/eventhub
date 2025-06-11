@@ -67,11 +67,30 @@ def home(request):
 
 @login_required
 def events(request):
-    events = Event.objects.all().order_by("scheduled_at")
+    """Vista para listar eventos"""
+    # Obtener el parámetro show_past de la URL
+    show_past = request.GET.get("show_past", "false").lower() == "true"
+
+    # Obtener la hora actual
+    current_time = timezone.now()
+
+    # Obtener eventos según el filtro
+    if show_past:
+        events = Event.objects.all().order_by("-scheduled_at")
+    else:
+        events = Event.objects.filter(scheduled_at__gte=current_time).order_by("scheduled_at")
+
+    # Verificar si el usuario es organizador
+    user_is_organizer = request.user.is_organizer
+
     return render(
         request,
         "app/events.html",
-        {"events": events, "user_is_organizer": request.user.is_organizer},
+        {
+            "events": events,
+            "show_past": show_past,
+            "user_is_organizer": user_is_organizer,
+        },
     )
 
 
