@@ -1,12 +1,10 @@
 from django.test import TestCase
-from django.contrib.auth import get_user_model
 from django.urls import reverse
-from app.models import Event, Venue, Rating
+from app.models import Event, Venue, Rating, User
 from django.utils import timezone
 from django.contrib.messages import get_messages
 import datetime
 
-User = get_user_model()
 
 class EventRatingsIntegrationTest(TestCase):
     def setUp(self):
@@ -134,20 +132,27 @@ class EventRatingsIntegrationTest(TestCase):
     def test_delete_rating_flow(self):
         """Test que verifica el flujo completo de eliminación de un rating"""
         # 1. Crear dos ratings
-        rating1 = Rating.objects.create(
-            event=self.event,
-            user=self.user1,
-            title='Buen evento',
-            text='Regular',
-            rating=3
-        )
-        rating2 = Rating.objects.create(
-            event=self.event,
-            user=self.user2,
-            title='Excelente',
-            text='Muy bueno',
-            rating=5
-        )
+        ratings_to_create = [
+            Rating(
+                event=self.event,
+                user=self.user1,
+                title='Buenazo',
+                text='Me divertí pero estaba re caro.',
+                rating=3
+            ),
+            Rating(
+                event=self.event,
+                user=self.user2,
+                title='Excelente',
+                text='Comparado a cuando nació mi hijo, impecable.',
+                rating=5
+            )
+        ]
+        Rating.objects.bulk_create(ratings_to_create)
+        
+        # Obtener los ratings creados para las verificaciones
+        rating1 = Rating.objects.get(event=self.event, user=self.user1)
+        rating2 = Rating.objects.get(event=self.event, user=self.user2)
         
         # 2. Verificar estado inicial
         self.event.refresh_from_db()
@@ -182,7 +187,8 @@ class EventRatingsIntegrationTest(TestCase):
         
         # Obtener mensajes de la respuesta
         messages = list(get_messages(response.wsgi_request))
-        self.assertTrue(any('organizadores no pueden calificar sus propios eventos' in str(msg) for msg in messages))
+        message_texts = [str(msg) for msg in messages]
+        self.assertTrue('organizadores no pueden calificar sus propios eventos' in ' '.join(message_texts))
         
         # 2. Verificar que un usuario no puede calificar dos veces el mismo evento
         # Primera calificación
@@ -200,7 +206,8 @@ class EventRatingsIntegrationTest(TestCase):
         
         # Obtener mensajes de la respuesta
         messages = list(get_messages(response.wsgi_request))
-        self.assertTrue(any('Ya has calificado este evento' in str(msg) for msg in messages))
+        message_texts = [str(msg) for msg in messages]
+        self.assertTrue('Ya has calificado este evento' in ' '.join(message_texts))
         
         # 3. Verificar que un usuario no puede editar la calificación de otro
         rating = Rating.objects.create(
@@ -220,7 +227,8 @@ class EventRatingsIntegrationTest(TestCase):
         
         # Obtener mensajes de la respuesta
         messages = list(get_messages(response.wsgi_request))
-        self.assertTrue(any('No tienes permiso para editar esta reseña' in str(msg) for msg in messages))
+        message_texts = [str(msg) for msg in messages]
+        self.assertTrue('No tienes permiso para editar esta reseña' in ' '.join(message_texts))
         
         # 4. Verificar que un usuario no puede eliminar la calificación de otro
         response = self.client.get(reverse('delete_rating', args=[rating.id]))
