@@ -13,6 +13,7 @@ pluggy==1.5.0
 pyee==12.1.1
 pytest==8.3.5
 pytest-base-url==2.1.0
+pytest-cov==4.1.0
 pytest-django==4.11.1
 pytest-playwright==0.7.0
 python-slugify==8.0.4
