@@ -106,7 +106,6 @@ class TicketForm(forms.ModelForm):
                 Ticket.objects.filter(event=event, user=user).aggregate(Sum('quantity'))['quantity__sum'] or 0
             )
             
-            # Si estamos editando, restamos la cantidad actual del ticket
             if self.instance and self.instance.pk:
                 total_user_tickets -= self.instance.quantity
 
@@ -121,7 +120,7 @@ class TicketForm(forms.ModelForm):
 
     def __init__(self, *args, user=None, fixed_event=False, event_instance=None, **kwargs):
         super().__init__(*args, **kwargs)
-        self.user = user  # Guarda el usuario para usarlo en clean o donde necesites
+        self.user = user  
 
         if self.instance and self.instance.pk:
             masked = '************' + self.instance.last4_card_number

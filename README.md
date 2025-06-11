@@ -37,3 +37,11 @@ AplicaciÃ³n web para venta de entradas utilizada en la cursada 2025 de IngenierÃ
 ## Iniciar app
 
 `python manage.py runserver`
+
+## Crear la imagen en docker
+
+`docker build -t eventhub-app .`
+
+## Crea el contenedor de docker y te lo ejecuta en http://127.0.0.1:8000
+
+`docker run --env-file .env -p 8000:8000 eventhub-app`
