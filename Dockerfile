@@ -50,7 +50,10 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # Copia el código fuente al contenedor.
 COPY . .
 
-RUN chmod 664 db.sqlite3
+RUN python3 manage.py makemigrations 
+RUN python3 manage.py migrate 
+
+##RUN chown 664 db.sqlite3
 # Expone el puerto en el que la aplicación escucha.
 EXPOSE 8000
 
