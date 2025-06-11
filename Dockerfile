@@ -50,7 +50,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 # Copia el código fuente al contenedor.
 COPY . .
 
-RUN chown 664 db.sqlite3
+RUN chmod 664 db.sqlite3
 # Expone el puerto en el que la aplicación escucha.
 EXPOSE 8000
 
