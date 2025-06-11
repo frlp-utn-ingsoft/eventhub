@@ -6,7 +6,9 @@ from typing import Dict, Any, Union, Tuple, List
 
 class TestOverselling(TestCase):
     def setUp(self):
+        # Crear usuarios base para reutilizar en todos los tests
         self.user = self._create_test_user('testuser', 'testpass123')
+        self.users = self._create_multiple_users(count=5, base_username='testuser')
         
         # Crear venue de prueba con capacidad limitada
         self.venue = Venue.objects.create(
@@ -24,6 +26,31 @@ class TestOverselling(TestCase):
             scheduled_at=timezone.now() + timedelta(days=1),
             organizer=self.user,
             venue=self.venue
+        )
+        
+        # Crear tickets base para diferentes escenarios
+        # Ticket 1: 4 entradas (usuario 0)
+        self.ticket1 = Ticket.objects.create(
+            quantity=4,
+            type='GENERAL',
+            event=self.event,
+            user=self.users[0]
+        )
+        
+        # Ticket 2: 4 entradas (usuario 1) 
+        self.ticket2 = Ticket.objects.create(
+            quantity=4,
+            type='GENERAL',
+            event=self.event,
+            user=self.users[1]
+        )
+        
+        # Ticket 3: 2 entradas (usuario 2) - completa la capacidad
+        self.ticket3 = Ticket.objects.create(
+            quantity=2,
+            type='GENERAL',
+            event=self.event,
+            user=self.users[2]
         )
 
     def _create_test_user(self, username: str, password: str) -> User:
@@ -72,22 +99,7 @@ class TestOverselling(TestCase):
 
     def test_cannot_buy_tickets_when_event_is_full(self):
         """Verifica que no se puedan comprar entradas cuando el evento está lleno"""
-        # Crear múltiples usuarios usando método helper
-        users = self._create_multiple_users(count=3)
-        
-        # Comprar entradas hasta llenar el evento
-        success1, ticket1 = Ticket.new(quantity=4, type='GENERAL', event=self.event, user=users[0])
-        self.assertTrue(success1)
-        self.assertIsInstance(ticket1, Ticket)
-        
-        success2, ticket2 = Ticket.new(quantity=4, type='GENERAL', event=self.event, user=users[1])
-        self.assertTrue(success2)
-        self.assertIsInstance(ticket2, Ticket)
-        
-        success3, ticket3 = Ticket.new(quantity=2, type='GENERAL', event=self.event, user=users[2])
-        self.assertTrue(success3)
-        self.assertIsInstance(ticket3, Ticket)
-        
+        # El evento ya está lleno con los tickets creados en setUp()
         # Intentar comprar una entrada más
         success, result = Ticket.new(
             quantity=1,
@@ -108,11 +120,7 @@ class TestOverselling(TestCase):
 
     def test_cannot_update_ticket_to_exceed_capacity(self):
         """Verifica que no se pueda actualizar un ticket para exceder la capacidad"""
-        # Crear un ticket inicial con 4 entradas
-        success, ticket = Ticket.new(quantity=4, type='GENERAL', event=self.event, user=self.user)
-        self.assertTrue(success)
-        self.assertIsInstance(ticket, Ticket)
-        
+        # Usar el ticket1 creado en setUp() (4 entradas)
         # Intentar actualizar el ticket a 7 entradas (lo que excedería la capacidad)
         # Primero validamos la cantidad
         errors = Ticket.validate(
@@ -130,35 +138,26 @@ class TestOverselling(TestCase):
 
     def test_can_buy_tickets_up_to_capacity(self):
         """Verifica que se puedan comprar entradas hasta la capacidad máxima"""
-        # Crear múltiples usuarios usando método helper optimizado
-        users = self._create_multiple_users(count=3)
-        
-        # Comprar entradas hasta llenar el evento
-        success1, ticket1 = Ticket.new(quantity=4, type='GENERAL', event=self.event, user=users[0])
-        self.assertTrue(success1)
-        self.assertIsInstance(ticket1, Ticket)
-        
-        success2, ticket2 = Ticket.new(quantity=4, type='GENERAL', event=self.event, user=users[1])
-        self.assertTrue(success2)
-        self.assertIsInstance(ticket2, Ticket)
-        
-        success3, ticket3 = Ticket.new(quantity=2, type='GENERAL', event=self.event, user=users[2])
-        self.assertTrue(success3)
-        self.assertIsInstance(ticket3, Ticket)
-        
+        # Los tickets ya están creados en setUp() y llenan la capacidad
         self.assertEqual(self.event.available_tickets(), 0)
 
     def test_multiple_tickets_respect_capacity(self):
         """Verifica que múltiples compras de tickets respeten la capacidad total"""
-        # Crear múltiples usuarios usando método helper optimizado
-        users = self._create_multiple_users(count=3)
+        # Crear un nuevo evento con capacidad disponible para este test específico
+        new_event = Event.objects.create(
+            title='New Test Event',
+            description='New Test Description',
+            scheduled_at=timezone.now() + timedelta(days=2),
+            organizer=self.user,
+            venue=self.venue
+        )
         
         # Comprar entradas
-        success1, ticket1 = Ticket.new(quantity=4, type='GENERAL', event=self.event, user=users[0])
+        success1, ticket1 = Ticket.new(quantity=4, type='GENERAL', event=new_event, user=self.users[0])
         self.assertTrue(success1)
         self.assertIsInstance(ticket1, Ticket)
         
-        success2, ticket2 = Ticket.new(quantity=4, type='GENERAL', event=self.event, user=users[1])
+        success2, ticket2 = Ticket.new(quantity=4, type='GENERAL', event=new_event, user=self.users[1])
         self.assertTrue(success2)
         self.assertIsInstance(ticket2, Ticket)
         
@@ -166,8 +165,8 @@ class TestOverselling(TestCase):
         success, result = Ticket.new(
             quantity=3,
             type='GENERAL',
-            event=self.event,
-            user=users[2]
+            event=new_event,
+            user=self.users[2]
         )
         
         # Verificar que es un error de cantidad insuficiente
