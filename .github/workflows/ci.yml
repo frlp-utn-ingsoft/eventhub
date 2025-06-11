@@ -43,7 +43,11 @@ jobs:
         pip install -r requirements.txt
         
     - name: Run unit and integration tests
+      env:
+        DJANGO_SETTINGS_MODULE: eventhub.settings
+        DATABASE_URL: sqlite:///test_db.sqlite3
       run: |
+        python manage.py migrate
         pytest app/test/test_unit/ app/test/test_integration/ --cov=. --cov-report=xml
 
   e2e:
@@ -67,6 +71,10 @@ jobs:
         playwright install
         
     - name: Run end-to-end tests
+      env:
+        DJANGO_SETTINGS_MODULE: eventhub.settings
+        DATABASE_URL: sqlite:///test_db.sqlite3
       run: |
+        python manage.py migrate
         python manage.py runserver &
         pytest app/test/test_e2e/ --headed 
