@@ -1,0 +1,17 @@
+# Ante cualquier duda visitar la guía de referencia de Dockerfile en
+# https://docs.docker.com/go/compose-spec-reference/
+
+# Para agregar otros servicios de los que la aplicación pueda depender, como una
+# base de datos o una caché, podemos agregarlos a este arhivo. Para ejemplos, 
+# consulta el repositorio Awesome Compose:
+# https://github.com/docker/awesome-compose
+
+# Aquí las instrucciones definen tu aplicación como un servicio llamado "eventhub".
+# Este servicio se construye a partir del Dockerfile en el directorio actual.
+services:
+  eventhub:
+    build:
+      context: .
+    image: eventhub:v1.0.0
+    ports:
+      - 8000:8000
