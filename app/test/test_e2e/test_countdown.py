@@ -1,65 +1,51 @@
 import re
-import pytest
-from playwright.sync_api import sync_playwright, expect
-from app.models import User
+from app.test.test_e2e.base import BaseE2ETest
+from app.models import User, Event
+from django.utils import timezone
+from datetime import timedelta
 
-# Helper para login simple (adaptar a tu forma real de login)
-def login(page, username, password):
-    page.goto("http://localhost:8000/accounts/login/")  # URL correcta de login
-    page.fill("input[name='username']", username)
-    page.fill("input[name='password']", password)
-    page.click("button[type='submit']")
-    # Esperar a que el formulario se envíe y la página cambie
-    page.wait_for_load_state("networkidle")
-    # Verificar que estamos en la página principal
-    expect(page).to_have_url("http://localhost:8000/events")
+class TestCountdownE2E(BaseE2ETest):
+    def setUp(self):
+        super().setUp()
+        # Crear usuarios
+        self.organizer = User.objects.create_user(username="organizador", password="password", is_organizer=True)
+        self.usuario = User.objects.create_user(username="usuario", password="password")
+        # Crear evento válido
+        self.event = Event.objects.create(
+            title="Evento Test",
+            description="Descripción",
+            scheduled_at=timezone.now() + timedelta(days=1),
+            price_general=100,
+            price_vip=200,
+            tickets_total=100,
+            tickets_sold=0,
+            organizer=self.organizer,
+        )
 
-@pytest.fixture(scope="session")
-def playwright_instance():
-    with sync_playwright() as p:
-        yield p
+    def login(self, username, password):
+        self.page.goto(f"{self.live_server_url}/accounts/login/")
+        self.page.fill("input[name='username']", username)
+        self.page.fill("input[name='password']", password)
+        self.page.click("button[type='submit']")
+        self.page.wait_for_load_state("networkidle")
 
-@pytest.fixture
-def browser(playwright_instance):
-    browser = playwright_instance.chromium.launch(headless=True)
-    yield browser
-    browser.close()
+    def test_countdown_visibility_for_non_organizer(self):
+        self.login("usuario", "password")
+        self.page.goto(f"{self.live_server_url}/events/{self.event.id}/")
+        countdown = self.page.locator("#countdown")
+        countdown.wait_for(state="visible", timeout=5000)
+        assert countdown.is_visible()
+        text = countdown.text_content()
+        assert text is not None
+        assert re.match(r"\d+d \d+h \d+m \d+s", text)
+        initial_text = text
+        self.page.wait_for_timeout(2000)
+        new_text = countdown.text_content()
+        assert new_text is not None
+        assert new_text != initial_text
 
-@pytest.fixture(autouse=True)
-def crear_usuarios():
-    if not User.objects.filter(username="usuario").exists():
-        User.objects.create_user(username="usuario", password="password")
-    if not User.objects.filter(username="organizador").exists():
-        User.objects.create_user(username="organizador", password="password", is_organizer=True)
-
-def test_countdown_visibility_for_non_organizer(browser):
-    page = browser.new_page()
-
-    # Login como usuario no organizador (crear previamente o usar fixture)
-    login(page, "usuario", "password")
-
-    event_id = 123  # Cambiar por evento válido en tu DB de test
-    page.goto(f"http://localhost:8000/events/{event_id}/")
-
-    countdown = page.locator("#countdown")
-    assert countdown.is_visible()
-
-    text = countdown.text_content()
-    assert re.match(r"\d{1,2}:\d{2}:\d{2}", text)
-
-    initial_text = text
-    page.wait_for_timeout(2000)  # Esperar 2 segundos
-    new_text = countdown.text_content()
-    assert new_text != initial_text
-
-def test_countdown_not_visible_for_organizer(browser):
-    page = browser.new_page()
-
-    # Login como usuario organizador
-    login(page, "organizador", "password")
-
-    event_id = 123  # Mismo evento de arriba
-    page.goto(f"http://localhost:8000/events/{event_id}/")
-
-    countdown = page.locator("#countdown")
-    assert countdown.count() == 0  # No debe existir ni ser visible
+    def test_countdown_not_visible_for_organizer(self):
+        self.login("organizador", "password")
+        self.page.goto(f"{self.live_server_url}/events/{self.event.id}/")
+        countdown = self.page.locator("#countdown")
+        assert countdown.count() == 0
