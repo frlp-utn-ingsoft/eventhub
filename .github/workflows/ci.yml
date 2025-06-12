@@ -89,38 +89,3 @@ jobs:
         done
         # Ejecutar los tests
         pytest app/test/test_e2e/ --headed 
-
-
-
-name: CD
-
-on:
-  release:
-    types: [published]  # Se dispara cuando se crea una release
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    needs: [build, test, e2e]  # Depende del workflow CI
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Log in to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-      - name: Build Docker image
-        run: |
-          docker build -t ${{ secrets.DOCKERHUB_USERNAME }}/eventhub-app:${{ github.ref_name }} .
-
-      - name: Push Docker image to Docker Hub
-        run: |
-          docker push ${{ secrets.DOCKERHUB_USERNAME }}/eventhub-app:${{ github.ref_name }}
-
-      - name: Deploy to Render
-        env:
-          RENDER_DEPLOY_HOOK_URL: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
-        run: |
-          curl -X POST $RENDER_DEPLOY_HOOK_URL
