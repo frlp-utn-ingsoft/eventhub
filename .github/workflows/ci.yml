@@ -1,15 +1,12 @@
 name: CI Pipeline
 
 on:
-  push:
-    branches: ["*"]           # Ejecuta CI en cualquier rama -> de prueba
-  pull_request:
-    branches: ["*"]           # Ejecuta CI en cualquier rama -> de prueba
   release:
-    types: [published]        # Ejecuta CI cuando se publica una release
+    types: [published]
 
 jobs:
   build:
+    if: github.event.release.target_commitish == 'continuous-deployment'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -30,6 +27,7 @@ jobs:
           python manage.py collectstatic --noinput
 
   unit-integration-tests:
+    if: github.event.release.target_commitish == 'continuous-deployment'
     needs: build
     runs-on: ubuntu-latest
     steps:
@@ -54,6 +52,7 @@ jobs:
           python manage.py test app.test.test_integration
 
   e2e-tests:
+    if: github.event.release.target_commitish == 'continuous-deployment'
     needs: unit-integration-tests
     runs-on: ubuntu-latest
     steps:
