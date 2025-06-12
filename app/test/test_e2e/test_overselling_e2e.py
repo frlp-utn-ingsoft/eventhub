@@ -13,7 +13,12 @@ class OversellingPreventionTest(BaseE2ETest):
         super().setUp()
 
         # Crear un usuario regular
-        self.regular_user = self._create_test_user("regular", is_organizer=False)
+        self.regular_user = User.objects.create_user(
+            username="testuser_regular",
+            email="testuser_regular@example.com",
+            password="password123",
+            is_organizer=False,
+        )
         
         # Crear un establecimiento/localización
         self.venue = Venue.objects.create(
@@ -39,15 +44,6 @@ class OversellingPreventionTest(BaseE2ETest):
             type="GENERAL",
             event=self.event,
             user=self.regular_user
-        )
-
-    def _create_test_user(self, username_suffix, is_organizer=False):
-        """Helper method para crear usuarios de prueba - optimizado para evitar repetición"""
-        return User.objects.create_user(
-            username=f"testuser_{username_suffix}",
-            email=f"testuser_{username_suffix}@example.com",
-            password="password123",
-            is_organizer=is_organizer,
         )
 
     def test_cannot_exceed_remaining_capacity(self):

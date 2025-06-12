@@ -15,21 +15,6 @@ class DiscountBaseTest(BaseE2ETest):
 
     def setUp(self):
         super().setUp()
-        # Crear un usuario organizador
-     #   self.organizer = User.objects.create_user(
-      #      username="organizador",
-       #     email="organizador@test.com",
-        #    password="password123",
-        #    is_organizer=True,
-        #)
-
-        # Crear un usuario regular
-      #  self.regular_user = User.objects.create_user(
-       #     username="regular",
-        #    email="regular@test.com",
-         #   password="password123",
-          #  is_organizer=False,
-        #)
 
         # Crear una localización de prueba
         self.venue = Venue.objects.create(

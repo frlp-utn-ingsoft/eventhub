@@ -5,15 +5,39 @@ from app.models import Event, Venue, Rating, User
 class EventRatingTests(TestCase):
     def setUp(self):
         # Crear organizador
-        self.organizer = self._create_test_user(
+        self.organizer = User.objects.create_user(
             username='organizador',
             email='organizador@test.com',
             password='testpass123',
             is_organizer=True
         )
         
-        # Crear múltiples usuarios para diferentes ratings
-        self.users = self._create_multiple_users(count=5, base_username='usuario')
+        # Crear usuarios directamente sin usar bucles
+        self.user1 = User.objects.create_user(
+            username='usuario1',
+            email='usuario1@test.com',
+            password='testpass123'
+        )
+        self.user2 = User.objects.create_user(
+            username='usuario2',
+            email='usuario2@test.com',
+            password='testpass123'
+        )
+        self.user3 = User.objects.create_user(
+            username='usuario3',
+            email='usuario3@test.com',
+            password='testpass123'
+        )
+        self.user4 = User.objects.create_user(
+            username='usuario4',
+            email='usuario4@test.com',
+            password='testpass123'
+        )
+        self.user5 = User.objects.create_user(
+            username='usuario5',
+            email='usuario5@test.com',
+            password='testpass123'
+        )
         
         # Crear venue
         self.venue = Venue.objects.create(
@@ -37,7 +61,7 @@ class EventRatingTests(TestCase):
         # Rating 1: 4 estrellas
         self.rating1 = Rating.objects.create(
             event=self.event,
-            user=self.users[0],
+            user=self.user1,
             rating=4,
             title='Test Rating 1',
             text='Test Review 1'
@@ -46,7 +70,7 @@ class EventRatingTests(TestCase):
         # Rating 2: 5 estrellas
         self.rating2 = Rating.objects.create(
             event=self.event,
-            user=self.users[1],
+            user=self.user2,
             rating=5,
             title='Test Rating 2',
             text='Test Review 2'
@@ -55,7 +79,7 @@ class EventRatingTests(TestCase):
         # Rating 3: 3 estrellas
         self.rating3 = Rating.objects.create(
             event=self.event,
-            user=self.users[2],
+            user=self.user3,
             rating=3,
             title='Test Rating 3',
             text='Test Review 3'
@@ -64,7 +88,7 @@ class EventRatingTests(TestCase):
         # Rating 4: 2 estrellas
         self.rating4 = Rating.objects.create(
             event=self.event,
-            user=self.users[3],
+            user=self.user4,
             rating=2,
             title='Test Rating 4',
             text='Test Review 4'
@@ -73,32 +97,11 @@ class EventRatingTests(TestCase):
         # Rating 5: 1 estrella
         self.rating5 = Rating.objects.create(
             event=self.event,
-            user=self.users[4],
+            user=self.user5,
             rating=1,
             title='Test Rating 5',
             text='Test Review 5'
         )
-
-    def _create_test_user(self, username, email, password, is_organizer=False):
-        """Helper method para crear usuarios de prueba - optimizado para evitar repetición"""
-        return User.objects.create_user(
-            username=username,
-            email=email,
-            password=password,
-            is_organizer=is_organizer
-        )
-
-    def _create_multiple_users(self, count: int, base_username: str = 'usuario') -> list:
-        """Helper method para crear múltiples usuarios usando bulk_create - optimizado para performance"""
-        users_to_create = [
-            User(
-                username=f'{base_username}{i}',
-                email=f'{base_username}{i}@test.com',
-                password='testpass123'
-            )
-            for i in range(count)
-        ]
-        return User.objects.bulk_create(users_to_create)
 
     def _verify_rating_stats(self, expected_average, expected_count):
         """Helper method para verificar estadísticas de ratings - optimizado para evitar repetición"""
@@ -134,7 +137,7 @@ class EventRatingTests(TestCase):
         # Crear una calificación directamente en el evento single_event
         Rating.objects.create(
             event=single_event,
-            user=self.users[0],
+            user=self.user1,
             rating=4,
             title='Test Rating',
             text='Test Review'
@@ -146,7 +149,7 @@ class EventRatingTests(TestCase):
 
     def test_get_average_rating_with_multiple_ratings(self):
         """Test que verifica el cálculo del promedio con múltiples calificaciones"""
-        # Los ratings ya están creados
+        # Los ratings ya están creados en setUp
         self._verify_rating_stats(expected_average=3.0, expected_count=5)
 
     def test_get_average_rating_decimal_precision(self):
@@ -163,7 +166,7 @@ class EventRatingTests(TestCase):
         # Crear calificaciones
         Rating.objects.create(
             event=decimal_event,
-            user=self.users[0],
+            user=self.user1,
             rating=5,
             title='Test Rating 1',
             text='Test Review 1'
@@ -171,7 +174,7 @@ class EventRatingTests(TestCase):
         
         Rating.objects.create(
             event=decimal_event,
-            user=self.users[1],
+            user=self.user2,
             rating=4,
             title='Test Rating 2',
             text='Test Review 2'
@@ -182,7 +185,7 @@ class EventRatingTests(TestCase):
 
     def test_get_rating_count_after_deletion(self):
         """Test que verifica el conteo de calificaciones después de eliminar una"""
-        # Usar los ratings creados
+        # Usar los ratings creados en setUp
         self._verify_rating_stats(expected_average=3.0, expected_count=5)
         
         # Eliminar una calificación
