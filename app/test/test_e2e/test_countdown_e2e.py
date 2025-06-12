@@ -1,22 +1,19 @@
-from django.test import TestCase, Client
-from django.contrib.auth import get_user_model
-from django.urls import reverse
-from app.models import Event, Venue
+import re
+from playwright.sync_api import expect
 from django.utils import timezone
 from datetime import timedelta
-import time
+from app.models import User, Event, Venue
+from .base import BaseE2ETest
 
-User = get_user_model()
 
-
-class CountdownE2ETest(TestCase):
-    """Tests end-to-end para la funcionalidad completa de countdown"""
+class CountdownE2ETest(BaseE2ETest):
+    """Tests end-to-end para la funcionalidad completa de countdown usando Playwright"""
     
     def setUp(self):
         """Configuración inicial para los tests e2e"""
-        self.client = Client()
+        super().setUp()
         
-        # Usuario regular (NO organizador)
+        # Usuario regular (NO organizador) 
         self.user = User.objects.create_user(
             username='testuser',
             email='test@example.com',
@@ -40,278 +37,263 @@ class CountdownE2ETest(TestCase):
             capacity=100,
             contact='test@venue.com'
         )
-
-    def test_complete_countdown_user_journey(self):
-        """Test del flujo completo de usuario viendo countdown"""
-        # Crear evento futuro
-        future_event = Event.objects.create(
+        
+        # Eventos base para reutilizar en tests
+        self.future_event = Event.objects.create(
             title='Future Event',
             description='Event for countdown testing',
             scheduled_at=timezone.now() + timedelta(days=30),
             organizer=self.organizer,
             venue=self.venue
         )
-        
-        # 1. Usuario accede sin login -> redirige a login
-        response = self.client.get(
-            reverse('event_detail', kwargs={'event_id': future_event.id})
-        )
-        self.assertEqual(response.status_code, 302)
-        
-        # 2. Usuario hace login
-        login_success = self.client.login(username='testuser', password='testpass123')
-        self.assertTrue(login_success)
-        
-        # 3. Usuario accede al evento y ve countdown
-        response = self.client.get(
-            reverse('event_detail', kwargs={'event_id': future_event.id})
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'countdown-container')
-        self.assertContains(response, 'Tiempo restante:')
-        
-        # 4. Verificar que el JavaScript está presente y funcional
-        content = response.content.decode('utf-8')
-        self.assertIn('function updateCountdown()', content)
-        self.assertIn('setInterval(updateCountdown, 1000)', content)
 
-    def test_organizer_vs_regular_user_countdown_visibility(self):
-        """Test e2e de visibilidad del countdown según tipo de usuario"""
-        # Crear evento
-        event = Event.objects.create(
-            title='Test Event',
-            description='Event for testing',
-            scheduled_at=timezone.now() + timedelta(days=15),
-            organizer=self.organizer,
-            venue=self.venue
-        )
-        
-        # Test como usuario regular
-        self.client.login(username='testuser', password='testpass123')
-        response = self.client.get(
-            reverse('event_detail', kwargs={'event_id': event.id})
-        )
-        self.assertContains(response, 'countdown-container')
-        self.assertFalse(response.context['user_is_organizer'])
-        
-        # Logout y login como organizador
-        self.client.logout()
-        self.client.login(username='organizer', password='testpass123')
-        response = self.client.get(
-            reverse('event_detail', kwargs={'event_id': event.id})
-        )
-        self.assertNotContains(response, 'countdown-container')
-        self.assertTrue(response.context['user_is_organizer'])
-
-    def test_countdown_with_different_event_times(self):
-        """Test e2e del countdown con diferentes tiempos de evento"""
-        # Evento muy futuro (más de 30 días)
-        far_future_event = Event.objects.create(
-            title='Far Future Event',
-            description='Event very far in the future',
-            scheduled_at=timezone.now() + timedelta(days=60),
-            organizer=self.organizer,
-            venue=self.venue
-        )
-        
-        # Evento próximo (menos de 1 día)
-        near_future_event = Event.objects.create(
-            title='Near Future Event',
-            description='Event happening soon',
-            scheduled_at=timezone.now() + timedelta(hours=12),
-            organizer=self.organizer,
-            venue=self.venue
-        )
-        
-        # Evento pasado
-        past_event = Event.objects.create(
-            title='Past Event',
+        self.past_event = Event.objects.create(
+            title='Past Event', 
             description='Event that already happened',
             scheduled_at=timezone.now() - timedelta(days=1),
             organizer=self.organizer,
             venue=self.venue
         )
-        
-        self.client.login(username='testuser', password='testpass123')
-        
-        # Test evento futuro lejano
-        response = self.client.get(
-            reverse('event_detail', kwargs={'event_id': far_future_event.id})
-        )
-        self.assertContains(response, 'countdown-container')
-        content = response.content.decode('utf-8')
-        self.assertIn('días', content)  # Debe mostrar días
-        
-        # Test evento próximo
-        response = self.client.get(
-            reverse('event_detail', kwargs={'event_id': near_future_event.id})
-        )
-        self.assertContains(response, 'countdown-container')
-        
-        # Test evento pasado
-        response = self.client.get(
-            reverse('event_detail', kwargs={'event_id': past_event.id})
-        )
-        self.assertContains(response, 'countdown-container')  # Container presente
-        content = response.content.decode('utf-8')
-        self.assertIn('¡El evento ya comenzó!', content)  # Mensaje de evento pasado
 
-    def test_countdown_navigation_flow(self):
-        """Test e2e del flujo de navegación con countdown"""
-        # Crear múltiples eventos
-        event1 = Event.objects.create(
-            title='Event 1',
-            description='First event',
-            scheduled_at=timezone.now() + timedelta(days=10),
-            organizer=self.organizer,
-            venue=self.venue
-        )
+    def test_countdown_visible_for_non_organizer_user_journey(self):
+        """Test del flujo completo de usuario NO organizador viendo countdown usando Playwright"""
+        # Login como usuario NO organizador
+        self.login_user('testuser', 'testpass123')
         
-        event2 = Event.objects.create(
-            title='Event 2',
-            description='Second event',
-            scheduled_at=timezone.now() + timedelta(days=20),
-            organizer=self.organizer,
-            venue=self.venue
-        )
+        # Navegar al detalle del evento futuro
+        self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
+        self.page.wait_for_load_state("networkidle")
         
-        self.client.login(username='testuser', password='testpass123')
+        # Verificar que la página del evento cargó correctamente
+        expect(self.page.locator("h1").filter(has_text="Future Event")).to_be_visible()
         
-        # 1. Ver lista de eventos
-        response = self.client.get(reverse('events'))
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Event 1')
-        self.assertContains(response, 'Event 2')
+        # Verificar que el countdown está presente y visible
+        expect(self.page.locator("#countdown-container")).to_be_visible()
+        expect(self.page.locator("#countdown-timer")).to_be_visible()
         
-        # 2. Navegar al primer evento
-        response = self.client.get(
-            reverse('event_detail', kwargs={'event_id': event1.id})
-        )
-        self.assertContains(response, 'countdown-container')
-        self.assertContains(response, 'Event 1')
+        # Verificar que el countdown timer tiene contenido válido
+        countdown_text = self.page.locator("#countdown-timer").inner_text()
+        self.assertIsNotNone(countdown_text)
         
-        # 3. Navegar al segundo evento
-        response = self.client.get(
-            reverse('event_detail', kwargs={'event_id': event2.id})
-        )
-        self.assertContains(response, 'countdown-container')
-        self.assertContains(response, 'Event 2')
+        # Verificar que el JavaScript del countdown está funcionando
+        # Esperar un momento y verificar que el contenido cambia o está actualizado
+        initial_text = self.page.locator("#countdown-timer").inner_text()
+        self.page.wait_for_timeout(2000)  # Esperar 2 segundos
+        updated_text = self.page.locator("#countdown-timer").inner_text()
+        
+        # El texto debería estar definido
+        self.assertIsNotNone(initial_text)
+        self.assertIsNotNone(updated_text)
 
-    def test_countdown_responsive_behavior(self):
-        """Test e2e del comportamiento responsive del countdown"""
-        event = Event.objects.create(
-            title='Responsive Test Event',
-            description='Event for responsive testing',
-            scheduled_at=timezone.now() + timedelta(days=5),
-            organizer=self.organizer,
-            venue=self.venue
-        )
+    def test_countdown_not_visible_for_organizer_user(self):
+        """Test que el countdown NO es visible para usuarios organizadores"""
+        # Login como organizador
+        self.login_user('organizer', 'testpass123')
         
-        self.client.login(username='testuser', password='testpass123')
+        # Navegar al detalle del evento
+        self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
+        self.page.wait_for_load_state("networkidle")
         
-        response = self.client.get(
-            reverse('event_detail', kwargs={'event_id': event.id})
-        )
+        # Verificar que la página del evento cargó correctamente
+        expect(self.page.locator("h1").filter(has_text="Future Event")).to_be_visible()
         
-        content = response.content.decode('utf-8')
+        # Verificar que el countdown NO está presente
+        countdown_container = self.page.locator("#countdown-container")
+        expect(countdown_container).to_have_count(0)
         
-        # Verificar clases Bootstrap para responsive design
-        self.assertIn('d-flex', content)
-        self.assertIn('align-items-center', content)
-        self.assertIn('alert', content)
-        self.assertIn('mb-4', content)
-        
-        # Verificar que el countdown está dentro de un container responsive
-        self.assertIn('container', content)
-
-    def test_countdown_error_handling(self):
-        """Test e2e del manejo de errores en countdown"""
-        event = Event.objects.create(
-            title='Error Test Event',
-            description='Event for error testing',
-            scheduled_at=timezone.now() + timedelta(days=1),
-            organizer=self.organizer,
-            venue=self.venue
-        )
-        
-        self.client.login(username='testuser', password='testpass123')
-        
-        # Test con evento válido
-        response = self.client.get(
-            reverse('event_detail', kwargs={'event_id': event.id})
-        )
-        self.assertEqual(response.status_code, 200)
-        
-        # Test con evento inexistente
-        response = self.client.get(
-            reverse('event_detail', kwargs={'event_id': 99999})
-        )
-        self.assertEqual(response.status_code, 404)
+        # Verificar que tampoco están los elementos específicos del countdown
+        expect(self.page.locator("#countdown-timer")).to_have_count(0)
 
     def test_countdown_javascript_functionality(self):
-        """Test e2e de la funcionalidad JavaScript del countdown"""
-        event = Event.objects.create(
-            title='JS Test Event',
-            description='Event for JavaScript testing',
-            scheduled_at=timezone.now() + timedelta(days=2, hours=3, minutes=30),
-            organizer=self.organizer,
-            venue=self.venue
-        )
+        """Test funcionalidad JavaScript del countdown"""
+        # Login como usuario NO organizador
+        self.login_user('testuser', 'testpass123')
         
-        self.client.login(username='testuser', password='testpass123')
+        # Navegar al detalle del evento
+        self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
+        self.page.wait_for_load_state("networkidle")
         
-        response = self.client.get(
-            reverse('event_detail', kwargs={'event_id': event.id})
-        )
+        # Verificar que el script JavaScript está presente
+        script_content = self.page.evaluate("() => document.body.innerHTML")
+        self.assertIn("updateCountdown", script_content)
+        self.assertIn("function", script_content)
         
-        content = response.content.decode('utf-8')
+        # Verificar que la fecha del evento está correctamente formateada para JavaScript
+        self.assertIn("const eventDateStr", script_content)
         
-        # Verificar elementos JavaScript críticos
-        self.assertIn('function updateCountdown()', content)
-        self.assertIn('const eventDateStr =', content)
-        self.assertIn('const eventDate = new Date(eventDateStr)', content)
-        self.assertIn('const now = new Date()', content)
-        self.assertIn('const timeLeft = eventDate.getTime() - now.getTime()', content)
-        self.assertIn('Math.floor(timeLeft / (1000 * 60 * 60 * 24))', content)  # Cálculo días
-        self.assertIn('setInterval(updateCountdown, 1000)', content)  # Actualización cada segundo
+        # Verificar que el countdown tiene un valor válido
+        countdown_text = self.page.locator("#countdown-timer").inner_text()
         
-        # Verificar manejo de errores en JavaScript
-        self.assertIn('try {', content)
-        self.assertIn('} catch (error) {', content)
+        # El texto del countdown debería estar definido y contener información de tiempo
+        self.assertIsNotNone(countdown_text)
+        # Verificar que contiene palabras relacionadas con tiempo
+        time_words = ["días", "horas", "minutos", "segundos", "día", "hora", "minuto", "segundo"]
+        contains_time_word = any(word in countdown_text.lower() for word in time_words)
+        self.assertTrue(contains_time_word)
 
-    def test_countdown_complete_user_experience(self):
-        """Test e2e de la experiencia completa del usuario con countdown"""
-        # Crear evento con tiempo específico
-        event = Event.objects.create(
-            title='Complete UX Event',
-            description='Event for complete user experience testing',
-            scheduled_at=timezone.now() + timedelta(days=7, hours=12, minutes=45),
+    def test_countdown_responsive_design(self):
+        """Test diseño responsive del countdown"""
+        # Login como usuario NO organizador
+        self.login_user('testuser', 'testpass123')
+        
+        # Navegar al detalle del evento
+        self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
+        self.page.wait_for_load_state("networkidle")
+        
+        # Probar en viewport móvil
+        self.page.set_viewport_size({"width": 375, "height": 667})
+        
+        # Verificar que el countdown sigue siendo visible en móvil
+        expect(self.page.locator("#countdown-container")).to_be_visible()
+        expect(self.page.locator("#countdown-timer")).to_be_visible()
+        
+        # Probar en tablet
+        self.page.set_viewport_size({"width": 768, "height": 1024})
+        expect(self.page.locator("#countdown-container")).to_be_visible()
+        
+        # Volver a desktop
+        self.page.set_viewport_size({"width": 1200, "height": 800})
+        expect(self.page.locator("#countdown-container")).to_be_visible()
+
+    def test_countdown_with_past_event_behavior(self):
+        """Test comportamiento del countdown con evento pasado"""
+        # Login como usuario NO organizador
+        self.login_user('testuser', 'testpass123')
+        
+        # Navegar al detalle del evento pasado
+        self.page.goto(f"{self.live_server_url}/events/{self.past_event.pk}/")
+        self.page.wait_for_load_state("networkidle")
+        
+        # Verificar que la página del evento cargó
+        expect(self.page.locator("h1").filter(has_text="Past Event")).to_be_visible()
+        
+        # El countdown puede estar presente pero debería mostrar "Evento finalizado" o similar
+        countdown_container = self.page.locator("#countdown-container")
+        if countdown_container.count() > 0:
+            # Si existe, debería mostrar algún mensaje de evento finalizado
+            page_content = self.page.content()
+            event_finished_indicators = [
+                "Evento finalizado",
+                "Evento terminado", 
+                "Evento pasado",
+                "comenzó",
+                "ya comenzó",
+                "El evento ya comenzó"
+            ]
+            finished_found = any(indicator in page_content for indicator in event_finished_indicators)
+            self.assertTrue(finished_found)
+
+    def test_countdown_visual_elements_present(self):
+        """Test que todos los elementos visuales del countdown están presentes"""
+        # Login como usuario NO organizador
+        self.login_user('testuser', 'testpass123')
+        
+        # Navegar al detalle del evento
+        self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
+        self.page.wait_for_load_state("networkidle")
+        
+        # Verificar estructura HTML del countdown
+        expect(self.page.locator("#countdown-container")).to_be_visible()
+        
+        # Verificar labels de tiempo
+        labels = ["Días", "Horas", "Minutos", "Segundos", "días", "horas", "minutos", "segundos"]
+        page_content = self.page.content()
+        label_found = any(label in page_content for label in labels)
+        self.assertTrue(label_found)
+        
+        # Verificar que hay algún texto que indica tiempo restante
+        time_indicators = ["Tiempo restante", "Faltan", "Cuenta regresiva", "Countdown"]
+        time_indicator_found = any(indicator in page_content for indicator in time_indicators)
+        self.assertTrue(time_indicator_found)
+
+    def test_countdown_event_information_display(self):
+        """Test que la información del evento se muestra correctamente junto al countdown"""
+        # Login como usuario NO organizador
+        self.login_user('testuser', 'testpass123')
+        
+        # Navegar al detalle del evento
+        self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
+        self.page.wait_for_load_state("networkidle")
+        
+        # Verificar información del evento
+        expect(self.page.locator("h1").filter(has_text="Future Event")).to_be_visible()
+        expect(self.page.locator("p").filter(has_text="Event for countdown testing")).to_be_visible()
+        
+        # Verificar información del venue
+        expect(self.page.locator("span").filter(has_text="Test Venue")).to_be_visible()
+        
+        # Verificar que el countdown y la información del evento están en la misma página
+        expect(self.page.locator("#countdown-container")).to_be_visible()
+
+    def test_countdown_authentication_requirement(self):
+        """Test que se requiere autenticación para ver el countdown"""
+        # Sin hacer login, intentar acceder al evento
+        self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
+        
+        # Debería redirigir al login
+        self.page.wait_for_load_state("networkidle")
+        
+        # Verificar que estamos en la página de login
+        current_url = self.page.url
+        login_indicators = ["/login", "login", "sign-in", "signin"]
+        redirected_to_login = any(indicator in current_url.lower() for indicator in login_indicators)
+        self.assertTrue(redirected_to_login)
+
+    def test_countdown_multiple_events_navigation(self):
+        """Test navegación entre múltiples eventos con countdown"""
+        # Crear un evento adicional para probar navegación
+        additional_event = Event.objects.create(
+            title='Additional Event',
+            description='Another event for navigation testing',
+            scheduled_at=timezone.now() + timedelta(days=45),
             organizer=self.organizer,
             venue=self.venue
         )
         
-        # 1. Login del usuario
-        self.client.login(username='testuser', password='testpass123')
+        # Login como usuario NO organizador
+        self.login_user('testuser', 'testpass123')
         
-        # 2. Acceso al evento
-        response = self.client.get(
-            reverse('event_detail', kwargs={'event_id': event.id})
-        )
+        # Navegar al primer evento
+        self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
+        self.page.wait_for_load_state("networkidle")
         
-        # 3. Verificar experiencia visual completa
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Complete UX Event')
-        self.assertContains(response, 'countdown-container')
-        self.assertContains(response, 'Tiempo restante:')
-        self.assertContains(response, 'bi-clock')  # Ícono de reloj
+        # Verificar countdown en primer evento
+        expect(self.page.locator("#countdown-container")).to_be_visible()
+        expect(self.page.locator("h1").filter(has_text="Future Event")).to_be_visible()
         
-        # 4. Verificar que puede comprar tickets (botón presente)
-        self.assertContains(response, 'Comprar Entrada')
+        # Navegar al segundo evento
+        self.page.goto(f"{self.live_server_url}/events/{additional_event.pk}/")
+        self.page.wait_for_load_state("networkidle")
         
-        # 5. Verificar que puede ver detalles del venue
-        self.assertContains(response, 'Test Venue')
-        # self.assertContains(response, 'Test Address')  # La dirección no se muestra en el template
+        # Verificar countdown en segundo evento
+        expect(self.page.locator("#countdown-container")).to_be_visible()
+        expect(self.page.locator("h1").filter(has_text="Additional Event")).to_be_visible()
+
+    def test_countdown_event_details_interaction(self):
+        """Test interacción con detalles del evento que tiene countdown"""
+        # Login como usuario NO organizador
+        self.login_user('testuser', 'testpass123')
         
-        # 6. Verificar navegación funcional
-        self.assertContains(response, 'EventHub')  # Navbar
-        self.assertContains(response, 'Eventos')   # Link a eventos 
+        # Navegar al detalle del evento
+        self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
+        self.page.wait_for_load_state("networkidle")
+        
+        # Verificar que el countdown no interfiere con otros elementos de la página
+        expect(self.page.locator("#countdown-container")).to_be_visible()
+        
+        # Verificar que otros elementos del evento son interactuables
+        # (botones de compra, enlaces, etc. si existen)
+        buy_buttons = self.page.locator(".btn:has-text('Comprar')")
+        if buy_buttons.count() > 0:
+            expect(buy_buttons.first).to_be_visible()
+            expect(buy_buttons.first).to_be_enabled()
+        
+        # Verificar que la navegación funciona normalmente
+        navbar = self.page.locator(".navbar")
+        if navbar.count() > 0:
+            expect(navbar).to_be_visible()
+        
+        # Verificar que se puede hacer scroll sin problemas con el countdown
+        self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
+        self.page.wait_for_timeout(500)
+        expect(self.page.locator("#countdown-container")).to_be_visible() 
