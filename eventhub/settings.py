@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -20,12 +21,17 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure--f67ll=2-b2qolla9=1f8mtg@s=l8^y8aj=@ij-0f4)eg@%8(0"
+SECRET_KEY = os.environ.get('SECRET_KEY', "django-insecure--f67ll=2-b2qolla9=1f8mtg@s=l8^y8aj=@ij-0f4)eg@%8(0")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True').lower() == 'true'
 
-ALLOWED_HOSTS = []
+# Leer ALLOWED_HOSTS de variable de entorno
+ALLOWED_HOSTS_ENV = os.environ.get('ALLOWED_HOSTS', '')
+if ALLOWED_HOSTS_ENV:
+    ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',') if host.strip()]
+else:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
 
 
 # Application definition
@@ -74,12 +80,24 @@ WSGI_APPLICATION = "eventhub.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+# Configuración de base de datos que puede usar variables de entorno
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    # Si hay DATABASE_URL (como en producción), se puede configurar para PostgreSQL
+    # Por ahora mantenemos SQLite, pero se puede cambiar después
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
     }
-}
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
+        }
+    }
 
 
 # Password validation
@@ -110,9 +128,9 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
 AUTH_USER_MODEL = "app.User"
-LANGUAGE_CODE = "es-ar"
+LANGUAGE_CODE = os.environ.get('LANGUAGE_CODE', "es-ar")
 
-TIME_ZONE = "America/Argentina/Buenos_Aires"
+TIME_ZONE = os.environ.get('TIME_ZONE', "America/Argentina/Buenos_Aires")
 
 USE_I18N = True
 
@@ -129,8 +147,8 @@ STATIC_URL = "static/"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOGIN_REDIRECT_URL = "/events/"
+LOGIN_REDIRECT_URL = os.environ.get('LOGIN_REDIRECT_URL', "/events/")
 
-LOGIN_URL = "/accounts/login/"
+LOGIN_URL = os.environ.get('LOGIN_URL', "/accounts/login/")
 
-LOGOUT_REDIRECT_URL = "/accounts/login/"
+LOGOUT_REDIRECT_URL = os.environ.get('LOGOUT_REDIRECT_URL', "/accounts/login/")
