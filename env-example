@@ -1,0 +1,12 @@
+# Django settings
+DEBUG=True
+SECRET_KEY=tu_llave_secreta_aqui
+ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+DJANGO_SETTINGS_MODULE=eventhub.settings
+
+# Database settings (SQLite)
+DB_ENGINE=django.db.backends.sqlite3
+DB_NAME=db.sqlite3
+
+# Static files
+STATIC_ROOT=/app/staticfiles

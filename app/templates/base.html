@@ -68,7 +68,7 @@
                     <a
                         class="btn btn-sm btn-outline-primary"
                         href="{% url 'login' %}"
-                    >Ingresá</>
+                    >Ingresá</a>
                     <a
                         class="btn btn-sm btn-primary"
                         href="{% url 'register' %}"
@@ -88,3 +88,18 @@
 ></script>
 
 </html>
+
+<style>
+    .table-hover tbody tr:hover {
+        transform: scale(1.01);
+        transition: transform 0.2s;
+    }
+    .badge-vip {
+        background-color: #ffc107;
+        color: #000;
+    }
+    .badge-general {
+        background-color: #0dcaf0;
+        color: #000;
+    }
+    </style>

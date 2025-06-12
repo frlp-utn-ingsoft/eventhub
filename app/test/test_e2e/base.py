@@ -1,4 +1,5 @@
 import os
+import uuid
 
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from playwright.sync_api import sync_playwright
@@ -35,10 +36,12 @@ class BaseE2ETest(StaticLiveServerTestCase):
         self.page.close()
 
     def create_test_user(self, is_organizer=False):
+        """Crea un usuario de prueba con un username único"""
+        unique_username = f"usuario_test_{uuid.uuid4().hex[:8]}"
         """Crea un usuario de prueba en la base de datos"""
         return User.objects.create_user(
-            username="usuario_test",
-            email="test@example.com",
+            username=unique_username,
+            email=f"{unique_username}@example.com",
             password="password123",
             is_organizer=is_organizer,
         )

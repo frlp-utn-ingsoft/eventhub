@@ -1,0 +1,17 @@
+.git
+.gitignore
+.vscode
+*.sqlite3
+*.pyc
+__pycache__
+venv
+tests
+coverage
+locustfile
+functional_tests
+*.md
+README.md
+Dockerfile
+docker-compose.yml
+requirements-dev.txt
+.env

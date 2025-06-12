@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Mis Eventos Favoritos{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            <i class="bi bi-star-fill text-warning"></i>
+            Mis Eventos Favoritos
+        </h1>
+        <a href="{% url 'events' %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> Volver a todos los eventos
+        </a>
+    </div>
+
+    {% if favoritos %}
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for evento in favoritos %}
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        {{ evento.title }}
+                        <span class="badge bg-warning text-dark ms-2">
+                            <i class="bi bi-star-fill"></i> Favorito
+                        </span>
+                    </h5>
+                    <p class="card-text">{{ evento.description|truncatechars:100 }}</p>
+                    <p class="text-muted small">
+                        <i class="bi bi-calendar-event"></i> {{ evento.scheduled_at|date:"d M Y H:i" }}
+                    </p>
+                </div>
+                <div class="card-footer bg-white">
+                    <a href="{% url 'event_detail' evento.id %}" 
+                       class="btn btn-sm btn-outline-primary">
+                        Ver detalles
+                    </a>
+                    <a href="{% url 'eliminar_favorito' evento.id %}" 
+                       class="btn btn-sm btn-outline-danger float-end">
+                        <i class="bi bi-star"></i> Quitar
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-warning">
+        <i class="bi bi-exclamation-triangle"></i>
+        Aún no tienes eventos favoritos. 
+        <a href="{% url 'events' %}">Explora los eventos</a> y marca tus favoritos.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

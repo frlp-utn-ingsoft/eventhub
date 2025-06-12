@@ -32,7 +32,7 @@ class RegisterViewLoadTest(RegisterViewBaseTest):
         """Test que verifica que la página de registro carga correctamente"""
         response = self.client.get(self.register_url)
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "accounts/register.html")
+        self.assertTemplateUsed(response, "app/accounts/register.html")
 
 
 class RegisterViewSuccessTest(RegisterViewBaseTest):
@@ -43,7 +43,7 @@ class RegisterViewSuccessTest(RegisterViewBaseTest):
         response = self.client.post(self.register_url, self.valid_user_data)
 
         # Verificar redirección a events después del registro exitoso
-        self.assertRedirects(response, reverse("events"))
+        self.assertRedirects(response, reverse("home"))
 
         # Verificar que el usuario fue creado en la base de datos
         self.assertTrue(User.objects.filter(username="nuevo_usuario").exists())
@@ -65,7 +65,7 @@ class RegisterViewValidationTest(RegisterViewBaseTest):
 
         # Verificar que se redirige de nuevo al formulario
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "accounts/register.html")
+        self.assertTemplateUsed(response, "app/accounts/register.html")
 
         # Verificar que se muestra el error correcto
         self.assertIn("errors", response.context)
@@ -84,7 +84,7 @@ class RegisterViewValidationTest(RegisterViewBaseTest):
 
         # Verificar que se redirige de nuevo al formulario
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "accounts/register.html")
+        self.assertTemplateUsed(response, "app/accounts/register.html")
 
         # Verificar que se muestra el error correcto
         self.assertIn("errors", response.context)
@@ -106,7 +106,7 @@ class RegisterViewValidationTest(RegisterViewBaseTest):
 
         # Verificar que se redirige de nuevo al formulario
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "accounts/register.html")
+        self.assertTemplateUsed(response, "app/accounts/register.html")
 
         # Verificar que se muestra el error correcto
         self.assertIn("errors", response.context)
@@ -123,7 +123,7 @@ class RegisterViewValidationTest(RegisterViewBaseTest):
 
         # Verificar que se redirige de nuevo al formulario
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "accounts/register.html")
+        self.assertTemplateUsed(response, "app/accounts/register.html")
 
         # Verificar que se muestran los errores correctos
         self.assertIn("errors", response.context)
@@ -154,7 +154,7 @@ class LoginViewLoadTest(LoginViewBaseTest):
         """Test que verifica que la página de login carga correctamente"""
         response = self.client.get(self.login_url)
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "accounts/login.html")
+        self.assertTemplateUsed(response, "app/accounts/login.html")
 
 
 class LoginViewSuccessTest(LoginViewBaseTest):
@@ -165,7 +165,7 @@ class LoginViewSuccessTest(LoginViewBaseTest):
         response = self.client.post(self.login_url, self.valid_credentials)
 
         # Verificar redirección a events después del login exitoso
-        self.assertRedirects(response, reverse("events"))
+        self.assertRedirects(response, reverse("home"))
 
         # Verificar que el usuario está autenticado
         self.assertEqual(int(self.client.session["_auth_user_id"]), self.test_user.pk)
@@ -183,7 +183,7 @@ class LoginViewFailureTest(LoginViewBaseTest):
 
         # Verificar que se redirige de nuevo al formulario
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "accounts/login.html")
+        self.assertTemplateUsed(response, "app/accounts/login.html")
 
         # Verificar que se muestra el error correcto
         self.assertIn("error", response.context)
@@ -201,7 +201,7 @@ class LoginViewFailureTest(LoginViewBaseTest):
 
         # Verificar que se redirige de nuevo al formulario
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "accounts/login.html")
+        self.assertTemplateUsed(response, "app/accounts/login.html")
 
         # Verificar que se muestra el error correcto
         self.assertIn("error", response.context)
@@ -217,7 +217,7 @@ class LoginViewFailureTest(LoginViewBaseTest):
 
         # Verificar que se redirige de nuevo al formulario
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "accounts/login.html")
+        self.assertTemplateUsed(response, "app/accounts/login.html")
 
         # Verificar que se muestra el error correcto
         self.assertIn("error", response.context)

@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="display-4">Mis Tickets</h1>
+        {% if not user.is_organizer  %}
+        <div class="btn-group">
+            <a href="{% url 'ticket_form' %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Comprar Ticket
+            </a>
+            <a href="{% url 'request_refund' %}" class="btn btn-warning">
+                <i class="bi bi-arrow-counterclockwise"></i> Solicitar Reembolso
+            </a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Agregar alerta informativa sobre el límite -->
+    <div class="alert alert-info mb-4">
+        <i class="bi bi-info-circle-fill"></i> 
+        <strong>Política de compra:</strong> Cada usuario puede adquirir un máximo de 4 entradas por evento.
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover table-striped">
+            <thead class="table-dark">
+                <tr>
+                    <th>Código</th>
+                    <th>Tipo</th>
+                    <th>Evento</th>
+                    <th>Cantidad</th>  <!-- Nueva columna -->
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr>
+                    <td class="fw-bold">{{ ticket.ticket_code }}</td>
+                    <td>
+                        <span class="badge {% if ticket.type == 'VIP' %}bg-warning{% else %}bg-info{% endif %}">
+                            {{ ticket.get_type_display }}
+                        </span>
+                    </td>
+                    <td>{{ ticket.event.title }}</td>
+                    <td>{{ ticket.quantity }}</td>  <!-- Mostrar cantidad -->
+                    <td>{{ ticket.buy_date|date:"d/m/Y" }}</td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'ticket_delete' ticket.pk %}" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center py-4">  <!-- Ajustado a 6 columnas -->
+                        <div class="alert alert-info" role="alert">
+                            <i class="bi bi-info-circle"></i> No tienes tickets registrados
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+    <!-- Paginación -->
+    {% if is_paginated %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            {% if page_obj.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+            </li>
+            {% endif %}
+            
+            {% for num in page_obj.paginator.page_range %}
+            <li class="page-item {% if num == page_obj.number %}active{% endif %}">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endfor %}
+            
+            {% if page_obj.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
+</div>
+{% endblock %}

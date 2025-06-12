@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="mb-4">
+                {% if venue.id %}
+                    Editar ubicación
+                {% else %}
+                    Crear nueva ubicación
+                {% endif %}
+            </h1>
+
+            <div class="card">
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="vstack gap-3">
+                            <div>
+                                <label for="name" class="form-label">Nombre de la ubicación *</label>
+                                <input class="form-control"
+                                    id="name"
+                                    required
+                                    type="text"
+                                    value="{{ venue.name }}"
+                                    name="name"
+                                    placeholder="Ej: Estadio Uno">
+                            </div>
+                            
+                            <div>
+                                <label for="address" class="form-label">Dirección *</label>
+                                <input class="form-control"
+                                    id="address"
+                                    required
+                                    type="text"
+                                    value="{{ venue.address }}"
+                                    name="address"
+                                    placeholder="Ej: Av. 1 1150-1198, B1900 La Plata">
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="city" class="form-label">Ciudad *</label>
+                                    <input class="form-control"
+                                        id="city"
+                                        required
+                                        type="text"
+                                        value="{{ venue.city }}"
+                                        name="city"
+                                        placeholder="Ej: La Plata">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="capacity" class="form-label">Capacidad *</label>
+                                    <input class="form-control"
+                                        id="capacity"
+                                        required
+                                        type="number"
+                                        value="{{ venue.capacity }}"
+                                        name="capacity"
+                                        placeholder="Ej: 32500">
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="contact_info" class="form-label">Información de contacto *</label>
+                                <textarea class="form-control"
+                                    id="contact_info"
+                                    name="contact_info"
+                                    rows="3"
+                                    placeholder="Describe principales caracteristicas de la ubicación..">
+                                    {{ venue.contact_info }}
+                                </textarea>
+                            </div>
+                            
+                            <div class="mt-3">
+                                <button type="submit" class="btn btn-primary">
+                                    {% if venue.id %}Guardar cambios{% else %}Crear ubicación{% endif %}
+                                </button>
+                                <a href="{% url 'venue_list' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

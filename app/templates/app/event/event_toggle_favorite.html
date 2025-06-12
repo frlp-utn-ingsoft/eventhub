@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Eventos Favoritos{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Mis Eventos Favoritos</h1>
+        <a href="{% url 'event_list' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left me-2"></i> Volver a Eventos
+        </a>
+    </div>
+
+    {% if favorite_events %}
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Título</th>
+                    <th>Descripción</th>
+                    <th>Fecha</th>
+                    <th>Organizador</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for event in favorite_events %}
+                    <tr>
+                        <td>{{ event.title }}</td>
+                        <td>{{ event.description|truncatechars:50 }}</td>
+                        <td>{{ event.scheduled_at|date:"d M Y, H:i" }}</td>
+                        <td>{{ event.organizer.username }}</td>
+                        <td>
+                            <div class="hstack gap-2">
+                                <a href="{% url 'event_detail' event.id %}"
+                                   class="btn btn-sm btn-outline-primary"
+                                   title="Ver detalle">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+
+                                <form action="{% url 'toggle_favorite' event.id %}" method="POST" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-warning" title="Quitar de favoritos">
+                                        <i class="bi bi-star-fill"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <div class="alert alert-info text-center">
+            No tenés eventos favoritos todavía.
+            <a href="{% url 'event-toggle-favorite' %}" class="alert-link">Explorar eventos</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

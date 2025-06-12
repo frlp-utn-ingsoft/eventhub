@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Comentarios{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Comentarios</h1>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Evento</th>
+                    <th>Usuario</th>
+                    <th>Comentario</th>
+                    <th>Fecha</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for comentario in comentarios %}
+                <tr>
+                    <td>
+                        <a href="{% url 'event_detail' comentario.event.id %}" 
+                           class="text-primary text-decoration-none">
+                            {{ comentario.event.title }}
+                        </a>
+                    </td>
+                    <td>{{ comentario.user.username }}</td>
+                    <td>
+                       {% if request.GET.edit == comentario.id|stringformat:"s" %}
+                        <form method="POST" action="{% url 'editar_comentario' comentario.id %}" 
+                              onsubmit="this.querySelector('button[type=submit]').disabled=true; this.querySelector('button[type=submit]').innerHTML='<span class=\'spinner-border spinner-border-sm\' role=\'status\' aria-hidden=\'true\'></span> Guardando...';">
+                            {% csrf_token %}
+                            <div class="input-group">
+                                <input type="text" name="content" class="form-control" value="{{ comentario.content }}">
+                                <button type="submit" class="btn btn-success btn-sm">
+                                    <i class="bi bi-check-circle me-1"></i> Guardar
+                                </button>
+                                <a href="{% url 'comentarios_organizador' %}" class="btn btn-secondary btn-sm">
+                                    <i class="bi bi-x-circle me-1"></i> Cancelar
+                                </a>
+                            </div>
+                        </form>
+                        {% else %}
+                            {{ comentario.content|truncatechars:50 }}
+                        {% endif %}
+                    </td>
+                    <td>{{ comentario.created_at|date:"d M Y, H:i" }}</td>
+                    <td>
+                        <div class="hstack gap-2">
+                            <a href="{% url 'event_detail' comentario.event.id %}"
+                               class="btn btn-sm btn-outline-primary"
+                               title="Ver detalle">
+                                <i class="bi bi-eye"></i>
+                            </a>
+
+                            {% if request.user == comentario.user %}
+                                <!-- Botón editar -->
+                                <a href="?edit={{ comentario.id }}" class="btn btn-sm btn-outline-secondary" title="Editar">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+
+                                <!-- Botón eliminar (propio comentario) -->
+                                <form method="POST" action="{% url 'eliminar_comentario' comentario.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('¿Eliminar este comentario?')"
+                                            title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+
+                            {% elif request.user.is_organizer and comentario.event.organizer == request.user %}
+                                <!-- Botón eliminar para organizador del evento -->
+                                <form method="POST" action="{% url 'eliminar_comentario' comentario.id %}" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('¿Eliminar este comentario?')"
+                                            title="Eliminar">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" class="text-center py-4">
+                        <div class="alert alert-info">
+                            No hay comentarios para mostrar
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+{% endblock %}

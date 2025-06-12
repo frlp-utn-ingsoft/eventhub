@@ -1,0 +1,206 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+
+    <div class="row mt-4">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1>{{ event.title }}</h1>
+                <div class="mt-2">
+                    <span class="badge 
+                        {% if event.status == 'activo' %}bg-success
+                        {% elif event.status == 'cancelado' %}bg-danger
+                        {% elif event.status == 'reprogramado' %}bg-warning
+                        {% elif event.status == 'agotado' %}bg-secondary
+                        {% elif event.status == 'finalizado' %}bg-dark
+                        {% endif %}"
+                        data-test="event-status">
+                        {{ event.get_status_display }}
+                    </span>
+                </div>
+            </div>
+            
+            <div>
+                {% if request.user == event.organizer %}
+                    <div>
+                        <a href="{% url 'event_edit' event.id %}" class="btn btn-outline-primary btn-sm me-2">
+                            <i class="bi bi-pencil me-1"></i>Editar
+                        </a>
+                        <form action="{% url 'event_delete' event.id %}" method="POST" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                <i class="bi bi-trash me-1"></i>Eliminar
+                            </button>
+                        </form>
+                    </div>
+                {% else %}
+                    {% if event.available_tickets > 0 %}
+                        <div class="d-flex align-items-center gap-2">
+                            <a href="{% url 'ticket_form' %}?event={{ event.id }}" class="btn btn-success btn-sm">
+                                <i class="bi bi-ticket-perforated me-1"></i> Comprar Entrada
+                            </a>
+                            <small class="text-muted">
+                                {{ event.available_tickets }} entradas disponibles
+                            </small>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-danger d-inline-block p-2 mb-0">
+                            <i class="bi bi-exclamation-triangle me-2"></i>¡Evento agotado!
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div class="row mt-4">
+        <div class="card shadow-sm border rounded-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-4">
+                    <div class="bg-light rounded-circle p-2 me-3">
+                        <i class="bi bi-ticket-detailed text-primary fs-5"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-0">Disponibilidad</h6>
+                        {% if event.venue %}
+                            <p class="mb-0">
+                                {{ event.available_tickets }} entradas restantes de 
+                                {{ event.venue.capacity }} disponibles
+                            </p>
+                        {% else %}
+                            <p class="mb-0 text-muted">Sin límite de capacidad</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <h5 class="card-title">Detalles del Evento</h5>
+                <p class="card-text">{{ event.description }}</p>
+                
+                <div class="mt-4">
+    
+                    <div class="d-flex align-items-start mb-4">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-geo-alt text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-2">Ubicación</h6>
+                            {% if event.venue %}
+                                <p class="mb-0">
+                                    {{ event.venue.name }}<br>
+                                    {{ event.venue.address }}, {{ event.venue.city }}<br>
+                                    Capacidad: {{ event.venue.capacity }} personas<br>
+                                    Contacto: {{ event.venue.contact_info }}
+                                </p>
+                            {% else %}
+                                <p class="mb-0 text-muted">No se ha asignado una ubicación</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+
+                    <div class="d-flex align-items-start mb-4">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-clock text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-2">Fecha y Hora</h6>
+                            <p class="mb-0">{{ event.scheduled_at|date:"j N Y, H:i" }}</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-start mb-4">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-tags text-primary fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-2">Categorías</h6>
+                            <div class="d-flex flex-wrap gap-2 mt-1">
+                                {% for category in event.categories.all %}
+                                    <span class="badge bg-secondary">{{ category.name }}</span>
+                                {% empty %}
+                                    <span class="text-muted">Sin categorías</span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex align-items-start mb-4">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-person text-primary fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-2">Organizador</h6>
+                            <p class="mb-0">{{ event.organizer }}</p>
+                        </div>
+                    </div>
+                    
+                    {% if event.status != "activo" or request.user == event.organizer %}
+                    <div class="d-flex align-items-start mb-4">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-ticket-perforated text-primary fs-5"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="alert alert-warning mb-0">
+                                {% if event.status == "agotado" %}
+                                    <i class="bi bi-exclamation-octagon me-2"></i>Evento agotado
+                                {% elif event.status == "finalizado" %}
+                                    <i class="bi bi-clock-history me-2"></i>Evento finalizado
+                                {% else %}
+                                    <i class="bi bi-slash-circle me-2"></i>No disponible para compra
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Comentarios -->
+    <div class="row mt-5">
+        <div class="card shadow-sm border rounded-3">
+            <div class="card-body">
+                <h5 class="card-title">Comentarios ({{ comments.count }})</h5>
+
+                {% for comment in comments %}
+                <div class="border-bottom pb-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <strong><i class="bi bi-person-circle me-1"></i>{{ comment.user.username }}</strong>
+                        <small class="text-muted">{{ comment.created_at|date:"d M Y, H:i" }}</small>
+                    </div>
+                    <h6><i class="bi bi-chat-left-text me-1"></i>{{ comment.title }}</h6>
+                    <p class="mb-0">{{ comment.content }}</p>
+                </div>
+                {% empty %}
+                <p class="text-muted">Todavía no hay comentarios. ¡Sé el primero!</p>
+                {% endfor %}
+
+                {% if user.is_authenticated %}
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <h6 class="mb-3">Deja tu comentario</h6>
+                    <div class="mb-3">
+                        <label for="id_title" class="form-label">Título del comentario*</label>
+                        <input type="text" class="form-control rounded-3 shadow-sm" id="id_title" name="title"
+                               placeholder="Escribe un título para tu comentario" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="id_content" class="form-label">Contenido del comentario*</label>
+                        <textarea class="form-control rounded-3 shadow-sm" id="id_content" name="content" rows="3"
+                                  placeholder="Escribe tu comentario aquí..." required></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">Publicar comentario</button>
+                </form>
+                {% else %}
+                <div class="alert alert-info mt-3">
+                    <a href="{% url 'login' %}?next={{ request.path }}" class="alert-link">Inicia sesión</a> para comentar.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

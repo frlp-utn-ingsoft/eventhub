@@ -1,0 +1,179 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+
+    {% if messages %}
+        <div class="container mt-3">
+            {% for message in messages %}
+                <div class="alert alert-danger">{{ message }}</div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+
+
+    <form method="post">
+        {% csrf_token %}
+
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-dark text-white">
+                <h2 class="mb-0">Comprar Entrada</h2>
+            </div>
+
+            <div class="card-body">
+                <div class="mb-4 p-3 border rounded">
+                    {% if selected_event %}
+                        <input type="hidden" name="event" value="{{ selected_event.id }}">
+                        <div class="mt-3 text-center">
+                            <h2 class="text-primary fw-bold">
+                                {{ selected_event.title }}
+                            </h2>
+                            <p class="text-muted fs-5">
+                                {{ selected_event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}<br>
+                                {{ selected_event.venue.name }} - {{ selected_event.venue.city }}
+                            </p>
+                        </div>
+                    {% else %}
+                        <label for="{{ form.event.id_for_label }}" class="form-label">Evento</label>
+                        {{ form.event }}
+                    {% endif %}
+                </div>
+
+                <div class="mb-4 p-3 border rounded">
+                    <h4><i class="bi bi-ticket-perforated"></i> Cantidad de entradas</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="{{ form.type.id_for_label }}" class="form-label">Tipo de entrada</label>
+                            {{ form.type }}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.quantity.id_for_label }}" class="form-label">Cantidad</label>
+                            {{ form.quantity }}
+                            {% if form.quantity.errors %}  <!-- Mostrar errores si existen -->
+                                <div class="alert alert-danger mt-2">
+                                    {% for error in form.quantity.errors %}
+                                        <small class="d-block"><i class="bi bi-exclamation-circle"></i> {{ error }}</small>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+
+
+
+
+                            <small class="text-muted d-block mt-1">Máximo 4 entradas por evento</small>
+                        </div>
+                    </div>
+                </div>
+
+                
+                <div class="mb-4 p-3 border rounded bg-light">
+                    <h4><i class="bi bi-credit-card"></i> Método de pago</h4>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label">Número de tarjeta</label>
+                                    <input 
+                                        type="text" 
+                                        id="card_number"
+                                        class="form-control" 
+                                        placeholder="1234 5678 9012 3456"
+                                    >
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-label">MM/AA</label>
+                                <input type="text" class="form-control" placeholder="MM/AA">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-label">Nombre en tarjeta</label>
+                                <input type="text" class="form-control" placeholder="Juan Pérez">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-check mb-4">
+                    <input class="form-check-input" type="checkbox" id="terms" required>
+                    <label class="form-check-label" for="terms">
+                        Acepto los términos y condiciones
+                    </label>
+                </div>
+
+                <div class="mb-4 p-3 border rounded bg-light">
+                    <h4><i class="bi bi-receipt"></i> Resumen de compra</h4>
+                    <div class="row">
+                        <div class="col-6">
+                            <p>Precio por entrada:</p>
+                            <p>Cantidad:</p>
+                            <p>Subtotal:</p>
+                            <p>Impuestos (10%):</p>
+                            <p class="fw-bold">Total:</p>
+                        </div>
+                        <div class="col-6 text-end">
+                            <p id="precio-unitario">$50.00</p>
+                            <p id="resumen-cantidad">1</p>
+                            <p id="subtotal">$50.00</p>
+                            <p id="impuestos">$5.00</p>
+                            <p class="fw-bold" id="total">$55.00</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-grid">
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        <i class="bi bi-check-circle-fill"></i> Confirmar compra
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const tipoEntrada = document.getElementById('id_type');
+        const cantidadInput = document.getElementById('id_quantity');
+        const precioUnitarioEl = document.getElementById('precio-unitario');
+        const cantidadEl = document.getElementById('resumen-cantidad');
+        const subtotalEl = document.getElementById('subtotal');
+        const impuestosEl = document.getElementById('impuestos');
+        const totalEl = document.getElementById('total');
+        const eventSelect = document.getElementById('id_event');
+        const eventTitleDisplay = document.getElementById('event-title-display');
+
+        function actualizarResumen() {
+            let cantidad = parseInt(cantidadInput.value) || 1;
+            if (cantidad > 4) {
+                cantidad = 4;
+                cantidadInput.value = 4;
+                alert("No puedes comprar más de 4 entradas");
+            }
+
+            const precioUnitario = tipoEntrada.value === 'VIP' ? 100 : 50;
+            const subtotal = precioUnitario * cantidad;
+            const impuestos = subtotal * 0.1;
+            const total = subtotal + impuestos;
+
+            precioUnitarioEl.textContent = `$${precioUnitario.toFixed(2)}`;
+            cantidadEl.textContent = cantidad;
+            subtotalEl.textContent = `$${subtotal.toFixed(2)}`;
+            impuestosEl.textContent = `$${impuestos.toFixed(2)}`;
+            totalEl.textContent = `$${total.toFixed(2)}`;
+        }
+
+        tipoEntrada.addEventListener('change', actualizarResumen);
+        cantidadInput.addEventListener('input', actualizarResumen);
+
+        eventSelect.addEventListener('change', function () {
+            const texto = eventSelect.options[eventSelect.selectedIndex].text;
+            eventTitleDisplay.textContent = texto || "Seleccione un evento";
+        });
+
+        actualizarResumen();
+    });
+</script>
+{% endblock %}

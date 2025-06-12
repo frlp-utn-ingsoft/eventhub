@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h1 class="mb-4">
+                {% if form.instance.id %}
+                    Editar evento
+                {% else %}
+                    Crear evento
+                {% endif %}
+            </h1>
+
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        {% if form.errors %}
+                            <div class="alert alert-danger">
+                                Corrige los errores debajo.
+                            </div>
+                        {% endif %}
+                        
+                        <div class="vstack gap-3">
+                            <div>
+                                <label for="title" class="form-label">Título del Evento *</label>
+                                <input class="form-control"
+                                    id="title"
+                                    required
+                                    type="text"
+                                    name="title"
+                                    value="{{ form.title.value|default:'' }}"
+                                    placeholder="Ej: Festival de Música Primavera">
+                                {{ form.title.errors }}
+                            </div>
+                            
+                            <div>
+                                <label for="description" class="form-label">Descripción *</label>
+                                <textarea class="form-control"
+                                    id="description"
+                                    required
+                                    name="description"
+                                    rows="3"
+                                    placeholder="Describe el evento detalladamente">{{ form.description.value|default:'' }}</textarea>
+                                {{ form.description.errors }}
+                            </div>
+                        
+                            
+                            
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <label for="scheduled_at" class="form-label">Fecha y Hora *</label>
+                                    <input class="form-control"
+                                    type="datetime-local"
+                                    id="scheduled_at"
+                                    name="scheduled_at"
+                                    value="{{ form.scheduled_at.value|default:''|date:'Y-m-d\TH:i' }}"
+                                    required>
+                                </div>
+                            </div>
+                            <div>
+                                <label for="venue" class="form-label">Venue (Lugar) *</label>
+                                <select class="form-select" 
+                                    id="venue" 
+                                    name="venue" 
+                                    required>
+                                    <option value="">Seleccione un lugar</option>
+                                    {% for venue in form.venue.field.queryset %}
+                                        <option value="{{ venue.id }}" 
+                                            {% if form.venue.value == venue.id %}selected{% endif %}>
+                                            {{ venue.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                {{ form.venue.errors }}
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Estado del Evento</label>
+                                <select class="form-select" name="status" id="status">
+                                    {% for value, label in form.status.field.choices %}
+                                        <option value="{{ value }}" 
+                                            {% if form.status.value == value %}selected{% endif %}>
+                                            {{ label }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            {% if form.categories.field.queryset.all %}
+                            <div class="border p-3 mb-4 rounded">
+                                <h5 class="mb-3">Categorías</h5>
+                                <div class="row row-cols-1 row-cols-md-2 g-3">
+                                    {% for category in form.categories.field.queryset %}
+                                    <div class="col">
+                                        <div class="card h-100">
+                                            <div class="card-body">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" 
+                                                           type="checkbox" 
+                                                           name="categories" 
+                                                           id="category_{{ category.id }}" 
+                                                           value="{{ category.id }}"
+                                                           {% if category.id in form.categories.value %}checked{% endif %}>
+                                                    <label class="form-check-label fw-bold" for="category_{{ category.id }}">
+                                                        {{ category.name }}
+                                                    </label>
+                                                </div>
+                                                <p class="card-text mt-2 text-muted small">
+                                                    {{ category.description|default:"Sin descripción" }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="mt-3">
+                                <button type="submit" class="btn btn-primary">
+                                    {% if form.instance.id %}Guardar Cambios{% else %}Crear Evento{% endif %}
+                                </button>
+                                <a href="{% url 'events' %}" class="btn btn-outline-secondary">Cancelar</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
