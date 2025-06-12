@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, feature/integracion-continua ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Build
+      run: |
+        python manage.py check
+
+  test:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Run unit and integration tests
+      env:
+        DJANGO_SETTINGS_MODULE: eventhub.settings
+        DATABASE_URL: sqlite:///test_db.sqlite3
+      run: |
+        python manage.py migrate
+        pytest app/test/test_unit/ app/test/test_integration/ --cov=. --cov-report=xml
+
+  e2e:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+        
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        
+    - name: Install Playwright browsers
+      run: |
+        playwright install
+        
+    - name: Run end-to-end tests
+      env:
+        DJANGO_SETTINGS_MODULE: eventhub.settings
+        DATABASE_URL: sqlite:///test_db.sqlite3
+        DEBUG: "True"
+        ALLOWED_HOSTS: localhost,127.0.0.1
+      run: |
+        python manage.py migrate
+        # Iniciar el servidor en segundo plano y esperar a que esté listo
+        python manage.py runserver 0.0.0.0:8000 &
+        # Esperar a que el servidor esté listo
+        for i in {1..30}; do
+          if curl -s http://localhost:8000/ > /dev/null; then
+            break
+          fi
+          sleep 1
+        done
+        # Ejecutar los tests
+        pytest app/test/test_e2e/ --headed 
