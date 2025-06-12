@@ -24,4 +24,10 @@ tomli==2.2.1
 typing_extensions==4.13.2
 tzdata==2025.2
 urllib3==2.4.0
+<<<<<<< HEAD
 python-decouple==3.8
+=======
+python-decouple
+urllib3==2.4.0
+
+>>>>>>> 9a02bc4d9d0579b91b9769515f55c099aa75d8ae
