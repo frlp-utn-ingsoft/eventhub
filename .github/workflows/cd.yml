@@ -10,8 +10,8 @@ jobs:
         name: Deploy
         runs-on: ubuntu-latest
         if: ${{  github.event_name == 'workflow_run' &&
-            github.event.workflow_run.event == 'release' &&
-            github.event.workflow_run.conclusion == 'success'  }}
+            github.event.workflow_run.event == 'Release' &&
+            github.event.workflow_run.conclusion == 'Success'  }}
 
         steps:
             - name: Check out code
