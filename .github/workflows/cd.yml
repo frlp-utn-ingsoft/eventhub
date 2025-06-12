@@ -5,6 +5,10 @@ name: CD
 on:
   release:
     types: [published]
+  push:
+    branches:
+      - main
+
 
 jobs:
   # Verificar que CI pasó en la rama main antes de hacer deploy

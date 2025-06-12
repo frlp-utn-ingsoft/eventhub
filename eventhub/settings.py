@@ -36,6 +36,7 @@ else:
         CSRF_TRUSTED_ORIGINS = ['http://localhost:8000', 'http://127.0.0.1:8000']
     else:
         CSRF_TRUSTED_ORIGINS = [] # En producción, es mejor que sea vacío si no se especifica
+=======
 
 
 # Application definition
