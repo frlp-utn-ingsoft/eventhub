@@ -2,7 +2,7 @@ import datetime
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-from app.models import User, Event, Ticket, Venue, Category
+from app.models import User, Event, Ticket, Venue
 
 class EventGetDemandIntegrationTest(TestCase):
     def setUp(self):

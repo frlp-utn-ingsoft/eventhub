@@ -43,12 +43,50 @@ class RefundValidationIntegrationTest(TestCase):
             category=self.category
         )
 
-        # Crear ticket
-        self.ticket = Ticket.objects.create(
+        # Crear tickets para diferentes tests
+        self.ticket_active = Ticket.objects.create(
             user=self.user,
             event=self.event,
             quantity=1,
             type="REGULAR"
+        )
+
+        self.ticket_rejected = Ticket.objects.create(
+            user=self.user,
+            event=self.event,
+            quantity=1,
+            type="REGULAR"
+        )
+
+        self.ticket_approved = Ticket.objects.create(
+            user=self.user,
+            event=self.event,
+            quantity=1,
+            type="REGULAR"
+        )
+
+        # Crear solicitudes de reembolso para diferentes tests
+        self.active_refund = RefundRequest.objects.create(
+            user=self.user,
+            ticket_code=self.ticket_active.ticket_code,
+            reason="Razón de prueba 1",
+            event_name=self.event.title
+        )
+
+        self.rejected_refund = RefundRequest.objects.create(
+            user=self.user,
+            ticket_code=self.ticket_rejected.ticket_code,
+            reason="Razón de prueba 2",
+            event_name=self.event.title,
+            approval=False
+        )
+
+        self.approved_refund = RefundRequest.objects.create(
+            user=self.user,
+            ticket_code=self.ticket_approved.ticket_code,
+            reason="Razón de prueba 3",
+            event_name=self.event.title,
+            approval=True
         )
 
         # Iniciar sesión
@@ -56,19 +94,11 @@ class RefundValidationIntegrationTest(TestCase):
 
     def test_cannot_create_refund_with_active_request(self):
         """Test que verifica que no se puede crear una solicitud si ya hay una activa"""
-        # Crear primera solicitud
-        RefundRequest.objects.create(
-            user=self.user,
-            ticket_code=self.ticket.ticket_code,
-            reason="Razón de prueba 1",
-            event_name=self.event.title
-        )
-
         # Intentar crear segunda solicitud
         response = self.client.post(
-            reverse('refund_form', args=[self.ticket.id]),
+            reverse('refund_form', args=[self.ticket_active.id]),
             {
-                'ticket_code': self.ticket.ticket_code,
+                'ticket_code': self.ticket_active.ticket_code,
                 'reason': 'Razón de prueba 2',
                 'accepted_policy': 'on'
             }
@@ -80,21 +110,11 @@ class RefundValidationIntegrationTest(TestCase):
 
     def test_can_create_refund_after_rejected(self):
         """Test que verifica que se puede crear una solicitud después de que una fue rechazada"""
-        # Crear y rechazar primera solicitud
-        refund1 = RefundRequest.objects.create(
-            user=self.user,
-            ticket_code=self.ticket.ticket_code,
-            reason="Razón de prueba 1",
-            event_name=self.event.title
-        )
-        refund1.approval = False
-        refund1.save()
-
         # Crear segunda solicitud
         response = self.client.post(
-            reverse('refund_form', args=[self.ticket.id]),
+            reverse('refund_form', args=[self.ticket_rejected.id]),
             {
-                'ticket_code': self.ticket.ticket_code,
+                'ticket_code': self.ticket_rejected.ticket_code,
                 'reason': 'Razón de prueba 2',
                 'accepted_policy': 'on'
             }
@@ -106,21 +126,11 @@ class RefundValidationIntegrationTest(TestCase):
 
     def test_can_create_refund_after_approved(self):
         """Test que verifica que se puede crear una solicitud después de que una fue aprobada"""
-        # Crear y aprobar primera solicitud
-        refund1 = RefundRequest.objects.create(
-            user=self.user,
-            ticket_code=self.ticket.ticket_code,
-            reason="Razón de prueba 1",
-            event_name=self.event.title
-        )
-        refund1.approval = True
-        refund1.save()
-
         # Crear segunda solicitud
         response = self.client.post(
-            reverse('refund_form', args=[self.ticket.id]),
+            reverse('refund_form', args=[self.ticket_approved.id]),
             {
-                'ticket_code': self.ticket.ticket_code,
+                'ticket_code': self.ticket_approved.ticket_code,
                 'reason': 'Razón de prueba 2',
                 'accepted_policy': 'on'
             }

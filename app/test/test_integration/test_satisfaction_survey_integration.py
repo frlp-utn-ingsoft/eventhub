@@ -26,6 +26,13 @@ class SatisfactionSurveyIntegrationTest(TestCase):
             password='testpass123',
             is_organizer=True
         )
+
+        # Otro usuario para tests de permisos
+        self.other_user = User.objects.create_user(
+            username='otheruser',
+            email='other@example.com',
+            password='testpass123'
+        )
         
         # Venue para eventos
         self.venue = Venue.objects.create(
@@ -45,10 +52,24 @@ class SatisfactionSurveyIntegrationTest(TestCase):
             venue=self.venue
         )
         
-        # Ticket para encuestas
+        # Tickets para diferentes tests
         self.ticket = Ticket.objects.create(
             quantity=2,
             type='GENERAL',
+            event=self.event,
+            user=self.user
+        )
+
+        self.vip_ticket = Ticket.objects.create(
+            quantity=1,
+            type='VIP',
+            event=self.event,
+            user=self.user
+        )
+
+        self.new_ticket = Ticket.objects.create(
+            quantity=1,
+            type='VIP',
             event=self.event,
             user=self.user
         )
@@ -65,20 +86,12 @@ class SatisfactionSurveyIntegrationTest(TestCase):
 
     def test_satisfaction_survey_form_display(self):
         """Test que el formulario de encuesta se muestra correctamente"""
-        # Crear ticket nuevo para este test ya que self.ticket ya tiene encuesta
-        new_ticket = Ticket.objects.create(
-            quantity=1,
-            type='VIP',
-            event=self.event,
-            user=self.user
-        )
-        
         # Login del usuario
         self.client.login(username='testuser', password='testpass123')
         
         # Acceder al formulario de encuesta
         response = self.client.get(
-            reverse('satisfaction_survey', kwargs={'ticket_id': new_ticket.id})
+            reverse('satisfaction_survey', kwargs={'ticket_id': self.vip_ticket.id})
         )
         
         self.assertEqual(response.status_code, 200)
@@ -96,14 +109,6 @@ class SatisfactionSurveyIntegrationTest(TestCase):
 
     def test_satisfaction_survey_form_submission_success(self):
         """Test envío exitoso del formulario de encuesta"""
-        # Crear ticket nuevo para este test
-        new_ticket = Ticket.objects.create(
-            quantity=1,
-            type='VIP',
-            event=self.event,
-            user=self.user
-        )
-        
         # Login del usuario
         self.client.login(username='testuser', password='testpass123')
         
@@ -117,7 +122,7 @@ class SatisfactionSurveyIntegrationTest(TestCase):
         
         # Enviar formulario
         response = self.client.post(
-            reverse('satisfaction_survey', kwargs={'ticket_id': new_ticket.id}),
+            reverse('satisfaction_survey', kwargs={'ticket_id': self.vip_ticket.id}),
             data=form_data
         )
         
@@ -125,7 +130,7 @@ class SatisfactionSurveyIntegrationTest(TestCase):
         self.assertEqual(response.status_code, 302)
         
         # Verificar que la encuesta se creó
-        survey = SatisfactionSurvey.objects.get(ticket=new_ticket)
+        survey = SatisfactionSurvey.objects.get(ticket=self.vip_ticket)
         self.assertEqual(survey.overall_satisfaction, 5)
         self.assertEqual(survey.purchase_experience, 'facil')
         self.assertTrue(survey.would_recommend)
@@ -133,14 +138,6 @@ class SatisfactionSurveyIntegrationTest(TestCase):
 
     def test_satisfaction_survey_form_validation_errors(self):
         """Test validación de errores en el formulario"""
-        # Crear ticket nuevo para este test
-        new_ticket = Ticket.objects.create(
-            quantity=1,
-            type='VIP',
-            event=self.event,
-            user=self.user
-        )
-        
         # Login del usuario
         self.client.login(username='testuser', password='testpass123')
         
@@ -154,7 +151,7 @@ class SatisfactionSurveyIntegrationTest(TestCase):
         
         # Enviar formulario con errores
         response = self.client.post(
-            reverse('satisfaction_survey', kwargs={'ticket_id': new_ticket.id}),
+            reverse('satisfaction_survey', kwargs={'ticket_id': self.vip_ticket.id}),
             data=form_data
         )
         
@@ -189,13 +186,6 @@ class SatisfactionSurveyIntegrationTest(TestCase):
 
     def test_satisfaction_survey_ticket_ownership(self):
         """Test que solo el dueño del ticket puede hacer la encuesta"""
-        # Crear otro usuario
-        other_user = User.objects.create_user(
-            username='otheruser',
-            email='other@example.com',
-            password='testpass123'
-        )
-        
         # Login con otro usuario
         self.client.login(username='otheruser', password='testpass123')
         
@@ -209,41 +199,25 @@ class SatisfactionSurveyIntegrationTest(TestCase):
 
     def test_satisfaction_survey_context_variables(self):
         """Test variables de contexto en el template"""
-        # Crear ticket nuevo para este test
-        new_ticket = Ticket.objects.create(
-            quantity=1,
-            type='VIP',
-            event=self.event,
-            user=self.user
-        )
-        
         # Login del usuario
         self.client.login(username='testuser', password='testpass123')
         
         response = self.client.get(
-            reverse('satisfaction_survey', kwargs={'ticket_id': new_ticket.id})
+            reverse('satisfaction_survey', kwargs={'ticket_id': self.vip_ticket.id})
         )
         
         # Verificar variables de contexto
-        self.assertEqual(response.context['ticket'], new_ticket)
+        self.assertEqual(response.context['ticket'], self.vip_ticket)
         self.assertEqual(response.context['event'], self.event)
 
     def test_satisfaction_survey_redirect_after_purchase(self):
         """Test redirección a encuesta después de comprar ticket"""
-        # Crear ticket nuevo para simular compra reciente
-        new_ticket = Ticket.objects.create(
-            quantity=1,
-            type='VIP',
-            event=self.event,
-            user=self.user
-        )
-        
         # Login del usuario
         self.client.login(username='testuser', password='testpass123')
         
         # Simular redirección desde proceso de compra
         response = self.client.get(
-            reverse('satisfaction_survey', kwargs={'ticket_id': new_ticket.id}) + '?from=purchase'
+            reverse('satisfaction_survey', kwargs={'ticket_id': self.vip_ticket.id}) + '?from=purchase'
         )
         
         self.assertEqual(response.status_code, 200)
@@ -251,19 +225,11 @@ class SatisfactionSurveyIntegrationTest(TestCase):
 
     def test_satisfaction_survey_template_inheritance(self):
         """Test que el template hereda correctamente de base.html"""
-        # Crear ticket nuevo para este test
-        new_ticket = Ticket.objects.create(
-            quantity=1,
-            type='VIP',
-            event=self.event,
-            user=self.user
-        )
-        
         # Login del usuario
         self.client.login(username='testuser', password='testpass123')
         
         response = self.client.get(
-            reverse('satisfaction_survey', kwargs={'ticket_id': new_ticket.id})
+            reverse('satisfaction_survey', kwargs={'ticket_id': self.vip_ticket.id})
         )
         
         # Verificar elementos comunes del template base
@@ -272,19 +238,11 @@ class SatisfactionSurveyIntegrationTest(TestCase):
 
     def test_satisfaction_survey_responsive_design(self):
         """Test diseño responsive de la encuesta"""
-        # Crear ticket nuevo para este test
-        new_ticket = Ticket.objects.create(
-            quantity=1,
-            type='VIP',
-            event=self.event,
-            user=self.user
-        )
-        
         # Login del usuario
         self.client.login(username='testuser', password='testpass123')
         
         response = self.client.get(
-            reverse('satisfaction_survey', kwargs={'ticket_id': new_ticket.id})
+            reverse('satisfaction_survey', kwargs={'ticket_id': self.vip_ticket.id})
         )
         
         # Verificar clases Bootstrap para responsive design
@@ -293,14 +251,6 @@ class SatisfactionSurveyIntegrationTest(TestCase):
 
     def test_satisfaction_survey_form_fields_validation(self):
         """Test validación específica de campos del formulario"""
-        # Crear ticket nuevo para este test
-        new_ticket = Ticket.objects.create(
-            quantity=1,
-            type='VIP',
-            event=self.event,
-            user=self.user
-        )
-        
         # Login del usuario
         self.client.login(username='testuser', password='testpass123')
         
@@ -312,7 +262,7 @@ class SatisfactionSurveyIntegrationTest(TestCase):
         }
         
         response = self.client.post(
-            reverse('satisfaction_survey', kwargs={'ticket_id': new_ticket.id}),
+            reverse('satisfaction_survey', kwargs={'ticket_id': self.vip_ticket.id}),
             data=form_data
         )
         
@@ -321,14 +271,6 @@ class SatisfactionSurveyIntegrationTest(TestCase):
 
     def test_satisfaction_survey_success_message(self):
         """Test mensaje de éxito después de enviar encuesta"""
-        # Crear ticket nuevo para este test
-        new_ticket = Ticket.objects.create(
-            quantity=1,
-            type='VIP',
-            event=self.event,
-            user=self.user
-        )
-        
         # Login del usuario
         self.client.login(username='testuser', password='testpass123')
         
@@ -342,7 +284,7 @@ class SatisfactionSurveyIntegrationTest(TestCase):
         
         # Enviar formulario
         response = self.client.post(
-            reverse('satisfaction_survey', kwargs={'ticket_id': new_ticket.id}),
+            reverse('satisfaction_survey', kwargs={'ticket_id': self.vip_ticket.id}),
             data=form_data,
             follow=True  # Seguir redirección
         )

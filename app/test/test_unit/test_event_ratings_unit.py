@@ -1,5 +1,7 @@
 from django.test import TestCase
 from app.models import Event, Venue, Rating, User
+from django.utils import timezone
+import datetime
 
 
 class EventRatingTests(TestCase):
@@ -48,11 +50,35 @@ class EventRatingTests(TestCase):
             contact='test@venue.com'
         )
         
-        # Crear evento
+        # Crear eventos para diferentes tests
         self.event = Event.objects.create(
             title='Test Event',
             description='Test Description',
-            scheduled_at='2024-12-31 20:00:00',
+            scheduled_at=timezone.make_aware(datetime.datetime(2024, 12, 31, 20, 0, 0)),
+            organizer=self.organizer,
+            venue=self.venue
+        )
+
+        self.empty_event = Event.objects.create(
+            title='Empty Event',
+            description='Empty Description',
+            scheduled_at=timezone.make_aware(datetime.datetime(2024, 12, 31, 21, 0, 0)),
+            organizer=self.organizer,
+            venue=self.venue
+        )
+
+        self.single_event = Event.objects.create(
+            title='Single Rating Event',
+            description='Single Description',
+            scheduled_at=timezone.make_aware(datetime.datetime(2024, 12, 31, 22, 0, 0)),
+            organizer=self.organizer,
+            venue=self.venue
+        )
+
+        self.decimal_event = Event.objects.create(
+            title='Decimal Event',
+            description='Decimal Description',
+            scheduled_at=timezone.make_aware(datetime.datetime(2024, 12, 31, 23, 0, 0)),
             organizer=self.organizer,
             venue=self.venue
         )
@@ -103,6 +129,32 @@ class EventRatingTests(TestCase):
             text='Test Review 5'
         )
 
+        # Crear rating para single_event
+        self.single_rating = Rating.objects.create(
+            event=self.single_event,
+            user=self.user1,
+            rating=4,
+            title='Test Rating',
+            text='Test Review'
+        )
+
+        # Crear ratings para decimal_event
+        self.decimal_rating1 = Rating.objects.create(
+            event=self.decimal_event,
+            user=self.user1,
+            rating=5,
+            title='Test Rating 1',
+            text='Test Review 1'
+        )
+        
+        self.decimal_rating2 = Rating.objects.create(
+            event=self.decimal_event,
+            user=self.user2,
+            rating=4,
+            title='Test Rating 2',
+            text='Test Review 2'
+        )
+
     def _verify_rating_stats(self, expected_average, expected_count):
         """Helper method para verificar estadísticas de ratings - optimizado para evitar repetición"""
         self.assertEqual(self.event.get_average_rating(), expected_average)
@@ -110,42 +162,15 @@ class EventRatingTests(TestCase):
 
     def test_get_average_rating_with_no_ratings(self):
         """Test que verifica que el promedio es 0 cuando no hay calificaciones"""
-        # Crear un nuevo evento sin ratings
-        empty_event = Event.objects.create(
-            title='Empty Event',
-            description='Empty Description',
-            scheduled_at='2024-12-31 21:00:00',
-            organizer=self.organizer,
-            venue=self.venue
-        )
-        
         # Verificar estadísticas del evento vacío
-        self.assertEqual(empty_event.get_average_rating(), 0)
-        self.assertEqual(empty_event.get_rating_count(), 0)
+        self.assertEqual(self.empty_event.get_average_rating(), 0)
+        self.assertEqual(self.empty_event.get_rating_count(), 0)
 
     def test_get_average_rating_with_single_rating(self):
         """Test que verifica el cálculo del promedio con una sola calificación"""
-        # Crear un nuevo evento
-        single_event = Event.objects.create(
-            title='Single Rating Event',
-            description='Single Description',
-            scheduled_at='2024-12-31 22:00:00',
-            organizer=self.organizer,
-            venue=self.venue
-        )
-        
-        # Crear una calificación directamente en el evento single_event
-        Rating.objects.create(
-            event=single_event,
-            user=self.user1,
-            rating=4,
-            title='Test Rating',
-            text='Test Review'
-        )
-        
         # Verificar estadísticas del evento con un rating
-        self.assertEqual(single_event.get_average_rating(), 4.0)
-        self.assertEqual(single_event.get_rating_count(), 1)
+        self.assertEqual(self.single_event.get_average_rating(), 4.0)
+        self.assertEqual(self.single_event.get_rating_count(), 1)
 
     def test_get_average_rating_with_multiple_ratings(self):
         """Test que verifica el cálculo del promedio con múltiples calificaciones"""
@@ -154,34 +179,8 @@ class EventRatingTests(TestCase):
 
     def test_get_average_rating_decimal_precision(self):
         """Test que verifica la precisión decimal del promedio"""
-        # Crear un nuevo evento
-        decimal_event = Event.objects.create(
-            title='Decimal Event',
-            description='Decimal Description',
-            scheduled_at='2024-12-31 23:00:00',
-            organizer=self.organizer,
-            venue=self.venue
-        )
-        
-        # Crear calificaciones
-        Rating.objects.create(
-            event=decimal_event,
-            user=self.user1,
-            rating=5,
-            title='Test Rating 1',
-            text='Test Review 1'
-        )
-        
-        Rating.objects.create(
-            event=decimal_event,
-            user=self.user2,
-            rating=4,
-            title='Test Rating 2',
-            text='Test Review 2'
-        )
-        
-        self.assertEqual(decimal_event.get_average_rating(), 4.5)
-        self.assertEqual(decimal_event.get_rating_count(), 2)
+        self.assertEqual(self.decimal_event.get_average_rating(), 4.5)
+        self.assertEqual(self.decimal_event.get_rating_count(), 2)
 
     def test_get_rating_count_after_deletion(self):
         """Test que verifica el conteo de calificaciones después de eliminar una"""

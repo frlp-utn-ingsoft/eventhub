@@ -4,7 +4,7 @@ from django.utils import timezone
 import datetime
 from playwright.sync_api import expect
 
-from app.models import Event, User, Venue, Category
+from app.models import Event
 from app.test.test_e2e.base import BaseE2ETest
 
 class EventFilterE2ETest(BaseE2ETest):

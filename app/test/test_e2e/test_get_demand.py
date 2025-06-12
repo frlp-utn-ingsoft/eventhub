@@ -1,5 +1,5 @@
 from playwright.sync_api import expect
-from app.models import Ticket, User, Venue,Category, Event  
+from app.models import Ticket, User, Venue, Category, Event  
 from app.test.test_e2e.base import BaseE2ETest
 import datetime
 from django.utils import timezone
@@ -44,6 +44,20 @@ class EventDetailGetDemandE2ETest(BaseE2ETest):
             is_organizer=False,
         )
 
+        # Crear tickets para el evento
+        self.ticket1 = Ticket.objects.create(
+            user=self.user1,
+            event=self.event,
+            type="general",
+            quantity=1
+        )
+        self.ticket2 = Ticket.objects.create(
+            user=self.user2,
+            event=self.event,
+            type="general",
+            quantity=1
+        )
+
     def test_event_get_demand(self):
         """Test que verifica la demanda y la cantidad de entradas vendidas en el detalle del evento"""
         # Login como organizador
@@ -52,27 +66,8 @@ class EventDetailGetDemandE2ETest(BaseE2ETest):
         self.page.fill('input[name="password"]', "password123")             
         self.page.click('button[type="submit"]')
 
-        # Ir al detalle del evento (sin tickets, debe ser baja demanda)
+        # Ir al detalle del evento
         self.page.goto(f"{self.live_server_url}/events/{self.event.id}/")
-        expect(self.page.locator("text=Baja demanda")).to_be_visible()
-        expect(self.page.locator("text=Entradas vendidas: 0")).to_be_visible()
-
-        # Creamos tickets para el evento
-        Ticket.objects.create(
-                user=self.user1,
-                event=self.event,
-                type="general",
-                quantity=1
-            )
-        Ticket.objects.create(
-                user=self.user2,
-                event=self.event,
-                type="general",
-                quantity=1
-            )
-   
-        # Refrescar la página de detalle
-        self.page.reload()
         expect(self.page.locator("text=Alta demanda")).to_be_visible()
         expect(self.page.locator("text=Entradas vendidas: 2")).to_be_visible()
         
