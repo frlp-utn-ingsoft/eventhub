@@ -3,7 +3,8 @@ name: CD
 on:
   release:
     types: [published]
-
+  workflow_dispatch:
+  
 jobs:
   build-and-push:
     name: Build & Push Docker Image
