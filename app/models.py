@@ -165,18 +165,15 @@ class Event(models.Model):
 
     @property
     def tickets_available(self):
-        """Calcula tickets disponibles de manera consistente"""
         return max(0, self.tickets_total - self.tickets_sold)
     
     def clean(self):
-        """Validación adicional para asegurar que tickets_sold no sea mayor que tickets_total"""
         if self.tickets_sold > self.tickets_total:
             raise ValidationError({
                 'tickets_sold': 'No pueden haberse vendido más tickets que el total disponible'
             })
     
     def save(self, *args, **kwargs):
-        # Asegurar que tickets_sold no sea mayor que tickets_total
         if self.tickets_sold > self.tickets_total:
             self.tickets_sold = self.tickets_total
         super().save(*args, **kwargs)
@@ -421,14 +418,12 @@ class Ticket(models.Model):
         if not self.pk and not self.ticket_code:
             self.ticket_code = f"TKT-{uuid.uuid4().hex[:6].upper()}"
         
-        # Usamos transacción atómica para evitar inconsistencias
         with transaction.atomic():
             is_new = not self.pk
             super().save(*args, **kwargs)
             
             # Actualizar contador de tickets vendidos SOLO si es un nuevo ticket
             if is_new and self.event:
-                # Usamos F() para evitar condiciones de carrera
                 Event.objects.filter(id=self.event.id).update(
                     tickets_sold=F('tickets_sold') + self.quantity
                 )
@@ -436,7 +431,6 @@ class Ticket(models.Model):
     def delete(self, *args, **kwargs):
         with transaction.atomic():
             if self.event:
-                # Usamos F() para evitar condiciones de carrera
                 Event.objects.filter(id=self.event.id).update(
                     tickets_sold=F('tickets_sold') - self.quantity
                 )
