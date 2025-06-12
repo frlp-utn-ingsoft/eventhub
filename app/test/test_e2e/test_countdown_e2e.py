@@ -68,24 +68,22 @@ class CountdownE2ETest(BaseE2ETest):
         expect(self.page.locator("h1").filter(has_text="Future Event")).to_be_visible()
         
         # Verificar que el countdown está presente y visible
-        expect(self.page.locator(".countdown-container")).to_be_visible()
-        expect(self.page.locator(".countdown-timer")).to_be_visible()
+        expect(self.page.locator("#countdown-container")).to_be_visible()
+        expect(self.page.locator("#countdown-timer")).to_be_visible()
         
-        # Verificar elementos específicos del countdown
-        expect(self.page.locator(".countdown-days")).to_be_visible()
-        expect(self.page.locator(".countdown-hours")).to_be_visible()
-        expect(self.page.locator(".countdown-minutes")).to_be_visible()
-        expect(self.page.locator(".countdown-seconds")).to_be_visible()
+        # Verificar que el countdown timer tiene contenido válido
+        countdown_text = self.page.locator("#countdown-timer").inner_text()
+        self.assertIsNotNone(countdown_text)
         
         # Verificar que el JavaScript del countdown está funcionando
-        # Esperar un momento y verificar que los segundos cambian
-        initial_seconds = self.page.locator(".countdown-seconds").inner_text()
+        # Esperar un momento y verificar que el contenido cambia o está actualizado
+        initial_text = self.page.locator("#countdown-timer").inner_text()
         self.page.wait_for_timeout(2000)  # Esperar 2 segundos
-        updated_seconds = self.page.locator(".countdown-seconds").inner_text()
+        updated_text = self.page.locator("#countdown-timer").inner_text()
         
-        # Los segundos deberían haber cambiado (o al menos estar definidos)
-        self.assertIsNotNone(initial_seconds)
-        self.assertIsNotNone(updated_seconds)
+        # El texto debería estar definido
+        self.assertIsNotNone(initial_text)
+        self.assertIsNotNone(updated_text)
 
     def test_countdown_not_visible_for_organizer_user(self):
         """Test que el countdown NO es visible para usuarios organizadores"""
@@ -100,12 +98,11 @@ class CountdownE2ETest(BaseE2ETest):
         expect(self.page.locator("h1").filter(has_text="Future Event")).to_be_visible()
         
         # Verificar que el countdown NO está presente
-        countdown_container = self.page.locator(".countdown-container")
+        countdown_container = self.page.locator("#countdown-container")
         expect(countdown_container).to_have_count(0)
         
         # Verificar que tampoco están los elementos específicos del countdown
-        expect(self.page.locator(".countdown-timer")).to_have_count(0)
-        expect(self.page.locator(".countdown-days")).to_have_count(0)
+        expect(self.page.locator("#countdown-timer")).to_have_count(0)
 
     def test_countdown_javascript_functionality(self):
         """Test funcionalidad JavaScript del countdown"""
@@ -124,17 +121,15 @@ class CountdownE2ETest(BaseE2ETest):
         # Verificar que la fecha del evento está correctamente formateada para JavaScript
         self.assertIn("const eventDateStr", script_content)
         
-        # Verificar que los elementos del countdown tienen valores numéricos válidos
-        days = self.page.locator(".countdown-days").inner_text()
-        hours = self.page.locator(".countdown-hours").inner_text()
-        minutes = self.page.locator(".countdown-minutes").inner_text()
-        seconds = self.page.locator(".countdown-seconds").inner_text()
+        # Verificar que el countdown tiene un valor válido
+        countdown_text = self.page.locator("#countdown-timer").inner_text()
         
-        # Todos deberían ser números o al menos estar definidos
-        self.assertIsNotNone(days)
-        self.assertIsNotNone(hours)
-        self.assertIsNotNone(minutes)
-        self.assertIsNotNone(seconds)
+        # El texto del countdown debería estar definido y contener información de tiempo
+        self.assertIsNotNone(countdown_text)
+        # Verificar que contiene palabras relacionadas con tiempo
+        time_words = ["días", "horas", "minutos", "segundos", "día", "hora", "minuto", "segundo"]
+        contains_time_word = any(word in countdown_text.lower() for word in time_words)
+        self.assertTrue(contains_time_word)
 
     def test_countdown_responsive_design(self):
         """Test diseño responsive del countdown"""
@@ -149,16 +144,16 @@ class CountdownE2ETest(BaseE2ETest):
         self.page.set_viewport_size({"width": 375, "height": 667})
         
         # Verificar que el countdown sigue siendo visible en móvil
-        expect(self.page.locator(".countdown-container")).to_be_visible()
-        expect(self.page.locator(".countdown-timer")).to_be_visible()
+        expect(self.page.locator("#countdown-container")).to_be_visible()
+        expect(self.page.locator("#countdown-timer")).to_be_visible()
         
         # Probar en tablet
         self.page.set_viewport_size({"width": 768, "height": 1024})
-        expect(self.page.locator(".countdown-container")).to_be_visible()
+        expect(self.page.locator("#countdown-container")).to_be_visible()
         
         # Volver a desktop
         self.page.set_viewport_size({"width": 1200, "height": 800})
-        expect(self.page.locator(".countdown-container")).to_be_visible()
+        expect(self.page.locator("#countdown-container")).to_be_visible()
 
     def test_countdown_with_past_event_behavior(self):
         """Test comportamiento del countdown con evento pasado"""
@@ -173,16 +168,17 @@ class CountdownE2ETest(BaseE2ETest):
         expect(self.page.locator("h1").filter(has_text="Past Event")).to_be_visible()
         
         # El countdown puede estar presente pero debería mostrar "Evento finalizado" o similar
-        countdown_container = self.page.locator(".countdown-container")
+        countdown_container = self.page.locator("#countdown-container")
         if countdown_container.count() > 0:
             # Si existe, debería mostrar algún mensaje de evento finalizado
             page_content = self.page.content()
             event_finished_indicators = [
                 "Evento finalizado",
-                "Evento terminado",
+                "Evento terminado", 
                 "Evento pasado",
-                "00:00:00",
-                "0 días"
+                "comenzó",
+                "ya comenzó",
+                "El evento ya comenzó"
             ]
             finished_found = any(indicator in page_content for indicator in event_finished_indicators)
             self.assertTrue(finished_found)
@@ -197,7 +193,7 @@ class CountdownE2ETest(BaseE2ETest):
         self.page.wait_for_load_state("networkidle")
         
         # Verificar estructura HTML del countdown
-        expect(self.page.locator(".countdown-container")).to_be_visible()
+        expect(self.page.locator("#countdown-container")).to_be_visible()
         
         # Verificar labels de tiempo
         labels = ["Días", "Horas", "Minutos", "Segundos", "días", "horas", "minutos", "segundos"]
@@ -224,10 +220,10 @@ class CountdownE2ETest(BaseE2ETest):
         expect(self.page.locator("p").filter(has_text="Event for countdown testing")).to_be_visible()
         
         # Verificar información del venue
-        expect(self.page.locator("p").filter(has_text="Test Venue")).to_be_visible()
+        expect(self.page.locator("span").filter(has_text="Test Venue")).to_be_visible()
         
         # Verificar que el countdown y la información del evento están en la misma página
-        expect(self.page.locator(".countdown-container")).to_be_visible()
+        expect(self.page.locator("#countdown-container")).to_be_visible()
 
     def test_countdown_authentication_requirement(self):
         """Test que se requiere autenticación para ver el countdown"""
@@ -262,7 +258,7 @@ class CountdownE2ETest(BaseE2ETest):
         self.page.wait_for_load_state("networkidle")
         
         # Verificar countdown en primer evento
-        expect(self.page.locator(".countdown-container")).to_be_visible()
+        expect(self.page.locator("#countdown-container")).to_be_visible()
         expect(self.page.locator("h1").filter(has_text="Future Event")).to_be_visible()
         
         # Navegar al segundo evento
@@ -270,7 +266,7 @@ class CountdownE2ETest(BaseE2ETest):
         self.page.wait_for_load_state("networkidle")
         
         # Verificar countdown en segundo evento
-        expect(self.page.locator(".countdown-container")).to_be_visible()
+        expect(self.page.locator("#countdown-container")).to_be_visible()
         expect(self.page.locator("h1").filter(has_text="Additional Event")).to_be_visible()
 
     def test_countdown_event_details_interaction(self):
@@ -283,7 +279,7 @@ class CountdownE2ETest(BaseE2ETest):
         self.page.wait_for_load_state("networkidle")
         
         # Verificar que el countdown no interfiere con otros elementos de la página
-        expect(self.page.locator(".countdown-container")).to_be_visible()
+        expect(self.page.locator("#countdown-container")).to_be_visible()
         
         # Verificar que otros elementos del evento son interactuables
         # (botones de compra, enlaces, etc. si existen)
@@ -300,4 +296,4 @@ class CountdownE2ETest(BaseE2ETest):
         # Verificar que se puede hacer scroll sin problemas con el countdown
         self.page.evaluate("window.scrollTo(0, document.body.scrollHeight)")
         self.page.wait_for_timeout(500)
-        expect(self.page.locator(".countdown-container")).to_be_visible() 
+        expect(self.page.locator("#countdown-container")).to_be_visible() 

@@ -244,7 +244,7 @@ class SatisfactionSurveyE2ETest(BaseE2ETest):
         omit_button = self.page.locator("a.btn:has-text('Omitir')")
         if omit_button.count() > 0:
             expect(omit_button).to_be_visible()
-            expect(omit_button).to_have_attribute("href")
+            expect(omit_button).to_have_attribute("href", re.compile(r".*"))
 
     def test_satisfaction_survey_ticket_details_section(self):
         """Test sección de detalles del ticket en la encuesta"""
