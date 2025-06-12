@@ -25,16 +25,4 @@ jobs:
         #Acá va el tag con el que se sube al dockerhub
   
   #Se describen los pasos del deploy
-  deploy:
-      #Pongo este nombre para hacer notar que se deploya una imagen del release
-      name: Deploy a release
-      runs-on: ubuntu-latest
-      needs: build-and-push
-      #Pasos que sigue el deploy
-      steps:
-
-        -name: llamar al deploy del render
-        run: |
-           curl -X POST https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }} \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            -H "Accept: application/json"
+  #Tarea Asignada a Geronimo
