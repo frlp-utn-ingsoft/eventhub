@@ -1,44 +1,58 @@
-from django.test import TestCase
-from django.urls import reverse
-from django.contrib.auth import get_user_model
-from app.models import Event, FavoriteEvent
+import pytest
 from django.utils import timezone
+from app.models import Event,User
+from playwright.sync_api import sync_playwright
 
-User = get_user_model()
+@pytest.mark.django_db
+def test_toggle_favorite(live_server):
+    # Crear usuarios
+    user = User.objects.create_user(username='prueba', password='12345678')
+    organizer = User.objects.create_user(username='organizador', password='87654321', is_organizer=True)
 
-class FavouriteE2ETest(TestCase):
+    # Crear evento
+    event = Event.objects.create(
+        title='Evento de prueba',
+        description='Descripción',
+        scheduled_at=timezone.now() + timezone.timedelta(days=1),
+        organizer=organizer,
+        status='active',
+        venue=None,
+    )
 
-    def setUp(self):
-        # Crear usuarios
-        self.user = User.objects.create_user(username='prueba', password='12345678')
-        self.organizer = User.objects.create_user(username='organizador', password='87654321', is_organizer=True)
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context()
+        page = context.new_page()
 
-        # Crear evento
-        self.event = Event.objects.create(
-            title='Evento de prueba',
-            description='Descripción del evento',
-            scheduled_at=timezone.now() + timezone.timedelta(days=1),
-            organizer=self.organizer,
-            status='active',
-            venue=None,
-        )
+        # Login
+        page.goto(f'{live_server.url}/accounts/login/')
+        page.fill('input[name="username"]', 'prueba')
+        page.fill('input[name="password"]', '12345678')
+        page.click('button:has-text("Iniciar sesión")')
 
-        # Login del usuario de prueba
-        self.client.login(username='prueba', password='12345678')
+        # Esperar a que redirija a /events/
+        page.wait_for_url(f'{live_server.url}/events/', timeout=10000)
 
-    def test_marcar_y_desmarcar_favorito(self):
-        url_toggle_fav = reverse('toggle_favorite', kwargs={'event_id': self.event.id})
-        # Ajustá 'favorite_toggle' y kwargs según tu configuración de urls
+        # Buscar fila del evento por título
+        row = page.locator(f'tr:has-text("{event.title}")')
+        favorite_button = row.locator('form.favourite-form button')
 
-        # Al principio no hay favorito
-        self.assertFalse(FavoriteEvent.objects.filter(user=self.user, event=self.event).exists())
+        # Validar que el botón está en estado "no favorito" (clase btn-outline-warning)
+        btn_class = favorite_button.get_attribute('class')
+        assert 'btn-outline-warning' in btn_class
 
-        # Marcar favorito (POST)
-        response = self.client.post(url_toggle_fav, follow=True)
-        self.assertEqual(response.status_code, 200)
-        self.assertTrue(FavoriteEvent.objects.filter(user=self.user, event=self.event).exists())
+        # Click para marcar favorito
+        favorite_button.click()
 
-        # Desmarcar favorito (POST de nuevo)
-        response = self.client.post(url_toggle_fav, follow=True)
-        self.assertEqual(response.status_code, 200)
-        self.assertFalse(FavoriteEvent.objects.filter(user=self.user, event=self.event).exists())
+        # Esperar recarga o actualización (ajustar según implementación)
+        page.wait_for_load_state('networkidle')  # Espera que termine carga red
+
+        # Re-obtener botón para verificar cambio
+        row = page.locator(f'tr:has-text("{event.title}")')
+        favorite_button = row.locator('form.favourite-form button')
+        btn_class_after = favorite_button.get_attribute('class')
+
+        # Validar que el botón cambió a "favorito" (clase btn-warning)
+        assert 'btn-warning' in btn_class_after
+
+        browser.close()
