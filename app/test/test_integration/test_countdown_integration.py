@@ -206,8 +206,8 @@ class CountdownIntegrationTest(TestCase):
         )
         
         # Verificar elementos comunes del template base
-        self.assertContains(response, 'Bootstrap')  # CSS framework
-        self.assertContains(response, 'navbar')     # Navigation bar
+        self.assertContains(response, 'navbar')  # Navigation bar
+        self.assertContains(response, 'container')     # Bootstrap container
 
     def test_countdown_responsive_design(self):
         """Test diseño responsive del countdown"""

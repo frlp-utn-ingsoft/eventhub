@@ -229,7 +229,7 @@ class SatisfactionSurveyUnitTest(TestCase):
         self.assertEqual(self.base_survey.user, self.user)
         self.assertEqual(self.base_survey.event, self.event)
         
-        # Verificar reverse relationships
-        self.assertIn(self.base_survey, self.ticket.satisfactionsurvey_set.all())
-        self.assertIn(self.base_survey, self.user.satisfactionsurvey_set.all())
-        self.assertIn(self.base_survey, self.event.satisfactionsurvey_set.all()) 
+        # Verificar reverse relationships (usar los nombres correctos)
+        self.assertEqual(self.ticket.satisfaction_survey, self.base_survey)
+        self.assertIn(self.base_survey, self.user.satisfaction_surveys.all())
+        self.assertIn(self.base_survey, self.event.satisfaction_surveys.all()) 
