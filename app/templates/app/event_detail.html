@@ -1,4 +1,6 @@
 {% extends 'base.html' %}
+{% load rating_average %}
+{% load tz %}
 
 {% block content %}
 <div class="container">
@@ -17,8 +19,24 @@
         </div>
     </div>
     <div class="row">
-        <div class="card">
-            <div class="card-body">
+        <div class="card mb-4">
+            <div class="card-body position-relative">
+                {% if user_is_organizer %}
+                    {% average_rating event as avg_rating %}
+                    <div class="position-absolute top-0 end-0 m-3 text-end">
+                        <div class="bg-light border rounded p-3 shadow-sm">
+                            <h6 class="mb-1 text-muted">Promedio de Calificación</h6>
+                            {% if avg_rating %}
+                                <p class="mb-0">
+                                    <span class="fs-1 fw-bold text-primary">{{ avg_rating }}</span>
+                                    <span class="fs-5 text-primary">/ 5</span>
+                                </p>
+                            {% else %}
+                                <p class="mb-0 fst-italic text-muted">Este evento aún no ha sido calificado.</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
                 <h5 class="card-title">Detalles del Evento</h5>
                 <p class="card-text">{{ event.description }}</p>
                 <div class="mt-4">
@@ -28,7 +46,25 @@
                         </div>
                         <div>
                             <h6 class="mb-0">Fecha y Hora</h6>
-                            <p class="mb-0">{{ event.scheduled_at|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
+                            <p class="mb-0">{{ event.scheduled_at|localtime|date:"l, j \\d\\e F \\d\\e Y, H:i" }}</p>
+                            {% if not request.user.is_authenticated or not request.user.is_organizer %}
+                            <div id="countdown" class="text-info fw-bold mt-1"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="bg-light rounded-circle p-2 me-3">
+                            <i class="bi bi-geo-alt text-primary"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-0">Ubicación</h6>
+                            <p class="mb-0">
+                                {% if event.venue %}
+                                    {{ event.venue.name }} ({{ event.venue.city }})
+                                {% else %}
+                                    No asignada
+                                {% endif %}
+                            </p>
                         </div>
                     </div>
                     <div class="d-flex align-items-center mb-3">
@@ -40,9 +76,87 @@
                             <p class="mb-0">{{ event.organizer }}</p>
                         </div>
                     </div>
+                    <div class="d-flex align-items-center mb-3">
+                      <div class="bg-light rounded-circle p-2 me-3">
+                          <i class="bi bi-tags text-primary"></i>
+                      </div>
+                      <div>
+                          <h6 class="mb-0">Categorías</h6>
+                          <p class="mb-0">
+                              {% if event.categories.all %}
+                                  {% for category in event.categories.all %}
+                                      {{ category.name }}{% if not forloop.last %}, {% endif %}
+                                  {% endfor %}
+                              {% else %}
+                                  Sin categoría
+                              {% endif %}
+                          </p>
+                      </div>
+                  </div>
                 </div>
             </div>
         </div>
+            <!-- Botón para mostrar comentarios -->
+            <div class="card mb-2 mt-2" style="background-color: lightgray;">
+                <nav>
+                    <button class="btn btn-secondary" style="border: none; background-color: lightgray; color: black ; font-size: 17pt;" onclick="toggleComments()">Comentarios ({{ num_comments|default:0 }})</button>
+                    <button class="btn btn-secondary" style="border: none; background-color: lightgray; color: black ; font-size: 17pt;" onclick="toggleRatings()">Ratings ({{ num_ratings|default:0 }})</button>
+                </nav>
+                
+            </div>
+            
+            <!-- Div contenedor de comentarios -->
+            <div class="card mb-4" id="comments-section" style="display: none;">
+                {% include "app/partials/comment.html" %}
+                <!--Aca usas lo mismo de arriba pero con partials/Ratings-->
+            </div>
+             <!-- Div contenedor de comentarios -->
+             <div class="card mb-4" id="ratings-section" style="display: none;">
+                {% include "app/partials/rating.html" %}
+              <!--Aca usas lo mismo de arriba pero con partials/Ratings-->
+          </div>
+
+            <script>
+            function toggleComments() {
+                const section = document.getElementById('comments-section');
+                section.style.display = section.style.display === 'none' ? 'block' : 'none';
+            }
+            </script>
+            <script>
+              function toggleRatings() {
+                  const section = document.getElementById('ratings-section');
+                  section.style.display = section.style.display === 'none' ? 'block' : 'none';
+              }
+              </script>
+
+            <script>
+                const eventTime = new Date("{{ event.scheduled_at|date:'c' }}").getTime();
+
+                function updateCountdown() {
+                    const now = new Date().getTime();
+                    const distance = eventTime - now;
+
+                    if (distance < 0) {
+                        document.getElementById("countdown").innerHTML = "¡El evento ya comenzó!";
+                        return;
+                     }
+
+                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                    document.getElementById("countdown").innerHTML =
+                        `Faltan ${days}d ${hours}h ${minutes}m ${seconds}s`;
+
+                    setTimeout(updateCountdown, 1000);
+                }
+
+                 updateCountdown();
+            </script>
+
+
     </div>
+
 </div>
 {% endblock %}

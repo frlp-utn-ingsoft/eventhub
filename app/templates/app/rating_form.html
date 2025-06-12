@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2>Editar Reseña</h2>
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="mb-3">
+            <label for="title" class="form-label">Título</label>
+            <input type="text" name="title" id="title" class="form-control" value="{{ rating.title }}" required>
+        </div>
+
+        {% include "components/star_rating.html" with name="rating" selected=rating.rating %}
+
+        <div class="mb-3">
+            <label for="text" class="form-label">Comentario</label>
+            <textarea name="text" id="text" class="form-control" rows="4" required>{{ rating.text }}</textarea>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Actualizar Reseña</button>
+        <a href="{% url 'event_detail' rating.event.id %}" class="btn btn-secondary ms-2">Cancelar</a>
+    </form>
+</div>
+
+{% endblock %}

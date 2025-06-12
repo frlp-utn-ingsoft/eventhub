@@ -1,36 +1,77 @@
 {% extends "base.html" %}
+{% load tz i18n %}
 
 {% block title %}Eventos{% endblock %}
 
 {% block content %}
-<div class="container">
+<div class="container mt-5">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1>Eventos</h1>
         {% if user_is_organizer %}
-            <a
-                href="{% url 'event_form' %}"
-                class="btn btn-primary"
-            >
+            <a href="{% url 'event_form' %}" class="btn btn-primary">
                 <i class="bi bi-plus-circle me-2" aria-hidden="true"></i>
                 Crear Evento
             </a>
         {% endif %}
     </div>
+
+    <form method="get" class="mb-3" id="filterForm">
+        <div class="form-check">
+            <input
+                type="checkbox"
+                class="form-check-input"
+                id="showPast"
+                name="show_past"
+                value="1"
+                {% if request.GET.show_past == "1" %}checked{% endif %}
+                onchange="document.getElementById('filterForm').submit();"
+            >
+            <label class="form-check-label" for="showPast">
+                Mostrar eventos pasados
+            </label>
+        </div>
+    </form>
+
     <table class="table">
         <thead>
             <tr>
                 <th>Título</th>
                 <th>Descripción</th>
                 <th>Fecha</th>
+                <th>Categorías</th>
+                <th>Estado</th>
                 <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
-            {% for event in events%}
-                <tr>
+            {% for event in events %}
+                <tr class="{% if event.is_favorite %}table-warning{% endif %}">
                     <td>{{ event.title }}</td>
                     <td>{{ event.description }}</td>
-                    <td>{{ event.scheduled_at|date:"d b Y, H:i" }}</td>
+                    <td>{{ event.scheduled_at|localtime|date:"j M Y, H:i"|lower }}</td>
+                    <td>
+                        {% for category in event.categories.all %}
+                            <span class="badge bg-secondary">{{ category.name }}</span>
+                        {% empty %}
+                            <span class="text-muted">Sin categoría</span>
+                        {% endfor %}
+                    </td>
+                    <td>
+                        {% if event.status == 'active' %}
+                            <span class="badge bg-success">Activo</span>
+                        {% elif event.status == 'cancelled' %}
+                            <span class="badge bg-danger">Cancelado</span>
+                        {% elif event.status == 'sold_out' %}
+                            <span class="badge bg-danger">Agotado</span>
+                        {% elif event.status == 'finished' %}
+                            <span class="badge bg-danger">Finalizado</span>
+                        {% elif event.status == 'rescheduled' %}
+                            <span class="badge bg-warning text-dark">Reprogramado</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Desconocido</span>
+                        {% endif %}
+                    </td>
+
                     <td>
                         <div class="hstack gap-1">
                             <a href="{% url 'event_detail' event.id %}"
@@ -39,20 +80,41 @@
                                title="Ver detalle">
                                 <i class="bi bi-eye" aria-hidden="true"></i>
                             </a>
+
+                            {% if not request.user.is_authenticated or not request.user.is_organizer %}
+                                <a href="{% url 'ticket_create' event.id %}" 
+                                   class="btn btn-sm btn-outline-success" 
+                                   aria-label="Comprar Ticket" 
+                                   title="Comprar Ticket">
+                                    <i class="bi bi-cart-plus" aria-hidden="true"></i> Comprar Ticket
+                                </a>
+                                <form action="{% url 'toggle_favorite' event.id %}" method="POST" class="d-inline favourite-form">
+                                    {% csrf_token %}
+                                    {% if event.is_favorite %}
+                                        <button class="btn btn-sm btn-warning" title="Quitar de favoritos">
+                                            <i class="bi bi-star-fill"></i>
+                                        </button>
+                                    {% else %}
+                                        <button class="btn btn-sm btn-outline-warning" title="Agregar a favoritos">
+                                            <i class="bi bi-star"></i>
+                                        </button>
+                                    {% endif %}
+                                </form>
+                            {% endif %}
+
                             {% if user_is_organizer %}
                                 <a href="{% url 'event_edit' event.id %}"
-                                    class="btn btn-sm btn-outline-secondary"
-                                    aria-label="Editar"
-                                    title="Editar">
+                                   class="btn btn-sm btn-outline-secondary"
+                                   aria-label="Editar"
+                                   title="Editar">
                                     <i class="bi bi-pencil" aria-hidden="true"></i>
                                 </a>
                                 <form action="{% url 'event_delete' event.id %}" method="POST">
                                     {% csrf_token %}
                                     <button class="btn btn-sm btn-outline-danger"
-                                        title="Eliminar"
-                                        type="submit"
-                                        aria-label="Eliminar"
-                                        titile="Eliminar">
+                                            title="Eliminar"
+                                            type="submit"
+                                            aria-label="Eliminar">
                                         <i class="bi bi-trash" aria-hidden="true"></i>
                                     </button>
                                 </form>
@@ -62,7 +124,7 @@
                 </tr>
             {% empty %}
                 <tr>
-                    <td colspan="4" class="text-center">No hay eventos disponibles</td>
+                    <td colspan="5" class="text-center">No hay eventos disponibles</td>
                 </tr>
             {% endfor %}
         </tbody>

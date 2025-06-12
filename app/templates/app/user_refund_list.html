@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block content %}
+  <h2>Mis Solicitudes de Reembolso</h2>
+
+  {% if has_pending_refund %}
+    <p style="color: red;"><strong>Ya tienes una solicitud de reembolso pendiente. Debes esperar a que sea procesada antes de solicitar otra.</strong></p>
+  {% else %}
+    <a href="{% url 'create_refund' %}" class="btn btn-primary" style="margin-bottom: 20px;">
+      Solicitar nuevo reembolso
+    </a>
+  {% endif %}
+
+  {% if refunds %}
+    <table>
+      <thead>
+        <tr>
+          <th>Código del Ticket</th>
+          <th>Motivo</th>
+          <th>Fecha de Solicitud</th>
+          <th>Estado</th>
+          <th>Fecha de Aprobación</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for refund in refunds %}
+          <tr>
+            <td>{{ refund.ticket_code }}</td>
+            <td>{{ refund.reason }}</td>
+            <td>{{ refund.created_at|date:"d/m/Y" }}</td>
+            <td>
+              {% if refund.approved == True %}
+                Aprobado
+              {% elif refund.approved == False %}
+                Rechazado
+              {% else %}
+                Pendiente
+              {% endif %}
+            </td>
+            <td>
+              {{ refund.approval_date|default:"-" }}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No has solicitado ningún reembolso.</p>
+  {% endif %}
+{% endblock %}

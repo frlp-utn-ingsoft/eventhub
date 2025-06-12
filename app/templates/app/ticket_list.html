@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row align-items-center mb-4">
+        <div class="col text-start">
+            <h1>Mis Entradas</h1>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+            {% if 'ticket' in message.tags %}
+                <div class="alert alert-info {{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if tickets %}
+    <div class="table-responsive">
+        <table class="table">
+            <thead class="thead-light">
+                <tr>
+                    <th class="border-bottom">Evento</th>
+                    <th class="border-bottom">Fecha de Compra</th>
+                    <th class="border-bottom">Código de Entrada</th>
+                    <th class="border-bottom">Tipo de Entrada</th>
+                    <th class="border-bottom">Cantidad</th>
+                    {% if not request.user.is_authenticated or not request.user.is_organizer %}
+                    <th class="border-bottom">Acciones</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr>
+                    <td>{{ ticket.event.title }}</td>
+                    <td>{{ ticket.buy_date }}</td>
+                    <td>{{ ticket.ticket_code }}</td>
+                    <td>{{ ticket.type }}</td>
+                    <td>{{ ticket.quantity }}</td>
+                    {% if not request.user.is_authenticated or not request.user.is_organizer %}
+                    <td>
+                        <a href="{% url 'ticket_update' ticket.id %}" class="btn btn-sm btn-outline-primary me-2" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <form method="post" action="{% url 'ticket_delete' ticket.id %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Estás seguro de eliminar este ticket?')" title="Eliminar">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        </form>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info" role="alert">
+        No tienes tickets registrados.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    /* Estilos adicionales que puedas tener */
+    .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+        line-height: 1.5;
+        border-radius: 0.2rem;
+    }
+
+    .me-2 {
+        margin-right: 0.5rem;
+    }
+
+    .table td,
+    .table th {
+        border-top: 0 !important; /* Elimina los bordes superiores */
+    }
+
+    /* El borde inferior ya está aplicado por la clase 'border-bottom' en thead */
+</style>
+{% endblock %}
