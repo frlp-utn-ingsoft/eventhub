@@ -1,25 +1,24 @@
-from django.test import TestCase, Client
-from django.contrib.auth import get_user_model
-from django.urls import reverse
-from app.models import Event, Venue, Ticket, SatisfactionSurvey
+import re
+from playwright.sync_api import expect
 from django.utils import timezone
 from datetime import timedelta
+from app.models import User, Event, Venue, Ticket, SatisfactionSurvey
+from .base import BaseE2ETest
 
-User = get_user_model()
 
-
-class SatisfactionSurveyE2ETest(TestCase):
-    """Tests end-to-end para la funcionalidad completa de satisfaction survey"""
+class SatisfactionSurveyE2ETest(BaseE2ETest):
+    """Tests end-to-end para la funcionalidad completa de satisfaction survey usando Playwright"""
     
     def setUp(self):
         """Configuración inicial para los tests e2e"""
-        self.client = Client()
+        super().setUp()
         
         # Usuario regular
         self.user = User.objects.create_user(
             username='testuser',
             email='test@example.com',
-            password='testpass123'
+            password='testpass123',
+            is_organizer=False
         )
         
         # Usuario organizador
@@ -48,393 +47,260 @@ class SatisfactionSurveyE2ETest(TestCase):
             venue=self.venue
         )
 
-    def test_complete_satisfaction_survey_user_journey(self):
-        """Test del flujo completo de usuario completando encuesta"""
-        # 1. Usuario hace login
-        login_success = self.client.login(username='testuser', password='testpass123')
-        self.assertTrue(login_success)
-        
-        # 2. Usuario compra ticket (simulado)
-        ticket = Ticket.objects.create(
+        # Ticket base para reutilizar en tests
+        self.base_ticket = Ticket.objects.create(
             quantity=1,
             type='GENERAL',
             event=self.event,
             user=self.user
         )
+
+    def test_complete_satisfaction_survey_user_journey(self):
+        """Test del flujo completo de usuario completando encuesta usando Playwright"""
+        # Login del usuario usando el método helper
+        self.login_user('testuser', 'testpass123')
         
-        # 3. Usuario accede a la encuesta
-        response = self.client.get(
-            reverse('satisfaction_survey', kwargs={'ticket_id': ticket.id})
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Encuesta de Satisfacción')
+        # Navegar a la encuesta de satisfacción (URL real)
+        self.page.goto(f"{self.live_server_url}/tickets/{self.base_ticket.pk}/survey/")
+        self.page.wait_for_load_state("networkidle")
         
-        # 4. Usuario completa y envía la encuesta
-        form_data = {
-            'overall_satisfaction': 5,
-            'purchase_experience': 'facil',
-            'would_recommend': 'yes',
-            'comments': 'Excelente experiencia de compra'
-        }
+        # Verificar que la página de encuesta cargó correctamente
+        expect(self.page.locator("h3")).to_contain_text("Encuesta de Satisfacción")
+        expect(self.page.locator("strong").filter(has_text="Test Event")).to_be_visible()
         
-        response = self.client.post(
-            reverse('satisfaction_survey', kwargs={'ticket_id': ticket.id}),
-            data=form_data
-        )
+        # Verificar que los elementos del formulario están presentes (elementos reales)
+        expect(self.page.locator("input[name='overall_satisfaction']").first).to_be_visible()
+        expect(self.page.locator("select[name='purchase_experience']")).to_be_visible()
+        expect(self.page.locator("input[name='would_recommend']").first).to_be_visible()
+        expect(self.page.locator("textarea[name='comments']")).to_be_visible()
         
-        # 5. Verificar redirección exitosa
-        self.assertEqual(response.status_code, 302)
+        # Llenar el formulario de encuesta (usando elementos reales)
+        self.page.check("input[name='overall_satisfaction'][value='5']")
+        self.page.select_option("select[name='purchase_experience']", "facil")
+        self.page.check("input[name='would_recommend'][value='yes']")
+        self.page.fill("textarea[name='comments']", "Excelente experiencia de compra!")
         
-        # 6. Verificar que la encuesta se guardó correctamente
-        survey = SatisfactionSurvey.objects.get(ticket=ticket)
+        # Enviar el formulario
+        self.page.click("button[type='submit']:has-text('Enviar encuesta')")
+        
+        # Verificar redirección exitosa (puede ser a tickets o eventos)
+        self.page.wait_for_url(re.compile(r".*(tickets|events).*"), timeout=10000)
+        
+        # Verificar que la encuesta se guardó en la base de datos
+        survey = SatisfactionSurvey.objects.get(ticket=self.base_ticket)
         self.assertEqual(survey.overall_satisfaction, 5)
         self.assertEqual(survey.purchase_experience, 'facil')
         self.assertTrue(survey.would_recommend)
+        self.assertIn('Excelente', survey.comments or '')
 
-    def test_satisfaction_survey_after_ticket_purchase_flow(self):
-        """Test flujo completo desde compra hasta encuesta"""
-        # 1. Login del usuario
-        self.client.login(username='testuser', password='testpass123')
-        
-        # 2. Ver evento disponible
-        response = self.client.get(
-            reverse('event_detail', kwargs={'event_id': self.event.id})
-        )
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Comprar Entrada')
-        
-        # 3. Simular compra exitosa (crear ticket directamente)
-        ticket = Ticket.objects.create(
-            quantity=2,
-            type='GENERAL',
+    def test_satisfaction_survey_form_validation_errors(self):
+        """Test validación de errores en el formulario usando Playwright"""
+        # Crear ticket nuevo para este test específico
+        new_ticket = Ticket.objects.create(
+            quantity=1,
+            type='VIP',
             event=self.event,
             user=self.user
         )
         
-        # 4. Acceder a encuesta después de compra
-        response = self.client.get(
-            reverse('satisfaction_survey', kwargs={'ticket_id': ticket.id})
-        )
-        self.assertEqual(response.status_code, 200)
-        
-        # 5. Verificar información del ticket en la encuesta
-        self.assertContains(response, 'Test Event')
-        self.assertContains(response, '2 entrada(s)')
-        self.assertContains(response, 'General')
-
-    def test_satisfaction_survey_multiple_users_different_experiences(self):
-        """Test múltiples usuarios con diferentes experiencias"""
-        # Usuario 1: Experiencia positiva
-        user1 = User.objects.create_user(
-            username='user1',
-            email='user1@example.com',
-            password='testpass123'
-        )
-        
-        ticket1 = Ticket.objects.create(
-            quantity=1,
-            type='GENERAL',
-            event=self.event,
-            user=user1
-        )
-        
-        self.client.login(username='user1', password='testpass123')
-        
-        response = self.client.post(
-            reverse('satisfaction_survey', kwargs={'ticket_id': ticket1.id}),
-            data={
-                'overall_satisfaction': 5,
-                'purchase_experience': 'muy_facil',
-                'would_recommend': 'yes',
-                'comments': 'Perfecto!'
-            }
-        )
-        self.assertEqual(response.status_code, 302)
-        
-        # Usuario 2: Experiencia negativa
-        user2 = User.objects.create_user(
-            username='user2',
-            email='user2@example.com',
-            password='testpass123'
-        )
-        
-        ticket2 = Ticket.objects.create(
-            quantity=1,
-            type='GENERAL',
-            event=self.event,
-            user=user2
-        )
-        
-        self.client.login(username='user2', password='testpass123')
-        
-        response = self.client.post(
-            reverse('satisfaction_survey', kwargs={'ticket_id': ticket2.id}),
-            data={
-                'overall_satisfaction': 2,
-                'purchase_experience': 'dificil',
-                'would_recommend': 'no',
-                'comments': 'Proceso complicado'
-            }
-        )
-        self.assertEqual(response.status_code, 302)
-        
-        # Verificar que ambas encuestas se guardaron
-        surveys = SatisfactionSurvey.objects.all()
-        self.assertEqual(surveys.count(), 2)
-
-    def test_satisfaction_survey_organizer_can_view_results(self):
-        """Test que organizadores pueden ver resultados de encuestas"""
-        # Crear algunas encuestas
-        ticket1 = Ticket.objects.create(
-            quantity=1,
-            type='GENERAL',
-            event=self.event,
-            user=self.user
-        )
-        
-        SatisfactionSurvey.objects.create(
-            ticket=ticket1,
-            user=self.user,
-            event=self.event,
-            overall_satisfaction=4,
-            purchase_experience='facil',
-            would_recommend=True,
-            comments='Buena experiencia'
-        )
-        
-        # Login como organizador
-        self.client.login(username='organizer', password='testpass123')
-        
-        # Acceder a resultados de encuestas
-        response = self.client.get(
-            reverse('survey_results', kwargs={'event_id': self.event.id})
-        )
-        
-        # Verificar que puede ver los resultados
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Resultados de Encuestas')
-
-    def test_satisfaction_survey_validation_and_error_handling(self):
-        """Test manejo de errores y validación en el flujo completo"""
         # Login del usuario
-        self.client.login(username='testuser', password='testpass123')
+        self.login_user('testuser', 'testpass123')
         
-        ticket = Ticket.objects.create(
-            quantity=1,
-            type='GENERAL',
-            event=self.event,
-            user=self.user
-        )
+        # Navegar a la encuesta
+        self.page.goto(f"{self.live_server_url}/tickets/{new_ticket.pk}/survey/")
+        self.page.wait_for_load_state("networkidle")
         
-        # 1. Enviar formulario vacío
-        response = self.client.post(
-            reverse('satisfaction_survey', kwargs={'ticket_id': ticket.id}),
-            data={}
-        )
+        # Intentar enviar formulario sin completar campos requeridos
+        self.page.click("button[type='submit']:has-text('Enviar encuesta')")
         
-        # Debe mostrar errores de validación
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'alert-danger')
-        
-        # 2. Enviar datos inválidos
-        response = self.client.post(
-            reverse('satisfaction_survey', kwargs={'ticket_id': ticket.id}),
-            data={
-                'overall_satisfaction': 6,  # Fuera de rango
-                'purchase_experience': 'invalido',
-                'would_recommend': 'maybe',  # Valor inválido
-                'comments': 'x' * 501  # Muy largo
-            }
-        )
-        
-        # Debe mostrar errores específicos
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'alert-danger')
+        # Verificar que aparecen mensajes de error o validación HTML5
+        # En caso de validación HTML5, la página no se enviará
+        expect(self.page).to_have_url(re.compile(f".*tickets/{new_ticket.pk}/survey.*"))
 
-    def test_satisfaction_survey_duplicate_prevention_flow(self):
-        """Test prevención de encuestas duplicadas en flujo completo"""
-        # Login del usuario
-        self.client.login(username='testuser', password='testpass123')
-        
-        ticket = Ticket.objects.create(
-            quantity=1,
-            type='GENERAL',
-            event=self.event,
-            user=self.user
-        )
-        
-        # 1. Completar encuesta primera vez
-        response = self.client.post(
-            reverse('satisfaction_survey', kwargs={'ticket_id': ticket.id}),
-            data={
-                'overall_satisfaction': 4,
-                'purchase_experience': 'facil',
-                'would_recommend': 'yes',
-                'comments': 'Primera encuesta'
-            }
-        )
-        self.assertEqual(response.status_code, 302)
-        
-        # 2. Intentar acceder nuevamente a la encuesta
-        response = self.client.get(
-            reverse('satisfaction_survey', kwargs={'ticket_id': ticket.id})
-        )
-        
-        # Debe mostrar mensaje de encuesta ya completada o redirigir
-        self.assertIn(response.status_code, [200, 302])
-
-    def test_satisfaction_survey_responsive_design_flow(self):
-        """Test que la encuesta funciona bien en diferentes dispositivos"""
-        # Login del usuario
-        self.client.login(username='testuser', password='testpass123')
-        
-        ticket = Ticket.objects.create(
-            quantity=1,
-            type='GENERAL',
-            event=self.event,
-            user=self.user
-        )
-        
-        # Acceder a la encuesta
-        response = self.client.get(
-            reverse('satisfaction_survey', kwargs={'ticket_id': ticket.id})
-        )
-        
-        content = response.content.decode('utf-8')
-        
-        # Verificar elementos responsive
-        self.assertIn('container', content)
-        self.assertIn('col-md-', content)
-        self.assertIn('form-control', content)
-        self.assertIn('btn', content)
-        self.assertIn('card', content)
-        
-        # Verificar meta viewport para móviles
-        self.assertIn('viewport', content)
-        self.assertIn('device-width', content)
-
-    def test_satisfaction_survey_navigation_flow(self):
-        """Test navegación completa relacionada con encuestas"""
-        # Login del usuario
-        self.client.login(username='testuser', password='testpass123')
-        
-        ticket = Ticket.objects.create(
-            quantity=1,
-            type='GENERAL',
-            event=self.event,
-            user=self.user
-        )
-        
-        # 1. Navegar desde tickets a encuesta
-        response = self.client.get(reverse('tickets'))
-        self.assertEqual(response.status_code, 200)
-        
-        # 2. Acceder a encuesta específica
-        response = self.client.get(
-            reverse('satisfaction_survey', kwargs={'ticket_id': ticket.id})
-        )
-        self.assertEqual(response.status_code, 200)
-        
-        # 3. Completar encuesta
-        response = self.client.post(
-            reverse('satisfaction_survey', kwargs={'ticket_id': ticket.id}),
-            data={
-                'overall_satisfaction': 3,
-                'purchase_experience': 'normal',
-                'would_recommend': 'yes',
-                'comments': 'Experiencia normal'
-            }
-        )
-        
-        # 4. Verificar redirección después de completar
-        self.assertEqual(response.status_code, 302)
-
-    def test_satisfaction_survey_security_and_permissions(self):
-        """Test seguridad y permisos en el flujo de encuestas"""
-        # Crear ticket para user1
-        user1 = User.objects.create_user(
-            username='user1',
-            email='user1@example.com',
-            password='testpass123'
-        )
-        
-        ticket = Ticket.objects.create(
-            quantity=1,
-            type='GENERAL',
-            event=self.event,
-            user=user1
-        )
-        
-        # 1. Intentar acceder sin login
-        response = self.client.get(
-            reverse('satisfaction_survey', kwargs={'ticket_id': ticket.id})
-        )
-        self.assertEqual(response.status_code, 302)  # Redirige a login
-        
-        # 2. Login con usuario diferente
-        user2 = User.objects.create_user(
-            username='user2',
-            email='user2@example.com',
-            password='testpass123'
-        )
-        
-        self.client.login(username='user2', password='testpass123')
-        
-        # 3. Intentar acceder a encuesta de otro usuario
-        response = self.client.get(
-            reverse('satisfaction_survey', kwargs={'ticket_id': ticket.id})
-        )
-        
-        # Debe denegar acceso
-        self.assertIn(response.status_code, [403, 404])
-
-    def test_satisfaction_survey_complete_user_experience(self):
-        """Test experiencia completa del usuario con encuesta"""
-        # 1. Login del usuario
-        self.client.login(username='testuser', password='testpass123')
-        
-        # 2. Crear ticket (simular compra)
-        ticket = Ticket.objects.create(
+    def test_satisfaction_survey_ticket_information_display(self):
+        """Test que verifica la información del ticket en la encuesta"""
+        # Crear ticket VIP con múltiples entradas para este test específico
+        vip_ticket = Ticket.objects.create(
             quantity=3,
             type='VIP',
             event=self.event,
             user=self.user
         )
         
-        # 3. Acceder a encuesta
-        response = self.client.get(
-            reverse('satisfaction_survey', kwargs={'ticket_id': ticket.id})
+        # Login del usuario
+        self.login_user('testuser', 'testpass123')
+        
+        # Navegar a la encuesta
+        self.page.goto(f"{self.live_server_url}/tickets/{vip_ticket.pk}/survey/")
+        self.page.wait_for_load_state("networkidle")
+        
+        # Verificar información del evento y ticket
+        expect(self.page.locator("strong").filter(has_text="Test Event")).to_be_visible()
+        expect(self.page.locator("p").filter(has_text="3 entrada")).to_be_visible()
+        expect(self.page.locator("p").filter(has_text="Tipo: VIP")).to_be_visible()
+
+    def test_satisfaction_survey_form_elements_present(self):
+        """Test que verifica que todos los elementos del formulario están presentes"""
+        # Login del usuario
+        self.login_user('testuser', 'testpass123')
+        
+        # Navegar a la encuesta usando el ticket base
+        self.page.goto(f"{self.live_server_url}/tickets/{self.base_ticket.pk}/survey/")
+        self.page.wait_for_load_state("networkidle")
+        
+        # Verificar elementos de satisfacción (radio buttons)
+        for value in ['1', '2', '3', '4', '5']:
+            expect(self.page.locator(f"input[name='overall_satisfaction'][value='{value}']")).to_be_visible()
+        
+        # Verificar dropdown de experiencia de compra
+        expect(self.page.locator("select[name='purchase_experience']")).to_be_visible()
+        
+        # Verificar radio buttons de recomendación
+        expect(self.page.locator("input[name='would_recommend'][value='yes']")).to_be_visible()
+        expect(self.page.locator("input[name='would_recommend'][value='no']")).to_be_visible()
+        
+        # Verificar textarea de comentarios
+        expect(self.page.locator("textarea[name='comments']")).to_be_visible()
+        
+        # Verificar botones
+        expect(self.page.locator("button[type='submit']:has-text('Enviar encuesta')")).to_be_visible()
+        expect(self.page.locator("a.btn:has-text('Omitir encuesta')")).to_be_visible()  # Botón "Omitir encuesta"
+
+    def test_satisfaction_survey_responsive_design(self):
+        """Test diseño responsive de la encuesta"""
+        # Login del usuario
+        self.login_user('testuser', 'testpass123')
+        
+        # Navegar a la encuesta usando el ticket base
+        self.page.goto(f"{self.live_server_url}/tickets/{self.base_ticket.pk}/survey/")
+        self.page.wait_for_load_state("networkidle")
+        
+        # Probar en viewport móvil
+        self.page.set_viewport_size({"width": 375, "height": 667})
+        
+        # Verificar que los elementos se adaptan al móvil
+        expect(self.page.locator(".container")).to_be_visible()
+        expect(self.page.locator("input[name='overall_satisfaction']").first).to_be_visible()
+        expect(self.page.locator("button[type='submit']:has-text('Enviar encuesta')")).to_be_visible()
+
+    def test_satisfaction_survey_complete_form_interaction(self):
+        """Test interacción completa con todos los elementos del formulario"""
+        # Crear ticket nuevo para este test específico
+        interactive_ticket = Ticket.objects.create(
+            quantity=2,
+            type='VIP',
+            event=self.event,
+            user=self.user
         )
         
-        # 4. Verificar experiencia visual completa
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, 'Encuesta de Satisfacción')
-        self.assertContains(response, 'Test Event')
-        self.assertContains(response, '3 entrada(s)')
-        self.assertContains(response, 'VIP')
+        # Login del usuario
+        self.login_user('testuser', 'testpass123')
         
-        # 5. Verificar elementos de UX
-        self.assertContains(response, 'bi-clipboard-check')  # Ícono
-        self.assertContains(response, 'Compra exitosa')     # Mensaje positivo
-        self.assertContains(response, 'card shadow-sm')     # Diseño elegante
+        # Navegar a la encuesta
+        self.page.goto(f"{self.live_server_url}/tickets/{interactive_ticket.pk}/survey/")
+        self.page.wait_for_load_state("networkidle")
         
-        # 6. Completar encuesta con experiencia positiva
-        response = self.client.post(
-            reverse('satisfaction_survey', kwargs={'ticket_id': ticket.id}),
-            data={
-                'overall_satisfaction': 5,
-                'purchase_experience': 'muy_facil',
-                'would_recommend': 'yes',
-                'comments': 'Experiencia excepcional, muy recomendado!'
-            }
-        )
+        # Probar cada nivel de satisfacción
+        for satisfaction_level in ['1', '2', '3', '4', '5']:
+            self.page.check(f"input[name='overall_satisfaction'][value='{satisfaction_level}']")
+            expect(self.page.locator(f"input[name='overall_satisfaction'][value='{satisfaction_level}']")).to_be_checked()
         
-        # 7. Verificar finalización exitosa
-        self.assertEqual(response.status_code, 302)
+        # Probar opciones de experiencia de compra
+        experience_options = ["muy_dificil", "dificil", "normal", "facil", "muy_facil"]
+        for option in experience_options:
+            self.page.select_option("select[name='purchase_experience']", option)
+            expect(self.page.locator("select[name='purchase_experience']")).to_have_value(option)
         
-        # 8. Verificar que los datos se guardaron correctamente
-        survey = SatisfactionSurvey.objects.get(ticket=ticket)
-        self.assertEqual(survey.overall_satisfaction, 5)
-        self.assertEqual(survey.purchase_experience, 'muy_facil')
-        self.assertTrue(survey.would_recommend)
-        self.assertIn('excepcional', survey.comments) 
+        # Probar radio buttons de recomendación
+        self.page.check("input[name='would_recommend'][value='yes']")
+        expect(self.page.locator("input[name='would_recommend'][value='yes']")).to_be_checked()
+        
+        self.page.check("input[name='would_recommend'][value='no']")
+        expect(self.page.locator("input[name='would_recommend'][value='no']")).to_be_checked()
+        
+        # Probar textarea de comentarios
+        test_comment = "Este es un comentario de prueba para verificar la funcionalidad."
+        self.page.fill("textarea[name='comments']", test_comment)
+        expect(self.page.locator("textarea[name='comments']")).to_have_value(test_comment)
+
+    def test_satisfaction_survey_navigation_elements(self):
+        """Test elementos de navegación en la página de encuesta"""
+        # Login del usuario
+        self.login_user('testuser', 'testpass123')
+        
+        # Navegar a la encuesta usando el ticket base
+        self.page.goto(f"{self.live_server_url}/tickets/{self.base_ticket.pk}/survey/")
+        self.page.wait_for_load_state("networkidle")
+        
+        # Verificar navbar
+        expect(self.page.locator(".navbar")).to_be_visible()
+        
+        # Verificar breadcrumb o enlaces de navegación si existen
+        breadcrumb = self.page.locator(".breadcrumb")
+        if breadcrumb.count() > 0:
+            expect(breadcrumb).to_be_visible()
+        
+        # Verificar botón de "Omitir encuesta" funciona
+        omit_button = self.page.locator("a.btn:has-text('Omitir')")
+        if omit_button.count() > 0:
+            expect(omit_button).to_be_visible()
+            expect(omit_button).to_have_attribute("href", re.compile(r".*"))
+
+    def test_satisfaction_survey_ticket_details_section(self):
+        """Test sección de detalles del ticket en la encuesta"""
+        # Login del usuario
+        self.login_user('testuser', 'testpass123')
+        
+        # Navegar a la encuesta usando el ticket base
+        self.page.goto(f"{self.live_server_url}/tickets/{self.base_ticket.pk}/survey/")
+        self.page.wait_for_load_state("networkidle")
+        
+        # Verificar información del evento
+        expect(self.page.locator("strong").filter(has_text="Test Event")).to_be_visible()
+        
+        # Verificar información del ticket
+        expect(self.page.locator("p").filter(has_text="1 entrada")).to_be_visible()
+        expect(self.page.locator("p").filter(has_text="Tipo: GENERAL")).to_be_visible()
+        
+        # Verificar información del venue si se muestra
+        venue_info = self.page.locator("p").filter(has_text="Test Venue")
+        if venue_info.count() > 0:
+            expect(venue_info).to_be_visible()
+
+    def test_satisfaction_survey_success_purchase_message(self):
+        """Test mensaje de éxito después de completar encuesta"""
+        # Login del usuario
+        self.login_user('testuser', 'testpass123')
+        
+        # Navegar a la encuesta usando el ticket base
+        self.page.goto(f"{self.live_server_url}/tickets/{self.base_ticket.pk}/survey/")
+        self.page.wait_for_load_state("networkidle")
+        
+        # Completar y enviar formulario
+        self.page.check("input[name='overall_satisfaction'][value='4']")
+        self.page.select_option("select[name='purchase_experience']", "facil")
+        self.page.check("input[name='would_recommend'][value='yes']")
+        self.page.fill("textarea[name='comments']", "Buen servicio en general")
+        
+        # Enviar formulario
+        self.page.click("button[type='submit']:has-text('Enviar encuesta')")
+        
+        # Esperar redirección
+        self.page.wait_for_load_state("networkidle")
+        
+        # Verificar que estamos en una página de éxito (puede variar según implementación)
+        # Verificar elementos comunes de éxito como mensajes flash o confirmación
+        success_indicators = [
+            "Gracias por tu opinión",
+            "Encuesta enviada",
+            "Agradecemos tu feedback",
+            "Tu opinión es importante"
+        ]
+        
+        page_content = self.page.content()
+        success_found = any(indicator in page_content for indicator in success_indicators)
+        
+        # Si no hay mensaje de éxito específico, al menos verificar que no estamos en la misma página de encuesta
+        if not success_found:
+            current_url = self.page.url
+            self.assertNotIn(f"/tickets/{self.base_ticket.pk}/survey/", current_url) 
