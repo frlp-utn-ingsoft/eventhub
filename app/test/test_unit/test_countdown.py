@@ -1,10 +1,7 @@
 from django.test import TestCase
-from django.contrib.auth import get_user_model
-from app.models import Event, Venue
+from app.models import User, Event, Venue
 from django.utils import timezone
 from datetime import timedelta
-
-User = get_user_model()
 
 
 class CountdownFunctionalityTest(TestCase):
@@ -34,71 +31,46 @@ class CountdownFunctionalityTest(TestCase):
             contact='test@venue.com'
         )
 
-    def test_future_event_is_not_past(self):
-        """Test que un evento futuro no está marcado como pasado"""
-        future_event = Event.objects.create(
+        # Crear eventos base para reutilizar en tests
+        self.future_event = Event.objects.create(
             title='Future Event',
             description='Test Description',
             scheduled_at=timezone.now() + timedelta(days=30),
             organizer=self.organizer,
             venue=self.venue
         )
-        
-        self.assertFalse(future_event.is_past())
+
+        self.past_event = Event.objects.create(
+            title='Past Event',
+            description='Test Description',
+            scheduled_at=timezone.now() - timedelta(days=1),
+            organizer=self.organizer,
+            venue=self.venue
+        )
+
+    def test_future_event_is_not_past(self):
+        """Test que un evento futuro no está marcado como pasado"""
+        self.assertFalse(self.future_event.is_past())
 
     def test_past_event_is_past(self):
         """Test que un evento pasado está marcado como pasado"""
-        past_event = Event.objects.create(
-            title='Past Event',
-            description='Test Description',
-            scheduled_at=timezone.now() - timedelta(days=1),
-            organizer=self.organizer,
-            venue=self.venue
-        )
-        
-        self.assertTrue(past_event.is_past())
+        self.assertTrue(self.past_event.is_past())
 
     def test_event_scheduled_at_is_timezone_aware(self):
         """Test que la fecha del evento es timezone-aware para JavaScript"""
-        event = Event.objects.create(
-            title='Test Event',
-            description='Test Description',
-            scheduled_at=timezone.now() + timedelta(days=30),
-            organizer=self.organizer,
-            venue=self.venue
-        )
-        
         # Verificar que la fecha es timezone-aware
-        self.assertIsNotNone(event.scheduled_at.tzinfo)
+        self.assertIsNotNone(self.future_event.scheduled_at.tzinfo)
         
         # Verificar que es un objeto datetime válido
-        self.assertIsInstance(event.scheduled_at, timezone.datetime)
+        self.assertIsInstance(self.future_event.scheduled_at, timezone.datetime)
 
     def test_get_future_events_for_countdown(self):
         """Test que get_future_events retorna solo eventos futuros para countdown"""
-        # Crear evento futuro
-        future_event = Event.objects.create(
-            title='Future Event',
-            description='Test Description',
-            scheduled_at=timezone.now() + timedelta(days=30),
-            organizer=self.organizer,
-            venue=self.venue
-        )
-        
-        # Crear evento pasado
-        past_event = Event.objects.create(
-            title='Past Event',
-            description='Test Description',
-            scheduled_at=timezone.now() - timedelta(days=1),
-            organizer=self.organizer,
-            venue=self.venue
-        )
-        
         future_events = Event.get_future_events()
         
         # Solo el evento futuro debe aparecer
-        self.assertIn(future_event, future_events)
-        self.assertNotIn(past_event, future_events)
+        self.assertIn(self.future_event, future_events)
+        self.assertNotIn(self.past_event, future_events)
 
     def test_event_creation_for_countdown_display(self):
         """Test creación de evento con fecha futura para mostrar countdown"""
@@ -127,19 +99,11 @@ class CountdownFunctionalityTest(TestCase):
 
     def test_event_organizer_relationship_for_countdown(self):
         """Test relación organizador-evento para lógica de countdown"""
-        event = Event.objects.create(
-            title='Test Event',
-            description='Test Description',
-            scheduled_at=timezone.now() + timedelta(days=30),
-            organizer=self.organizer,
-            venue=self.venue
-        )
-        
         # El organizador del evento debe ser el correcto
-        self.assertEqual(event.organizer, self.organizer)
+        self.assertEqual(self.future_event.organizer, self.organizer)
         
         # El usuario regular NO es organizador de este evento
-        self.assertNotEqual(event.organizer, self.user)
+        self.assertNotEqual(self.future_event.organizer, self.user)
 
     def test_countdown_time_calculation_logic(self):
         """Test lógica de cálculo de tiempo para countdown"""
