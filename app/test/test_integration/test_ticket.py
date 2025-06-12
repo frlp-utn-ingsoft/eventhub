@@ -64,13 +64,6 @@ class BaseTicketTestCase(TestCase):
             user=self.regular_user
         )
 
-        ticket_event_2 = Ticket.objects.create(
-            quantity=1,
-            type="GENERAL",
-            event=self.event2,
-            user=self.regular_user
-        )
-
         # Cliente para hacer peticiones
         self.client = Client()
 

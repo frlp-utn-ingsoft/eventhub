@@ -1,10 +1,12 @@
-name: CI/CD Pipeline
+name: CI
 
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  release:
+    types: [ published ]
 
 jobs:
   build:
@@ -23,6 +25,10 @@ jobs:
         pip install -r requirements.txt
         
     - name: Build
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DEBUG: "False"
+        ALLOWED_HOSTS: "localhost,127.0.0.1"
       run: |
         python manage.py check
         python manage.py collectstatic --noinput
@@ -44,10 +50,18 @@ jobs:
         pip install -r requirements.txt
         
     - name: Run unit tests
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DEBUG: "False"
+        ALLOWED_HOSTS: "localhost,127.0.0.1"
       run: |
         python manage.py test app.test.test_unit
         
     - name: Run integration tests
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DEBUG: "False"
+        ALLOWED_HOSTS: "localhost,127.0.0.1"
       run: |
         python manage.py test app.test.test_integration
 
@@ -72,5 +86,9 @@ jobs:
         playwright install
         
     - name: Run E2E tests
+      env:
+        SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DEBUG: "False"
+        ALLOWED_HOSTS: "localhost,127.0.0.1"
       run: |
         python manage.py test app.test.test_e2e

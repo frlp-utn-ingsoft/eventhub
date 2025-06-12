@@ -4,7 +4,7 @@ import re
 from django.utils import timezone
 from playwright.sync_api import expect
 
-from app.models import Event, User, Venue, Category
+from app.models import Event, Category
 
 from app.test.test_e2e.base import BaseE2ETest
 
@@ -15,37 +15,6 @@ class EventBaseTest(BaseE2ETest):
     def setUp(self):
         super().setUp()
         
-        # Limpiar la base de datos antes de cada test
-        Event.objects.all().delete()
-        User.objects.all().delete()
-        Venue.objects.all().delete()
-        Category.objects.all().delete()
-
-        # Crear usuario organizador
-        self.organizer = User.objects.create_user(
-            username="organizador",
-            email="organizador@example.com",
-            password="password123",
-            is_organizer=True,
-        )
-
-        # Crear usuario regular
-        self.regular_user = User.objects.create_user(
-            username="usuario",
-            email="usuario@example.com",
-            password="password123",
-            is_organizer=False,
-        )
-
-        # Crear venue para los eventos
-        self.venue = Venue.objects.create(
-            name="Test Venue",
-            adress="Test Address",
-            city="Test City",
-            capacity=100,
-            contact="test@test.com"
-        )
-
         # Crear categoría para los eventos
         self.category = Category.objects.create(
             name="Test Category",
@@ -76,14 +45,6 @@ class EventBaseTest(BaseE2ETest):
             venue=self.venue,
             category=self.category
         )
-
-    def tearDown(self):
-        # Limpiar la base de datos después de cada test
-        Event.objects.all().delete()
-        User.objects.all().delete()
-        Venue.objects.all().delete()
-        Category.objects.all().delete()
-        super().tearDown()
 
     def _table_has_event_info(self):
         """Método auxiliar para verificar que la tabla tiene la información correcta de eventos"""

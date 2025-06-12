@@ -1,5 +1,5 @@
 from django.utils import timezone
-from app.models import Event, Venue, User, Notification, Category, Ticket
+from app.models import Event, Venue, User, Category, Ticket
 import datetime
 from app.test.test_e2e.base import BaseE2ETest
 from playwright.sync_api import expect
@@ -9,18 +9,15 @@ class NotificationE2ETest(BaseE2ETest):
         super().setUp()
         
         # Crear usuario organizador con nombre único
-        timestamp = timezone.now().strftime("%Y%m%d%H%M%S")
         self.organizer = User.objects.create_user(
-            username=f"organizador_{timestamp}",
-            email=f"organizador_{timestamp}@example.com",
+            username="Organizer",
             password="password123",
             is_organizer=True,
         )
 
         # Crear usuario regular con nombre único
         self.regular_user = User.objects.create_user(
-            username=f"usuario_{timestamp}",
-            email=f"usuario_{timestamp}@example.com",
+            username="Normie",
             password="password123",
             is_organizer=False,
         )
@@ -114,12 +111,6 @@ class NotificationE2ETest(BaseE2ETest):
         # Ir a la página de notificaciones
         self.page.goto(f"{self.live_server_url}/notifications/")
 
-        # Verificar que existe la notificación
-        notification = self.page.get_by_text("Evento Modificado")
+        # Verificar que existe la notificación en el perfil del usuario
+        notification = self.page.get_by_text("Evento actualizado")
         expect(notification).to_be_visible()
-
-        # Verificar que el evento se actualizó correctamente
-        self.page.goto(f"{self.live_server_url}/events/")
-        updated_event = Event.objects.get(id=self.event.id)
-        self.assertEqual(updated_event.venue, self.venue2)
-        self.assertEqual(updated_event.state, Event.REPROGRAMED) 

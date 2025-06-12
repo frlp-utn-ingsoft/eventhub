@@ -10,12 +10,6 @@ class EventStatesE2ETest(BaseE2ETest):
 
     def setUp(self):
         super().setUp()
-        
-        # Limpiar la base de datos antes de cada test
-        Event.objects.all().delete()
-        User.objects.all().delete()
-        Venue.objects.all().delete()
-        Category.objects.all().delete()
 
         # Crear usuario organizador
         self.organizer = User.objects.create_user(
@@ -48,11 +42,21 @@ class EventStatesE2ETest(BaseE2ETest):
             is_active=True
         )
 
-        # Crear evento
+        # Crear evento futuro
         self.event = Event.objects.create(
             title="Evento de prueba",
             description="Descripción del evento de prueba",
             scheduled_at=timezone.now() + datetime.timedelta(days=1),
+            organizer=self.organizer,
+            venue=self.venue,
+            category=self.category
+        )
+
+        # Crear evento pasado
+        self.past_event = Event.objects.create(
+            title="Evento pasado",
+            description="Descripción del evento pasado",
+            scheduled_at=timezone.now() - datetime.timedelta(days=1),
             organizer=self.organizer,
             venue=self.venue,
             category=self.category
@@ -136,16 +140,6 @@ class EventStatesE2ETest(BaseE2ETest):
 
     def test_past_event_shows_finished_state(self):
         """Test que verifica que un evento pasado se muestra como finalizado"""
-        # Crear un evento pasado
-        past_event = Event.objects.create(
-            title="Evento pasado",
-            description="Descripción del evento pasado",
-            scheduled_at=timezone.now() - datetime.timedelta(days=1),
-            organizer=self.organizer,
-            venue=self.venue,
-            category=self.category
-        )
-        
         # Iniciar sesión como organizador
         self.login_user("organizador_states", "password123")
         
@@ -157,8 +151,8 @@ class EventStatesE2ETest(BaseE2ETest):
         expect(event_row).to_have_count(0)
         
         # Ir directamente a la página de detalles del evento pasado
-        self.page.goto(f"{self.live_server_url}/events/{past_event.id}/")
+        self.page.goto(f"{self.live_server_url}/events/{self.past_event.id}/")
         
         # Verificar que el estado se actualizó a FINISHED
-        past_event.refresh_from_db()
-        self.assertEqual(past_event.state, Event.FINISHED) 
+        self.past_event.refresh_from_db()
+        self.assertEqual(self.past_event.state, Event.FINISHED) 

@@ -1,13 +1,12 @@
 from django.test import TestCase
-from django.contrib.auth import get_user_model
-from app.models import Event, Venue, Rating
-from decimal import Decimal
+from app.models import Event, Venue, Rating, User
+from django.utils import timezone
+import datetime
 
-User = get_user_model()
 
 class EventRatingTests(TestCase):
     def setUp(self):
-        # Crear usuario organizador
+        # Crear organizador
         self.organizer = User.objects.create_user(
             username='organizador',
             email='organizador@test.com',
@@ -15,10 +14,30 @@ class EventRatingTests(TestCase):
             is_organizer=True
         )
         
-        # Crear usuario normal
-        self.user = User.objects.create_user(
-            username='usuario',
-            email='usuario@test.com',
+        # Crear usuarios directamente sin usar bucles
+        self.user1 = User.objects.create_user(
+            username='usuario1',
+            email='usuario1@test.com',
+            password='testpass123'
+        )
+        self.user2 = User.objects.create_user(
+            username='usuario2',
+            email='usuario2@test.com',
+            password='testpass123'
+        )
+        self.user3 = User.objects.create_user(
+            username='usuario3',
+            email='usuario3@test.com',
+            password='testpass123'
+        )
+        self.user4 = User.objects.create_user(
+            username='usuario4',
+            email='usuario4@test.com',
+            password='testpass123'
+        )
+        self.user5 = User.objects.create_user(
+            username='usuario5',
+            email='usuario5@test.com',
             password='testpass123'
         )
         
@@ -31,101 +50,146 @@ class EventRatingTests(TestCase):
             contact='test@venue.com'
         )
         
-        # Crear evento
+        # Crear eventos para diferentes tests
         self.event = Event.objects.create(
             title='Test Event',
             description='Test Description',
-            scheduled_at='2024-12-31 20:00:00',
+            scheduled_at=timezone.make_aware(datetime.datetime(2024, 12, 31, 20, 0, 0)),
             organizer=self.organizer,
             venue=self.venue
         )
 
-    def test_get_average_rating_with_no_ratings(self):
-        """Test que verifica que el promedio es 0 cuando no hay calificaciones"""
-        self.assertEqual(self.event.get_average_rating(), 0)
-        self.assertEqual(self.event.get_rating_count(), 0)
+        self.empty_event = Event.objects.create(
+            title='Empty Event',
+            description='Empty Description',
+            scheduled_at=timezone.make_aware(datetime.datetime(2024, 12, 31, 21, 0, 0)),
+            organizer=self.organizer,
+            venue=self.venue
+        )
 
-    def test_get_average_rating_with_single_rating(self):
-        """Test que verifica el cálculo del promedio con una sola calificación"""
-        Rating.objects.create(
+        self.single_event = Event.objects.create(
+            title='Single Rating Event',
+            description='Single Description',
+            scheduled_at=timezone.make_aware(datetime.datetime(2024, 12, 31, 22, 0, 0)),
+            organizer=self.organizer,
+            venue=self.venue
+        )
+
+        self.decimal_event = Event.objects.create(
+            title='Decimal Event',
+            description='Decimal Description',
+            scheduled_at=timezone.make_aware(datetime.datetime(2024, 12, 31, 23, 0, 0)),
+            organizer=self.organizer,
+            venue=self.venue
+        )
+        
+        # Crear ratings base para diferentes escenarios
+        # Rating 1: 4 estrellas
+        self.rating1 = Rating.objects.create(
             event=self.event,
-            user=self.user,
+            user=self.user1,
+            rating=4,
+            title='Test Rating 1',
+            text='Test Review 1'
+        )
+        
+        # Rating 2: 5 estrellas
+        self.rating2 = Rating.objects.create(
+            event=self.event,
+            user=self.user2,
+            rating=5,
+            title='Test Rating 2',
+            text='Test Review 2'
+        )
+        
+        # Rating 3: 3 estrellas
+        self.rating3 = Rating.objects.create(
+            event=self.event,
+            user=self.user3,
+            rating=3,
+            title='Test Rating 3',
+            text='Test Review 3'
+        )
+        
+        # Rating 4: 2 estrellas
+        self.rating4 = Rating.objects.create(
+            event=self.event,
+            user=self.user4,
+            rating=2,
+            title='Test Rating 4',
+            text='Test Review 4'
+        )
+        
+        # Rating 5: 1 estrella
+        self.rating5 = Rating.objects.create(
+            event=self.event,
+            user=self.user5,
+            rating=1,
+            title='Test Rating 5',
+            text='Test Review 5'
+        )
+
+        # Crear rating para single_event
+        self.single_rating = Rating.objects.create(
+            event=self.single_event,
+            user=self.user1,
             rating=4,
             title='Test Rating',
             text='Test Review'
         )
+
+        # Crear ratings para decimal_event
+        self.decimal_rating1 = Rating.objects.create(
+            event=self.decimal_event,
+            user=self.user1,
+            rating=5,
+            title='Test Rating 1',
+            text='Test Review 1'
+        )
         
-        self.assertEqual(self.event.get_average_rating(), 4.0)
-        self.assertEqual(self.event.get_rating_count(), 1)
+        self.decimal_rating2 = Rating.objects.create(
+            event=self.decimal_event,
+            user=self.user2,
+            rating=4,
+            title='Test Rating 2',
+            text='Test Review 2'
+        )
+
+    def _verify_rating_stats(self, expected_average, expected_count):
+        """Helper method para verificar estadísticas de ratings - optimizado para evitar repetición"""
+        self.assertEqual(self.event.get_average_rating(), expected_average)
+        self.assertEqual(self.event.get_rating_count(), expected_count)
+
+    def test_get_average_rating_with_no_ratings(self):
+        """Test que verifica que el promedio es 0 cuando no hay calificaciones"""
+        # Verificar estadísticas del evento vacío
+        self.assertEqual(self.empty_event.get_average_rating(), 0)
+        self.assertEqual(self.empty_event.get_rating_count(), 0)
+
+    def test_get_average_rating_with_single_rating(self):
+        """Test que verifica el cálculo del promedio con una sola calificación"""
+        # Verificar estadísticas del evento con un rating
+        self.assertEqual(self.single_event.get_average_rating(), 4.0)
+        self.assertEqual(self.single_event.get_rating_count(), 1)
 
     def test_get_average_rating_with_multiple_ratings(self):
         """Test que verifica el cálculo del promedio con múltiples calificaciones"""
-        # Crear varias calificaciones
-        ratings_data = [
-            {'rating': 5, 'title': 'Excelente', 'text': 'Muy bueno'},
-            {'rating': 4, 'title': 'Bueno', 'text': 'Bastante bueno'},
-            {'rating': 3, 'title': 'Regular', 'text': 'Normal'},
-            {'rating': 2, 'title': 'Malo', 'text': 'No tan bueno'},
-            {'rating': 1, 'title': 'Pésimo', 'text': 'Muy malo'}
-        ]
-        
-        for rating_data in ratings_data:
-            Rating.objects.create(
-                event=self.event,
-                user=self.user,
-                **rating_data
-            )
-        
-        # El promedio debería ser 3.0 (suma de todas las calificaciones / cantidad)
-        self.assertEqual(self.event.get_average_rating(), 3.0)
-        self.assertEqual(self.event.get_rating_count(), 5)
+        # Los ratings ya están creados en setUp
+        self._verify_rating_stats(expected_average=3.0, expected_count=5)
 
     def test_get_average_rating_decimal_precision(self):
         """Test que verifica la precisión decimal del promedio"""
-        # Crear calificaciones que resulten en un promedio con decimales
-        Rating.objects.create(
-            event=self.event,
-            user=self.user,
-            rating=5,
-            title='Test Rating 1',
-            text='Test Review 1'
-        )
-        Rating.objects.create(
-            event=self.event,
-            user=self.user,
-            rating=4,
-            title='Test Rating 2',
-            text='Test Review 2'
-        )
-        
-        # El promedio debería ser 4.5
-        self.assertEqual(self.event.get_average_rating(), 4.5)
-        self.assertEqual(self.event.get_rating_count(), 2)
+        self.assertEqual(self.decimal_event.get_average_rating(), 4.5)
+        self.assertEqual(self.decimal_event.get_rating_count(), 2)
 
     def test_get_rating_count_after_deletion(self):
         """Test que verifica el conteo de calificaciones después de eliminar una"""
-        # Crear dos calificaciones
-        rating1 = Rating.objects.create(
-            event=self.event,
-            user=self.user,
-            rating=5,
-            title='Test Rating 1',
-            text='Test Review 1'
-        )
-        Rating.objects.create(
-            event=self.event,
-            user=self.user,
-            rating=4,
-            title='Test Rating 2',
-            text='Test Review 2'
-        )
-        
-        # Verificar conteo inicial
-        self.assertEqual(self.event.get_rating_count(), 2)
+        # Usar los ratings creados en setUp
+        self._verify_rating_stats(expected_average=3.0, expected_count=5)
         
         # Eliminar una calificación
-        rating1.delete()
+        self.rating1.delete()
         
-        # Verificar conteo después de eliminar
-        self.assertEqual(self.event.get_rating_count(), 1)
-        self.assertEqual(self.event.get_average_rating(), 4.0)
+        # Verificar conteo después de eliminar (ahora 5+3+2+1 = 11, promedio = 2.75)
+        self.assertEqual(self.event.get_average_rating(), 2.75)
+        self.assertEqual(self.event.get_rating_count(), 4)

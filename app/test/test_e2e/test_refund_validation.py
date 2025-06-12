@@ -10,14 +10,6 @@ class RefundValidationE2ETest(BaseE2ETest):
 
     def setUp(self):
         super().setUp()
-        
-        # Limpiar la base de datos antes de cada test
-        RefundRequest.objects.all().delete()
-        Ticket.objects.all().delete()
-        Event.objects.all().delete()
-        User.objects.all().delete()
-        Venue.objects.all().delete()
-        Category.objects.all().delete()
 
         # Crear usuario
         self.user = User.objects.create_user(

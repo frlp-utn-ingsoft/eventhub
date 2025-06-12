@@ -1,12 +1,8 @@
 import datetime
-import time
-
 from django.test import Client, TestCase
 from django.urls import reverse
 from django.utils import timezone
-
 from app.models import Event, User, Venue, Category
-
 
 class BaseEventTestCase(TestCase):
     """Clase base con la configuración común para todos los tests de eventos"""
