@@ -9,9 +9,9 @@ https://docs.djangoproject.com/en/5.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
-
+import os
 from pathlib import Path
-from decouple import config, Csv
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,12 +21,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = "django-insecure--f67ll=2-b2qolla9=1f8mtg@s=l8^y8aj=@ij-0f4)eg@%8(0"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=False, cast=bool)
+DEBUG = True
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='', cast=Csv())
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,eventhub-v0-2-0.onrender.com").split(",")
 
 
 # Application definition
@@ -141,10 +141,6 @@ USE_TZ = True
 
 CSRF_TRUSTED_ORIGINS = [
     "https://eventhub-v0-2-0.onrender.com",
+    "https://localhost",
+    "https://127.0.0.1",
 ]
-# Proxy SSL (necesario si usás Render u otro proxy HTTPS como Cloudflare)
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-# Cookies seguras en producción
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
