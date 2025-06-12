@@ -48,9 +48,9 @@
                             <i class="bi bi-receipt me-2 text-primary"></i>
                             <span class="fw-bold">Entradas vendidas:</span>
                             <span class="ms-2">{{ event.tickets.count }}</span>
-                            {% if event.tickets.count > 90 %}
+                            {% if event.get_demand > 90 %}
                                 <span class="badge bg-danger ms-2">Alta demanda</span>
-                            {% elif event.tickets.count < 10 %}
+                            {% elif event.get_demand < 10 %}
                                 <span class="badge bg-secondary ms-2">Baja demanda</span>
                             {% endif %}
                         </div>
