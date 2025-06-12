@@ -142,3 +142,9 @@ USE_TZ = True
 CSRF_TRUSTED_ORIGINS = [
     "https://eventhub-v0-2-0.onrender.com",
 ]
+# Proxy SSL (necesario si usás Render u otro proxy HTTPS como Cloudflare)
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+# Cookies seguras en producción
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = True
