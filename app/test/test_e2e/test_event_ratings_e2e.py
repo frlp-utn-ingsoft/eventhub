@@ -2,7 +2,7 @@ import datetime
 from django.utils import timezone
 from playwright.sync_api import expect
 
-from app.models import Event, User, Rating, Venue
+from app.models import Event, Rating
 from app.test.test_e2e.base import BaseE2ETest
 
 

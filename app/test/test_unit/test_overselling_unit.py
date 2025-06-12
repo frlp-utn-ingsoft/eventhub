@@ -2,13 +2,18 @@ from django.test import TestCase
 from app.models import User, Event, Venue, Ticket
 from django.utils import timezone
 from datetime import timedelta
-from typing import Dict, List
 
 class TestOverselling(TestCase):
     def setUp(self):
         # Crear organizador y usuario normal
-        self.organizer = self._create_test_user('organizer', 'organizerpass123')
-        self.user = self._create_test_user('normaluser', 'userpass123')
+        self.organizer = User.objects.create_user(
+            username='organizer',
+            password='organizerpass123'
+        )
+        self.user = User.objects.create_user(
+            username='normaluser',
+            password='userpass123'
+        )
         
         # Crear venue de prueba con capacidad limitada a 1
         self.venue = Venue.objects.create(
@@ -35,31 +40,6 @@ class TestOverselling(TestCase):
             organizer=self.organizer,
             venue=self.venue
         )
-
-    def _create_test_user(self, username: str, password: str) -> User:
-        """Helper method para crear usuarios de prueba - optimizado para evitar repetición"""
-        return User.objects.create_user(username=username, password=password)
-
-    def _create_multiple_users(self, count: int, base_username: str = 'testuser') -> List[User]:
-        """Helper method para crear múltiples usuarios usando bulk_create - optimizado para performance"""
-        users_to_create = [
-            User(username=f'{base_username}{i}', password='testpass123')
-            for i in range(count)
-        ]
-        return User.objects.bulk_create(users_to_create)
-
-    def _verify_ticket_error(self, success: bool, result: Dict[str, str], expected_key: str, expected_message: str):
-        """Helper method para verificar errores de tickets - optimizado para evitar repetición"""
-        self.assertFalse(success)
-        self.assertIsInstance(result, dict)
-        self.assertIn(expected_key, result)
-        self.assertEqual(result[expected_key], expected_message)
-
-    def _verify_ticket_success(self, success: bool, ticket: Ticket) -> Ticket:
-        """Helper method para verificar éxito de tickets - optimizado para evitar repetición"""
-        self.assertTrue(success)
-        self.assertIsInstance(ticket, Ticket)
-        return ticket
 
     def test_cannot_buy_more_tickets_than_capacity(self):
         """Verifica que no se puedan comprar más entradas que la capacidad disponible"""

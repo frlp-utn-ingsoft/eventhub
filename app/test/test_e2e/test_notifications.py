@@ -1,5 +1,5 @@
 from django.utils import timezone
-from app.models import Event, Venue, User, Notification, Category, Ticket
+from app.models import Event, Venue, User, Category, Ticket
 import datetime
 from app.test.test_e2e.base import BaseE2ETest
 from playwright.sync_api import expect

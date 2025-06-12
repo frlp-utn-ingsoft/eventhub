@@ -47,10 +47,31 @@ class SatisfactionSurveyE2ETest(BaseE2ETest):
             venue=self.venue
         )
 
-        # Ticket base para reutilizar en tests
+        # Crear todos los tickets necesarios para los tests
         self.base_ticket = Ticket.objects.create(
             quantity=1,
             type='GENERAL',
+            event=self.event,
+            user=self.user
+        )
+
+        self.vip_ticket = Ticket.objects.create(
+            quantity=3,
+            type='VIP',
+            event=self.event,
+            user=self.user
+        )
+
+        self.new_ticket = Ticket.objects.create(
+            quantity=1,
+            type='VIP',
+            event=self.event,
+            user=self.user
+        )
+
+        self.interactive_ticket = Ticket.objects.create(
+            quantity=2,
+            type='VIP',
             event=self.event,
             user=self.user
         )
@@ -95,19 +116,11 @@ class SatisfactionSurveyE2ETest(BaseE2ETest):
 
     def test_satisfaction_survey_form_validation_errors(self):
         """Test validación de errores en el formulario usando Playwright"""
-        # Crear ticket nuevo para este test específico
-        new_ticket = Ticket.objects.create(
-            quantity=1,
-            type='VIP',
-            event=self.event,
-            user=self.user
-        )
-        
         # Login del usuario
         self.login_user('testuser', 'testpass123')
         
         # Navegar a la encuesta
-        self.page.goto(f"{self.live_server_url}/tickets/{new_ticket.pk}/survey/")
+        self.page.goto(f"{self.live_server_url}/tickets/{self.new_ticket.pk}/survey/")
         self.page.wait_for_load_state("networkidle")
         
         # Intentar enviar formulario sin completar campos requeridos
@@ -115,23 +128,15 @@ class SatisfactionSurveyE2ETest(BaseE2ETest):
         
         # Verificar que aparecen mensajes de error o validación HTML5
         # En caso de validación HTML5, la página no se enviará
-        expect(self.page).to_have_url(re.compile(f".*tickets/{new_ticket.pk}/survey.*"))
+        expect(self.page).to_have_url(re.compile(f".*tickets/{self.new_ticket.pk}/survey.*"))
 
     def test_satisfaction_survey_ticket_information_display(self):
         """Test que verifica la información del ticket en la encuesta"""
-        # Crear ticket VIP con múltiples entradas para este test específico
-        vip_ticket = Ticket.objects.create(
-            quantity=3,
-            type='VIP',
-            event=self.event,
-            user=self.user
-        )
-        
         # Login del usuario
         self.login_user('testuser', 'testpass123')
         
         # Navegar a la encuesta
-        self.page.goto(f"{self.live_server_url}/tickets/{vip_ticket.pk}/survey/")
+        self.page.goto(f"{self.live_server_url}/tickets/{self.vip_ticket.pk}/survey/")
         self.page.wait_for_load_state("networkidle")
         
         # Verificar información del evento y ticket
@@ -185,19 +190,11 @@ class SatisfactionSurveyE2ETest(BaseE2ETest):
 
     def test_satisfaction_survey_complete_form_interaction(self):
         """Test interacción completa con todos los elementos del formulario"""
-        # Crear ticket nuevo para este test específico
-        interactive_ticket = Ticket.objects.create(
-            quantity=2,
-            type='VIP',
-            event=self.event,
-            user=self.user
-        )
-        
         # Login del usuario
         self.login_user('testuser', 'testpass123')
         
         # Navegar a la encuesta
-        self.page.goto(f"{self.live_server_url}/tickets/{interactive_ticket.pk}/survey/")
+        self.page.goto(f"{self.live_server_url}/tickets/{self.interactive_ticket.pk}/survey/")
         self.page.wait_for_load_state("networkidle")
         
         # Probar cada nivel de satisfacción

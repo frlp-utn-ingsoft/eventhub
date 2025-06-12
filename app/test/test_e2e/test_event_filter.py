@@ -4,7 +4,7 @@ from django.utils import timezone
 import datetime
 from playwright.sync_api import expect
 
-from app.models import Event, User, Venue, Category
+from app.models import Event
 from app.test.test_e2e.base import BaseE2ETest
 
 class EventFilterE2ETest(BaseE2ETest):
@@ -14,10 +14,8 @@ class EventFilterE2ETest(BaseE2ETest):
         super().setUp()
         # Limpiar TODOS los eventos al inicio de cada test para asegurar un estado limpio
         Event.objects.all().delete()
-        # Ya no creamos los 3 eventos aquí.
 
-    def _create_standard_events(self):
-        """Método auxiliar para crear el conjunto estándar de eventos (pasado, actual, futuro)"""
+        # Crear eventos con diferentes fechas
         # Evento pasado
         past_date = timezone.now() - datetime.timedelta(days=1)
         self.past_event = Event.objects.create(
@@ -53,8 +51,6 @@ class EventFilterE2ETest(BaseE2ETest):
 
     def test_events_page_shows_only_future_events(self):
         """Test que verifica que la página de eventos solo muestra eventos futuros"""
-        self._create_standard_events() # Crea los eventos necesarios para este test
-
         # Iniciar sesión como usuario regular
         self.login_user("usuario", "password123")
 
@@ -79,8 +75,6 @@ class EventFilterE2ETest(BaseE2ETest):
 
     def test_events_are_ordered_by_date(self):
         """Test que verifica que los eventos están ordenados por fecha"""
-        self._create_standard_events() # Crea los eventos necesarios para este test
-
         # Iniciar sesión como usuario regular
         self.login_user("usuario", "password123")
 
@@ -107,8 +101,8 @@ class EventFilterE2ETest(BaseE2ETest):
 
     def test_no_events_message(self):
         """Test que verifica que se muestra el mensaje correcto cuando no hay eventos futuros"""
-        # En este test, los eventos ya han sido eliminados por el setUp() de la clase,
-        # así que la base de datos de eventos está vacía.
+        # Eliminar todos los eventos para este test específico
+        Event.objects.all().delete()
 
         # Iniciar sesión como usuario regular
         self.login_user("usuario", "password123")
@@ -125,14 +119,6 @@ class EventFilterE2ETest(BaseE2ETest):
         no_events_message = self.page.locator("text=No hay eventos disponibles")
         expect(no_events_message).to_be_visible()
 
-        # MODIFICACIÓN CLAVE AQUÍ:
-        # En lugar de esperar 0 filas de 'tr', esperamos 1 fila que CONTENGA el mensaje.
-        # O, si no quieres contar esa fila, puedes contar las filas que representan datos reales
-        # Si la fila de "No hay eventos" es la única en <tbody>, esta es la mejor opción:
+        # Verificar que solo hay una fila con el mensaje
         expect(self.page.locator("table tbody tr")).to_have_count(1, timeout=10000)
         expect(self.page.locator("table tbody tr:has-text('No hay eventos disponibles')")).to_be_visible()
-        
-        # Si prefieres asegurarte de que NO haya filas que *no* sean el mensaje:
-        # Puedes usar un selector negativo si sabes qué distingue a las filas de eventos reales.
-        # Por ejemplo, si los eventos reales tienen un botón, o una clase 'event-item':
-        # expect(self.page.locator("table tbody tr:not(:has-text('No hay eventos disponibles'))")).to_have_count(0, timeout=10000)

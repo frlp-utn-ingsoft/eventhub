@@ -13,22 +13,6 @@ class CountdownE2ETest(BaseE2ETest):
         """Configuración inicial para los tests e2e"""
         super().setUp()
         
-        # Usuario regular (NO organizador) 
-        self.user = User.objects.create_user(
-            username='testuser',
-            email='test@example.com',
-            password='testpass123',
-            is_organizer=False
-        )
-        
-        # Usuario organizador
-        self.organizer = User.objects.create_user(
-            username='organizer',
-            email='organizer@example.com',
-            password='testpass123',
-            is_organizer=True
-        )
-        
         # Venue para eventos
         self.venue = Venue.objects.create(
             name='Test Venue',
@@ -55,10 +39,19 @@ class CountdownE2ETest(BaseE2ETest):
             venue=self.venue
         )
 
+        # Evento adicional para pruebas de navegación
+        self.additional_event = Event.objects.create(
+            title='Additional Event',
+            description='Another event for navigation testing',
+            scheduled_at=timezone.now() + timedelta(days=45),
+            organizer=self.organizer,
+            venue=self.venue
+        )
+
     def test_countdown_visible_for_non_organizer_user_journey(self):
         """Test del flujo completo de usuario NO organizador viendo countdown usando Playwright"""
         # Login como usuario NO organizador
-        self.login_user('testuser', 'testpass123')
+        self.login_user('usuario', 'password123')
         
         # Navegar al detalle del evento futuro
         self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
@@ -88,7 +81,7 @@ class CountdownE2ETest(BaseE2ETest):
     def test_countdown_not_visible_for_organizer_user(self):
         """Test que el countdown NO es visible para usuarios organizadores"""
         # Login como organizador
-        self.login_user('organizer', 'testpass123')
+        self.login_user('organizador', 'password123')
         
         # Navegar al detalle del evento
         self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
@@ -107,7 +100,7 @@ class CountdownE2ETest(BaseE2ETest):
     def test_countdown_javascript_functionality(self):
         """Test funcionalidad JavaScript del countdown"""
         # Login como usuario NO organizador
-        self.login_user('testuser', 'testpass123')
+        self.login_user('usuario', 'password123')
         
         # Navegar al detalle del evento
         self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
@@ -134,7 +127,7 @@ class CountdownE2ETest(BaseE2ETest):
     def test_countdown_responsive_design(self):
         """Test diseño responsive del countdown"""
         # Login como usuario NO organizador
-        self.login_user('testuser', 'testpass123')
+        self.login_user('usuario', 'password123')
         
         # Navegar al detalle del evento
         self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
@@ -158,7 +151,7 @@ class CountdownE2ETest(BaseE2ETest):
     def test_countdown_with_past_event_behavior(self):
         """Test comportamiento del countdown con evento pasado"""
         # Login como usuario NO organizador
-        self.login_user('testuser', 'testpass123')
+        self.login_user('usuario', 'password123')
         
         # Navegar al detalle del evento pasado
         self.page.goto(f"{self.live_server_url}/events/{self.past_event.pk}/")
@@ -186,7 +179,7 @@ class CountdownE2ETest(BaseE2ETest):
     def test_countdown_visual_elements_present(self):
         """Test que todos los elementos visuales del countdown están presentes"""
         # Login como usuario NO organizador
-        self.login_user('testuser', 'testpass123')
+        self.login_user('usuario', 'password123')
         
         # Navegar al detalle del evento
         self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
@@ -209,7 +202,7 @@ class CountdownE2ETest(BaseE2ETest):
     def test_countdown_event_information_display(self):
         """Test que la información del evento se muestra correctamente junto al countdown"""
         # Login como usuario NO organizador
-        self.login_user('testuser', 'testpass123')
+        self.login_user('usuario', 'password123')
         
         # Navegar al detalle del evento
         self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
@@ -241,17 +234,8 @@ class CountdownE2ETest(BaseE2ETest):
 
     def test_countdown_multiple_events_navigation(self):
         """Test navegación entre múltiples eventos con countdown"""
-        # Crear un evento adicional para probar navegación
-        additional_event = Event.objects.create(
-            title='Additional Event',
-            description='Another event for navigation testing',
-            scheduled_at=timezone.now() + timedelta(days=45),
-            organizer=self.organizer,
-            venue=self.venue
-        )
-        
         # Login como usuario NO organizador
-        self.login_user('testuser', 'testpass123')
+        self.login_user('usuario', 'password123')
         
         # Navegar al primer evento
         self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
@@ -262,7 +246,7 @@ class CountdownE2ETest(BaseE2ETest):
         expect(self.page.locator("h1").filter(has_text="Future Event")).to_be_visible()
         
         # Navegar al segundo evento
-        self.page.goto(f"{self.live_server_url}/events/{additional_event.pk}/")
+        self.page.goto(f"{self.live_server_url}/events/{self.additional_event.pk}/")
         self.page.wait_for_load_state("networkidle")
         
         # Verificar countdown en segundo evento
@@ -272,7 +256,7 @@ class CountdownE2ETest(BaseE2ETest):
     def test_countdown_event_details_interaction(self):
         """Test interacción con detalles del evento que tiene countdown"""
         # Login como usuario NO organizador
-        self.login_user('testuser', 'testpass123')
+        self.login_user('usuario', 'password123')
         
         # Navegar al detalle del evento
         self.page.goto(f"{self.live_server_url}/events/{self.future_event.pk}/")
