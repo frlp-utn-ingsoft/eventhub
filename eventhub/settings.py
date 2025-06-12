@@ -138,3 +138,7 @@ LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 TIME_ZONE = "America/Argentina/Buenos_Aires"
 USE_TZ = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://eventhub-v0-2-0.onrender.com",
+]
