@@ -1,4 +1,4 @@
-name: CD 
+name: CD
 
 on:
   workflow_run:
@@ -9,8 +9,8 @@ on:
 jobs:
   deploy:
     name: Deploy
-    if: github.event.workflow_run.conclusion == 'success' && github.event_name == 'release'
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.event == 'release' && github.event.workflow_run.conclusion == 'success' }}
 
     steps:
       - name: Check out code
